@@ -1,1 +1,4 @@
 /.python-version
+/examples/api_for_tortoise_orm/db.sqlite3
+/examples/api_for_tortoise_orm/db.sqlite3-shm
+/examples/api_for_tortoise_orm/db.sqlite3-wal
