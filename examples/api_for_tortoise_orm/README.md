@@ -1,10 +1,6 @@
-# FastAPI-REST-JSONAPI
+## App API-FOR-TORTOISE-ORM
 
-## Examples:
-
-### 1. App API-FOR-TORTOISE-ORM
-
-#### Start app
+### Start app
 ```shell
 # in dir fastapi-rest-jsonapi
 
