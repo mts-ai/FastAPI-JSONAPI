@@ -1,4 +1,4 @@
-"""Device model."""
+"""User model."""
 
 
 from tortoise import (
@@ -15,7 +15,7 @@ NOMENCLATURE_NUMBER_FIELD_LENGTH = 100
 class User(models.Model):
     """The device model."""
 
-    class Enum(object):
+    class Enum:
         status = UserStatusEnum
 
     id: int = fields.IntField(pk=True)
@@ -25,5 +25,5 @@ class User(models.Model):
     created_at = fields.DatetimeField(null=True, auto_now_add=True)
     modified_at = fields.DatetimeField(null=True, auto_now=True)
 
-    class Meta(object):
+    class Meta:
         table = "users"

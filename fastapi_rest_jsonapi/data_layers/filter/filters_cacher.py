@@ -11,7 +11,7 @@ from typing import (
 )
 
 
-class FiltersCacher(object):
+class FiltersCacher:
     """Filter cacher."""
 
     def __init__(

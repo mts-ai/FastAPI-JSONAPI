@@ -37,7 +37,8 @@ def prepare_filter_event(field: Type[ModelField], field_name: str, type_op: str,
     """
     if field.type_ == int and type_op not in set(IntSchema.__fields__["operation"].default):
         raise InvalidFilters(
-            'Operation "{type_op}" is not permitted for type "INT"'.format(type_op=type_op), parameter=field_name
+            'Operation "{type_op}" is not permitted for type "INT"'.format(type_op=type_op),
+            parameter=field_name,
         )
     if field.type_ == float and type_op not in set(FloatSchema.__fields__["operation"].default):
         raise InvalidFilters(

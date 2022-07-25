@@ -266,6 +266,7 @@ class QueryStringManager(object):
         include_param: str = self.qs.get("include", "")
 
         if self.MAX_INCLUDE_DEPTH is not None:
+            # TODO: does this really work? needs tests!
             for include_path in include_param:
                 if len(include_path.split(SPLIT_REL)) > self.MAX_INCLUDE_DEPTH:
                     raise InvalidInclude(

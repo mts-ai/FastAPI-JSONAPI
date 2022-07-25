@@ -14,36 +14,33 @@ from examples.api_for_tortoise_orm.models.enums import UserStatusEnum
 class UserBaseSchema(BaseModel):
     """User base schema."""
 
-    class Config(object):
+    class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
-    class Enum(object):
+    class Enum:
         """Device enums."""
 
         status = UserStatusEnum
 
-
-class UserPatchSchema(UserBaseSchema):
-    """User PATCH schema."""
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     status: UserStatusEnum = Field(default=UserStatusEnum.active)
+
+
+class UserPatchSchema(UserBaseSchema):
+    """User PATCH schema."""
 
 
 class UserInSchema(UserBaseSchema):
     """User input schema."""
 
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    status: UserStatusEnum = Field(default=UserStatusEnum.active)
-
 
 class UserSchema(UserInSchema):
     """User item schema."""
 
-    class Config(object):
+    class Config:
         """Pydantic model config."""
 
         orm_mode = True
@@ -52,6 +49,3 @@ class UserSchema(UserInSchema):
     id: int
     created_at: datetime = Field(description="Время создания данных")
     modified_at: datetime = Field(description="Время изменения данных")
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    status: UserStatusEnum = Field(default=UserStatusEnum.active)
