@@ -9,8 +9,9 @@ from typing import (
     Union,
 )
 
+import pydantic
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from fastapi_rest_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_rest_jsonapi.methods import (
@@ -20,6 +21,8 @@ from fastapi_rest_jsonapi.methods import (
     patch_detail_jsonapi,
     post_list_jsonapi,
 )
+from fastapi_rest_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPISchema, JSONAPIObjectSchema, \
+    JSONAPIResultDetailSchema
 
 JSON_API_RESPONSE_TYPE = Optional[Dict[Union[int, str], Dict[str, Any]]]
 
@@ -38,8 +41,6 @@ class RoutersJSONAPI(object):
         type_resource: str,
         schema_in_patch: Type[BaseModel],
         schema_in_post: Type[BaseModel],
-        resp_schema_detail: Type[BaseModel],
-        resp_schema_list: Type[BaseModel],
     ) -> None:
         """Initialize router items."""
         self._routers: APIRouter = routers
@@ -49,10 +50,43 @@ class RoutersJSONAPI(object):
         self.class_list: Any = class_list
         self._type: str = type_resource
         self._schema: Type[BaseModel] = schema
-        self._schema_in_patch: Type[BaseModel] = schema_in_patch
-        self._schema_in_post: Type[BaseModel] = schema_in_post
-        self._resp_schema_detail: Type[BaseModel] = resp_schema_detail
-        self._resp_schema_list: Type[BaseModel] = resp_schema_list
+
+        patch_jsonapi_schema = pydantic.create_model(
+            "{base_name}JSONAPI".format(base_name=schema_in_patch.__name__),
+            attributes=(schema_in_patch, ...),
+            type=(str, Field(default=self._type, description="Тип ресурса")),
+            __base__=BasePatchJSONAPISchema,
+        )
+        self._schema_in_patch_base: Type[BaseModel] = schema_in_patch
+        self._schema_in_patch: Type[BaseModel] = patch_jsonapi_schema
+
+        post_jsonapi_schema = pydantic.create_model(
+            "{base_name}JSONAPI".format(base_name=schema_in_post.__name__),
+            attributes=(schema_in_post, ...),
+            type=(str, Field(default=self._type, description="Тип ресурса")),
+            __base__=BasePostJSONAPISchema,
+        )
+        self._schema_in_post_base: Type[BaseModel] = schema_in_post
+        self._schema_in_post: Type[BaseModel] = post_jsonapi_schema
+
+        object_jsonapi_schema = pydantic.create_model(
+            "{base_name}ObjectJSONAPI".format(base_name=schema.__name__),
+            attributes=(schema, ...),
+            type=(str, Field(default=self._type, description="Тип ресурса")),
+            __base__=JSONAPIObjectSchema,
+        )
+        detail_jsonapi_schema = pydantic.create_model(
+            "{base_name}DetailJSONAPI".format(base_name=schema.__name__),
+            data=(object_jsonapi_schema, ...),
+            __base__=JSONAPIResultDetailSchema,
+        )
+        self._resp_schema_detail: Type[BaseModel] = detail_jsonapi_schema
+        list_jsonapi_schema = pydantic.create_model(
+            "{base_name}ListJSONAPI".format(base_name=schema.__name__),
+            data=(List[object_jsonapi_schema], ...),
+            __base__=JSONAPIResultDetailSchema,
+        )
+        self._resp_schema_list: Type[BaseModel] = list_jsonapi_schema
 
         if isinstance(self._path, list):
             for i_path in self._path:

@@ -12,7 +12,7 @@ from pydantic import (
     Field,
 )
 
-from fastapi_rest_jsonapi.filter import json_api_filter_converter
+from fastapi_rest_jsonapi.data_layers.filter import json_api_filter_converter
 from fastapi_rest_jsonapi.querystring import QueryStringManager
 
 

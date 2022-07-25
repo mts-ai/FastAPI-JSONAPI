@@ -18,11 +18,11 @@ from fastapi_rest_jsonapi.data_layers.orm import (
     DBORMType,
 )
 from fastapi_rest_jsonapi.exceptions import InvalidFilters
-from fastapi_rest_jsonapi.filter.base import (
+from fastapi_rest_jsonapi.data_layers.filter.base import (
     orm_and_or,
     val_to_query,
 )
-from fastapi_rest_jsonapi.filter.preparing import prepare_filter_pair
+from fastapi_rest_jsonapi.data_layers.filter.preparing import prepare_filter_pair
 from fastapi_rest_jsonapi.querystring import QueryStringManager
 
 

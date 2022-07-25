@@ -61,7 +61,7 @@ def patch_detail_jsonapi(
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, data: schema_in):  # type: ignore
             query_params = QueryStringManager(request=request, schema=schema)
-            data_dict: dict = dict(query_params=query_params, obj_id=obj_id, data=data)
+            data_dict: dict = dict(query_params=query_params, obj_id=obj_id, data=getattr(data, "attributes", data))
             if is_necessary_request(func):
                 data_dict["request"] = request
             data_schema: Any = await func(**data_dict)
@@ -160,7 +160,7 @@ def post_list_jsonapi(
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, data: schema_in):  # type: ignore
             query_params = QueryStringManager(request=request, schema=schema)
-            data_dict: dict = dict(query_params=query_params, data=data)
+            data_dict: dict = dict(query_params=query_params, data=getattr(data, 'attributes', data))
             if is_necessary_request(func):
                 data_dict["request"] = request
             data_pydantic: Any = await func(**data_dict)

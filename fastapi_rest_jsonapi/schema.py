@@ -17,6 +17,20 @@ from pydantic import (
 )
 
 
+class BasePatchJSONAPISchema(BaseModel):
+    """Base PATCH JSON API schema."""
+    id: int = Field(description="ID объекта")
+    type: str = Field(description="Тип ресурса")
+    attributes: dict = Field(description="Данные объекта")
+
+
+class BasePostJSONAPISchema(BaseModel):
+    """Base POST JSON API schema."""
+
+    type: str = Field(description="Тип ресурса")
+    attributes: dict = Field(description="Данные объекта")
+
+
 class JSONAPIResultListMetaSchema(BaseModel):
     """JSON API list meta schema."""
 

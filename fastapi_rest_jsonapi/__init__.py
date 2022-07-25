@@ -2,7 +2,7 @@
 
 from fastapi_rest_jsonapi.api import RoutersJSONAPI
 from fastapi_rest_jsonapi.exceptions import BadRequest
-from fastapi_rest_jsonapi.filter import json_api_filter
+from fastapi_rest_jsonapi.data_layers.filter import json_api_filter
 from fastapi_rest_jsonapi.pagination import json_api_pagination
 from fastapi_rest_jsonapi.querystring import QueryStringManager
 from fastapi_rest_jsonapi.sorting import json_api_sort

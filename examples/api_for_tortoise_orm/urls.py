@@ -12,12 +12,9 @@ from fastapi import (
 )
 
 from fastapi_rest_jsonapi import RoutersJSONAPI
+from .models.pydantic import UserPatchSchema
 from .models.pydantic.user import (
-    UserJSONAPIDetailSchema,
-    UserJSONAPIListSchema,
-    UserPatchJSONAPISchema,
-    UserPostJSONAPISchema,
-    UserSchema,
+    UserSchema, UserInSchema,
 )
 from .api.user import (
     UserDetail,
@@ -42,10 +39,8 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_list=UserList,
         schema=UserSchema,
         type_resource="users",
-        schema_in_patch=UserPatchJSONAPISchema,
-        schema_in_post=UserPostJSONAPISchema,
-        resp_schema_detail=UserJSONAPIDetailSchema,
-        resp_schema_list=UserJSONAPIListSchema,
+        schema_in_patch=UserPatchSchema,
+        schema_in_post=UserInSchema,
     )
 
     app.include_router(routers, prefix="")

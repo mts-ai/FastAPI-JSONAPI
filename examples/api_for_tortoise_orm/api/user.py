@@ -10,8 +10,8 @@ from examples.api_for_tortoise_orm.helpers.factories.meta_base import FactoryUse
 from examples.api_for_tortoise_orm.helpers.factories.user import UserFactory, ErrorCreateUserObject
 from examples.api_for_tortoise_orm.helpers.updaters.exceptions import ObjectNotFound
 from examples.api_for_tortoise_orm.helpers.updaters.update_user import UpdateUser, ErrorUpdateUserObject
-from examples.api_for_tortoise_orm.models.pydantic import UserSchema, UserPatchJSONAPISchema, UserJSONAPIListSchema, \
-    UserPostJSONAPISchema
+from examples.api_for_tortoise_orm.models.pydantic import UserSchema, UserPatchSchema
+from examples.api_for_tortoise_orm.models.pydantic.user import UserInSchema
 from examples.api_for_tortoise_orm.models.tortoise import User
 from fastapi_rest_jsonapi import json_api_pagination
 
@@ -19,8 +19,9 @@ from fastapi_rest_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
-from fastapi_rest_jsonapi.filter import json_api_filter
+from fastapi_rest_jsonapi.data_layers.filter import json_api_filter
 from fastapi_rest_jsonapi.querystring import QueryStringManager
+from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema
 
 
 class UserDetail(object):
@@ -51,12 +52,12 @@ class UserDetail(object):
         return UserSchema.from_orm(user)
 
     @classmethod
-    async def patch(cls, obj_id, data: UserPatchJSONAPISchema, query_params: QueryStringManager) -> UserSchema:
+    async def patch(cls, obj_id, data: UserPatchSchema, query_params: QueryStringManager) -> UserSchema:
         user_obj: User
         try:
             user_obj = await UpdateUser.update(
                 obj_id,
-                data.attributes.dict(exclude_unset=True),
+                data.dict(exclude_unset=True),
                 query_params.headers,
             )
         except ErrorUpdateUserObject as ex:
@@ -70,7 +71,7 @@ class UserDetail(object):
 
 class UserList(object):
     @classmethod
-    async def get(cls, query_params: QueryStringManager) -> Union[QuerySet, UserJSONAPIListSchema]:
+    async def get(cls, query_params: QueryStringManager) -> Union[QuerySet, JSONAPIResultListSchema]:
         extended_fields: List[str] = query_params.fields.get("users", [])
         if not extended_fields:
             device_query = User.filter().order_by("-id")
@@ -82,16 +83,16 @@ class UserList(object):
         users_db: List[User] = await query.all()
         users: List[UserSchema] = [UserSchema.from_orm(i_user) for i_user in users_db]
 
-        return UserJSONAPIListSchema(
+        return JSONAPIResultListSchema(
             meta={"count": count, "totalPages": total_pages},
             data=[{"id": i_obj.id, "type": "Device", "attributes": i_obj.dict()} for i_obj in users],
         )
 
     @classmethod
-    async def post(cls, data: UserPostJSONAPISchema, query_params: QueryStringManager) -> UserSchema:
+    async def post(cls, data: UserInSchema, query_params: QueryStringManager) -> UserSchema:
         try:
             device_obj = await UserFactory.create(
-                data=data.attributes.dict(),
+                data=data.dict(),
                 mode=FactoryUseMode.production,
                 header=query_params.headers,
             )
