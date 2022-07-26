@@ -24,7 +24,7 @@ from fastapi_rest_jsonapi.querystring import QueryStringManager
 from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema
 
 
-class UserDetail(object):
+class UserDetail:
     @classmethod
     async def get_user(cls, user_id, query_params: QueryStringManager) -> User:
         """
@@ -69,7 +69,7 @@ class UserDetail(object):
         return device
 
 
-class UserList(object):
+class UserList:
     @classmethod
     async def get(cls, query_params: QueryStringManager) -> Union[QuerySet, JSONAPIResultListSchema]:
         extended_fields: List[str] = query_params.fields.get("users", [])
@@ -85,7 +85,7 @@ class UserList(object):
 
         return JSONAPIResultListSchema(
             meta={"count": count, "totalPages": total_pages},
-            data=[{"id": i_obj.id, "type": "Device", "attributes": i_obj.dict()} for i_obj in users],
+            data=[{"id": i_obj.id, "attributes": i_obj.dict()} for i_obj in users],
         )
 
     @classmethod

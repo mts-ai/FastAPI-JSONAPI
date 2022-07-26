@@ -104,7 +104,13 @@ class RoutersJSONAPI:
             500: {"model": ExceptionResponseSchema},
         }
         if hasattr(self.class_list, "get"):
-            self._routers.get(path, tags=self._tags, response_model=self._resp_schema_list, responses=error_responses,)(
+            self._routers.get(
+                path,
+                tags=self._tags,
+                response_model=self._resp_schema_list,
+                responses=error_responses,
+                summary=f"Get list of `{self._type}` objects",
+            )(
                 get_list_jsonapi(schema=self._schema, type_=self._type, schema_resp=self._resp_schema_list)(
                     self.class_list.get
                 )
@@ -116,6 +122,8 @@ class RoutersJSONAPI:
                 tags=self._tags,
                 response_model=self._resp_schema_detail,
                 responses=error_responses,
+                summary=f"Create object `{self._type}`"
+
             )(
                 post_list_jsonapi(
                     schema=self._schema,
@@ -131,6 +139,7 @@ class RoutersJSONAPI:
                 tags=self._tags,
                 response_model=self._resp_schema_detail,
                 responses=error_responses,
+                summary=f"Get object `{self._type}` by id"
             )(
                 get_detail_jsonapi(schema=self._schema, type_=self._type, schema_resp=self._resp_schema_detail)(
                     self.class_detail.get
@@ -143,6 +152,7 @@ class RoutersJSONAPI:
                 tags=self._tags,
                 response_model=self._resp_schema_detail,
                 responses=error_responses,
+                summary=f"Update object `{self._type}` by id"
             )(
                 patch_detail_jsonapi(
                     schema=self._schema,
@@ -156,4 +166,5 @@ class RoutersJSONAPI:
             self._routers.delete(
                 path + "/{obj_id}",
                 tags=self._tags,
+                summary=f"Delete object of type `{self._type}`"
             )(delete_detail_jsonapi(schema=self._schema)(self.class_detail.delete))

@@ -155,7 +155,10 @@ def post_list_jsonapi(
     type_: str,
     schema_resp: Any,
 ) -> Callable:
-    """POST method router (Decorator for JSON API)."""
+    """
+    POST method router (Decorator for JSON API).
+    TODO: check data in `type` field
+    """
 
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, data: schema_in):  # type: ignore
