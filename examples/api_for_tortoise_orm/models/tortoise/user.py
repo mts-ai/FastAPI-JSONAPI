@@ -13,7 +13,7 @@ NOMENCLATURE_NUMBER_FIELD_LENGTH = 100
 
 
 class User(models.Model):
-    """The device model."""
+    """The user model."""
 
     class Enum:
         status = UserStatusEnum

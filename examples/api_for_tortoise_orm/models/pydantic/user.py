@@ -20,7 +20,7 @@ class UserBaseSchema(BaseModel):
         orm_mode = True
 
     class Enum:
-        """Device enums."""
+        """User enums."""
 
         status = UserStatusEnum
 

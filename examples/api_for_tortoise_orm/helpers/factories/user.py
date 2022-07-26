@@ -61,6 +61,6 @@ class UserFactory(BaseFactory):
         data_for_create_user["last_name"] = kwargs.get("last_name", "Last name")
 
     @classmethod
-    def _set_status(cls, data_for_create_device: Dict, kwargs: Dict):
+    def _set_status(cls, data_for_create_user: Dict, kwargs: Dict):
         """Status setter."""
-        data_for_create_device["status"] = UserStatusEnum.active
+        data_for_create_user["status"] = UserStatusEnum.active
