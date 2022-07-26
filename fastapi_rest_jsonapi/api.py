@@ -27,7 +27,7 @@ from fastapi_rest_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPIS
 JSON_API_RESPONSE_TYPE = Optional[Dict[Union[int, str], Dict[str, Any]]]
 
 
-class RoutersJSONAPI(object):
+class RoutersJSONAPI:
     """API Router interface for JSON API endpoints in web-services."""
 
     def __init__(  # noqa: WPS211
@@ -88,6 +88,7 @@ class RoutersJSONAPI(object):
         )
         self._resp_schema_list: Type[BaseModel] = list_jsonapi_schema
 
+        # todo: check for any collection except string
         if isinstance(self._path, list):
             for i_path in self._path:
                 self._add_routers(i_path)

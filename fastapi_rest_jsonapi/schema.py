@@ -17,18 +17,20 @@ from pydantic import (
 )
 
 
-class BasePatchJSONAPISchema(BaseModel):
-    """Base PATCH JSON API schema."""
-    id: int = Field(description="ID объекта")
-    type: str = Field(description="Тип ресурса")
-    attributes: dict = Field(description="Данные объекта")
-
-
 class BasePostJSONAPISchema(BaseModel):
     """Base POST JSON API schema."""
 
     type: str = Field(description="Тип ресурса")
     attributes: dict = Field(description="Данные объекта")
+
+
+class BaseJSONAPIObjectSchema(BasePostJSONAPISchema):
+    """Base JSON:API object schema."""
+    id: int = Field(description="ID объекта")
+
+
+class BasePatchJSONAPISchema(BaseJSONAPIObjectSchema):
+    """Base PATCH JSON API schema."""
 
 
 class JSONAPIResultListMetaSchema(BaseModel):
@@ -44,28 +46,29 @@ class JSONAPIResultListJSONAPISchema(BaseModel):
     version: str = Field(default="1.0", description="json-api версия")
 
 
-class JSONAPIObjectSchema(BaseModel):
+class JSONAPIObjectSchema(BaseJSONAPIObjectSchema):
     """JSON API base object schema."""
 
-    id: int = Field(description="ID объекта")
-    type: str = Field(description="Тип ресурса")
-    attributes: dict = Field(description="Данные объекта")
+
+class BaseJSONAPIResultSchema(BaseModel):
+    """
+    JSON:API Required fields schema
+    """
+
+    meta: Optional[JSONAPIResultListMetaSchema] = Field(description="Meta данные json-api")
+    jsonapi: JSONAPIResultListJSONAPISchema = JSONAPIResultListJSONAPISchema()
 
 
-class JSONAPIResultListSchema(BaseModel):
+class JSONAPIResultListSchema(BaseJSONAPIResultSchema):
     """JSON API list base result schema."""
 
     data: Sequence[JSONAPIObjectSchema] = Field(description="Список объектов")
-    meta: Optional[JSONAPIResultListMetaSchema]
-    jsonapi: JSONAPIResultListJSONAPISchema = JSONAPIResultListJSONAPISchema()
 
 
-class JSONAPIResultDetailSchema(BaseModel):
+class JSONAPIResultDetailSchema(BaseJSONAPIResultSchema):
     """JSON API base detail schema."""
 
     data: JSONAPIObjectSchema = Field(description="Данные объекта")
-    meta: Optional[JSONAPIResultListMetaSchema] = Field(description="Meta данные json-api")
-    jsonapi: JSONAPIResultListJSONAPISchema = JSONAPIResultListJSONAPISchema()
 
 
 class BasicPipelineActionSchema(BaseModel):
