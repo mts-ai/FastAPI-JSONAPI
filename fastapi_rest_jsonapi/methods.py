@@ -120,9 +120,8 @@ def get_list_jsonapi(schema: Type[BaseModel], type_: str, schema_resp: Any) -> C
             filters_list: Optional[str] = Query(
                 None,
                 alias="filter",
-                description="[Description filter](https://flask-rest-jsonapi.readthedocs.io/en/latest/filtering"
-                ".html). "
-                "Examples:\n* filter for timestamp interval: "
+                description="[Filtering docs](https://flask-combo-jsonapi.readthedocs.io/en/latest/filtering.html)"
+                "\nExamples:\n* filter for timestamp interval: "
                 '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
                 '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
             ),
