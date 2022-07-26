@@ -37,7 +37,6 @@ def get_detail_jsonapi(schema: Type[BaseModel], type_: str, schema_resp: Any) ->
             return schema_resp(
                 data={
                     "id": data_schema.id,
-                    "type": type_,
                     "attributes": data_schema.dict(),
                 },
             )
@@ -56,7 +55,10 @@ def patch_detail_jsonapi(
     type_: str,
     schema_resp: Any,
 ) -> Callable:
-    """PATCH method router (Decorator for JSON API)."""
+    """
+    PATCH method router (Decorator for JSON API).
+    TODO: validate `id` in data!
+    """
 
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, data: schema_in):  # type: ignore
@@ -68,7 +70,6 @@ def patch_detail_jsonapi(
             return schema_resp(
                 data={
                     "id": data_schema.id,
-                    "type": type_,
                     "attributes": data_schema.dict(),
                 },
             )
@@ -102,7 +103,7 @@ async def _get_single_response(
     data_model: List[Any] = await query.all()
     data_schema: List[Any] = [schema.from_orm(i_obj) for i_obj in data_model]
     return schema_resp(
-        data=[{"id": i_obj.id, "type": type_, "attributes": i_obj.dict()} for i_obj in data_schema],
+        data=[{"id": i_obj.id, "attributes": i_obj.dict()} for i_obj in data_schema],
         meta={"count": count, "totalPages": total_pages},
     )
 
@@ -137,7 +138,7 @@ def get_list_jsonapi(schema: Type[BaseModel], type_: str, schema_resp: Any) -> C
             if isinstance(query, BaseModel):  # JSONAPIResultListSchema
                 return query
             elif isinstance(query, list):
-                return schema_resp(data=[{"id": i_obj.id, "type": type_, "attributes": i_obj.dict()} for i_obj in query])
+                return schema_resp(data=[{"id": i_obj.id, "attributes": i_obj.dict()} for i_obj in query])
             else:
                 return await _get_single_response(query, query_params, schema, type_, schema_resp)  # QuerySet
 
@@ -169,7 +170,6 @@ def post_list_jsonapi(
             return schema_resp(
                 data={
                     "id": data_pydantic.id,
-                    "type": type_,
                     "attributes": data_pydantic.dict(),
                 },
             )
