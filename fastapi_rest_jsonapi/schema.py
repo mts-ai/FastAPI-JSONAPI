@@ -44,8 +44,11 @@ class JSONAPIResultListMetaSchema(BaseModel):
     total_pages: Optional[int] = Field(alias="totalPages")
 
 
-class JSONAPIResultListJSONAPISchema(BaseModel):
-    """JSON:API result list schema."""
+class JSONAPIDocumentObjectSchema(BaseModel):
+    """
+    JSON:API Document Object Schema.
+    https://jsonapi.org/format/#document-jsonapi-object
+    """
 
     version: str = Field(default="1.0", description="json-api версия")
 
@@ -60,7 +63,7 @@ class BaseJSONAPIResultSchema(BaseModel):
     """
 
     meta: Optional[JSONAPIResultListMetaSchema] = Field(description="Meta данные json-api")
-    jsonapi: JSONAPIResultListJSONAPISchema = JSONAPIResultListJSONAPISchema()
+    jsonapi: JSONAPIDocumentObjectSchema = JSONAPIDocumentObjectSchema()
 
 
 class JSONAPIResultListSchema(BaseJSONAPIResultSchema):
