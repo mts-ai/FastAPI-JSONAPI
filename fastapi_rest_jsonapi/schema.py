@@ -1,15 +1,14 @@
-"""Helpers to deal with marshmallow schemas. Base JSON API schemas."""
+"""Helpers to deal with marshmallow schemas. Base JSON:API schemas."""
 from typing import (
     Dict,
-    Type, List,
+    Type,
+    List,
+    Optional,
+    Sequence,
 )
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_flat_models_from_routes
-from typing import (
-    Optional,
-    Sequence,
-)
 
 from pydantic import (
     BaseModel,
@@ -17,37 +16,42 @@ from pydantic import (
 )
 
 
-class BasePostJSONAPISchema(BaseModel):
-    """Base POST JSON API schema."""
+class BaseJSONAPIItemSchema(BaseModel):
+    """Base JSON:API item schema."""
 
     type: str = Field(description="Тип ресурса")
     attributes: dict = Field(description="Данные объекта")
 
 
-class BaseJSONAPIObjectSchema(BasePostJSONAPISchema):
+class BasePostJSONAPISchema(BaseJSONAPIItemSchema):
+    """Base POST JSON:API schema."""
+
+
+class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
     """Base JSON:API object schema."""
+
     id: int = Field(description="ID объекта")
 
 
 class BasePatchJSONAPISchema(BaseJSONAPIObjectSchema):
-    """Base PATCH JSON API schema."""
+    """Base PATCH JSON:API schema."""
 
 
 class JSONAPIResultListMetaSchema(BaseModel):
-    """JSON API list meta schema."""
+    """JSON:API list meta schema."""
 
     count: Optional[int]
     total_pages: Optional[int] = Field(alias="totalPages")
 
 
 class JSONAPIResultListJSONAPISchema(BaseModel):
-    """JSON API result list schema."""
+    """JSON:API result list schema."""
 
     version: str = Field(default="1.0", description="json-api версия")
 
 
 class JSONAPIObjectSchema(BaseJSONAPIObjectSchema):
-    """JSON API base object schema."""
+    """JSON:API base object schema."""
 
 
 class BaseJSONAPIResultSchema(BaseModel):
@@ -60,13 +64,13 @@ class BaseJSONAPIResultSchema(BaseModel):
 
 
 class JSONAPIResultListSchema(BaseJSONAPIResultSchema):
-    """JSON API list base result schema."""
+    """JSON:API list base result schema."""
 
     data: Sequence[JSONAPIObjectSchema] = Field(description="Список объектов")
 
 
 class JSONAPIResultDetailSchema(BaseJSONAPIResultSchema):
-    """JSON API base detail schema."""
+    """JSON:API base detail schema."""
 
     data: JSONAPIObjectSchema = Field(description="Данные объекта")
 
