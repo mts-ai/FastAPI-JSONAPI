@@ -1,15 +1,14 @@
-"""Helpers to deal with marshmallow schemas. Base JSON API schemas."""
+"""Helpers to deal with marshmallow schemas. Base JSON:API schemas."""
 from typing import (
     Dict,
-    Type, List,
+    Type,
+    List,
+    Optional,
+    Sequence,
 )
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_flat_models_from_routes
-from typing import (
-    Optional,
-    Sequence,
-)
 
 from pydantic import (
     BaseModel,
@@ -17,55 +16,66 @@ from pydantic import (
 )
 
 
-class BasePatchJSONAPISchema(BaseModel):
-    """Base PATCH JSON API schema."""
+class BaseJSONAPIItemSchema(BaseModel):
+    """Base JSON:API item schema."""
+
+    type: str = Field(description="Тип ресурса")
+    attributes: dict = Field(description="Данные объекта")
+
+
+class BasePostJSONAPISchema(BaseJSONAPIItemSchema):
+    """Base POST JSON:API schema."""
+
+
+class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
+    """Base JSON:API object schema."""
+
     id: int = Field(description="ID объекта")
-    type: str = Field(description="Тип ресурса")
-    attributes: dict = Field(description="Данные объекта")
 
 
-class BasePostJSONAPISchema(BaseModel):
-    """Base POST JSON API schema."""
-
-    type: str = Field(description="Тип ресурса")
-    attributes: dict = Field(description="Данные объекта")
+class BasePatchJSONAPISchema(BaseJSONAPIObjectSchema):
+    """Base PATCH JSON:API schema."""
 
 
 class JSONAPIResultListMetaSchema(BaseModel):
-    """JSON API list meta schema."""
+    """JSON:API list meta schema."""
 
     count: Optional[int]
     total_pages: Optional[int] = Field(alias="totalPages")
 
 
-class JSONAPIResultListJSONAPISchema(BaseModel):
-    """JSON API result list schema."""
+class JSONAPIDocumentObjectSchema(BaseModel):
+    """
+    JSON:API Document Object Schema.
+    https://jsonapi.org/format/#document-jsonapi-object
+    """
 
     version: str = Field(default="1.0", description="json-api версия")
 
 
-class JSONAPIObjectSchema(BaseModel):
-    """JSON API base object schema."""
-
-    id: int = Field(description="ID объекта")
-    type: str = Field(description="Тип ресурса")
-    attributes: dict = Field(description="Данные объекта")
+class JSONAPIObjectSchema(BaseJSONAPIObjectSchema):
+    """JSON:API base object schema."""
 
 
-class JSONAPIResultListSchema(BaseModel):
-    """JSON API list base result schema."""
+class BaseJSONAPIResultSchema(BaseModel):
+    """
+    JSON:API Required fields schema
+    """
+
+    meta: Optional[JSONAPIResultListMetaSchema] = Field(description="Meta данные json-api")
+    jsonapi: JSONAPIDocumentObjectSchema = JSONAPIDocumentObjectSchema()
+
+
+class JSONAPIResultListSchema(BaseJSONAPIResultSchema):
+    """JSON:API list base result schema."""
 
     data: Sequence[JSONAPIObjectSchema] = Field(description="Список объектов")
-    meta: Optional[JSONAPIResultListMetaSchema]
-    jsonapi: JSONAPIResultListJSONAPISchema = JSONAPIResultListJSONAPISchema()
 
 
-class JSONAPIResultDetailSchema(BaseModel):
-    """JSON API base detail schema."""
+class JSONAPIResultDetailSchema(BaseJSONAPIResultSchema):
+    """JSON:API base detail schema."""
 
     data: JSONAPIObjectSchema = Field(description="Данные объекта")
-    meta: Optional[JSONAPIResultListMetaSchema] = Field(description="Meta данные json-api")
-    jsonapi: JSONAPIResultListJSONAPISchema = JSONAPIResultListJSONAPISchema()
 
 
 class BasicPipelineActionSchema(BaseModel):

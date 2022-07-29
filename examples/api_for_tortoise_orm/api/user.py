@@ -24,7 +24,7 @@ from fastapi_rest_jsonapi.querystring import QueryStringManager
 from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema
 
 
-class UserDetail(object):
+class UserDetail:
     @classmethod
     async def get_user(cls, user_id, query_params: QueryStringManager) -> User:
         """
@@ -65,17 +65,17 @@ class UserDetail(object):
         except ObjectNotFound as ex:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ex.description)
 
-        device = UserSchema.from_orm(user_obj)
-        return device
+        user = UserSchema.from_orm(user_obj)
+        return user
 
 
-class UserList(object):
+class UserList:
     @classmethod
     async def get(cls, query_params: QueryStringManager) -> Union[QuerySet, JSONAPIResultListSchema]:
         extended_fields: List[str] = query_params.fields.get("users", [])
         if not extended_fields:
-            device_query = User.filter().order_by("-id")
-            return await json_api_filter(query=device_query, schema=UserSchema, query_params=query_params)
+            user_query = User.filter().order_by("-id")
+            return await json_api_filter(query=user_query, schema=UserSchema, query_params=query_params)
 
         user_query = User.filter().order_by("-id")
         query: QuerySet = await json_api_filter(query=user_query, schema=UserSchema, query_params=query_params)
@@ -85,13 +85,13 @@ class UserList(object):
 
         return JSONAPIResultListSchema(
             meta={"count": count, "totalPages": total_pages},
-            data=[{"id": i_obj.id, "type": "Device", "attributes": i_obj.dict()} for i_obj in users],
+            data=[{"id": i_obj.id, "attributes": i_obj.dict()} for i_obj in users],
         )
 
     @classmethod
     async def post(cls, data: UserInSchema, query_params: QueryStringManager) -> UserSchema:
         try:
-            device_obj = await UserFactory.create(
+            user_obj = await UserFactory.create(
                 data=data.dict(),
                 mode=FactoryUseMode.production,
                 header=query_params.headers,
@@ -99,5 +99,5 @@ class UserList(object):
         except ErrorCreateUserObject as ex:
             raise BadRequest(ex.description, ex.field)
 
-        user = UserSchema.from_orm(device_obj)
+        user = UserSchema.from_orm(user_obj)
         return user

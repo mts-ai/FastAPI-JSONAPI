@@ -38,7 +38,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_detail=UserDetail,
         class_list=UserList,
         schema=UserSchema,
-        type_resource="users",
+        type_resource="user",
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
     )

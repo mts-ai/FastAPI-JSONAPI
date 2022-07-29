@@ -23,9 +23,10 @@ def custom_openapi(app: FastAPI, title: Optional[str] = None) -> None:
             description="",
             routes=app.routes,
         )
-        openapi_schema["info"]["x-logo"] = {
-            "url": "https://static.ssl.mts.ru/mts_rf/static/20201102.1/Styles/Promo/i/header/logo.svg"
-        }
+        # картинка по адресу недоступна
+        # openapi_schema["info"]["x-logo"] = {
+        #     "url": "https://static.ssl.mts.ru/mts_rf/static/20201102.1/Styles/Promo/i/header/logo.svg",
+        # }
         app.openapi_schema = openapi_schema
         return app.openapi_schema
 

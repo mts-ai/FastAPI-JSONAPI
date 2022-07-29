@@ -1,4 +1,4 @@
-"""Update device helper."""
+"""Update user helper."""
 
 from typing import (
     Any,
@@ -16,9 +16,8 @@ from ...models.enums import UserStatusEnum
 from ...models.tortoise import User
 
 
-
 class ErrorUpdateUserObject(ErrorUpdateObject):
-    """Exception class for device update helper."""
+    """Exception class for user update helper."""
 
     def __init__(self, description, field: str = ""):
         """Initialize constructor for exception while updating object."""
@@ -26,7 +25,7 @@ class ErrorUpdateUserObject(ErrorUpdateObject):
 
 
 class UpdateUser(BaseUpdater):
-    """Device update helper."""
+    """User update helper."""
 
     class Meta(object):
         """Type of model."""
