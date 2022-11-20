@@ -13,6 +13,10 @@ from .json_api import (
     InvalidFilters,
     InvalidInclude,
     InvalidSort,
+    InvalidType,
+    RelationNotFound,
+    RelatedObjectNotFound,
+    ObjectNotFound,
 )
 
 __all__ = [
@@ -23,7 +27,11 @@ __all__ = [
     "InvalidField",
     "InvalidFilters",
     "InvalidInclude",
+    "InvalidType",
+    "RelationNotFound",
     "InvalidSort",
     "QueryError",
     "HTTPException",
+    "RelatedObjectNotFound",
+    "ObjectNotFound",
 ]

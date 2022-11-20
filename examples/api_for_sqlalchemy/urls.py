@@ -21,7 +21,7 @@ from .api.user import (
     UserDetail,
     UserList,
 )
-from .models.tortoise import User
+from .models.sqlalchemy import User
 
 
 def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
@@ -44,7 +44,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
         model=User,
-        engine=DBORMType.tortoise,
+        engine=DBORMType.sqlalchemy,
     )
 
     app.include_router(routers, prefix="")

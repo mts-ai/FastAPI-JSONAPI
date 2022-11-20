@@ -4,7 +4,7 @@ from typing import (
     Type,
     List,
     Optional,
-    Sequence,
+    Sequence, TYPE_CHECKING,
 )
 
 from fastapi import FastAPI
@@ -14,6 +14,9 @@ from pydantic import (
     BaseModel,
     Field,
 )
+
+if TYPE_CHECKING:
+    from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema
 
 
 class BaseJSONAPIItemSchema(BaseModel):
@@ -155,7 +158,7 @@ class BoolSchema(BasicPipelineActionSchema):
         type = bool
 
 
-def get_model_field(schema: Type[BaseModel], field: str) -> str:
+def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
     """
     Get the model field of a schema field.
 
@@ -169,14 +172,14 @@ def get_model_field(schema: Type[BaseModel], field: str) -> str:
     return field
 
 
-def get_relationships(schema, model_field=False):
+def get_relationships(schema: Type["TypeSchema"], model_field: bool = False) -> List[str]:
     """
     Return relationship fields of a schema.
 
-    :param Schema schema: a marshmallow schema
-    :param list: list of relationship fields of a schema
+    :param schema: a pydantic schema
+    :param model_field: list of relationship fields of a schema
     """
-    relationships = []
+    relationships = [i_name for i_name, i_type in schema.__fields__.items() if issubclass(i_type.type_, BaseModel)]
 
     if model_field is True:
         relationships = [get_model_field(schema, key) for key in relationships]
@@ -224,3 +227,14 @@ def collect_app_orm_schemas(app: FastAPI) -> None:
             models_dict[model_type] = model
     if models_dict:
         setattr(app, "schemas", models_dict)
+
+
+def get_related_schema(schema: Type["TypeSchema"], field: str) -> Type["TypeSchema"]:
+    """
+    Retrieve the related schema of a relationship field.
+
+    :params schema: the schema to retrieve le relationship field from
+    :params field: the relationship field
+    :return: the related schema
+    """
+    return schema.__fields__[field].type_
