@@ -45,8 +45,8 @@ def update_signature(
     params_dict.pop("cls", None)
     params_no_default = [
         i_param
-        for i_param in other.values()
-        if isinstance(i_param.default, type) and other["query_params"].annotation is not QueryStringManager
+        for i_name, i_param in other.items()
+        if isinstance(i_param.default, type) and other[i_name].annotation is not QueryStringManager
     ]
     params_default = [
         i_param
@@ -56,7 +56,10 @@ def update_signature(
     params: list = list(params_dict.values())
     for name, field in (schema and schema.__fields__ or {}).items():
         try:
-            if issubclass(field.type_, (dict, BaseModel)):
+            if field.sub_fields:
+                default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
+                type_field = field.type_
+            elif issubclass(field.type_, (dict, BaseModel)):
                 continue
             elif issubclass(field.type_, Enum):
                 default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=field.type_.values())
@@ -75,9 +78,10 @@ def update_signature(
         except Exception as ex:
             pass
 
-    params: list = params_no_default + params + params_default
+    params: list = params + params_no_default + params_default
     # Убираем дубликаты
     params_dict: dict = {i_p.name: i_p for i_p in params}
     params: list = list(params_dict.values())
+    params.sort(key=lambda x: not isinstance(x.default, type))
 
     return sig.replace(parameters=params)

@@ -13,7 +13,7 @@ import pydantic
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_rest_jsonapi.data_layers.orm import DBORMType
 from fastapi_rest_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_rest_jsonapi.methods import (
@@ -21,7 +21,7 @@ from fastapi_rest_jsonapi.methods import (
     get_detail_jsonapi,
     get_list_jsonapi,
     patch_detail_jsonapi,
-    post_list_jsonapi,
+    post_list_jsonapi, delete_list_jsonapi,
 )
 from fastapi_rest_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPISchema, JSONAPIObjectSchema, \
     JSONAPIResultDetailSchema
@@ -39,10 +39,10 @@ class RoutersJSONAPI:
         tags: List[str],
         class_detail: Any,
         class_list: Any,
-        schema: Type[BaseModel],
+        schema: Type[TypeSchema],
         type_resource: str,
-        schema_in_patch: Type[BaseModel],
-        schema_in_post: Type[BaseModel],
+        schema_in_patch: Type[TypeSchema],
+        schema_in_post: Type[TypeSchema],
         model: Type[TypeModel],
         engine: DBORMType = DBORMType.sqlalchemy,
     ) -> None:
@@ -164,6 +164,21 @@ class RoutersJSONAPI:
                     model=self._model,
                     engine=self._engine,
                 )(self.class_list.post)
+            )
+
+        if hasattr(self.class_list, "delete"):
+            self._routers.delete(
+                path,
+                tags=self._tags,
+                summary=f"Delete list objects of type `{self._type}`"
+            )(
+                delete_list_jsonapi(
+                    schema=self._schema,
+                    model=self._model,
+                    engine=self._engine,
+                )(
+                    self.class_list.delete
+                )
             )
 
         if hasattr(self.class_detail, "get"):

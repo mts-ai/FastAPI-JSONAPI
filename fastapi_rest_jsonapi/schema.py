@@ -1,10 +1,11 @@
 """Helpers to deal with marshmallow schemas. Base JSON:API schemas."""
+import uuid
 from typing import (
     Dict,
     Type,
     List,
     Optional,
-    Sequence, TYPE_CHECKING,
+    Sequence, TYPE_CHECKING, Union,
 )
 
 from fastapi import FastAPI
@@ -33,7 +34,7 @@ class BasePostJSONAPISchema(BaseJSONAPIItemSchema):
 class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
     """Base JSON:API object schema."""
 
-    id: int = Field(description="ID объекта")
+    id: Union[uuid.UUID, int] = Field(description="ID объекта")
 
 
 class BasePatchJSONAPISchema(BaseJSONAPIObjectSchema):
@@ -179,7 +180,13 @@ def get_relationships(schema: Type["TypeSchema"], model_field: bool = False) -> 
     :param schema: a pydantic schema
     :param model_field: list of relationship fields of a schema
     """
-    relationships = [i_name for i_name, i_type in schema.__fields__.items() if issubclass(i_type.type_, BaseModel)]
+    relationships: List[str] = []
+    for i_name, i_type in schema.__fields__.items():
+        try:
+            if issubclass(i_type.type_, BaseModel):
+                relationships.append(i_name)
+        except TypeError:
+            pass
 
     if model_field is True:
         relationships = [get_model_field(schema, key) for key in relationships]

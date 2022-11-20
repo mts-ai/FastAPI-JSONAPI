@@ -7,6 +7,7 @@ from typing import (
 from fastapi import Depends
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Select
 from tortoise.exceptions import DoesNotExist
 from tortoise.queryset import QuerySet
 
@@ -76,7 +77,7 @@ class UserDetail:
 
 class UserList:
     @classmethod
-    async def get(cls, query_params: QueryStringManager, session: AsyncSession = Depends(Connector.get_session)) -> Union[QuerySet, JSONAPIResultListSchema]:
+    async def get(cls, query_params: QueryStringManager, session: AsyncSession = Depends(Connector.get_session)) -> Union[Select, JSONAPIResultListSchema]:
         user_query = select(User).order_by(desc(User.id))
         dl = SqlalchemyEngine(query=user_query, schema=UserSchema, model=User, session=session)
         count, users_db = await dl.get_collection(qs=query_params)

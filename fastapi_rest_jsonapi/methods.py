@@ -47,6 +47,7 @@ def get_detail_jsonapi(
 
             params_function = OrderedDict(signature(func).parameters)
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
             data_schema: Any = await func(**data_dict)
             return schema_resp(
                 data={
@@ -91,6 +92,7 @@ def patch_detail_jsonapi(
 
             params_function = OrderedDict(signature(func).parameters)
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
             data_schema: Any = await func(**data_dict)
             return schema_resp(
                 data={
@@ -126,12 +128,55 @@ def delete_detail_jsonapi(
 
             params_function = OrderedDict(signature(func).parameters)
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
             await func(**data_dict)
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
         # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
         wrapper.__signature__ = update_signature(  # type: ignore
             sig=signature(wrapper),
+            other=OrderedDict(signature(func).parameters),
+        )
+        return wrapper
+
+    return inner
+
+
+def delete_list_jsonapi(
+    schema: Type[BaseModel],
+    model: Type[TypeModel],
+    engine: DBORMType,
+) -> Callable:
+    """DELETE method router (Decorator for JSON API)."""
+
+    def inner(func: Callable) -> Callable:
+        async def wrapper(
+            request: Request,
+            filters_list: Optional[str] = Query(
+                None,
+                alias="filter",
+                description="[Filtering docs](https://flask-combo-jsonapi.readthedocs.io/en/latest/filtering.html)"
+                            "\nExamples:\n* filter for timestamp interval: "
+                            '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
+                            '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
+            ),
+            **kwargs,
+        ):
+            query_params = QueryStringManager(request=request, schema=schema)
+            data_dict: dict = dict(query_params=query_params)
+            if is_necessary_request(func):
+                data_dict["request"] = request
+
+            params_function = OrderedDict(signature(func).parameters)
+            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
+            await func(**data_dict)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
+        wrapper.__signature__ = update_signature(  # type: ignore
+            sig=signature(wrapper),
+            schema=schema,
             other=OrderedDict(signature(func).parameters),
         )
         return wrapper
@@ -203,6 +248,7 @@ def get_list_jsonapi(
 
             params_function = OrderedDict(signature(func).parameters)
             data.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
+            data = {i_k: i_v for i_k, i_v in data.items() if i_k in params_function}
             query = await func(**data)
 
             if engine is DBORMType.sqlalchemy:
@@ -263,6 +309,7 @@ def post_list_jsonapi(
 
             params_function = OrderedDict(signature(func).parameters)
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
             data_pydantic: Any = await func(**data_dict)
             return schema_resp(
                 data={
