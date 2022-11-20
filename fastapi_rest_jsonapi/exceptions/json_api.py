@@ -54,6 +54,30 @@ class HTTPException(FastApiHttpException):
         return {"status_code": self.status_code, "source": self.source, "tittle": self.title, "detail": self._detail}
 
 
+class UnsupportedFeatureORM(HTTPException):
+    """Unsupported feature ORM exception class customized for json_api exceptions."""
+
+    def __init__(
+        self,
+        detail: str = "",
+        status_code: int = HTTPStatus.INTERNAL_SERVER_ERROR,
+        parameter: str = "",
+    ):
+        """
+        Init for invalid ORM exception.
+
+        :param detail: a human-readable explanation specific to this occurrence of the problem
+        :param parameter: a string indicating which URI query parameter caused the error
+        :param status_code: the HTTP status code applicable to this problem
+        """
+        super().__init__(
+            detail=detail,
+            parameter=parameter,
+            title="Invalid server.",
+            status_code=status_code,
+        )
+
+
 class BadRequest(HTTPException):
     """Bad request HTTP exception class customized for json_api exceptions."""
 
@@ -172,6 +196,102 @@ class InvalidInclude(HTTPException):
         super().__init__(
             detail=detail,
             title="Invalid include querystring parameter.",
+            parameter=parameter,
+            status_code=status_code,
+        )
+
+
+class InvalidType(HTTPException):
+    """Error to warn that there is a conflit between resource types"""
+
+    def __init__(
+        self,
+        detail: str = "",
+        status_code: int = HTTPStatus.CONFLICT,
+        parameter: str = "",
+    ):
+        """
+        Error to warn that there is a conflit between resource types.
+
+        :param detail: a human-readable explanation specific to this occurrence of the problem
+        :param parameter: a string indicating which URI query parameter caused the error
+        :param status_code: the HTTP status code applicable to this problem
+        """
+        super().__init__(
+            detail=detail,
+            title="Invalid type.",
+            parameter=parameter,
+            status_code=status_code,
+        )
+
+
+class RelationNotFound(HTTPException):
+    """Error to warn that a relationship is not found on a model"""
+
+    def __init__(
+        self,
+        detail: str = "",
+        status_code: int = HTTPStatus.NOT_FOUND,
+        parameter: str = "",
+    ):
+        """
+        Error to warn that a relationship is not found on a model.
+
+        :param detail: a human-readable explanation specific to this occurrence of the problem
+        :param parameter: a string indicating which URI query parameter caused the error
+        :param status_code: the HTTP status code applicable to this problem
+        """
+        super().__init__(
+            detail=detail,
+            title="Relation not found.",
+            parameter=parameter,
+            status_code=status_code,
+        )
+
+
+class RelatedObjectNotFound(HTTPException):
+    """Error to warn that a related object is not found"""
+
+    def __init__(
+        self,
+        detail: str = "",
+        status_code: int = HTTPStatus.NOT_FOUND,
+        parameter: str = "",
+    ):
+        """
+        Error to warn that a related object is not found.
+
+        :param detail: a human-readable explanation specific to this occurrence of the problem
+        :param parameter: a string indicating which URI query parameter caused the error
+        :param status_code: the HTTP status code applicable to this problem
+        """
+        super().__init__(
+            detail=detail,
+            title="Related object not found.",
+            parameter=parameter,
+            status_code=status_code,
+        )
+
+
+class ObjectNotFound(HTTPException):
+    """Error to warn that an object is not found in a database"""
+
+    def __init__(
+        self,
+        detail: str = "",
+        status_code: int = HTTPStatus.NOT_FOUND,
+        parameter: str = "",
+    ):
+        """
+        Error to warn that an object is not found in a database.
+
+        :param detail: a human-readable explanation specific to this occurrence of the problem
+        :param parameter: a string indicating which URI query parameter caused the error
+        :param status_code: the HTTP status code applicable to this problem
+        """
+        super().__init__(
+            detail=detail,
+            title="Object not found.",
             parameter=parameter,
             status_code=status_code,
         )

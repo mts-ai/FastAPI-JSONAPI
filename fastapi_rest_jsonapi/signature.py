@@ -11,10 +11,13 @@ from typing import (
     Callable,
     Optional,
     Type,
+    OrderedDict as OrderedDictType,
 )
 
 from fastapi import Query
 from pydantic import BaseModel
+
+from fastapi_rest_jsonapi.querystring import QueryStringManager
 
 
 def is_necessary_request(func: Callable) -> bool:
@@ -24,13 +27,34 @@ def is_necessary_request(func: Callable) -> bool:
     return "request" in params_dict
 
 
-def update_signature(sig: Signature, schema: Type[BaseModel]) -> Signature:
-    """Add docs parameters to signature."""
+def update_signature(
+        sig: Signature,
+        schema: Optional[Type[BaseModel]] = None,
+        other: OrderedDictType[str, Parameter] = None,
+) -> Signature:
+    """
+    Add docs parameters to signature.
+
+    :params sig: сигнатура декоратора библиотеки wrapper, которая оборачивает изначальную функцию.
+    :params schema: которую нужно вставить в сигнатуру.
+    :params other: список параметров из начальной функции.
+    """
+    other: OrderedDict[str, Parameter] = other or {}
     params_dict = OrderedDict(sig.parameters)
     params_dict.pop("kwargs", None)
     params_dict.pop("cls", None)
+    params_no_default = [
+        i_param
+        for i_param in other.values()
+        if isinstance(i_param.default, type) and other["query_params"].annotation is not QueryStringManager
+    ]
+    params_default = [
+        i_param
+        for i_param in other.values()
+        if not isinstance(i_param.default, type)
+    ]
     params: list = list(params_dict.values())
-    for name, field in schema.__fields__.items():
+    for name, field in (schema and schema.__fields__ or {}).items():
         try:
             if issubclass(field.type_, (dict, BaseModel)):
                 continue
@@ -50,4 +74,10 @@ def update_signature(sig: Signature, schema: Type[BaseModel]) -> Signature:
             )
         except Exception as ex:
             pass
+
+    params: list = params_no_default + params + params_default
+    # Убираем дубликаты
+    params_dict: dict = {i_p.name: i_p for i_p in params}
+    params: list = list(params_dict.values())
+
     return sig.replace(parameters=params)

@@ -6,7 +6,7 @@ from typing import (
     List,
     Optional,
     Type,
-    Union,
+    Union, TYPE_CHECKING,
 )
 from urllib.parse import unquote
 
@@ -19,6 +19,8 @@ from pydantic import (
     BaseModel,
     Field,
 )
+
+
 from fastapi_rest_jsonapi.exceptions import (
     BadRequest,
     InvalidField,
@@ -32,6 +34,9 @@ from fastapi_rest_jsonapi.schema import (
     get_schema_from_type,
 )
 from fastapi_rest_jsonapi.splitter import SPLIT_REL
+
+if TYPE_CHECKING:
+    from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema
 
 
 class PaginationQueryStringManager(BaseModel):
@@ -68,7 +73,7 @@ class QueryStringManager(object):
 
     managed_keys = ("filter", "page", "fields", "sort", "include", "q")
 
-    def __init__(self, request: Request, schema: Type[BaseModel]) -> None:
+    def __init__(self, request: Request, schema: Type["TypeSchema"]) -> None:
         """
         Initialize instance.
 
