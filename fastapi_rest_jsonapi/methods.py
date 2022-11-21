@@ -23,10 +23,7 @@ from fastapi_rest_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyEngine
 from fastapi_rest_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
 from fastapi_rest_jsonapi.exceptions.json_api import UnsupportedFeatureORM
 from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.signature import (
-    is_necessary_request,
-    update_signature,
-)
+from fastapi_rest_jsonapi.signature import update_signature
 
 
 def get_detail_jsonapi(
@@ -41,13 +38,16 @@ def get_detail_jsonapi(
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, **kwargs):
             query_params = QueryStringManager(request=request, schema=schema)
-            data_dict: dict = dict(query_params=query_params, obj_id=obj_id)
-            if is_necessary_request(func):
-                data_dict["request"] = request
+            data_dict = {"obj_id": obj_id}
+            func_signature = signature(func).parameters
+            for i_name, i_type in OrderedDict(func_signature).items():
+                if i_type.annotation is Request:
+                    data_dict[i_name] = request
+                elif i_type.annotation is QueryStringManager:
+                    data_dict[i_name] = query_params
 
-            params_function = OrderedDict(signature(func).parameters)
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
+            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             data_schema: Any = await func(**data_dict)
             return schema_resp(
                 data={
@@ -86,13 +86,18 @@ def patch_detail_jsonapi(
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, data: schema_in, **kwargs):  # type: ignore
             query_params = QueryStringManager(request=request, schema=schema)
-            data_dict: dict = dict(query_params=query_params, obj_id=obj_id, data=getattr(data, "attributes", data))
-            if is_necessary_request(func):
-                data_dict["request"] = request
+            data_dict = {"obj_id": obj_id}
+            func_signature = signature(func).parameters
+            for i_name, i_type in OrderedDict(func_signature).items():
+                if i_type.annotation is schema_in.__fields__["attributes"].type_:
+                    data_dict[i_name] = getattr(data, 'attributes', data)
+                elif i_type.annotation is Request:
+                    data_dict[i_name] = request
+                elif i_type.annotation is QueryStringManager:
+                    data_dict[i_name] = query_params
 
-            params_function = OrderedDict(signature(func).parameters)
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
+            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             data_schema: Any = await func(**data_dict)
             return schema_resp(
                 data={
@@ -122,13 +127,16 @@ def delete_detail_jsonapi(
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, **kwargs):  # type: ignore
             query_params = QueryStringManager(request=request, schema=schema)
-            data_dict: dict = dict(query_params=query_params, obj_id=obj_id)
-            if is_necessary_request(func):
-                data_dict["request"] = request
+            data_dict = {"obj_id": obj_id}
+            func_signature = signature(func).parameters
+            for i_name, i_type in OrderedDict(func_signature).items():
+                if i_type.annotation is Request:
+                    data_dict[i_name] = request
+                elif i_type.annotation is QueryStringManager:
+                    data_dict[i_name] = query_params
 
-            params_function = OrderedDict(signature(func).parameters)
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
+            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             await func(**data_dict)
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -163,9 +171,13 @@ def delete_list_jsonapi(
             **kwargs,
         ):
             query_params = QueryStringManager(request=request, schema=schema)
-            data_dict: dict = dict(query_params=query_params)
-            if is_necessary_request(func):
-                data_dict["request"] = request
+            data_dict = {}
+            func_signature = signature(func).parameters
+            for i_name, i_type in OrderedDict(func_signature).items():
+                if i_type.annotation is Request:
+                    data_dict[i_name] = request
+                elif i_type.annotation is QueryStringManager:
+                    data_dict[i_name] = query_params
 
             params_function = OrderedDict(signature(func).parameters)
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
@@ -238,22 +250,21 @@ def get_list_jsonapi(
             **kwargs,
         ):
             query_params = QueryStringManager(request=request, schema=schema)
-            data = {
-                i_name: query_params
-                for i_name, i_param in OrderedDict(signature(func).parameters).items()
-                if i_param.annotation is QueryStringManager
-            }
-            if is_necessary_request(func):
-                data["request"] = request
+            data_dict = {}
+            func_signature = signature(func).parameters
+            for i_name, i_type in OrderedDict(func_signature).items():
+                if i_type.annotation is Request:
+                    data_dict[i_name] = request
+                elif i_type.annotation is QueryStringManager:
+                    data_dict[i_name] = query_params
 
-            params_function = OrderedDict(signature(func).parameters)
-            data.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
-            data = {i_k: i_v for i_k, i_v in data.items() if i_k in params_function}
-            query = await func(**data)
+            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
+            query = await func(**data_dict)
 
             if engine is DBORMType.sqlalchemy:
                 # Для SQLAlchemy нужно указывать session, для Tortoise достаточно модели
-                session_list = [i_v for i_k, i_v in params_function.items() if isinstance(i_v, AsyncSession)]
+                session_list = [i_v for i_k, i_v in func_signature.items() if isinstance(i_v, AsyncSession)]
                 session: Optional[AsyncSession] = session_list and session_list[0] or None
             else:
                 session = None
@@ -303,11 +314,17 @@ def post_list_jsonapi(
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, data: schema_in, **kwargs):  # type: ignore
             query_params = QueryStringManager(request=request, schema=schema)
-            data_dict: dict = dict(query_params=query_params, data=getattr(data, 'attributes', data))
-            if is_necessary_request(func):
-                data_dict["request"] = request
+            data_dict = {}
+            func_signature = signature(func).parameters
+            for i_name, i_type in OrderedDict(func_signature).items():
+                if i_type.annotation is schema_in.__fields__["attributes"].type_:
+                    data_dict[i_name] = getattr(data, 'attributes', data)
+                elif i_type.annotation is Request:
+                    data_dict[i_name] = request
+                elif i_type.annotation is QueryStringManager:
+                    data_dict[i_name] = query_params
 
-            params_function = OrderedDict(signature(func).parameters)
+            params_function = OrderedDict(func_signature)
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
             data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
             data_pydantic: Any = await func(**data_dict)

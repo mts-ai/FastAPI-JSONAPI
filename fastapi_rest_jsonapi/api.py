@@ -6,14 +6,14 @@ from typing import (
     List,
     Optional,
     Type,
-    Union,
+    Union, TypeVar,
 )
 
 import pydantic
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
+from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel
 from fastapi_rest_jsonapi.data_layers.orm import DBORMType
 from fastapi_rest_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_rest_jsonapi.methods import (
@@ -28,13 +28,16 @@ from fastapi_rest_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPIS
 
 JSON_API_RESPONSE_TYPE = Optional[Dict[Union[int, str], Dict[str, Any]]]
 
+TypeAPIRouter = TypeVar("TypeAPIRouter", bound=APIRouter)
+TypeSchema = TypeVar("TypeSchema", bound=BaseModel)
+
 
 class RoutersJSONAPI:
     """API Router interface for JSON API endpoints in web-services."""
 
     def __init__(  # noqa: WPS211
         self,
-        routers: APIRouter,
+        routers: TypeAPIRouter,
         path: Union[str, List[str]],
         tags: List[str],
         class_detail: Any,

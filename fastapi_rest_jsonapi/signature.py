@@ -16,15 +16,9 @@ from typing import (
 
 from fastapi import Query
 from pydantic import BaseModel
+from starlette.requests import Request
 
 from fastapi_rest_jsonapi.querystring import QueryStringManager
-
-
-def is_necessary_request(func: Callable) -> bool:
-    """Check request in parameters."""
-    sig = signature(func)
-    params_dict = OrderedDict(sig.parameters)
-    return "request" in params_dict
 
 
 def update_signature(
@@ -39,8 +33,28 @@ def update_signature(
     :params schema: которую нужно вставить в сигнатуру.
     :params other: список параметров из начальной функции.
     """
-    other: OrderedDict[str, Parameter] = other or {}
     params_dict = OrderedDict(sig.parameters)
+
+    other_: OrderedDict[str, Parameter] = (other or {}).copy()
+    for i_k, i_v in (other or {}).items():
+        for j_k, j_v in params_dict.items():
+            try:
+                if i_v.annotation is j_v.annotation.__fields__["attributes"].type_:
+                    other_.pop(i_k)
+            except Exception:
+                pass
+            try:
+                if i_v.annotation is Request:
+                    other_.pop(i_k)
+            except Exception:
+                pass
+            try:
+                if i_v.annotation is QueryStringManager:
+                    other_.pop(i_k)
+            except Exception:
+                pass
+    other = other_
+
     params_dict.pop("kwargs", None)
     params_dict.pop("cls", None)
     params_no_default = [

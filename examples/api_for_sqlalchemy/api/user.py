@@ -9,7 +9,6 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 from tortoise.exceptions import DoesNotExist
-from tortoise.queryset import QuerySet
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
@@ -20,7 +19,6 @@ from examples.api_for_sqlalchemy.models.pydantic import UserSchema, UserPatchSch
 from examples.api_for_sqlalchemy.models.pydantic.user import UserInSchema
 from examples.api_for_sqlalchemy.models.sqlalchemy import User
 from fastapi_rest_jsonapi import SqlalchemyEngine
-
 from fastapi_rest_jsonapi.exceptions import (
     BadRequest,
     HTTPException,

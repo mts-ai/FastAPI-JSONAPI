@@ -34,7 +34,7 @@ class BasePostJSONAPISchema(BaseJSONAPIItemSchema):
 class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
     """Base JSON:API object schema."""
 
-    id: Union[uuid.UUID, int] = Field(description="ID объекта")
+    id: Union[int, uuid.UUID, str] = Field(description="ID объекта")
 
 
 class BasePatchJSONAPISchema(BaseJSONAPIObjectSchema):
