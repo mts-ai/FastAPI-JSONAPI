@@ -33,7 +33,7 @@ class BasePostJSONAPISchema(BaseJSONAPIItemSchema):
 class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
     """Base JSON:API object schema."""
 
-    id: int = Field(description="ID объекта")
+    id: str = Field(description="ID объекта")
 
 
 class BasePatchJSONAPISchema(BaseJSONAPIObjectSchema):
