@@ -51,7 +51,12 @@ class HTTPException(FastApiHttpException):
     @property
     def _dict(self):
 
-        return {"status_code": self.status_code, "source": self.source, "tittle": self.title, "detail": self._detail}
+        return {
+            "status_code": self.status_code,
+            "source": self.source,
+            "title": self.title,
+            "detail": self._detail,
+        }
 
 
 class UnsupportedFeatureORM(HTTPException):
