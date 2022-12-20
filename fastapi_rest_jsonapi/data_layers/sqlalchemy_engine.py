@@ -339,7 +339,7 @@ class SqlalchemyEngine(BaseDataLayer):
         :params paginate_info: pagination information.
         :return: the paginated query
         """
-        if paginate_info.size == 0:
+        if paginate_info.size == 0 or paginate_info.size is None:
             return query
 
         query = query.limit(paginate_info.size)

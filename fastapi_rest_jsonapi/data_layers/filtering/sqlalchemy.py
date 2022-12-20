@@ -8,7 +8,7 @@ from sqlalchemy.orm import aliased, InstrumentedAttribute
 from sqlalchemy.sql.elements import BinaryExpression
 
 from fastapi_rest_jsonapi.data_layers.shared import create_filters_or_sorts
-from fastapi_rest_jsonapi.exceptions import InvalidFilters
+from fastapi_rest_jsonapi.exceptions import InvalidFilters, InvalidType
 
 from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
 from fastapi_rest_jsonapi.schema import get_relationships, get_model_field
@@ -78,8 +78,24 @@ class Node(object):
             )
         # Here we have to deserialize and validate fields, that are used in filtering,
         # so the Enum fields are loaded correctly
-        value = schema_field.type_(value)
-        return getattr(model_column, self.operator)(value)
+
+        if schema_field.sub_fields:
+            # Для случаев когда в схеме тип Union
+            fields = [i for i in schema_field.sub_fields]
+        else:
+            fields = [schema_field]
+        types = [i.type_ for i in fields]
+        clear_value = None
+        errors: List[str] = []
+        for i_type in types:
+            try:
+                clear_value = i_type(value)
+            except (TypeError, ValueError) as ex:
+                errors.append(str(ex))
+        # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
+        if clear_value is None and not any([not i_f.required for i_f in fields]):
+            raise InvalidType(detail=", ".join(errors))
+        return getattr(model_column, self.operator)(clear_value)
 
     def resolve(self) -> FilterAndJoins:
         """Create filter for a particular node of the filter tree"""
@@ -105,13 +121,22 @@ class Node(object):
                 return self._relationship_filtering(value)
 
             schema_field: ModelField = self.schema.__fields__[self.name]
-            if issubclass(schema_field.type_, BaseModel):
-                value = {
-                    'name': self.name,
-                    'op': self.filter_['op'],
-                    'val': value,
-                }
-                return self._relationship_filtering(value)
+            if schema_field.sub_fields:
+                # Для случаев когда в схеме тип Union
+                types = [i.type_ for i in schema_field.sub_fields]
+            else:
+                types = [schema_field.type_]
+            for i_type in types:
+                try:
+                    if issubclass(i_type, BaseModel):
+                        value = {
+                            'name': self.name,
+                            'op': self.filter_['op'],
+                            'val': value,
+                        }
+                        return self._relationship_filtering(value)
+                except (TypeError, ValueError):
+                    pass
 
             return self.create_filter(
                 schema_field=schema_field,

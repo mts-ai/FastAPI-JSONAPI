@@ -6,7 +6,7 @@ from typing import (
     List,
     Optional,
     Type,
-    Union,
+    Union, TypeVar,
 )
 
 import pydantic
@@ -21,12 +21,15 @@ from fastapi_rest_jsonapi.methods import (
     get_detail_jsonapi,
     get_list_jsonapi,
     patch_detail_jsonapi,
-    post_list_jsonapi,
+    post_list_jsonapi, delete_list_jsonapi,
 )
 from fastapi_rest_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPISchema, JSONAPIObjectSchema, \
     JSONAPIResultDetailSchema
 
 JSON_API_RESPONSE_TYPE = Optional[Dict[Union[int, str], Dict[str, Any]]]
+
+TypeAPIRouter = TypeVar("TypeAPIRouter", bound=APIRouter)
+TypeSchema = TypeVar("TypeSchema", bound=BaseModel)
 
 
 class RoutersJSONAPI:
@@ -34,15 +37,15 @@ class RoutersJSONAPI:
 
     def __init__(  # noqa: WPS211
         self,
-        routers: APIRouter,
+        routers: TypeAPIRouter,
         path: Union[str, List[str]],
         tags: List[str],
         class_detail: Any,
         class_list: Any,
-        schema: Type[BaseModel],
+        schema: Type[TypeSchema],
         type_resource: str,
-        schema_in_patch: Type[BaseModel],
-        schema_in_post: Type[BaseModel],
+        schema_in_patch: Type[TypeSchema],
+        schema_in_post: Type[TypeSchema],
         model: Type[TypeModel],
         engine: DBORMType = DBORMType.sqlalchemy,
     ) -> None:
@@ -164,6 +167,21 @@ class RoutersJSONAPI:
                     model=self._model,
                     engine=self._engine,
                 )(self.class_list.post)
+            )
+
+        if hasattr(self.class_list, "delete"):
+            self._routers.delete(
+                path,
+                tags=self._tags,
+                summary=f"Delete list objects of type `{self._type}`"
+            )(
+                delete_list_jsonapi(
+                    schema=self._schema,
+                    model=self._model,
+                    engine=self._engine,
+                )(
+                    self.class_list.delete
+                )
             )
 
         if hasattr(self.class_detail, "get"):
