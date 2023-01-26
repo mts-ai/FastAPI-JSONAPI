@@ -81,6 +81,7 @@ class QueryStringManager(object):
         """
         self.request: Request = request
         self.app: FastAPI = request.app
+        # ?? request.query_params.multi_items()
         self.qs: Dict[str, str] = dict(request.query_params)
         self.config: Dict[str, Any] = getattr(self.app, "config", dict())
         self.schema: Type[BaseModel] = schema
