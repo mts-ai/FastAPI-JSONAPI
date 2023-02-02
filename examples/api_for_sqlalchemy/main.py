@@ -57,7 +57,6 @@ if __name__ == "__main__":
         "asgi:app",
         host="0.0.0.0",
         port=8082,
-        debug=True,
         reload=True,
         app_dir=str(CURRENT_DIR),
     )
