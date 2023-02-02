@@ -9,7 +9,10 @@ from inspect import (
 )
 from typing import (
     Callable,
+    Dict,
+    List,
     Optional,
+    Set,
     Type,
     OrderedDict as OrderedDictType,
 )
@@ -70,11 +73,11 @@ def update_signature(
     params: list = list(params_dict.values())
     for name, field in (schema and schema.__fields__ or {}).items():
         try:
-            if field.sub_fields:
+            if issubclass(field.type_, (dict, BaseModel, list, set, List, Set, Dict)):
+                continue
+            elif field.sub_fields:
                 default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
                 type_field = field.type_
-            elif issubclass(field.type_, (dict, BaseModel)):
-                continue
             elif issubclass(field.type_, Enum):
                 default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=field.type_.values())
                 type_field = str
