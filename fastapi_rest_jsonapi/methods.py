@@ -10,7 +10,7 @@ from typing import (
     TypeVar,
 )
 
-from fastapi import Query, Depends
+from fastapi import Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
@@ -28,10 +28,7 @@ from fastapi_rest_jsonapi.signature import update_signature
 
 def get_detail_jsonapi(
     schema: Type[BaseModel],
-    type_: str,
     schema_resp: Any,
-    model: Type[TypeModel],
-    engine: DBORMType,
 ) -> Callable:
     """GET DETAIL method router (Decorator for JSON API)."""
 
@@ -49,6 +46,8 @@ def get_detail_jsonapi(
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
             data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             data_schema: Any = await func(**data_dict)
+            if isinstance(data_schema, schema_resp):
+                return data_schema
             return schema_resp(
                 data={
                     "id": data_schema.id,
@@ -59,7 +58,9 @@ def get_detail_jsonapi(
         # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
         wrapper.__signature__ = update_signature(  # type: ignore
             sig=signature(wrapper),
+            schema=schema,
             other=OrderedDict(signature(func).parameters),
+            exclude_filters=True,
         )
 
         return wrapper
@@ -90,7 +91,7 @@ def patch_detail_jsonapi(
             func_signature = signature(func).parameters
             for i_name, i_type in OrderedDict(func_signature).items():
                 if i_type.annotation is schema_in.__fields__["attributes"].type_:
-                    data_dict[i_name] = getattr(data, 'attributes', data)
+                    data_dict[i_name] = getattr(data, "attributes", data)
                 elif i_type.annotation is Request:
                     data_dict[i_name] = request
                 elif i_type.annotation is QueryStringManager:
@@ -164,9 +165,9 @@ def delete_list_jsonapi(
                 None,
                 alias="filter",
                 description="[Filtering docs](https://flask-combo-jsonapi.readthedocs.io/en/latest/filtering.html)"
-                            "\nExamples:\n* filter for timestamp interval: "
-                            '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
-                            '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
+                "\nExamples:\n* filter for timestamp interval: "
+                '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
+                '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
             ),
             **kwargs,
         ):
@@ -204,7 +205,7 @@ async def _get_single_response(
     schema_resp: Any,
     model: Type[TypeModel],
     engine: DBORMType,
-    session: Optional[AsyncSession] = None
+    session: Optional[AsyncSession] = None,
 ) -> Any:
     if engine is DBORMType.sqlalchemy:
         dl = SqlalchemyEngine(schema=schema, model=model, session=session, query=query)
@@ -262,17 +263,21 @@ def get_list_jsonapi(
             data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             query = await func(**data_dict)
 
+            session = None
             if engine is DBORMType.sqlalchemy:
                 # Для SQLAlchemy нужно указывать session, для Tortoise достаточно модели
-                session_list = [i_v for i_k, i_v in func_signature.items() if isinstance(i_v, AsyncSession)]
-                session: Optional[AsyncSession] = session_list and session_list[0] or None
-            else:
-                session = None
+                session: Optional[AsyncSession] = next(
+                    # get first of type AsyncSession or None if not found
+                    filter(lambda v: isinstance(v, AsyncSession), func_signature.values()),
+                    None,
+                )
 
             if isinstance(query, BaseModel):  # JSONAPIResultListSchema
                 return query
             elif isinstance(query, list):
-                return schema_resp(data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": type_} for i_obj in query])
+                return schema_resp(
+                    data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": type_} for i_obj in query]
+                )
             else:
                 if engine is DBORMType.sqlalchemy and session is None:
                     raise UnsupportedFeatureORM("For SQLAlchemy you need to specify session in parameter")
@@ -318,7 +323,7 @@ def post_list_jsonapi(
             func_signature = signature(func).parameters
             for i_name, i_type in OrderedDict(func_signature).items():
                 if i_type.annotation is schema_in.__fields__["attributes"].type_:
-                    data_dict[i_name] = getattr(data, 'attributes', data)
+                    data_dict[i_name] = getattr(data, "attributes", data)
                 elif i_type.annotation is Request:
                     data_dict[i_name] = request
                 elif i_type.annotation is QueryStringManager:

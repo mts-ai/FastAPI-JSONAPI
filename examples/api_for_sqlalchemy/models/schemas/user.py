@@ -1,14 +1,14 @@
 """User base schemas module."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, List
 
-from pydantic import (
-    BaseModel,
-    Field,
-)
+from fastapi_rest_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
+
+if TYPE_CHECKING:
+    from .post import PostSchema
 
 
 class UserBaseSchema(BaseModel):
@@ -44,8 +44,13 @@ class UserSchema(UserInSchema):
         """Pydantic model config."""
 
         orm_mode = True
-        model = "users"
 
     id: int
-    created_at: datetime = Field(description="Время создания данных")
-    modified_at: datetime = Field(description="Время изменения данных")
+    created_at: datetime = Field(description="Create datetime")
+    modified_at: datetime = Field(description="Update datetime")
+    posts: List["PostSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post",
+            many=True,
+        ),
+    )

@@ -5,13 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from examples.api_for_sqlalchemy import config
 
 Base = declarative_base()
 
 
 def async_session() -> sessionmaker:
-    uri = "sqlite+aiosqlite:///db.sqlite3"
-    engine = create_async_engine(url=make_url(uri))
+    engine = create_async_engine(url=make_url(config.SQLA_URI), echo=config.SQLA_ECHO)
     _async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     return _async_session
 

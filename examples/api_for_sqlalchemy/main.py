@@ -20,16 +20,17 @@ sys.path.append(str(PROJECT_DIR))
 import uvicorn
 from fastapi import FastAPI
 
-from examples.api_for_sqlalchemy.urls import add_routes
 from fastapi_rest_jsonapi.schema import collect_app_orm_schemas
-from fastapi_rest_jsonapi.openapi import custom_openapi
+# from fastapi_rest_jsonapi.openapi import custom_openapi
+
+from examples.api_for_sqlalchemy.urls import add_routes
+from examples.api_for_sqlalchemy import config
 
 
 async def sqlalchemy_init() -> None:
-    uri = "sqlite+aiosqlite:///db.sqlite3"
-    engine = create_async_engine(url=make_url(uri))
+    engine = create_async_engine(url=make_url(config.SQLA_URI), echo=config.SQLA_ECHO)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
 
@@ -47,7 +48,7 @@ def create_app() -> FastAPI:
     )
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
-    custom_openapi(app, title="API for SQLAlchemy")
+    # custom_openapi(app, title="API for SQLAlchemy")
     collect_app_orm_schemas(app)
     return app
 

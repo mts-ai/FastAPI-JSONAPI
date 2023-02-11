@@ -13,7 +13,7 @@ from .meta_base import (
     FactoryUseMode,
 )
 from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
-from ...models.sqlalchemy import User
+from examples.api_for_sqlalchemy.models import User
 
 
 class ErrorCreateUserObject(ErrorCreateObject):
@@ -23,7 +23,7 @@ class ErrorCreateUserObject(ErrorCreateObject):
 
 
 class UserFactory(BaseFactory):
-    class Meta(object):
+    class Meta:
         model = User
 
     data = {

@@ -13,7 +13,7 @@ from .meta_base import (
     BaseUpdater,
 )
 from ...models.enums import UserStatusEnum
-from ...models.sqlalchemy import User
+from examples.api_for_sqlalchemy.models import User
 
 
 class ErrorUpdateUserObject(ErrorUpdateObject):
@@ -47,14 +47,12 @@ class UpdateUser(BaseUpdater):
 
     @classmethod
     def _update_first_name(cls, obj: User, new_data: Dict[str, Any]) -> None:
-        """Balena_id setter."""
         first_name: Optional[str] = new_data.get("first_name")
         if first_name is not None and first_name != obj.first_name:
             obj.first_name = first_name
 
     @classmethod
     def _update_last_name(cls, obj: User, new_data: Dict[str, Any]) -> None:
-        """Balena_id setter."""
         last_name: Optional[str] = new_data.get("last_name")
         if last_name is not None and last_name != obj.last_name:
             obj.last_name = last_name

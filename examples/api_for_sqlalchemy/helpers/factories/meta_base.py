@@ -19,13 +19,12 @@ from fastapi_rest_jsonapi.data_layers.fields.enum import Enum
 from .exceptions import (
     ExceptionAfterCommit,
     ExceptionBeforeCreate,
-    ExceptionNotFactory,
+    ExceptionNotFactory, ErrorCreateObject,
 )
 from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
 from ...extensions.sqlalchemy import Base
 
-TYPE_VAR = TypeVar("TYPE_VAR")
-TYPE_MODEL = TypeVar("TYPE_MODEL", bound=Base)
+TypeModel = TypeVar("TypeModel", bound=Base)
 
 
 class FactoryUseMode(Enum):
@@ -35,9 +34,9 @@ class FactoryUseMode(Enum):
     production = 2  # working version, you can not allow random data generation
 
 
-class _BaseFactory(Generic[TYPE_MODEL]):
+class _BaseFactory(Generic[TypeModel]):
     class Meta(object):
-        model: Any
+        model: Type[TypeModel]
 
     data: Dict[str, Callable] = {}
     """simple data like text, dict and etc."""
@@ -168,7 +167,7 @@ class _BaseFactory(Generic[TYPE_MODEL]):
     @classmethod
     async def after_create(
         cls,
-        result_data: Union[List[TYPE_MODEL], TYPE_MODEL],
+        result_data: Union[List[TypeModel], TypeModel],
         many: bool,
         saved: bool,
         mode: FactoryUseMode,
@@ -186,8 +185,24 @@ class _BaseFactory(Generic[TYPE_MODEL]):
         """
         raise ExceptionAfterCommit
 
+    @classmethod
+    async def _prepare_attribute_or_raise(
+        cls,
+        field_name: str,
+        data_for_create: Dict[str, Any],
+        kwargs: Dict[str, Any],
+    ) -> None:
+        value_for_create = kwargs.get(field_name)
+        if value_for_create is None:
+            raise ErrorCreateObject(
+                model=cls.Meta.model,
+                description=f'field required {field_name!r}',
+                field=field_name,
+            )
+        data_for_create[field_name] = value_for_create
 
-class Factories(object):
+
+class Factories:
     """Хранилище фабрик."""
 
     _factories: Dict[str, Type["_BaseFactory"]] = dict()
@@ -227,3 +242,22 @@ class BaseFactory(_BaseFactory, metaclass=MetaFactory):
     """Base factory."""
 
     ...
+
+
+TypeBaseFactory = TypeVar('TypeBaseFactory', bound=BaseFactory)  # type: ignore
+
+
+def factory_import(name: str) -> Type[TypeBaseFactory]:
+    components = name.split('.')
+    mod = __import__('.'.join(components[:-1]))  # noqa: WPS421
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    # TODO Починить при помощи regisry тк такой импорт замедляет
+    #  работу фабрик которые требуют вызовы других фабрик
+    return mod  # type: ignore
+
+
+async def create_from_factory(factory: str, **kwargs: Union[Any]) -> TypeModel:
+    factory_clss: Type[BaseFactory[TypeModel]] = factory_import(factory)
+    return await factory_clss(**kwargs).create()
+

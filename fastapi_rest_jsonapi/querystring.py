@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema
 
 
+
 class PaginationQueryStringManager(BaseModel):
     """
     Pagination query string manager.
@@ -268,15 +269,15 @@ class QueryStringManager(object):
         :return: a list of include information.
         :raises InvalidInclude: if nesting is more than MAX_INCLUDE_DEPTH.
         """
-        include_param: str = self.qs.get("include", "")
+        include_param: str = self.qs.get("include")
+        includes = include_param.split(",") if include_param and isinstance(include_param, str) else []
 
         if self.MAX_INCLUDE_DEPTH is not None:
-            # TODO: does this really work? needs tests!
-            for include_path in include_param:
+            for include_path in includes:
                 if len(include_path.split(SPLIT_REL)) > self.MAX_INCLUDE_DEPTH:
                     raise InvalidInclude(
                         "You can't use include through more than {max_include_depth} relationships".format(
                             max_include_depth=self.MAX_INCLUDE_DEPTH
                         )
                     )
-        return include_param.split(",") if isinstance(include_param, str) and include_param else []
+        return includes

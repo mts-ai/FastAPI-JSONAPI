@@ -114,7 +114,7 @@ class TortoiseORMEngine(BaseDataLayer):
         Update an object through sqlalchemy.
 
         :params obj: an object from sqlalchemy.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
@@ -322,7 +322,7 @@ class TortoiseORMEngine(BaseDataLayer):
         Make checks or provide additional data before update object.
 
         :params obj: an object from data layer.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
@@ -332,7 +332,7 @@ class TortoiseORMEngine(BaseDataLayer):
         Make work after update object.
 
         :params obj: an object from data layer.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         """
         pass

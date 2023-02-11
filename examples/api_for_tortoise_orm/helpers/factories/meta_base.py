@@ -25,7 +25,7 @@ from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
 
 
 TYPE_VAR = TypeVar("TYPE_VAR")
-TYPE_MODEL = TypeVar("TYPE_MODEL", bound=models.Model)
+TYPE_MODEL = TypeVar("TypeModel", bound=models.Model)
 
 
 class FactoryUseMode(Enum):

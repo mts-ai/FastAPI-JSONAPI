@@ -23,7 +23,7 @@ from .exceptions import (
 )
 
 TYPE_VAR = TypeVar("TYPE_VAR")
-TYPE_MODEL = TypeVar("TYPE_MODEL", bound=models.Model)
+TYPE_MODEL = TypeVar("TypeModel", bound=models.Model)
 
 
 class _BaseUpdater(Generic[TYPE_MODEL]):

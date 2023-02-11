@@ -56,11 +56,11 @@ class Node(object):
         :return:
         """
         """
-        Custom sqlachemy filtering logic can be created in a pydantic field for any operator
+        Custom sqlachemy filtering logic can be created in a schemas field for any operator
         To implement a new filtering logic (override existing or create a new one)
         create a method inside a field following this pattern:
         `_<your_op_name>_sql_filter_`. Each filtering method has to accept these params: 
-        * schema_field - pydantic field instance
+        * schema_field - schemas field instance
         * model_column - sqlalchemy column instance
         * value - filtering value
         * operator - your operator, for example: "eq", "in", "ilike_str_array", ...

@@ -80,7 +80,7 @@ class FilterTortoiseORM:
         """
         Make a list with filters, which can be used in the tortoise filter.
 
-        :param schema: pydantic schema of object.
+        :param schema: schemas schema of object.
         :param filters: list of JSON API filters.
         :return: list of filters, prepared for use in tortoise model.
         :raises InvalidFilters: if the filter was created with an error.

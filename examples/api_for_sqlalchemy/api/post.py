@@ -6,29 +6,36 @@ from typing import (
 
 from fastapi import Depends
 from sqlalchemy import select, desc
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
+from starlette import status
+from tortoise.exceptions import DoesNotExist
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
-from examples.api_for_sqlalchemy.helpers.factories.user import UserFactory, ErrorCreateUserObject
+from examples.api_for_sqlalchemy.helpers.factories.post import PostFactory, ErrorCreatePostObject
 from examples.api_for_sqlalchemy.helpers.updaters.exceptions import ObjectNotFound
-from examples.api_for_sqlalchemy.helpers.updaters.update_user import UpdateUser, ErrorUpdateUserObject
-from examples.api_for_sqlalchemy.models.schemas import UserSchema, UserPatchSchema
-from examples.api_for_sqlalchemy.models.schemas.user import UserInSchema
-from examples.api_for_sqlalchemy.models import User
+from examples.api_for_sqlalchemy.helpers.updaters.update_post import UpdatePost, ErrorUpdatePostObject
 from fastapi_rest_jsonapi import SqlalchemyEngine
 from fastapi_rest_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
 from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultDetailSchema
+from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultListMetaSchema, JSONAPIResultDetailSchema
 from fastapi_rest_jsonapi.views.detail_view import DetailViewBase
 from fastapi_rest_jsonapi.views.list_view import ListViewBase
 
+from examples.api_for_sqlalchemy.models import Post
+from examples.api_for_sqlalchemy.models.schemas import (
+    PostSchema,
+    PostInSchema,
+    PostPatchSchema,
+)
 
-class UserDetail(DetailViewBase):
+
+class PostDetail(DetailViewBase):
     async def get(
         self,
         obj_id,
@@ -47,32 +54,27 @@ class UserDetail(DetailViewBase):
             query_params=query_params,
         )
 
-    @classmethod
-    async def patch(
-        cls,
-        obj_id,
-        data: UserPatchSchema,
-        query_params: QueryStringManager,
-        session: AsyncSession = Depends(Connector.get_session),
-    ) -> UserSchema:
-        user_obj: User
-        try:
-            user_obj = await UpdateUser.update(
-                obj_id,
-                data.dict(exclude_unset=True),
-                query_params.headers,
-                session=session,
-            )
-        except ErrorUpdateUserObject as ex:
-            raise BadRequest(ex.description, ex.field)
-        except ObjectNotFound as ex:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ex.description)
-
-        user = UserSchema.from_orm(user_obj)
-        return user
+    # @classmethod
+    # async def patch(cls, obj_id, data: PostPatchSchema, query_params: QueryStringManager,
+    #                 session: AsyncSession = Depends(Connector.get_session)) -> PostSchema:
+    #     user_obj: Post
+    #     try:
+    #         user_obj = await UpdatePost.update(
+    #             obj_id,
+    #             data.dict(exclude_unset=True),
+    #             query_params.headers,
+    #             session=session,
+    #         )
+    #     except ErrorUpdatePostObject as ex:
+    #         raise BadRequest(ex.description, ex.field)
+    #     except ObjectNotFound as ex:
+    #         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ex.description)
+    #
+    #     user = PostSchema.from_orm(user_obj)
+    #     return user
 
 
-class UserList(ListViewBase):
+class PostList(ListViewBase):
     async def get(
         self,
         query_params: QueryStringManager,
@@ -88,22 +90,26 @@ class UserList(ListViewBase):
             query_params=query_params,
         )
 
-    @classmethod
     async def post(
-        cls,
-        data: UserInSchema,
+        self,
+        data: PostInSchema,
         query_params: QueryStringManager,
         session: AsyncSession = Depends(Connector.get_session),
-    ) -> UserSchema:
+    ) -> PostSchema:
         try:
-            user_obj = await UserFactory.create(
+            user_obj = await PostFactory.create(
                 data=data.dict(),
                 mode=FactoryUseMode.production,
                 header=query_params.headers,
                 session=session,
             )
-        except ErrorCreateUserObject as ex:
+        except IntegrityError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                # detail=str(e),
+            )
+        except ErrorCreatePostObject as ex:
             raise BadRequest(ex.description, ex.field)
 
-        user = UserSchema.from_orm(user_obj)
+        user = PostSchema.from_orm(user_obj)
         return user

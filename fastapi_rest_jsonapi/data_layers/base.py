@@ -61,7 +61,7 @@ class BaseDataLayer:
     async def create_object(self, data, view_kwargs):
         """Create an object
 
-        :param dict data: the data validated by pydantic
+        :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object
         """
@@ -88,7 +88,7 @@ class BaseDataLayer:
         """Update an object
 
         :param DeclarativeMeta obj: an object
-        :param dict data: the data validated by pydantic
+        :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
         :return boolean: True if object have changed else False
         """
@@ -155,7 +155,7 @@ class BaseDataLayer:
     def before_create_object(self, data, view_kwargs):
         """Provide additional data before object creation
 
-        :param dict data: the data validated by pydantic
+        :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
@@ -164,7 +164,7 @@ class BaseDataLayer:
         """Provide additional data after object creation
 
         :param obj: an object from data layer
-        :param dict data: the data validated by pydantic
+        :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
@@ -205,7 +205,7 @@ class BaseDataLayer:
         """Make checks or provide additional data before update object
 
         :param obj: an object from data layer
-        :param dict data: the data validated by pydantic
+        :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
@@ -214,7 +214,7 @@ class BaseDataLayer:
         """Make work after update object
 
         :param obj: an object from data layer
-        :param dict data: the data validated by pydantic
+        :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError

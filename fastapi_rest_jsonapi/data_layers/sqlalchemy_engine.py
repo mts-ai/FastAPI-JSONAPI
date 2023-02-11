@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.sql import Select
@@ -101,15 +101,20 @@ class SqlalchemyEngine(BaseDataLayer):
         except Exception:
             raise Exception(f"{self.model.__name__} has no attribute {id_name_field}")
 
-        url_field = getattr(self, "url_field", "id")
-        filter_value = view_kwargs[url_field]
+        filter_value = view_kwargs[self.url_field]
 
         query = self.retrieve_object_query(view_kwargs, filter_field, filter_value)
 
         if qs is not None:
             query = self.eagerload_includes(query, qs)
 
-        obj = (await self.session.execute(query)).scalars().first()
+        try:
+            obj = (await self.session.execute(query)).scalar_one()
+        except NoResultFound:
+            raise ObjectNotFound(
+                f"{self.model.__name__} #{filter_value} not found",
+                parameter=self.url_field,
+            )
 
         await self.after_get_object(obj, view_kwargs)
 
@@ -160,7 +165,7 @@ class SqlalchemyEngine(BaseDataLayer):
 
         collection = await self.after_get_collection(collection, qs, view_kwargs)
 
-        return objects_count, collection
+        return objects_count, list(collection)
 
     async def update_object(self, obj: Any, data: dict, view_kwargs: dict) -> bool:
         """
@@ -223,7 +228,8 @@ class SqlalchemyEngine(BaseDataLayer):
         if obj is None:
             filter_value = view_kwargs[self.url_field]
             raise ObjectNotFound(
-                f"{self.model.__name__}: {filter_value} not found", parameter=self.url_field,
+                f"{self.model.__name__}: {filter_value} not found",
+                parameter=self.url_field,
             )
 
         if not hasattr(obj, relationship_field):
@@ -235,7 +241,12 @@ class SqlalchemyEngine(BaseDataLayer):
             return obj, related_objects
 
         await self.after_get_relationship(
-            obj, related_objects, relationship_field, related_type_, related_id_field, view_kwargs,
+            obj,
+            related_objects,
+            relationship_field,
+            related_type_,
+            related_id_field,
+            view_kwargs,
         )
 
         if isinstance(related_objects, InstrumentedList):
@@ -357,32 +368,36 @@ class SqlalchemyEngine(BaseDataLayer):
         :return: the query with includes eagerloaded.
         """
         for include in qs.include:
-            joinload_object = None
+            relation_join_object = None
 
-            if SPLIT_REL in include:
-                current_schema = self.schema
-                for obj in include.split(SPLIT_REL):
-                    try:
-                        field = get_model_field(current_schema, obj)
-                    except Exception as e:
-                        raise InvalidInclude(str(e))
-
-                    if joinload_object is None:
-                        joinload_object = joinedload(field)
-                    else:
-                        joinload_object = joinload_object.joinedload(field)
-
-                    current_schema = get_related_schema(current_schema, obj)
-
-            else:
+            current_schema = self.schema
+            current_model = self.model
+            for related_field_name in include.split(SPLIT_REL):
                 try:
-                    field = get_model_field(self.schema, include)
+                    field_name_to_load = get_model_field(current_schema, related_field_name)
                 except Exception as e:
                     raise InvalidInclude(str(e))
 
-                joinload_object = joinedload(field)
+                field_to_load: InstrumentedAttribute = getattr(current_model, field_name_to_load)
+                is_many = field_to_load.property.uselist
+                if relation_join_object is None:
+                    if is_many:
+                        relation_join_object = selectinload(field_to_load)
+                    else:
+                        relation_join_object = joinedload(field_to_load)
+                else:
+                    if is_many:
+                        relation_join_object = relation_join_object.selectinload(field_to_load)
+                    else:
+                        relation_join_object = relation_join_object.joinedload(field_to_load)
 
-            query = query.options(joinload_object)
+                current_schema = get_related_schema(current_schema, related_field_name)
+
+                # the first entity is Mapper,
+                # the second entity is DeclarativeMeta
+                current_model = field_to_load.property.entity.entity
+
+            query = query.options(relation_join_object)
 
         return query
 
@@ -472,7 +487,7 @@ class SqlalchemyEngine(BaseDataLayer):
         Make checks or provide additional data before update object.
 
         :params obj: an object from data layer.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
@@ -482,7 +497,7 @@ class SqlalchemyEngine(BaseDataLayer):
         Make work after update object.
 
         :params obj: an object from data layer.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
