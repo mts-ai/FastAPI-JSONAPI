@@ -63,7 +63,7 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
             continue
         try:
             # process inner models, find relationships
-            if issubclass(field.type_, BaseModel):
+            if inspect.isclass(field.type_) and issubclass(field.type_, BaseModel):
                 if field.field_info.extra.get("relationship"):
                     # TODO?
                     # build enum?
