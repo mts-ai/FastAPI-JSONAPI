@@ -21,6 +21,7 @@ from typing import (
 )
 
 from fastapi import Query
+from pydantic import BaseModel as BaseModelOriginal
 from pydantic.fields import ModelField
 from starlette.requests import Request
 
@@ -34,7 +35,7 @@ def create_filter_parameter(name: str, field: ModelField) -> Parameter:
     if field.sub_fields:
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
         type_field = field.type_
-    elif issubclass(field.type_, Enum) and hasattr(field.type_, "values"):
+    elif inspect.isclass(field.type_) and issubclass(field.type_, Enum) and hasattr(field.type_, "values"):
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=field.type_.values())
         type_field = str
     else:
@@ -63,7 +64,7 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
             continue
         try:
             # process inner models, find relationships
-            if inspect.isclass(field.type_) and issubclass(field.type_, BaseModel):
+            if inspect.isclass(field.type_) and issubclass(field.type_, (BaseModel, BaseModelOriginal)):
                 if field.field_info.extra.get("relationship"):
                     # TODO?
                     # build enum?

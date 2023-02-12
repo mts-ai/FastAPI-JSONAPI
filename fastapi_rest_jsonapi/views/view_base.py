@@ -39,12 +39,13 @@ class ViewBase:
         relationship_info: RelationshipInfo,
         known_included: Set[Tuple[Union[int, str], str]],
     ) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
-        data_for_relationship = dict(id=item_from_db.id)
-        key = (item_from_db.id, relationship_info.resource_type)
+        item_id = str(item_from_db.id)
+        data_for_relationship = dict(id=item_id)
+        key = (item_id, relationship_info.resource_type)
         processed_object = None
         if key not in known_included:
             processed_object = included_object_schema(
-                id=item_from_db.id,
+                id=item_id,
                 attributes=item_from_db,
                 type=relationship_info.resource_type,
             )
