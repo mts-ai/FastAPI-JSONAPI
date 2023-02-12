@@ -1,5 +1,5 @@
 """Functions for extracting and updating signatures."""
-
+import inspect
 import logging
 from collections import OrderedDict
 from enum import Enum
@@ -17,7 +17,7 @@ from typing import (
     Type,
     OrderedDict as OrderedDictType,
     Tuple,
-    ForwardRef,
+    Any,
 )
 
 from fastapi import Query
@@ -59,7 +59,7 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
     schema.update_forward_refs(**registry.schemas)
     for name, field in (schema.__fields__ or {}).items():
         # skip collections
-        if issubclass(field.type_, (dict, list, tuple, set, Dict, List, Tuple, Set)):
+        if inspect.isclass(field.type_) and issubclass(field.type_, (dict, list, tuple, set, Dict, List, Tuple, Set)):
             continue
         try:
             # process inner models, find relationships
@@ -98,6 +98,7 @@ def update_signature(
     schema: Optional[Type[BaseModel]] = None,
     other: OrderedDictType[str, Parameter] = None,
     exclude_filters: bool = False,
+    return_annotation: Any = None,
 ) -> Signature:
     """
     Add docs parameters to signature.
@@ -144,4 +145,4 @@ def update_signature(
     params: list = list(params_dict.values())
     params.sort(key=lambda x: not isinstance(x.default, type))
 
-    return sig.replace(parameters=params)
+    return sig.replace(parameters=params, return_annotation=return_annotation or sig.return_annotation)

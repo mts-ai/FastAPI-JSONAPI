@@ -18,8 +18,8 @@ from pydantic import BaseConfig
 from pydantic.fields import ModelField
 from fastapi import APIRouter
 from fastapi_rest_jsonapi.schema_base import BaseModel, Field, registry, RelationshipInfo
-
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_rest_jsonapi.splitter import SPLIT_REL
+from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
 from fastapi_rest_jsonapi.data_layers.orm import DBORMType
 from fastapi_rest_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_rest_jsonapi.methods import (
@@ -42,9 +42,8 @@ from fastapi_rest_jsonapi.schema import (
     BaseJSONAPIItemSchema,
     BaseJSONAPIResultSchema,
 )
-from fastapi_rest_jsonapi.schema_base import registry
 
-JSON_API_RESPONSE_TYPE = Optional[Dict[Union[int, str], Dict[str, Any]]]
+JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
 
 
 not_passed = object()
@@ -98,9 +97,7 @@ class RoutersJSONAPI:
         self._routers: APIRouter = routers
         self._path: Union[str, List[str]] = path
         self._tags: List[str] = tags
-        self.class_detail: Any = class_detail
         self.detail_views: Any = class_detail(jsonapi=self)
-        self.class_list: Any = class_list
         self.list_views: Any = class_list(jsonapi=self)
         self._type: str = type_resource
         self._schema: Type[BaseModel] = schema
@@ -108,6 +105,8 @@ class RoutersJSONAPI:
         self.model: Type[TypeModel] = model
         self._engine: DBORMType = engine
         self.schema_detail = schema_detail or schema
+
+        self.object_schemas_cache = {}
 
         patch_jsonapi_schema = pydantic.create_model(
             "{base_name}JSONAPI".format(base_name=schema_in_patch.__name__),
@@ -149,15 +148,18 @@ class RoutersJSONAPI:
         self,
         base_name: str,
         schema: Type[BaseModel],
-        builder: Callable[
-            [...],
-            Tuple[Type[JSONAPIObjectSchema], Union[Type[JSONAPIResultDetailSchema], Type[JSONAPIResultListSchema]]],
-        ],
+        builder: Any,
+        includes: Iterable[str] = not_passed,
+        # builder: Callable[
+        #     [...],
+        #     Tuple[Type[JSONAPIObjectSchema], Union[Type[JSONAPIResultDetailSchema], Type[JSONAPIResultListSchema]]],
+        # ],
     ):
         object_schemas = self.create_jsonapi_object_schemas(
             schema=schema,
             base_name=base_name,
             compute_included_schemas=True,
+            includes=includes,
         )
         object_jsonapi_schema = object_schemas.object_jsonapi_schema
         can_be_included = list(object_schemas.can_be_included_schemas.values())
@@ -171,39 +173,47 @@ class RoutersJSONAPI:
     def build_detail_schemas(
         self,
         schema: Type[BaseModel],
+        includes: Iterable[str] = not_passed,
     ) -> Tuple[Type[JSONAPIObjectSchema], Type[JSONAPIResultDetailSchema]]:
         return self._build_schema(
             base_name=f"{schema.__name__}Detail",
             schema=schema,
             builder=self.build_schema_for_detail_result,
+            includes=includes,
         )
 
     def build_list_schemas(
         self,
         schema: Type[BaseModel],
+        includes: Iterable[str] = not_passed,
     ) -> Tuple[Type[JSONAPIObjectSchema], Type[JSONAPIResultListSchema]]:
         return self._build_schema(
             base_name=f"{schema.__name__}List",
             schema=schema,
             builder=self.build_schema_for_list_result,
+            includes=includes,
         )
 
     def _add_routers(self, path: str):
         """Add new router."""
-        error_responses: Optional[JSON_API_RESPONSE_TYPE] = {
+        error_responses: JSON_API_RESPONSE_TYPE = {
             400: {"model": ExceptionResponseSchema},
             401: {"model": ExceptionResponseSchema},
             404: {"model": ExceptionResponseSchema},
             500: {"model": ExceptionResponseSchema},
+        }
+        list_response_example = {
+            200: {"model": self.list_response_schema},
+        }
+        detail_response_example = {
+            200: {"model": self.detail_response_schema},
         }
         if hasattr(self.list_views, "get"):
             # Добавляем в APIRouter API с выгрузкой списка элементов данного ресурса
             self._routers.get(
                 path,
                 tags=self._tags,
-                response_model=self.list_response_schema,
-                response_model_exclude_unset=True,
-                responses=error_responses,
+                responses=list_response_example | error_responses,
                 summary=f"Get list of `{self._type}` objects",
             )(
                 # Оборачиваем декоратором, который создаст сигнатуру функции для FastAPI
@@ -220,9 +230,7 @@ class RoutersJSONAPI:
             self._routers.post(
                 path,
                 tags=self._tags,
-                response_model=self.detail_response_schema,
-                response_model_exclude_unset=True,
-                responses=error_responses,
+                responses=detail_response_example | error_responses,
                 summary=f"Create object `{self._type}`",
             )(
                 post_list_jsonapi(
@@ -248,9 +256,7 @@ class RoutersJSONAPI:
             self._routers.get(
                 path + "/{obj_id}",
                 tags=self._tags,
-                response_model=self.detail_response_schema,
-                response_model_exclude_unset=True,
-                responses=error_responses,
+                responses=detail_response_example | error_responses,
                 summary=f"Get object `{self._type}` by id",
             )(
                 get_detail_jsonapi(
@@ -265,9 +271,7 @@ class RoutersJSONAPI:
             self._routers.patch(
                 path + "/{obj_id}",
                 tags=self._tags,
-                response_model=self.detail_response_schema,
-                response_model_exclude_unset=True,
-                responses=error_responses,
+                responses=detail_response_example | error_responses,
                 summary=f"Update object `{self._type}` by id",
             )(
                 patch_detail_jsonapi(
@@ -313,7 +317,7 @@ class RoutersJSONAPI:
         base_name: str,
         field: ModelField,
         relationship_info: RelationshipInfo,
-    ) -> Tuple[Type[BaseJSONAPIRelationshipDataToOneSchema], Type[BaseJSONAPIRelationshipDataToManySchema]]:
+    ) -> Union[Type[BaseJSONAPIRelationshipDataToOneSchema], Type[BaseJSONAPIRelationshipDataToManySchema]]:
         schema_name = f"{base_name}{field_name.title()}"
         relationship_schema = self.create_relationship_schema(
             name=schema_name,
@@ -330,20 +334,12 @@ class RoutersJSONAPI:
         )
         return relationship_data_schema
 
-    def create_jsonapi_object_schemas(
+    def _get_info_from_schema_for_building(
         self,
+        base_name: str,
         schema: Type[BaseModel],
-        includes: Iterable[str] = not_passed,
-        resource_type: str = None,
-        base_name: str = "",
-        compute_included_schemas: bool = False,
-    ) -> JSONAPIObjectSchemas:
-        schema.update_forward_refs(**registry.schemas)
-        base_name = base_name or schema.__name__
-
-        if includes is not not_passed:
-            includes = set(includes)
-
+        includes: Iterable[str],
+    ):
         attributes_schema_fields = {}
         relationships_schema_fields = {}
         included_schemas: List[Tuple[str, BaseModel, str]] = []
@@ -361,7 +357,7 @@ class RoutersJSONAPI:
                     field=field,
                     relationship_info=relationship,
                 )
-                relationships_schema_fields[name] = (relationship_schema, None)  # allow to not pass relationshps
+                relationships_schema_fields[name] = (relationship_schema, None)  # allow to not pass relationships
                 # works both for to-one and to-many
                 included_schemas.append((name, field.type_, relationship.resource_type))
             elif name == "id":
@@ -385,11 +381,20 @@ class RoutersJSONAPI:
             __config__=ConfigOrmMode,
         )
 
+        return attributes_schema, relationships_schema, included_schemas
+
+    def _build_jsonapi_object(
+        self,
+        base_name: str,
+        resource_type: str,
+        attributes_schema: Type[TypeSchema],
+        relationships_schema: Type[TypeSchema],
+        includes,
+    ) -> Type[JSONAPIObjectSchema]:
         object_jsonapi_schema_fields = dict(
             attributes=(attributes_schema, ...),
         )
         if includes:
-            # we don't need `"relationships": null` in responses w/o relationships
             object_jsonapi_schema_fields.update(
                 relationships=(relationships_schema, None),  # allow None
             )
@@ -400,9 +405,18 @@ class RoutersJSONAPI:
             type=(str, Field(default=resource_type or self._type, description="Resource type")),
             __base__=JSONAPIObjectSchema,
         )
-        can_be_included_schemas = {}
-        if compute_included_schemas:
-            can_be_included_schemas = {
+        return object_jsonapi_schema
+
+    def find_all_included_schemas(
+        self,
+        schema: Type[BaseModel],
+        resource_type: str,
+        includes: Iterable[str],
+        included_schemas: List[Tuple[str, BaseModel, str]],
+    ) -> Dict[str, Type[JSONAPIObjectSchema]]:
+
+        if includes is not_passed:
+            return {
                 # prepare same object schema
                 # TODO: caches?!
                 name: self.create_jsonapi_object_schemas(
@@ -411,57 +425,131 @@ class RoutersJSONAPI:
                 ).object_jsonapi_schema
                 for (name, included_schema, resource_type) in included_schemas
             }
-        return JSONAPIObjectSchemas(
+
+        can_be_included_schemas = {}
+        for i_include in includes:
+            current_schema = schema
+            for include_part in i_include.split(SPLIT_REL):  # type: str
+                # find nested from the Schema
+                nested_schema: Type[BaseModel] = current_schema.__fields__[include_part].type_
+                # find all relations for this one
+                related_jsonapi_object_schema = self.create_jsonapi_object_schemas(
+                    nested_schema,
+                    resource_type=resource_type,
+                ).object_jsonapi_schema
+                # cache it
+                can_be_included_schemas[include_part] = related_jsonapi_object_schema
+                # prepare for the next step
+                current_schema = nested_schema
+
+        return can_be_included_schemas
+
+    def create_jsonapi_object_schemas(
+        self,
+        schema: Type[BaseModel],
+        includes: Iterable[str] = not_passed,
+        resource_type: str = None,
+        base_name: str = "",
+        compute_included_schemas: bool = False,
+    ) -> JSONAPIObjectSchemas:
+        if schema in self.object_schemas_cache and includes is not_passed:
+            return self.object_schemas_cache[schema]
+
+        schema.update_forward_refs(**registry.schemas)
+        base_name = base_name or schema.__name__
+
+        if includes is not not_passed:
+            includes = set(includes)
+
+        (
+            # pre-built attributed
+            attributes_schema,
+            # relationships
+            relationships_schema,
+            # anything that can be included
+            included_schemas,
+        ) = self._get_info_from_schema_for_building(
+            base_name=base_name,
+            schema=schema,
+            includes=includes,
+        )
+
+        object_jsonapi_schema = self._build_jsonapi_object(
+            base_name=base_name,
+            resource_type=resource_type,
+            attributes_schema=attributes_schema,
+            relationships_schema=relationships_schema,
+            includes=includes,
+        )
+
+        can_be_included_schemas = {}
+        if compute_included_schemas:
+            can_be_included_schemas = self.find_all_included_schemas(
+                schema=schema,
+                resource_type=resource_type,
+                includes=includes,
+                included_schemas=included_schemas,
+            )
+
+        result = JSONAPIObjectSchemas(
             attributes_schema=attributes_schema,
             relationships_schema=relationships_schema,
             object_jsonapi_schema=object_jsonapi_schema,
             can_be_included_schemas=can_be_included_schemas,
         )
+        if includes is not_passed:
+            self.object_schemas_cache[schema] = result
+        return result
 
-    @classmethod
     def build_schema_for_list_result(
-        cls,
+        self,
         name: str,
         object_jsonapi_schema: Type[JSONAPIObjectSchema],
         includes_schemas: List[Type[JSONAPIObjectSchema]],
     ) -> Type[JSONAPIResultListSchema]:
-        return cls.build_schema_for_result(
+        return self.build_schema_for_result(
             name=f"{name}JSONAPI",
             base=JSONAPIResultListSchema,
             data_type=List[object_jsonapi_schema],
             includes_schemas=includes_schemas,
         )
 
-    @classmethod
     def build_schema_for_detail_result(
-        cls,
+        self,
         name: str,
         object_jsonapi_schema: Type[JSONAPIObjectSchema],
         includes_schemas: List[Type[JSONAPIObjectSchema]],
     ) -> Type[JSONAPIResultDetailSchema]:
         # return detail_jsonapi_schema
-        return cls.build_schema_for_result(
+        return self.build_schema_for_result(
             name=f"{name}JSONAPI",
             base=JSONAPIResultDetailSchema,
             data_type=object_jsonapi_schema,
             includes_schemas=includes_schemas,
         )
 
-    @classmethod
     def build_schema_for_result(
-        cls,
+        self,
         name: str,
         base: Type[BaseJSONAPIResultSchema],
         data_type: Union[Type[JSONAPIObjectSchema], Type[List[JSONAPIObjectSchema]]],
         includes_schemas: List[Type[JSONAPIObjectSchema]],
     ) -> Union[Type[JSONAPIResultListSchema], Type[JSONAPIResultDetailSchema]]:
+        included_schema_annotation = Union[JSONAPIObjectSchema]
+        for includes_schema in includes_schemas:
+            included_schema_annotation = Union[included_schema_annotation, includes_schema]
+
         schema_fields = dict(
             data=(data_type, ...),
-            included=(List[JSONAPIObjectSchema], None),
         )
-        # TODO!
-        # if includes_schemas:
-        #     schema_fields.update(included=(List[Union[includes_schemas[0]]], None))
+        if includes_schemas:
+            schema_fields.update(
+                included=(
+                    List[included_schema_annotation],
+                    Field(None),
+                ),
+            )
+
         result_jsonapi_schema = pydantic.create_model(
             name,
             **schema_fields,

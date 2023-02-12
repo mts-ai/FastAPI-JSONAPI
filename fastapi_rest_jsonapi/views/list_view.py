@@ -31,12 +31,20 @@ class ListViewBase(ViewBase):
                 (count % query_params.pagination.size) and 1  # noqa: S001
             )
 
-        result_objects, extras = self.process_includes_for_db_items(
+        result_objects, object_schemas, extras = self.process_includes_for_db_items(
             includes=query_params.include,
             items_from_db=items_from_db,
             item_schema=schema or self.jsonapi.schema_list,
         )
-        return self.jsonapi.list_response_schema(
+
+        # we need to build a new schema here
+        # because we'd like to exclude some fields (relationships, includes, etc)
+        list_jsonapi_schema = self.jsonapi.build_schema_for_list_result(
+            name=f"Result{self.__class__.__name__}",
+            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
+            includes_schemas=list(object_schemas.can_be_included_schemas.values()),
+        )
+        return list_jsonapi_schema(
             meta=JSONAPIResultListMetaSchema(count=count, total_pages=total_pages),
             data=result_objects,
             **extras,

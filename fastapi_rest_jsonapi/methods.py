@@ -23,6 +23,7 @@ from fastapi_rest_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyEngine
 from fastapi_rest_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
 from fastapi_rest_jsonapi.exceptions.json_api import UnsupportedFeatureORM
 from fastapi_rest_jsonapi.querystring import QueryStringManager
+from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultDetailSchema
 from fastapi_rest_jsonapi.signature import update_signature
 
 
@@ -48,7 +49,7 @@ def get_detail_jsonapi(
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
             data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             data_schema: Any = await func(**data_dict)
-            if isinstance(data_schema, schema_resp):
+            if isinstance(data_schema, JSONAPIResultDetailSchema):
                 return data_schema
             return schema_resp(
                 data={
@@ -102,6 +103,8 @@ def patch_detail_jsonapi(
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
             data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             data_schema: Any = await func(**data_dict)
+            if isinstance(data_schema, JSONAPIResultDetailSchema):
+                return data_schema
             return schema_resp(
                 data={
                     "id": data_schema.id,
@@ -274,31 +277,41 @@ def get_list_jsonapi(
                     None,
                 )
 
-            if isinstance(query, BaseModel):  # JSONAPIResultListSchema
+            if isinstance(query, JSONAPIResultListSchema):
                 return query
-            elif isinstance(query, list):
+
+            if isinstance(query, list):
                 return schema_resp(
                     data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": type_} for i_obj in query]
                 )
-            else:
-                if engine is DBORMType.sqlalchemy and session is None:
-                    raise UnsupportedFeatureORM("For SQLAlchemy you need to specify session in parameter")
-                return await _get_single_response(
-                    query,
-                    query_params,
-                    schema,
-                    type_,
-                    schema_resp,
-                    model=model,
-                    engine=engine,
-                    session=session,
-                )  # QuerySet
+
+            session = None
+            if engine is DBORMType.sqlalchemy:
+                # Для SQLAlchemy нужно указывать session, для Tortoise достаточно модели
+                session: Optional[AsyncSession] = next(
+                    # get first of type AsyncSession or None if not found
+                    filter(lambda v: isinstance(v, AsyncSession), func_signature.values()),
+                    None,
+                )
+            if engine is DBORMType.sqlalchemy and session is None:
+                raise UnsupportedFeatureORM("For SQLAlchemy you need to specify session in parameter")
+            return await _get_single_response(
+                query,
+                query_params,
+                schema,
+                type_,
+                schema_resp,
+                model=model,
+                engine=engine,
+                session=session,
+            )  # QuerySet
 
         # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
         wrapper.__signature__ = update_signature(  # type: ignore
             sig=signature(wrapper),
             schema=schema,
             other=OrderedDict(signature(func).parameters),
+            # return_annotation=schema_resp,
         )
         return wrapper
 
@@ -335,7 +348,7 @@ def post_list_jsonapi(
             data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_params})
             data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_params}
             data_pydantic: Any = await func(**data_dict)
-            if isinstance(data_pydantic, schema_resp):
+            if isinstance(data_pydantic, JSONAPIResultDetailSchema):
                 return data_pydantic
             return schema_resp(
                 data={

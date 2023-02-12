@@ -1,8 +1,10 @@
 import logging
 
+from pydantic.fields import ModelField
+
 from fastapi_rest_jsonapi import RoutersJSONAPI
 
-from typing import Type, Iterable, Set, Tuple, Union, Dict, List
+from typing import Type, Iterable, Set, Tuple, Union, Dict, List, Optional
 
 from fastapi_rest_jsonapi.api import JSONAPIObjectSchemas
 from fastapi_rest_jsonapi.data_layers.data_typing import (
@@ -11,6 +13,7 @@ from fastapi_rest_jsonapi.data_layers.data_typing import (
 )
 from fastapi_rest_jsonapi.schema import (
     JSONAPIObjectSchema,
+    get_related_schema,
 )
 
 from fastapi_rest_jsonapi import SqlalchemyEngine, QueryStringManager
@@ -35,7 +38,7 @@ class ViewBase:
         included_object_schema: Type[TypeSchema],
         relationship_info: RelationshipInfo,
         known_included: Set[Tuple[Union[int, str], str]],
-    ):
+    ) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
         data_for_relationship = dict(id=item_from_db.id)
         key = (item_from_db.id, relationship_info.resource_type)
         processed_object = None
@@ -51,19 +54,12 @@ class ViewBase:
 
     def prepare_data_for_relationship(
         self,
-        current_db_item: TypeModel,
-        current_schema: Type[TypeSchema],
-        related_field_name: str,
-        schemas_include: Dict[str, Type[JSONAPIObjectSchema]],
+        related_db_item: Union[List[TypeModel], TypeModel],
+        relationship_info: RelationshipInfo,
+        included_object_schema: Type[TypeSchema],
         known_included: Set[Tuple[Union[int, str], str]],
-    ):
-        relationship_info: RelationshipInfo = current_schema.__fields__[related_field_name].field_info.extra[
-            "relationship"
-        ]
-        relationship_db_data = getattr(current_db_item, related_field_name)
-        included_object_schema = schemas_include[related_field_name]
-
-        def prepare_related_db_item(item_from_db: TypeModel):
+    ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema],]:
+        def prepare_related_db_item(item_from_db: TypeModel) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
             return self.prepare_related_object_data(
                 item_from_db=item_from_db,
                 included_object_schema=included_object_schema,
@@ -72,9 +68,9 @@ class ViewBase:
             )
 
         included_objects = []
-        if isinstance(relationship_db_data, Iterable):
+        if isinstance(related_db_item, Iterable):
             data_for_relationship = []
-            for included_item in relationship_db_data:
+            for included_item in related_db_item:
                 relation_data, processed_object = prepare_related_db_item(
                     item_from_db=included_item,
                 )
@@ -82,11 +78,11 @@ class ViewBase:
                 if processed_object:
                     included_objects.append(processed_object)
         else:
-            if relationship_db_data is None:
+            if related_db_item is None:
                 return None, included_objects
 
             data_for_relationship, processed_object = prepare_related_db_item(
-                item_from_db=relationship_db_data,
+                item_from_db=related_db_item,
             )
             if processed_object:
                 included_objects.append(processed_object)
@@ -97,32 +93,69 @@ class ViewBase:
         self,
         include: str,
         current_db_item: TypeModel,
-        current_schema: Type[TypeSchema],
+        current_relation_schema: Type[TypeSchema],
         relationships_schema: Type[TypeSchema],
         schemas_include: Dict[str, Type[JSONAPIObjectSchema]],
         known_included: Set[Tuple[Union[int, str], str]],
-    ):
+    ) -> Tuple[Dict[str, TypeSchema], List[JSONAPIObjectSchema]]:
         top_level_relationships = {}
         included_objects = []
+        previous_included = []
+        previous_include_key = None
+        previous_relationship_info = None
         top_level_include = True
         for related_field_name in include.split(SPLIT_REL):
-
-            # I'm really sorry about it, but it's the shortest way
-            # otherwise I'll have to return these schemas separately
-            relationship_data_schema = relationships_schema.__fields__[related_field_name].type_
-            # relationship_data_schema = get_related_schema(object_schemas.relationships_schema, include)
+            # TODO: when including 'user.bio', it loads user AND user's bio.
+            #  need to load only bio when includes 'user.bio'
+            current_relation_field: ModelField = current_relation_schema.__fields__[related_field_name]
+            current_relation_schema: Type[TypeSchema] = current_relation_field.type_
+            parent_db_item: Union[List[TypeModel], TypeModel] = current_db_item
+            current_db_item: Union[List[TypeModel], TypeModel] = getattr(current_db_item, related_field_name)
+            relationship_info: RelationshipInfo = current_relation_field.field_info.extra["relationship"]
+            included_object_schema = schemas_include[related_field_name]
 
             data_for_relationship, new_included = self.prepare_data_for_relationship(
-                current_db_item=current_db_item,
-                current_schema=current_schema,
-                related_field_name=related_field_name,
-                schemas_include=schemas_include,
+                related_db_item=current_db_item,
+                relationship_info=relationship_info,
+                included_object_schema=included_object_schema,
                 known_included=known_included,
             )
+            if previous_include_key:
+                for prev_included_item in previous_included:
+                    fwd_relationships_schema = get_related_schema(prev_included_item.__class__, "relationships")
+                    fwd_relationship_data_schema = get_related_schema(
+                        fwd_relationships_schema,
+                        previous_include_key,
+                    )
+                    # TODO!! xxx
+                    #  this will overwrite any existing data
+                    #  due to 'known includes' some items may be not filled :(
+                    #  idea: use dict instead of set for known and update those
+                    prev_included_item.relationships = fwd_relationship_data_schema(data=data_for_relationship)
+
+                for new_included_item in new_included:
+                    reverse_relationships_schema = get_related_schema(new_included_item.__class__, "relationships")
+                    reverse_relationship_data_schema = get_related_schema(
+                        reverse_relationships_schema,
+                        previous_include_key,
+                    )
+                    # reverse_relationship_data, _ =
+                    data = dict(id=parent_db_item.id)
+                    if relationship_info.many:
+                        data = [data]
+                    # TODO!! xxx
+                    #  this will overwrite any existing data
+                    new_included_item.relationships = reverse_relationship_data_schema(data=data)
+
+            previous_include_key = related_field_name
+            previous_included = new_included
+            previous_relationship_info = relationship_info
+
             included_objects.extend(new_included)
 
-            # TODO: PROCESS LEVELS 2+ !!
+            # TODO: level 2+ not finished yet (relationship stays null)
             if top_level_include:
+                relationship_data_schema = get_related_schema(relationships_schema, related_field_name)
                 top_level_relationships[related_field_name] = relationship_data_schema(data=data_for_relationship)
                 top_level_include = False
 
@@ -148,7 +181,7 @@ class ViewBase:
             top_level_relationships, new_included_objects = self.process_one_include_with_nested(
                 include=include,
                 current_db_item=item,
-                current_schema=item_schema,
+                current_relation_schema=item_schema,
                 relationships_schema=object_schemas.relationships_schema,
                 schemas_include=object_schemas.can_be_included_schemas,
                 known_included=known_included,
@@ -199,26 +232,34 @@ class ViewBase:
             # even if no related objects were found
             extras.update(included=included_objects)
 
-        return result_objects, extras
+        return result_objects, object_schemas, extras
 
     async def get_detailed_result(
         self,
         dl: SqlalchemyEngine,
-        view_kwargs: Dict[str, str],
+        view_kwargs: Dict[str, Union[str, int]],
         query_params: QueryStringManager = None,
         schema: Type[TypeSchema] = None,
     ) -> JSONAPIResultDetailSchema:
         # todo: generate dl?
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=query_params)
 
-        result_objects, extras = self.process_includes_for_db_items(
+        result_objects, object_schemas, extras = self.process_includes_for_db_items(
             includes=query_params.include,
             items_from_db=[db_object],
             item_schema=schema or self.jsonapi.schema_detail,
         )
         # todo: is it ok to do through list?
         result_object = result_objects[0]
-        return self.jsonapi.detail_response_schema(
+
+        # we need to build a new schema here
+        # because we'd like to exclude some fields (relationships, includes, etc)
+        detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
+            name=f"Result{self.__class__.__name__}",
+            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
+            includes_schemas=list(object_schemas.can_be_included_schemas.values()),
+        )
+        return detail_jsonapi_schema(
             data=result_object,
             **extras,
         )
