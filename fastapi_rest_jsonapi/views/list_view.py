@@ -1,9 +1,11 @@
 import logging
+from typing import Type
 
 from fastapi_rest_jsonapi import (
     QueryStringManager,
     SqlalchemyEngine,
 )
+from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema
 from fastapi_rest_jsonapi.schema import (
     JSONAPIResultListMetaSchema,
     JSONAPIResultListSchema,
@@ -19,6 +21,7 @@ class ListViewBase(ViewBase):
         self,
         dl: SqlalchemyEngine,
         query_params: QueryStringManager,
+        schema: Type[TypeSchema] = None,
     ) -> JSONAPIResultListSchema:
         # todo: generate dl?
         count, items_from_db = await dl.get_collection(qs=query_params)
@@ -31,6 +34,7 @@ class ListViewBase(ViewBase):
         result_objects, extras = self.process_includes_for_db_items(
             includes=query_params.include,
             items_from_db=items_from_db,
+            item_schema=schema or self.jsonapi.schema_list,
         )
         return self.jsonapi.list_response_schema(
             meta=JSONAPIResultListMetaSchema(count=count, total_pages=total_pages),

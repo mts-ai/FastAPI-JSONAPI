@@ -13,6 +13,10 @@ from fastapi_rest_jsonapi.schema import (
     JSONAPIObjectSchema,
 )
 
+from fastapi_rest_jsonapi import SqlalchemyEngine, QueryStringManager
+from fastapi_rest_jsonapi.schema import JSONAPIResultDetailSchema
+
+
 from fastapi_rest_jsonapi.schema_base import RelationshipInfo
 from fastapi_rest_jsonapi.splitter import SPLIT_REL
 
@@ -78,6 +82,9 @@ class ViewBase:
                 if processed_object:
                     included_objects.append(processed_object)
         else:
+            if relationship_db_data is None:
+                return None, included_objects
+
             data_for_relationship, processed_object = prepare_related_db_item(
                 item_from_db=relationship_db_data,
             )
@@ -125,6 +132,7 @@ class ViewBase:
         self,
         includes: List[str],
         item: TypeModel,
+        item_schema: Type[TypeSchema],
         object_schemas: JSONAPIObjectSchemas,
         known_included: Set[Tuple[Union[int, str], str]],
     ):
@@ -140,7 +148,7 @@ class ViewBase:
             top_level_relationships, new_included_objects = self.process_one_include_with_nested(
                 include=include,
                 current_db_item=item,
-                current_schema=self.jsonapi.model_schema,
+                current_schema=item_schema,
                 relationships_schema=object_schemas.relationships_schema,
                 schemas_include=object_schemas.can_be_included_schemas,
                 known_included=known_included,
@@ -159,9 +167,14 @@ class ViewBase:
 
         return item_as_schema, included_objects
 
-    def process_includes_for_db_items(self, includes: List[str], items_from_db: List[TypeModel]):
+    def process_includes_for_db_items(
+        self,
+        includes: List[str],
+        items_from_db: List[TypeModel],
+        item_schema: Type[TypeSchema],
+    ):
         object_schemas = self.jsonapi.create_jsonapi_object_schemas(
-            schema=self.jsonapi.model_schema,
+            schema=item_schema,
             includes=includes,
             compute_included_schemas=bool(includes),
         )
@@ -173,6 +186,7 @@ class ViewBase:
             jsonapi_object, new_included = self.process_db_object(
                 includes=includes,
                 item=item,
+                item_schema=item_schema,
                 object_schemas=object_schemas,
                 known_included=known_included,
             )
@@ -186,3 +200,25 @@ class ViewBase:
             extras.update(included=included_objects)
 
         return result_objects, extras
+
+    async def get_detailed_result(
+        self,
+        dl: SqlalchemyEngine,
+        view_kwargs: Dict[str, str],
+        query_params: QueryStringManager = None,
+        schema: Type[TypeSchema] = None,
+    ) -> JSONAPIResultDetailSchema:
+        # todo: generate dl?
+        db_object = await dl.get_object(view_kwargs=view_kwargs, qs=query_params)
+
+        result_objects, extras = self.process_includes_for_db_items(
+            includes=query_params.include,
+            items_from_db=[db_object],
+            item_schema=schema or self.jsonapi.schema_detail,
+        )
+        # todo: is it ok to do through list?
+        result_object = result_objects[0]
+        return self.jsonapi.detail_response_schema(
+            data=result_object,
+            **extras,
+        )

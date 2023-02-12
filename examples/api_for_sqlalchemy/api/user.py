@@ -36,7 +36,7 @@ class UserDetail(DetailViewBase):
         session: AsyncSession = Depends(Connector.get_session),
     ) -> JSONAPIResultDetailSchema:
         dl = SqlalchemyEngine(
-            schema=self.jsonapi.model_schema,
+            schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,
             session=session,
         )
@@ -79,7 +79,7 @@ class UserList(ListViewBase):
         session: AsyncSession = Depends(Connector.get_session),
     ) -> JSONAPIResultListSchema:
         dl = SqlalchemyEngine(
-            schema=self.jsonapi.model_schema,
+            schema=self.jsonapi.schema_list,
             model=self.jsonapi.model,
             session=session,
         )
@@ -88,13 +88,12 @@ class UserList(ListViewBase):
             query_params=query_params,
         )
 
-    @classmethod
     async def post(
-        cls,
+        self,
         data: UserInSchema,
         query_params: QueryStringManager,
         session: AsyncSession = Depends(Connector.get_session),
-    ) -> UserSchema:
+    ) -> JSONAPIResultDetailSchema:
         try:
             user_obj = await UserFactory.create(
                 data=data.dict(),
@@ -105,5 +104,14 @@ class UserList(ListViewBase):
         except ErrorCreateUserObject as ex:
             raise BadRequest(ex.description, ex.field)
 
-        user = UserSchema.from_orm(user_obj)
-        return user
+        dl = SqlalchemyEngine(
+            schema=self.jsonapi.schema_detail,
+            model=self.jsonapi.model,
+            session=session,
+        )
+        view_kwargs = {"id": user_obj.id}
+        return await self.get_detailed_result(
+            dl=dl,
+            view_kwargs=view_kwargs,
+            query_params=query_params,
+        )

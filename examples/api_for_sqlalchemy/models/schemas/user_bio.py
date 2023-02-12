@@ -1,4 +1,4 @@
-"""Post schemas module."""
+"""User Bio schemas module."""
 
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -9,28 +9,28 @@ if TYPE_CHECKING:
     from .user import UserSchema
 
 
-class PostBaseSchema(BaseModel):
-    """Post base schema."""
+class UserBioBaseSchema(BaseModel):
+    """UserBio base schema."""
 
     class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
-    title: str
-    body: str
+    birth_city: str
+    favourite_movies: str
 
 
-class PostPatchSchema(PostBaseSchema):
-    """Post PATCH schema."""
+class UserBioPatchSchema(UserBioBaseSchema):
+    """UserBio PATCH schema."""
 
 
-class PostInSchema(PostBaseSchema):
-    """Post input schema."""
+class UserBioInSchema(UserBioBaseSchema):
+    """UserBio input schema."""
 
 
-class PostSchema(PostInSchema):
-    """Post item schema."""
+class UserBioSchema(UserBioInSchema):
+    """UserBio item schema."""
 
     class Config:
         """Pydantic model config."""

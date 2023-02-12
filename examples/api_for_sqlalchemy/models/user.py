@@ -17,13 +17,15 @@ class User(Base, BaseModelMixin):
     status = Column(EnumColumn(UserStatusEnum), nullable=False, default=UserStatusEnum.active)
 
     posts = relationship("Post", back_populates="user", uselist=True)
+    bio = relationship("UserBio", back_populates="user", uselist=False)
 
     def __repr__(self):
         return (
-            f"<{self.__class__.__name__}"
-            f" id={self.id}"
-            f" name={self.first_name!r} {self.last_name!r}"
-            ">"
+            f"{self.__class__.__name__}("
+            f"id={self.id},"
+            f" first_name={self.first_name!r},"
+            f" last_name={self.last_name!r}"
+            ")"
         )
 
     class Enum:

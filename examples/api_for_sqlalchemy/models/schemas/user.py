@@ -1,4 +1,4 @@
-"""User base schemas module."""
+"""User schemas module."""
 
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING, List
@@ -9,6 +9,7 @@ from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
 
 if TYPE_CHECKING:
     from .post import PostSchema
+    from .user_bio import UserBioSchema
 
 
 class UserBaseSchema(BaseModel):
@@ -52,5 +53,11 @@ class UserSchema(UserInSchema):
         relationship=RelationshipInfo(
             resource_type="post",
             many=True,
+        ),
+    )
+
+    bio: Optional["UserBioSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user_bio",
         ),
     )

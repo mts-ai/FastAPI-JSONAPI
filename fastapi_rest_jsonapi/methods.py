@@ -29,6 +29,8 @@ from fastapi_rest_jsonapi.signature import update_signature
 def get_detail_jsonapi(
     schema: Type[BaseModel],
     schema_resp: Any,
+    model: Type[TypeModel],
+    engine: DBORMType,
 ) -> Callable:
     """GET DETAIL method router (Decorator for JSON API)."""
 
@@ -321,7 +323,8 @@ def post_list_jsonapi(
             query_params = QueryStringManager(request=request, schema=schema)
             data_dict = {}
             func_signature = signature(func).parameters
-            for i_name, i_type in OrderedDict(func_signature).items():
+            func_params = OrderedDict(func_signature)
+            for i_name, i_type in func_params.items():
                 if i_type.annotation is schema_in.__fields__["attributes"].type_:
                     data_dict[i_name] = getattr(data, "attributes", data)
                 elif i_type.annotation is Request:
@@ -329,10 +332,11 @@ def post_list_jsonapi(
                 elif i_type.annotation is QueryStringManager:
                     data_dict[i_name] = query_params
 
-            params_function = OrderedDict(func_signature)
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
+            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_params})
+            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_params}
             data_pydantic: Any = await func(**data_dict)
+            if isinstance(data_pydantic, schema_resp):
+                return data_pydantic
             return schema_resp(
                 data={
                     "id": data_pydantic.id,
@@ -343,7 +347,9 @@ def post_list_jsonapi(
         # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
         wrapper.__signature__ = update_signature(  # type: ignore
             sig=signature(wrapper),
+            schema=schema,
             other=OrderedDict(signature(func).parameters),
+            exclude_filters=True,
         )
 
         return wrapper

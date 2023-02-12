@@ -17,7 +17,6 @@ def async_session() -> sessionmaker:
 
 
 class Connector:
-
     @classmethod
     async def get_session(cls):
         """
@@ -25,7 +24,6 @@ class Connector:
 
         :return:
         """
-        async_session_ = async_session()
-        async with async_session_() as db_session:
-            async with db_session.begin():
-                yield db_session
+        sess = async_session()
+        async with sess() as db_session:
+            yield db_session

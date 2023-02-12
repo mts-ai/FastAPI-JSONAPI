@@ -13,6 +13,11 @@ from .post import (
     PostPatchSchema,
 )
 
+from .user_bio import (
+    UserBioSchema,
+    UserBioInSchema,
+    UserBioPatchSchema,
+)
 
 __all__ = [
     "UserSchema",
@@ -21,4 +26,7 @@ __all__ = [
     "PostSchema",
     "PostInSchema",
     "PostPatchSchema",
+    "UserBioSchema",
+    "UserBioInSchema",
+    "UserBioPatchSchema",
 ]

@@ -43,7 +43,7 @@ class PostDetail(DetailViewBase):
         session: AsyncSession = Depends(Connector.get_session),
     ) -> JSONAPIResultDetailSchema:
         dl = SqlalchemyEngine(
-            schema=self.jsonapi.model_schema,
+            schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,
             session=session,
         )
@@ -57,9 +57,9 @@ class PostDetail(DetailViewBase):
     # @classmethod
     # async def patch(cls, obj_id, data: PostPatchSchema, query_params: QueryStringManager,
     #                 session: AsyncSession = Depends(Connector.get_session)) -> PostSchema:
-    #     user_obj: Post
+    #     post_obj: Post
     #     try:
-    #         user_obj = await UpdatePost.update(
+    #         post_obj = await UpdatePost.update(
     #             obj_id,
     #             data.dict(exclude_unset=True),
     #             query_params.headers,
@@ -70,8 +70,8 @@ class PostDetail(DetailViewBase):
     #     except ObjectNotFound as ex:
     #         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ex.description)
     #
-    #     user = PostSchema.from_orm(user_obj)
-    #     return user
+    #     post = PostSchema.from_orm(post_obj)
+    #     return post
 
 
 class PostList(ListViewBase):
@@ -81,7 +81,7 @@ class PostList(ListViewBase):
         session: AsyncSession = Depends(Connector.get_session),
     ) -> JSONAPIResultListSchema:
         dl = SqlalchemyEngine(
-            schema=self.jsonapi.model_schema,
+            schema=self.jsonapi.schema_list,
             model=self.jsonapi.model,
             session=session,
         )
@@ -95,9 +95,9 @@ class PostList(ListViewBase):
         data: PostInSchema,
         query_params: QueryStringManager,
         session: AsyncSession = Depends(Connector.get_session),
-    ) -> PostSchema:
+    ) -> JSONAPIResultDetailSchema:
         try:
-            user_obj = await PostFactory.create(
+            post_obj = await PostFactory.create(
                 data=data.dict(),
                 mode=FactoryUseMode.production,
                 header=query_params.headers,
@@ -111,5 +111,14 @@ class PostList(ListViewBase):
         except ErrorCreatePostObject as ex:
             raise BadRequest(ex.description, ex.field)
 
-        user = PostSchema.from_orm(user_obj)
-        return user
+        dl = SqlalchemyEngine(
+            schema=self.jsonapi.schema_detail,
+            model=self.jsonapi.model,
+            session=session,
+        )
+        view_kwargs = {"id": post_obj.id}
+        return await self.get_detailed_result(
+            dl=dl,
+            view_kwargs=view_kwargs,
+            query_params=query_params,
+        )
