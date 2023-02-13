@@ -8,6 +8,7 @@ from inspect import (
     Signature,
     signature,
 )
+from types import GenericAlias
 from typing import (
     Callable,
     Dict,
@@ -18,6 +19,7 @@ from typing import (
     OrderedDict as OrderedDictType,
     Tuple,
     Any,
+    Mapping,
 )
 
 from fastapi import Query
@@ -59,10 +61,13 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
     # TODO! ?
     schema.update_forward_refs(**registry.schemas)
     for name, field in (schema.__fields__ or {}).items():
-        # skip collections
-        if inspect.isclass(field.type_) and issubclass(field.type_, (dict, list, tuple, set, Dict, List, Tuple, Set)):
-            continue
         try:
+            # skip collections
+            if inspect.isclass(field.type_):
+                if type(field.type_) is GenericAlias:
+                    continue
+                if issubclass(field.type_, (dict, list, tuple, set, Dict, List, Tuple, Set)):
+                    continue
             # process inner models, find relationships
             if inspect.isclass(field.type_) and issubclass(field.type_, (BaseModel, BaseModelOriginal)):
                 if field.field_info.extra.get("relationship"):
