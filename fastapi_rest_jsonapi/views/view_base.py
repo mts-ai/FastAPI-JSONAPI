@@ -173,7 +173,7 @@ class ViewBase:
         included_objects = []
 
         schema_kwargs = dict(
-            id=item.id,
+            id=str(item.id),
             attributes=object_schemas.attributes_schema.from_orm(item),
         )
 
