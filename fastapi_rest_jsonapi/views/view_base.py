@@ -105,54 +105,71 @@ class ViewBase:
         previous_include_key = None
         previous_relationship_info = None
         top_level_include = True
+        current_db_item: Union[List[TypeModel], TypeModel]
         for related_field_name in include.split(SPLIT_REL):
             # TODO: when including 'user.bio', it loads user AND user's bio.
             #  need to load only bio when includes 'user.bio'
             current_relation_field: ModelField = current_relation_schema.__fields__[related_field_name]
             current_relation_schema: Type[TypeSchema] = current_relation_field.type_
             parent_db_item: Union[List[TypeModel], TypeModel] = current_db_item
-            current_db_item: Union[List[TypeModel], TypeModel] = getattr(current_db_item, related_field_name)
+
             relationship_info: RelationshipInfo = current_relation_field.field_info.extra["relationship"]
             included_object_schema = schemas_include[related_field_name]
 
-            data_for_relationship, new_included = self.prepare_data_for_relationship(
-                related_db_item=current_db_item,
-                relationship_info=relationship_info,
-                included_object_schema=included_object_schema,
-                known_included=known_included,
-            )
-            if previous_include_key:
-                for prev_included_item in previous_included:
-                    fwd_relationships_schema = get_related_schema(prev_included_item.__class__, "relationships")
-                    fwd_relationship_data_schema = get_related_schema(
-                        fwd_relationships_schema,
-                        previous_include_key,
+            if isinstance(current_db_item, Iterable):
+                current_db_item = [getattr(item, related_field_name) for item in current_db_item]
+                for db_item in current_db_item:
+                    data_for_relationship, new_included = self.prepare_data_for_relationship(
+                        related_db_item=db_item,
+                        relationship_info=relationship_info,
+                        included_object_schema=included_object_schema,
+                        known_included=known_included,
                     )
-                    # TODO!! xxx
-                    #  this will overwrite any existing data
-                    #  due to 'known includes' some items may be not filled :(
-                    #  idea: use dict instead of set for known and update those
-                    prev_included_item.relationships = fwd_relationship_data_schema(data=data_for_relationship)
+                    included_objects.extend(new_included)
 
-                for new_included_item in new_included:
-                    reverse_relationships_schema = get_related_schema(new_included_item.__class__, "relationships")
-                    reverse_relationship_data_schema = get_related_schema(
-                        reverse_relationships_schema,
-                        previous_include_key,
-                    )
-                    # reverse_relationship_data, _ =
-                    data = dict(id=parent_db_item.id)
-                    if relationship_info.many:
-                        data = [data]
-                    # TODO!! xxx
-                    #  this will overwrite any existing data
-                    new_included_item.relationships = reverse_relationship_data_schema(data=data)
+            else:
+                current_db_item = getattr(current_db_item, related_field_name)
 
-            previous_include_key = related_field_name
-            previous_included = new_included
-            previous_relationship_info = relationship_info
+                data_for_relationship, new_included = self.prepare_data_for_relationship(
+                    related_db_item=current_db_item,
+                    relationship_info=relationship_info,
+                    included_object_schema=included_object_schema,
+                    known_included=known_included,
+                )
+                included_objects.extend(new_included)
 
-            included_objects.extend(new_included)
+            # if previous_include_key:
+            #     for prev_included_item in previous_included:
+            #         fwd_relationships_schema = get_related_schema(prev_included_item.__class__, "relationships")
+            #         fwd_relationship_data_schema = get_related_schema(
+            #             fwd_relationships_schema,
+            #             previous_include_key,
+            #         )
+            #         # TODO!! xxx
+            #         #  this will overwrite any existing data
+            #         #  due to 'known includes' some items may be not filled :(
+            #         #  idea: use dict instead of set for known and update those
+            #         prev_included_item.relationships = fwd_relationship_data_schema(data=data_for_relationship)
+            #
+            #     for new_included_item in new_included:
+            #         reverse_relationships_schema = get_related_schema(new_included_item.__class__, "relationships")
+            #         # TODO: reverse for many doesn't work here!
+            #         reverse_relationship_data_schema = get_related_schema(
+            #             reverse_relationships_schema,
+            #             previous_include_key,
+            #         )
+            #         # reverse_relationship_data, _ =
+            #         if relationship_info.many:
+            #             data = [dict(id=item.id) for item in parent_db_item]
+            #         else:
+            #             data = dict(id=parent_db_item.id)
+            #         # TODO!! xxx
+            #         #  this will overwrite any existing data
+            #         new_included_item.relationships = reverse_relationship_data_schema(data=data)
+
+            # previous_include_key = related_field_name
+            # previous_included = new_included
+            # previous_relationship_info = relationship_info
 
             # TODO: level 2+ not finished yet (relationship stays null)
             if top_level_include:

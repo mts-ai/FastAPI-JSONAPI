@@ -19,6 +19,12 @@ from .user_bio import (
     UserBioPatchSchema,
 )
 
+from .post_comment import (
+    PostCommentSchema,
+    PostCommentInSchema,
+    PostCommentPatchSchema,
+)
+
 __all__ = [
     "UserSchema",
     "UserInSchema",
@@ -29,4 +35,7 @@ __all__ = [
     "UserBioSchema",
     "UserBioInSchema",
     "UserBioPatchSchema",
+    "PostCommentSchema",
+    "PostCommentInSchema",
+    "PostCommentPatchSchema",
 ]

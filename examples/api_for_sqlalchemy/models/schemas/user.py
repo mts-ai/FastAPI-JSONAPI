@@ -28,6 +28,7 @@ class UserBaseSchema(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     status: UserStatusEnum = Field(default=UserStatusEnum.active)
+    email: str | None = None
 
 
 class UserPatchSchema(UserBaseSchema):

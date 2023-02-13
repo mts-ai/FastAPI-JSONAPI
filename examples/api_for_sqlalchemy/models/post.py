@@ -16,11 +16,7 @@ class Post(Base, BaseModelMixin):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=False)
     user = relationship("User", back_populates="posts", uselist=False)
 
+    comments = relationship("PostComment", back_populates="post", uselist=True)
+
     def __repr__(self):
-        return (
-            f"<{self.__class__.__name__}"
-            f" id={self.id}"
-            f" title={self.title!r}"
-            f" user_id={self.user_id}"
-            ">"
-        )
+        return f"{self.__class__.__name__}(id={self.id} title={self.title!r} user_id={self.user_id})"

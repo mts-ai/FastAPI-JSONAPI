@@ -7,6 +7,7 @@ from fastapi_rest_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
     from .user import UserSchema
+    from .post_comment import PostCommentSchema
 
 
 class PostBaseSchema(BaseModel):
@@ -44,5 +45,11 @@ class PostSchema(PostInSchema):
     user: "UserSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="user",
+        ),
+    )
+
+    comments: list["PostCommentSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post_comment",
         ),
     )

@@ -15,9 +15,11 @@ class User(Base, BaseModelMixin):
     first_name: str = Column(String, nullable=True)
     last_name: str = Column(String, nullable=True)
     status = Column(EnumColumn(UserStatusEnum), nullable=False, default=UserStatusEnum.active)
+    email: str | None = Column(String, nullable=True)
 
     posts = relationship("Post", back_populates="user", uselist=True)
     bio = relationship("UserBio", back_populates="user", uselist=False)
+    comments = relationship("PostComment", back_populates="author", uselist=True)
 
     def __repr__(self):
         return (
