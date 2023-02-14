@@ -89,7 +89,10 @@ class Node(object):
         errors: List[str] = []
         for i_type in types:
             try:
-                clear_value = i_type(value)
+                if isinstance(value, list):
+                    clear_value = [i_type(item) for item in value]
+                else:
+                    clear_value = i_type(value)
             except (TypeError, ValueError) as ex:
                 errors.append(str(ex))
         # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
