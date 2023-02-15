@@ -275,7 +275,7 @@ class ViewBase:
         detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
             name=f"Result{self.__class__.__name__}",
             object_jsonapi_schema=object_schemas.object_jsonapi_schema,
-            includes_schemas=list(object_schemas.can_be_included_schemas.values()),
+            includes_schemas=object_schemas.included_schemas_list,
         )
         return detail_jsonapi_schema(
             data=result_object,

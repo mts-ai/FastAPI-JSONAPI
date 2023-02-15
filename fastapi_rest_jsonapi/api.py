@@ -56,6 +56,10 @@ class JSONAPIObjectSchemas:
     object_jsonapi_schema: Type[JSONAPIObjectSchema]
     can_be_included_schemas: Dict[str, Type[JSONAPIObjectSchema]]
 
+    @property
+    def included_schemas_list(self) -> List[Type[JSONAPIObjectSchema]]:
+        return list(self.can_be_included_schemas.values())
+
 
 class RoutersJSONAPI:
     """API Router interface for JSON API endpoints in web-services."""
@@ -168,11 +172,10 @@ class RoutersJSONAPI:
             includes=includes,
         )
         object_jsonapi_schema = object_schemas.object_jsonapi_schema
-        can_be_included = list(object_schemas.can_be_included_schemas.values())
         response_jsonapi_schema = builder(
             name=base_name,
             object_jsonapi_schema=object_jsonapi_schema,
-            includes_schemas=can_be_included,
+            includes_schemas=object_schemas.included_schemas_list,
         )
         return object_jsonapi_schema, response_jsonapi_schema
 
@@ -440,13 +443,15 @@ class RoutersJSONAPI:
         can_be_included_schemas = {}
         for i_include in includes:
             current_schema = schema
-            for include_part in i_include.split(SPLIT_REL):  # type: str
+            relations_list: List[str] = i_include.split(SPLIT_REL)
+            for part_index, include_part in enumerate(relations_list, start=1):
                 # find nested from the Schema
                 nested_schema: Type[BaseModel] = current_schema.__fields__[include_part].type_
                 # find all relations for this one
                 related_jsonapi_object_schema = self.create_jsonapi_object_schemas(
                     nested_schema,
                     resource_type=resource_type,
+                    includes=relations_list[part_index:],
                 ).object_jsonapi_schema
                 # cache it
                 can_be_included_schemas[include_part] = related_jsonapi_object_schema
