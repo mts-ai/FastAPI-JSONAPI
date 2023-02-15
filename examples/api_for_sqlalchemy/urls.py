@@ -14,6 +14,7 @@ from fastapi import (
 from fastapi_rest_jsonapi import RoutersJSONAPI
 from fastapi_rest_jsonapi.data_layers.orm import DBORMType
 from .api.post import PostDetail, PostList
+from .api.user_bio import UserBioDetail, UserBioList
 from .models.schemas import (
     UserSchema,
     UserInSchema,
@@ -21,12 +22,15 @@ from .models.schemas import (
     PostSchema,
     PostInSchema,
     PostPatchSchema,
+    UserBioSchema,
+    UserBioPatchSchema,
+    UserBioInSchema,
 )
 from .api.user import (
     UserDetail,
     UserList,
 )
-from examples.api_for_sqlalchemy.models import User, Post
+from examples.api_for_sqlalchemy.models import User, Post, UserBio
 
 
 def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
@@ -67,6 +71,20 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         schema_in_patch=PostPatchSchema,
         schema_in_post=PostInSchema,
         model=Post,
+        engine=DBORMType.sqlalchemy,
+    )
+
+    RoutersJSONAPI(
+        routers=routers,
+        path="/user-bio",
+        tags=["Bio"],
+        class_detail=UserBioDetail,
+        class_list=UserBioList,
+        schema=UserBioSchema,
+        type_resource="user_bio",
+        schema_in_patch=UserBioPatchSchema,
+        schema_in_post=UserBioInSchema,
+        model=UserBio,
         engine=DBORMType.sqlalchemy,
     )
 

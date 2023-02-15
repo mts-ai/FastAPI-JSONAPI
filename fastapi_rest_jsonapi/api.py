@@ -60,6 +60,11 @@ class JSONAPIObjectSchemas:
 class RoutersJSONAPI:
     """API Router interface for JSON API endpoints in web-services."""
 
+    # IDK if there's a better way than global caches
+    # shared between ALL RoutersJSONAPI instances
+    object_schemas_cache = {}
+    relationship_schema_cache = {}
+
     def __init__(  # noqa: WPS211
         self,
         routers: APIRouter,
@@ -106,7 +111,8 @@ class RoutersJSONAPI:
         self._engine: DBORMType = engine
         self.schema_detail = schema_detail or schema
 
-        self.object_schemas_cache = {}
+        # self.object_schemas_cache = {}
+        # self.relationship_schema_cache = {}
 
         patch_jsonapi_schema = pydantic.create_model(
             "{base_name}JSONAPI".format(base_name=schema_in_patch.__name__),
@@ -163,12 +169,12 @@ class RoutersJSONAPI:
         )
         object_jsonapi_schema = object_schemas.object_jsonapi_schema
         can_be_included = list(object_schemas.can_be_included_schemas.values())
-        list_jsonapi_schema = builder(
+        response_jsonapi_schema = builder(
             name=base_name,
             object_jsonapi_schema=object_jsonapi_schema,
             includes_schemas=can_be_included,
         )
-        return object_jsonapi_schema, list_jsonapi_schema
+        return object_jsonapi_schema, response_jsonapi_schema
 
     def build_detail_schemas(
         self,
@@ -318,6 +324,10 @@ class RoutersJSONAPI:
         field: ModelField,
         relationship_info: RelationshipInfo,
     ) -> Union[Type[BaseJSONAPIRelationshipDataToOneSchema], Type[BaseJSONAPIRelationshipDataToManySchema]]:
+
+        cache_key = (base_name, field_name, relationship_info.resource_type, relationship_info.many)
+        if field in self.relationship_schema_cache:
+            return self.relationship_schema_cache[cache_key]
         schema_name = f"{base_name}{field_name.title()}"
         relationship_schema = self.create_relationship_schema(
             name=schema_name,
@@ -332,6 +342,7 @@ class RoutersJSONAPI:
             data=(relationship_schema, Field(... if field.required else None)),
             __base__=base,
         )
+        self.relationship_schema_cache[cache_key] = relationship_data_schema
         return relationship_data_schema
 
     def _get_info_from_schema_for_building(
