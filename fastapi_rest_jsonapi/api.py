@@ -378,7 +378,7 @@ class RoutersJSONAPI:
                 # skip id field (should be on top)
                 continue
             else:
-                attributes_schema_fields[name] = (field.type_, field.field_info)
+                attributes_schema_fields[name] = (field.outer_type_, field.field_info)
 
         class ConfigOrmMode(BaseConfig):
             orm_mode = True
