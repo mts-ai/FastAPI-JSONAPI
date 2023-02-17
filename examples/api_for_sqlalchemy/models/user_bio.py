@@ -1,6 +1,7 @@
 """User Bio model."""
+from typing import Dict, List
 
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, String, Integer, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
@@ -12,6 +13,7 @@ class UserBio(Base, BaseModelMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     birth_city: str = Column(String, nullable=False, default="", server_default="")
     favourite_movies: str = Column(String, nullable=False, default="", server_default="")
+    keys_to_ids_list: Dict[str, List[int]] = Column(JSON)
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     user = relationship("User", back_populates="bio", uselist=False)

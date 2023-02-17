@@ -32,11 +32,14 @@ class UserBioFactory(BaseFactory):
         "birth_city": lambda: fake.sentence(),
         "favourite_movies": lambda: fake.sentence(),
         "user": create_user,
+        "keys_to_ids_list": lambda: {"key": [1, 2, 3]},
     }
 
     set_field_on_create = (
-        'birth_city',
-        'favourite_movies',
+        "birth_city",
+        "favourite_movies",
+        "keys_to_ids_list",
+        # "user_id",
     )
 
     @classmethod

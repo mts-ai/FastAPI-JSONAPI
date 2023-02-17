@@ -1,7 +1,7 @@
 """User Bio schemas module."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List
 
 from fastapi_rest_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -17,8 +17,10 @@ class UserBioBaseSchema(BaseModel):
 
         orm_mode = True
 
+    user_id: str
     birth_city: str
     favourite_movies: str
+    keys_to_ids_list: Dict[str, List[int]] = None
 
 
 class UserBioPatchSchema(UserBioBaseSchema):
