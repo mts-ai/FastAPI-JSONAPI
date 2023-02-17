@@ -415,7 +415,10 @@ class SqlalchemyEngine(BaseDataLayer):
         :params filter_value: the value to filter with
         :return sqlalchemy query: a query from sqlalchemy
         """
-        return select(self.model).where(filter_field == filter_value)
+        query: Select = self.query(view_kwargs)
+        # noinspection PyNoneFunctionAssignment,PyTypeChecker
+        query: Select = query.where(filter_field == filter_value)
+        return query
 
     def query(self, view_kwargs: dict) -> Select:
         """
