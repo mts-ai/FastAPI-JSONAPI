@@ -1,7 +1,7 @@
 """Post schemas module."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fastapi_rest_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -48,7 +48,7 @@ class PostSchema(PostInSchema):
         ),
     )
 
-    comments: list["PostCommentSchema"] = Field(
+    comments: List["PostCommentSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="post_comment",
         ),

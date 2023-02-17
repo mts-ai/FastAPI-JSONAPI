@@ -59,7 +59,7 @@ class ViewBase:
         relationship_info: RelationshipInfo,
         included_object_schema: Type[TypeSchema],
         known_included: Set[Tuple[Union[int, str], str]],
-    ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema],]:
+    ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema]]:
         def prepare_related_db_item(item_from_db: TypeModel) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
             return self.prepare_related_object_data(
                 item_from_db=item_from_db,
@@ -189,6 +189,7 @@ class ViewBase:
     ):
         included_objects = []
 
+        # noinspection Pydantic
         schema_kwargs = dict(
             id=str(item.id),
             attributes=object_schemas.attributes_schema.from_orm(item),
