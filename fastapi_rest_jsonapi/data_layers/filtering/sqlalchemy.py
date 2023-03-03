@@ -32,7 +32,7 @@ def create_filters(model: Type[TypeModel], filter_info: Union[list, dict], schem
     return create_filters_or_sorts(model, filter_info, Node, schema)
 
 
-class Node(object):
+class Node:
     """Helper to recursively create filters with sqlalchemy according to filter querystring parameter"""
 
     def __init__(self, model: Type[TypeModel], filter_: dict, schema: Type[TypeSchema]) -> None:
@@ -66,8 +66,8 @@ class Node(object):
         * operator - your operator, for example: "eq", "in", "ilike_str_array", ...
         """
         try:
-            f = getattr(schema_field, f"_{operator}_sql_filter_")
-        except AttributeError:
+            f = schema_field.field_info.extra[f"_{operator}_sql_filter_"]
+        except KeyError:
             pass
         else:
             return f(
@@ -101,52 +101,53 @@ class Node(object):
         """Create filter for a particular node of the filter tree"""
         if "or" in self.filter_:
             return self._create_filters(type_filter="or")
-        elif "and" in self.filter_:
+        if "and" in self.filter_:
             return self._create_filters(type_filter="and")
-        elif "not" in self.filter_:
+        if "not" in self.filter_:
             filter_, joins = Node(self.model, self.filter_["not"], self.schema).resolve()
             return not_(filter_), joins
+
+        value = self.value
+        operator = self.filter_["op"]
+
+        if isinstance(value, dict):
+            return self._relationship_filtering(value)
+
+        if SPLIT_REL in self.filter_.get("name", ""):
+            value = {
+                "name": SPLIT_REL.join(self.filter_["name"].split(SPLIT_REL)[1:]),
+                "op": operator,
+                "val": value,
+            }
+            return self._relationship_filtering(value)
+
+        schema_field: ModelField = self.schema.__fields__[self.name]
+        if schema_field.sub_fields:
+            # Для случаев когда в схеме тип Union
+            types = [i.type_ for i in schema_field.sub_fields]
         else:
-            value = self.value
+            types = [schema_field.type_]
+        for i_type in types:
+            try:
+                if issubclass(i_type, BaseModel):
+                    value = {
+                        "name": self.name,
+                        "op": operator,
+                        "val": value,
+                    }
+                    return self._relationship_filtering(value)
+            except (TypeError, ValueError):
+                pass
 
-            if isinstance(value, dict):
-                return self._relationship_filtering(value)
-
-            if SPLIT_REL in self.filter_.get("name", ""):
-                value = {
-                    "name": SPLIT_REL.join(self.filter_["name"].split(SPLIT_REL)[1:]),
-                    "op": self.filter_["op"],
-                    "val": value,
-                }
-                return self._relationship_filtering(value)
-
-            schema_field: ModelField = self.schema.__fields__[self.name]
-            if schema_field.sub_fields:
-                # Для случаев когда в схеме тип Union
-                types = [i.type_ for i in schema_field.sub_fields]
-            else:
-                types = [schema_field.type_]
-            for i_type in types:
-                try:
-                    if issubclass(i_type, BaseModel):
-                        value = {
-                            "name": self.name,
-                            "op": self.filter_["op"],
-                            "val": value,
-                        }
-                        return self._relationship_filtering(value)
-                except (TypeError, ValueError):
-                    pass
-
-            return (
-                self.create_filter(
-                    schema_field=schema_field,
-                    model_column=self.column,
-                    operator=self.filter_["op"],
-                    value=value,
-                ),
-                [],
-            )
+        return (
+            self.create_filter(
+                schema_field=schema_field,
+                model_column=self.column,
+                operator=operator,
+                value=value,
+            ),
+            [],
+        )
 
     def _relationship_filtering(self, value):
         alias = aliased(self.related_model)
