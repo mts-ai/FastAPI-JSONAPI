@@ -65,17 +65,6 @@ class Node:
         * value - filtering value
         * operator - your operator, for example: "eq", "in", "ilike_str_array", ...
         """
-        try:
-            f = schema_field.field_info.extra[f"_{operator}_sql_filter_"]
-        except KeyError:
-            pass
-        else:
-            return f(
-                schema_field=schema_field,
-                model_column=model_column,
-                value=value,
-                operator=operator,
-            )
         # Here we have to deserialize and validate fields, that are used in filtering,
         # so the Enum fields are loaded correctly
 
@@ -109,6 +98,16 @@ class Node:
 
         value = self.value
         operator = self.filter_["op"]
+        schema_field: ModelField = self.schema.__fields__[self.name]
+
+        custom_filter = schema_field.field_info.extra.get(f"_{operator}_sql_filter_")
+        if custom_filter:
+            return custom_filter(
+                schema_field=schema_field,
+                model_column=self.column,
+                value=value,
+                operator=operator,
+            )
 
         if isinstance(value, dict):
             return self._relationship_filtering(value)
@@ -121,7 +120,6 @@ class Node:
             }
             return self._relationship_filtering(value)
 
-        schema_field: ModelField = self.schema.__fields__[self.name]
         if schema_field.sub_fields:
             # Для случаев когда в схеме тип Union
             types = [i.type_ for i in schema_field.sub_fields]
