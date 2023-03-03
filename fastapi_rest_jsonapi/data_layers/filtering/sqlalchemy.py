@@ -66,7 +66,7 @@ class Node(object):
         * operator - your operator, for example: "eq", "in", "ilike_str_array", ...
         """
         try:
-            f = getattr(schema_field, f'_{operator}_sql_filter_')
+            f = getattr(schema_field, f"_{operator}_sql_filter_")
         except AttributeError:
             pass
         else:
@@ -99,12 +99,12 @@ class Node(object):
 
     def resolve(self) -> FilterAndJoins:
         """Create filter for a particular node of the filter tree"""
-        if 'or' in self.filter_:
-            return self._create_filters(type_filter='or')
-        elif 'and' in self.filter_:
-            return self._create_filters(type_filter='and')
-        elif 'not' in self.filter_:
-            filter_, joins = Node(self.model, self.filter_['not'], self.schema).resolve()
+        if "or" in self.filter_:
+            return self._create_filters(type_filter="or")
+        elif "and" in self.filter_:
+            return self._create_filters(type_filter="and")
+        elif "not" in self.filter_:
+            filter_, joins = Node(self.model, self.filter_["not"], self.schema).resolve()
             return not_(filter_), joins
         else:
             value = self.value
@@ -112,11 +112,11 @@ class Node(object):
             if isinstance(value, dict):
                 return self._relationship_filtering(value)
 
-            if SPLIT_REL in self.filter_.get('name', ''):
+            if SPLIT_REL in self.filter_.get("name", ""):
                 value = {
-                    'name': SPLIT_REL.join(self.filter_['name'].split(SPLIT_REL)[1:]),
-                    'op': self.filter_['op'],
-                    'val': value,
+                    "name": SPLIT_REL.join(self.filter_["name"].split(SPLIT_REL)[1:]),
+                    "op": self.filter_["op"],
+                    "val": value,
                 }
                 return self._relationship_filtering(value)
 
@@ -130,20 +130,23 @@ class Node(object):
                 try:
                     if issubclass(i_type, BaseModel):
                         value = {
-                            'name': self.name,
-                            'op': self.filter_['op'],
-                            'val': value,
+                            "name": self.name,
+                            "op": self.filter_["op"],
+                            "val": value,
                         }
                         return self._relationship_filtering(value)
                 except (TypeError, ValueError):
                     pass
 
-            return self.create_filter(
-                schema_field=schema_field,
-                model_column=self.column,
-                operator=self.filter_['op'],
-                value=value,
-            ), []
+            return (
+                self.create_filter(
+                    schema_field=schema_field,
+                    model_column=self.column,
+                    operator=self.filter_["op"],
+                    value=value,
+                ),
+                [],
+            )
 
     def _relationship_filtering(self, value):
         alias = aliased(self.related_model)
@@ -163,7 +166,7 @@ class Node(object):
         joins = []
         for i_node in nodes:
             joins.extend(i_node[1])
-        op = and_ if type_filter == 'and' else or_
+        op = and_ if type_filter == "and" else or_
         return op(*[i_node[0] for i_node in nodes]), joins
 
     @property
@@ -172,7 +175,7 @@ class Node(object):
 
         :return str: the name of the field to filter on
         """
-        name = self.filter_.get('name')
+        name = self.filter_.get("name")
 
         if name is None:
             raise InvalidFilters("Can't find name of a filter")
@@ -192,14 +195,13 @@ class Node(object):
         :return str: the operator to use in the filter
         """
         try:
-            return self.filter_['op']
+            return self.filter_["op"]
         except KeyError:
             raise InvalidFilters("Can't find op of a filter")
 
     @property
     def column(self) -> InstrumentedAttribute:
-        """Get the column object
-        """
+        """Get the column object"""
         field = self.name
 
         model_field = get_model_field(self.schema, field)
@@ -215,7 +217,7 @@ class Node(object):
 
         :return callable: a callable to make operation on a column
         """
-        operators = (self.op, self.op + '_', '__' + self.op + '__')
+        operators = (self.op, self.op + "_", "__" + self.op + "__")
 
         for op in operators:
             if hasattr(self.column, op):
@@ -229,18 +231,18 @@ class Node(object):
 
         :return: the value to filter on
         """
-        if self.filter_.get('field') is not None:
+        if self.filter_.get("field") is not None:
             try:
-                result = getattr(self.model, self.filter_['field'])
+                result = getattr(self.model, self.filter_["field"])
             except AttributeError:
-                raise InvalidFilters("{} has no attribute {}".format(self.model.__name__, self.filter_['field']))
+                raise InvalidFilters("{} has no attribute {}".format(self.model.__name__, self.filter_["field"]))
             else:
                 return result
         else:
-            if 'val' not in self.filter_:
+            if "val" not in self.filter_:
                 raise InvalidFilters("Can't find value or field in a filter")
 
-            return self.filter_['val']
+            return self.filter_["val"]
 
     @property
     def related_model(self):
@@ -267,4 +269,3 @@ class Node(object):
             raise InvalidFilters("{} has no relationship attribute {}".format(self.schema.__name__, relationship_field))
 
         return self.schema.__fields__[relationship_field].type_
-

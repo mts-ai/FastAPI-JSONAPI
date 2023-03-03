@@ -65,7 +65,7 @@ class Node(object):
         * model_column - sqlalchemy column instance
         """
         try:
-            f = getattr(schema_field, f'_{order}_sql_sort_')
+            f = getattr(schema_field, f"_{order}_sql_sort_")
         except AttributeError:
             pass
         else:
@@ -80,15 +80,12 @@ class Node(object):
         Create sort for a particular node of the sort tree.
         """
 
-        field = self.sort_.get('field', '')
+        field = self.sort_.get("field", "")
         if not hasattr(self.model, field) and SPLIT_REL not in field:
             raise InvalidSort("{} has no attribute {}".format(self.model.__name__, field))
 
         if SPLIT_REL in field:
-            value = {
-                'field': SPLIT_REL.join(field.split(SPLIT_REL)[1:]),
-                'order': self.sort_['order']
-            }
+            value = {"field": SPLIT_REL.join(field.split(SPLIT_REL)[1:]), "order": self.sort_["order"]}
             alias = aliased(self.related_model)
             joins = [[alias, self.column]]
             node = Node(alias, value, self.related_schema)
@@ -96,11 +93,14 @@ class Node(object):
             joins.extend(new_joins)
             return filters, joins
 
-        return self.create_sort(
-            schema_field=self.schema.__fields__[self.name].type_,
-            model_column=self.column,
-            order=self.sort_['order']
-        ), []
+        return (
+            self.create_sort(
+                schema_field=self.schema.__fields__[self.name].type_,
+                model_column=self.column,
+                order=self.sort_["order"],
+            ),
+            [],
+        )
 
     @property
     def name(self) -> str:
@@ -108,7 +108,7 @@ class Node(object):
 
         :return str: the name of the sort to sort on
         """
-        name = self.sort_.get('field')
+        name = self.sort_.get("field")
 
         if name is None:
             raise InvalidFilters("Can't find name of a sort")
