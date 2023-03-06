@@ -76,7 +76,7 @@ class UserDetail:
 class UserList:
     @classmethod
     async def get(cls, query_params: QueryStringManager, session: AsyncSession = Depends(Connector.get_session)) -> Union[Select, JSONAPIResultListSchema]:
-        user_query = select(User).order_by(desc(User.id))
+        user_query = select(User)
         dl = SqlalchemyEngine(query=user_query, schema=UserSchema, model=User, session=session)
         count, users_db = await dl.get_collection(qs=query_params)
         total_pages = count // query_params.pagination.size + (count % query_params.pagination.size and 1)
