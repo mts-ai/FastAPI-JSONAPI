@@ -324,7 +324,7 @@ class SqlalchemyEngine(BaseDataLayer):
         :return: the sorted query.
         """
         if sort_info:
-            sorts, joins = create_sorts(self.model, sort_info, self.resource if hasattr(self, "resource") else None)
+            sorts, joins = create_sorts(self.model, sort_info, self.schema)
             for i_join in joins:
                 query = query.join(*i_join)
             for i_sort in sorts:
