@@ -247,6 +247,10 @@ def get_list_jsonapi(
                 '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
                 '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
             ),
+            sort: Optional[str] = Query(
+                None, alias='sort', 
+                description="[Sorting docs](https://flask-combo-jsonapi.readthedocs.io/en/latest/sorting.html)"
+            ),
             **kwargs,
         ):
             query_params = QueryStringManager(request=request, schema=schema)
