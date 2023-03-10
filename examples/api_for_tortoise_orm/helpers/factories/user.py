@@ -12,7 +12,7 @@ from .meta_base import (
     BaseFactory,
     FactoryUseMode,
 )
-from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
 from ...models.tortoise import User
 
 

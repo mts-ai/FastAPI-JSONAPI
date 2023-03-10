@@ -21,22 +21,22 @@ from pydantic import (
 )
 
 
-from fastapi_rest_jsonapi.exceptions import (
+from fastapi_jsonapi.exceptions import (
     BadRequest,
     InvalidField,
     InvalidFilters,
     InvalidInclude,
     InvalidSort,
 )
-from fastapi_rest_jsonapi.schema import (
+from fastapi_jsonapi.schema import (
     get_model_field,
     get_relationships,
     get_schema_from_type,
 )
-from fastapi_rest_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.splitter import SPLIT_REL
 
 if TYPE_CHECKING:
-    from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema
+    from fastapi_jsonapi.data_layers.data_typing import TypeSchema
 
 
 class PaginationQueryStringManager(BaseModel):

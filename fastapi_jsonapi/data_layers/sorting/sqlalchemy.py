@@ -5,11 +5,11 @@ from pydantic.fields import ModelField
 from sqlalchemy.orm import aliased, InstrumentedAttribute, DeclarativeMeta
 from sqlalchemy.sql.elements import BinaryExpression
 
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
-from fastapi_rest_jsonapi.data_layers.shared import create_filters_or_sorts
-from fastapi_rest_jsonapi.exceptions import InvalidFilters, InvalidSort
-from fastapi_rest_jsonapi.schema import get_relationships, get_model_field
-from fastapi_rest_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
+from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
+from fastapi_jsonapi.exceptions import InvalidFilters, InvalidSort
+from fastapi_jsonapi.schema import get_relationships, get_model_field
+from fastapi_jsonapi.splitter import SPLIT_REL
 
 
 Sort = BinaryExpression

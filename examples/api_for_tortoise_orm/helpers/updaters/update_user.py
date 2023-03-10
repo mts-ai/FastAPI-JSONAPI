@@ -7,7 +7,7 @@ from typing import (
     Union,
 )
 
-from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
 from .exceptions import ErrorUpdateObject
 from .meta_base import (
     BaseUpdater,

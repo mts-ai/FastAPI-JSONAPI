@@ -17,8 +17,8 @@ from fastapi import FastAPI
 from tortoise import Tortoise
 
 from examples.api_for_tortoise_orm.urls import add_routes
-from fastapi_rest_jsonapi.schema import collect_app_orm_schemas
-from fastapi_rest_jsonapi.openapi import custom_openapi
+from fastapi_jsonapi.schema import collect_app_orm_schemas
+from fastapi_jsonapi.openapi import custom_openapi
 
 
 async def tortoise_init() -> None:

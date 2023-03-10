@@ -10,23 +10,23 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.sql import Select
 
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
-from fastapi_rest_jsonapi.data_layers.filtering.sqlalchemy import create_filters
-from fastapi_rest_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
-from fastapi_rest_jsonapi.exceptions import (
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.data_layers.base import BaseDataLayer
+from fastapi_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
+from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
+from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
+from fastapi_jsonapi.exceptions import (
     RelationNotFound,
     RelatedObjectNotFound,
     ObjectNotFound,
     InvalidInclude,
 )
-from fastapi_rest_jsonapi.querystring import PaginationQueryStringManager
-from fastapi_rest_jsonapi.schema import (
+from fastapi_jsonapi.querystring import PaginationQueryStringManager
+from fastapi_jsonapi.schema import (
     get_model_field,
     get_related_schema,
 )
-from fastapi_rest_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.splitter import SPLIT_REL
 
 
 class SqlalchemyEngine(BaseDataLayer):

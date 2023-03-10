@@ -6,7 +6,7 @@ This framework is designed to quickly build REST APIs and fit the complexity
 of real life projects with legacy data and multiple data storages.
 
 ## Architecture
-![img.png](img.png)
+![docs/img/schema.png](docs/img/schema.png)
 
 ## Install
 ```bash
@@ -32,13 +32,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import Select
 
-from fastapi_rest_jsonapi import RoutersJSONAPI
-from fastapi_rest_jsonapi import SqlalchemyEngine
-from fastapi_rest_jsonapi.data_layers.orm import DBORMType
-from fastapi_rest_jsonapi.openapi import custom_openapi
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema
-from fastapi_rest_jsonapi.schema import collect_app_orm_schemas
+from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi.data_layers.orm import DBORMType
+from fastapi_jsonapi.openapi import custom_openapi
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import JSONAPIResultListSchema
+from fastapi_jsonapi.schema import collect_app_orm_schemas
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent

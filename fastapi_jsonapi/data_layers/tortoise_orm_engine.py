@@ -3,11 +3,11 @@ from typing import Any, Iterable, Type, Optional, Tuple
 
 from tortoise.queryset import QuerySet
 
-from fastapi_rest_jsonapi.querystring import QueryStringManager, PaginationQueryStringManager
-from fastapi_rest_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
-from fastapi_rest_jsonapi.data_layers.filtering.tortoise_orm import FilterTortoiseORM
-from fastapi_rest_jsonapi.data_layers.sorting.tortoise_orm import SortTortoiseORM
+from fastapi_jsonapi.querystring import QueryStringManager, PaginationQueryStringManager
+from fastapi_jsonapi.data_layers.base import BaseDataLayer
+from fastapi_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
+from fastapi_jsonapi.data_layers.filtering.tortoise_orm import FilterTortoiseORM
+from fastapi_jsonapi.data_layers.sorting.tortoise_orm import SortTortoiseORM
 
 
 class TortoiseORMEngine(BaseDataLayer):

@@ -12,16 +12,14 @@ from pydantic.fields import ModelField
 from tortoise.expressions import Q
 from tortoise.queryset import QuerySet
 
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeQuery, TypeModel
-from fastapi_rest_jsonapi.data_layers.fields.enum import Enum
-from fastapi_rest_jsonapi.data_layers.filtering.tortoise_operation import prepare_field_name_for_filtering
-from fastapi_rest_jsonapi.data_layers.orm import (
-    DBORMOperandType,
-)
-from fastapi_rest_jsonapi.exceptions import InvalidFilters
-from fastapi_rest_jsonapi.exceptions import QueryError
-from fastapi_rest_jsonapi.jsonapi_typing import Filters
-from fastapi_rest_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.data_layers.data_typing import TypeQuery, TypeModel
+from fastapi_jsonapi.data_layers.fields.enum import Enum
+from fastapi_jsonapi.data_layers.filtering.tortoise_operation import prepare_field_name_for_filtering
+from fastapi_jsonapi.data_layers.orm import DBORMOperandType
+from fastapi_jsonapi.exceptions import InvalidFilters
+from fastapi_jsonapi.exceptions import QueryError
+from fastapi_jsonapi.jsonapi_typing import Filters
+from fastapi_jsonapi.querystring import QueryStringManager
 
 
 def prepare_filter_pair(field: Type[ModelField], field_name: str, type_op: str, value: Any) -> Tuple:

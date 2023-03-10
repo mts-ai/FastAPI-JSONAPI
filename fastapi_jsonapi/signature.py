@@ -21,7 +21,7 @@ from fastapi import Query
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from fastapi_rest_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.querystring import QueryStringManager
 
 
 def update_signature(

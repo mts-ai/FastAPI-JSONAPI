@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tortoise import models
 from tortoise.exceptions import DoesNotExist
 
-from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
 
 from .exceptions import (
     ExceptionBeforeUpdate,

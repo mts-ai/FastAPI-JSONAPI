@@ -17,13 +17,13 @@ from starlette import status
 from starlette.requests import Request
 from starlette.responses import Response
 
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel
-from fastapi_rest_jsonapi.data_layers.orm import DBORMType
-from fastapi_rest_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyEngine
-from fastapi_rest_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
-from fastapi_rest_jsonapi.exceptions.json_api import UnsupportedFeatureORM
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.signature import update_signature
+from fastapi_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_jsonapi.data_layers.orm import DBORMType
+from fastapi_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyEngine
+from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
+from fastapi_jsonapi.exceptions.json_api import UnsupportedFeatureORM
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.signature import update_signature
 
 
 def get_detail_jsonapi(
@@ -163,7 +163,7 @@ def delete_list_jsonapi(
             filters_list: Optional[str] = Query(
                 None,
                 alias="filter",
-                description="[Filtering docs](https://flask-combo-jsonapi.readthedocs.io/en/latest/filtering.html)"
+                description="[Filtering docs](https://fastapi-jsonapi.readthedocs.io/en/latest/filtering.html)"
                             "\nExamples:\n* filter for timestamp interval: "
                             '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
                             '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
@@ -242,14 +242,14 @@ def get_list_jsonapi(
             filters_list: Optional[str] = Query(
                 None,
                 alias="filter",
-                description="[Filtering docs](https://flask-combo-jsonapi.readthedocs.io/en/latest/filtering.html)"
+                description="[Filtering docs](https://fastapi-jsonapi.readthedocs.io/en/latest/filtering.html)"
                 "\nExamples:\n* filter for timestamp interval: "
                 '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
                 '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
             ),
             sort: Optional[str] = Query(
                 None, alias='sort', 
-                description="[Sorting docs](https://flask-combo-jsonapi.readthedocs.io/en/latest/sorting.html)"
+                description="[Sorting docs](https://fastapi-jsonapi.readthedocs.io/en/latest/sorting.html)"
             ),
             **kwargs,
         ):

@@ -1,9 +1,9 @@
 from typing import Type, Union, Tuple, TYPE_CHECKING
 
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 
 if TYPE_CHECKING:
-    from fastapi_rest_jsonapi.data_layers.filtering.sqlalchemy import Node as NodeSQLAlchemy
+    from fastapi_jsonapi.data_layers.filtering.sqlalchemy import Node as NodeSQLAlchemy
 
 
 def create_filters_or_sorts(

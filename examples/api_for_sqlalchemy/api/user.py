@@ -5,7 +5,7 @@ from typing import (
 )
 
 from fastapi import Depends
-from sqlalchemy import select, desc
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 from tortoise.exceptions import DoesNotExist
@@ -18,13 +18,13 @@ from examples.api_for_sqlalchemy.helpers.updaters.update_user import UpdateUser,
 from examples.api_for_sqlalchemy.models.pydantic import UserSchema, UserPatchSchema
 from examples.api_for_sqlalchemy.models.pydantic.user import UserInSchema
 from examples.api_for_sqlalchemy.models.sqlalchemy import User
-from fastapi_rest_jsonapi import SqlalchemyEngine
-from fastapi_rest_jsonapi.exceptions import (
+from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import JSONAPIResultListSchema
 
 
 class UserDetail:

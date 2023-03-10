@@ -28,7 +28,7 @@ setup(
     version=__version__,
     description="FastAPI extension to create REST web api according to JSON:API 1.0 specification "
                 "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",
-    url="https://git.mts.ai/inner-source/fastapi-rest-jsonapi",
+    url="https://github.com/mts-ai/FastAPI-JSONAPI",
     author="Team MTS AI",
     author_email="a.nekrasov@mts.ru",
     license="MIT",

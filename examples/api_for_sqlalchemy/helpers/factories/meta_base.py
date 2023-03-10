@@ -15,13 +15,13 @@ from typing import (
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi_rest_jsonapi.data_layers.fields.enum import Enum
+from fastapi_jsonapi.data_layers.fields.enum import Enum
 from .exceptions import (
     ExceptionAfterCommit,
     ExceptionBeforeCreate,
     ExceptionNotFactory,
 )
-from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
 from ...extensions.sqlalchemy import Base
 
 TYPE_VAR = TypeVar("TYPE_VAR")

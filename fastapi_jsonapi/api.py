@@ -13,17 +13,17 @@ import pydantic
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeModel
-from fastapi_rest_jsonapi.data_layers.orm import DBORMType
-from fastapi_rest_jsonapi.exceptions import ExceptionResponseSchema
-from fastapi_rest_jsonapi.methods import (
+from fastapi_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_jsonapi.data_layers.orm import DBORMType
+from fastapi_jsonapi.exceptions import ExceptionResponseSchema
+from fastapi_jsonapi.methods import (
     delete_detail_jsonapi,
     get_detail_jsonapi,
     get_list_jsonapi,
     patch_detail_jsonapi,
     post_list_jsonapi, delete_list_jsonapi,
 )
-from fastapi_rest_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPISchema, JSONAPIObjectSchema, \
+from fastapi_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPISchema, JSONAPIObjectSchema, \
     JSONAPIResultDetailSchema
 
 JSON_API_RESPONSE_TYPE = Optional[Dict[Union[int, str], Dict[str, Any]]]

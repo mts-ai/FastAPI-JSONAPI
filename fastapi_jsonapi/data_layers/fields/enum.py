@@ -1,6 +1,6 @@
 """Base enum module."""
 
-from fastapi_rest_jsonapi.data_layers.fields.mixins import (
+from fastapi_jsonapi.data_layers.fields.mixins import (
     MixinEnum,
     MixinIntEnum,
 )

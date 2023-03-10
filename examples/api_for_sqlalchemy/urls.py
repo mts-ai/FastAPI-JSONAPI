@@ -11,8 +11,8 @@ from fastapi import (
     FastAPI,
 )
 
-from fastapi_rest_jsonapi import RoutersJSONAPI
-from fastapi_rest_jsonapi.data_layers.orm import DBORMType
+from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi.data_layers.orm import DBORMType
 from .models.pydantic import UserPatchSchema
 from .models.pydantic.user import (
     UserSchema, UserInSchema,
