@@ -24,7 +24,7 @@ EXTRAS_REQUIRE = {
 EXTRAS_REQUIRE.update(extra_packages)
 
 setup(
-    name="FastAPI-REST-JSONAPI",
+    name="FastAPI-JSONAPI",
     version=__version__,
     description="FastAPI extension to create REST web api according to JSON:API 1.0 specification "
                 "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",

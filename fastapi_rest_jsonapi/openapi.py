@@ -18,7 +18,7 @@ def custom_openapi(app: FastAPI, title: Optional[str] = None) -> None:
         if app.openapi_schema:
             return app.openapi_schema
         openapi_schema = get_openapi(
-            title=title or "FastAPI-REST-JSONAPI",
+            title=title or "FastAPI-JSONAPI",
             version="2.5.0",
             description="",
             routes=app.routes,

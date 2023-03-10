@@ -1,6 +1,6 @@
-# FastAPI-REST-JSONAPI
+# FastAPI-JSONAPI
 
-FastAPI-REST-JSONAPI is a FastAPI extension for building REST APIs.
+FastAPI-JSONAPI is a FastAPI extension for building REST APIs.
 Implementation of a strong specification [JSONAPI 1.0](http://jsonapi.org/).
 This framework is designed to quickly build REST APIs and fit the complexity
 of real life projects with legacy data and multiple data storages.
@@ -8,7 +8,7 @@ of real life projects with legacy data and multiple data storages.
 
 ## Install
 ```bash
-pip install FastAPI-REST-JSONAPI
+pip install FastAPI-JSONAPI
 ```
 
 ## A minimal API
