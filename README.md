@@ -9,6 +9,7 @@ of real life projects with legacy data and multiple data storages.
 ![docs/img/schema.png](docs/img/schema.png)
 
 ## Install
+
 ```bash
 pip install FastAPI-JSONAPI
 ```

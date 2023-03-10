@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 requirements_filepath = os.path.join(os.path.dirname(__name__), "requirements.txt")
@@ -24,11 +24,22 @@ EXTRAS_REQUIRE = {
 }
 EXTRAS_REQUIRE.update(extra_packages)
 
+
+def get_description():
+    """
+    Read full description from 'README.md'
+    """
+    with open('README.md', 'r', encoding='utf-8') as f:
+        return f.read()
+
+
 setup(
     name="FastAPI-JSONAPI",
     version=__version__,
     description="FastAPI extension to create REST web api according to JSON:API 1.0 specification "
                 "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",
+    long_description=get_description(),
+    long_description_content_type='text/markdown',
     url="https://github.com/mts-ai/FastAPI-JSONAPI",
     author="Team MTS AI",
     author_email="a.nekrasov@mts.ru",
@@ -41,13 +52,11 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Topic :: Utilities",
     ],
-    keywords="pycore mts digital",
+    keywords="fastapi jsonapi mts ai",
     packages=find_packages(exclude=["tests"]),
     zip_safe=False,
     platforms="any",
     install_requires=install_requires,
     extras_require=EXTRAS_REQUIRE,
     tests_require=["pytest"],
-    long_description=readme_filepath,
-    long_description_content_type='text/markdown',
 )
