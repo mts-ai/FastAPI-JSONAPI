@@ -5,6 +5,8 @@ Implementation of a strong specification [JSONAPI 1.0](http://jsonapi.org/).
 This framework is designed to quickly build REST APIs and fit the complexity
 of real life projects with legacy data and multiple data storages.
 
+## Architecture
+![img.png](img.png)
 
 ## Install
 ```bash
