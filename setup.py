@@ -1,10 +1,11 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 requirements_filepath = os.path.join(os.path.dirname(__name__), "requirements.txt")
+readme_filepath = os.path.join(os.path.dirname(__name__), "README.md")
 with open(requirements_filepath) as fp:
     install_requires = fp.read()
 
@@ -47,4 +48,6 @@ setup(
     install_requires=install_requires,
     extras_require=EXTRAS_REQUIRE,
     tests_require=["pytest"],
+    long_description=readme_filepath,
+    long_description_content_type='text/markdown',
 )
