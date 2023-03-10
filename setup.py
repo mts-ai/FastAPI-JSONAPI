@@ -11,6 +11,8 @@ with open(requirements_filepath) as fp:
 extra_packages = {
     "tests": ["pytest"],
     "docs": ["sphinx"],
+    "tortoise-orm": ["tortoise-orm>=0.19.2"],
+    "sqlalchemy": ["SQLAlchemy>=1.4.39,<2.0.0"],
 }
 all_packages = []
 for value in extra_packages.values():

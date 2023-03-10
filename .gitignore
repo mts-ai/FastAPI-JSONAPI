@@ -7,3 +7,4 @@
 /db.sqlite3-wal
 /.idea
 /examples/api_for_sqlalchemy/db.sqlite3
+/dist/

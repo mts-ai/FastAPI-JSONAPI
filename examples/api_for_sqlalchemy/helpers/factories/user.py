@@ -44,6 +44,7 @@ class UserFactory(BaseFactory):
         cls._set_first_name(data_for_create_user, model_kwargs)
         cls._set_last_name(data_for_create_user, model_kwargs)
         cls._set_status(data_for_create_user, model_kwargs)
+        cls._set_age(data_for_create_user, model_kwargs)
         return data_for_create_user
 
     @classmethod
@@ -59,6 +60,13 @@ class UserFactory(BaseFactory):
         Set first name.
         """
         data_for_create_user["last_name"] = kwargs.get("last_name", "Last name")
+
+    @classmethod
+    def _set_age(cls, data_for_create_user: Dict, kwargs: Dict):
+        """
+        Set first name.
+        """
+        data_for_create_user["age"] = kwargs.get("age", 0)
 
     @classmethod
     def _set_status(cls, data_for_create_user: Dict, kwargs: Dict):
