@@ -1,0 +1,13 @@
+{
+  "method": "GET",
+  "url": "http://localhost:5000/persons",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ]
+}

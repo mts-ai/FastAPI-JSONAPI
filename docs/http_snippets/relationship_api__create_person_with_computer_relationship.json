@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:5000/persons?include=computers",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"data\": {\n    \"type\": \"person\",\n    \"attributes\": {\n      \"name\": \"John\",\n      \"email\": \"john@exmple.com\"\n    },\n    \"relationships\": {\n      \"computers\": {\n        \"data\": [\n          {\n            \"type\": \"computer\",\n            \"id\": \"2\"\n          }\n        ]\n      }\n    }\n  }\n}"
+  }
+}

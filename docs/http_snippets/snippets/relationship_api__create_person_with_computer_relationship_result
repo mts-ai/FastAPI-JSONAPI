@@ -1,0 +1,56 @@
+HTTP/1.1 201 Created
+Content-Type: application/vnd.api+json
+
+{
+  "data": {
+    "attributes": {
+      "display_name": "JOHN <john@exmple.com>",
+      "name": "John"
+    },
+    "id": "1",
+    "links": {
+      "self": "/persons/1"
+    },
+    "relationships": {
+      "computers": {
+        "data": [
+          {
+            "id": "2",
+            "type": "computer"
+          }
+        ],
+        "links": {
+          "related": "/persons/1/computers",
+          "self": "/persons/1/relationships/computers"
+        }
+      }
+    },
+    "type": "person"
+  },
+  "included": [
+    {
+      "attributes": {
+        "serial": "Halo"
+      },
+      "id": "2",
+      "links": {
+        "self": "/computers/2"
+      },
+      "relationships": {
+        "owner": {
+          "links": {
+            "related": "/computers/2/owner",
+            "self": "/computers/2/relationships/owner"
+          }
+        }
+      },
+      "type": "computer"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "self": "/persons/1"
+  }
+}

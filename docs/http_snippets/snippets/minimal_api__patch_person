@@ -1,0 +1,12 @@
+PATCH /persons/1 HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "data": {
+    "id": 1,
+    "type": "person",
+    "attributes": {
+        "name": "Sam"
+    }
+  }
+}
