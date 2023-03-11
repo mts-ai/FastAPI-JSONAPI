@@ -109,15 +109,15 @@ class Node:
                 operator=operator,
             )
 
-        if isinstance(value, dict):
-            return self._relationship_filtering(value)
-
         if SPLIT_REL in self.filter_.get("name", ""):
             value = {
                 "name": SPLIT_REL.join(self.filter_["name"].split(SPLIT_REL)[1:]),
                 "op": operator,
                 "val": value,
             }
+            return self._relationship_filtering(value)
+
+        if isinstance(value, dict):
             return self._relationship_filtering(value)
 
         if schema_field.sub_fields:
