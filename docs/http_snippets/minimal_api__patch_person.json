@@ -1,0 +1,17 @@
+{
+  "method": "PATCH",
+  "url": "http://localhost:5000/persons/1",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"data\": {\n    \"id\": 1,\n    \"type\": \"person\",\n    \"attributes\": {\n        \"name\": \"Sam\"\n    }\n  }\n}"
+  }
+}

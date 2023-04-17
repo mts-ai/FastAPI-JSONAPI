@@ -1,0 +1,34 @@
+HTTP/1.1 200 OK
+Content-Type: application/vnd.api+json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "serial": "Amstrad"
+      },
+      "id": "1",
+      "links": {
+        "self": "/computers/1"
+      },
+      "relationships": {
+        "owner": {
+          "links": {
+            "related": "/computers/1/owner",
+            "self": "/computers/1/relationships/owner"
+          }
+        }
+      },
+      "type": "computer"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "self": "http://localhost:5000/computers"
+  },
+  "meta": {
+    "count": 1
+  }
+}

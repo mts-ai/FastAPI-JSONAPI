@@ -1,0 +1,6 @@
+SQLAlchemy>=1.4.39,<2.0.0
+pydantic>=1.9.1
+fastapi>=0.79.0
+uvicorn>=0.18.2
+simplejson>=3.17.6
+tortoise-orm>=0.19.2

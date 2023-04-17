@@ -5,7 +5,7 @@ from typing import (
 )
 
 from fastapi import Depends
-from sqlalchemy import select, desc
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
@@ -17,15 +17,15 @@ from examples.api_for_sqlalchemy.helpers.updaters.update_user import UpdateUser,
 from examples.api_for_sqlalchemy.models.schemas import UserSchema, UserPatchSchema
 from examples.api_for_sqlalchemy.models.schemas.user import UserInSchema
 from examples.api_for_sqlalchemy.models import User
-from fastapi_rest_jsonapi import SqlalchemyEngine
-from fastapi_rest_jsonapi.exceptions import (
+from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultDetailSchema
-from fastapi_rest_jsonapi.views.detail_view import DetailViewBase
-from fastapi_rest_jsonapi.views.list_view import ListViewBase
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultDetailSchema
+from fastapi_jsonapi.views.detail_view import DetailViewBase
+from fastapi_jsonapi.views.list_view import ListViewBase
 
 
 class UserDetail(DetailViewBase):

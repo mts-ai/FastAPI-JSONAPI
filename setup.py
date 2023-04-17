@@ -1,16 +1,19 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = "0.1.1"
+__version__ = "0.3.2"
 
 
 requirements_filepath = os.path.join(os.path.dirname(__name__), "requirements.txt")
+readme_filepath = os.path.join(os.path.dirname(__name__), "README.md")
 with open(requirements_filepath) as fp:
     install_requires = fp.read()
 
 extra_packages = {
     "tests": ["pytest"],
     "docs": ["sphinx"],
+    "tortoise-orm": ["tortoise-orm>=0.19.2"],
+    "sqlalchemy": ["SQLAlchemy>=1.4.39,<2.0.0"],
 }
 all_packages = []
 for value in extra_packages.values():
@@ -21,12 +24,23 @@ EXTRAS_REQUIRE = {
 }
 EXTRAS_REQUIRE.update(extra_packages)
 
+
+def get_description():
+    """
+    Read full description from 'README.md'
+    """
+    with open('README.md', 'r', encoding='utf-8') as f:
+        return f.read()
+
+
 setup(
-    name="FastAPI-REST-JSONAPI",
+    name="FastAPI-JSONAPI",
     version=__version__,
     description="FastAPI extension to create REST web api according to JSON:API 1.0 specification "
                 "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",
-    url="https://git.mts.ai/inner-source/fastapi-rest-jsonapi",
+    long_description=get_description(),
+    long_description_content_type='text/markdown',
+    url="https://github.com/mts-ai/FastAPI-JSONAPI",
     author="Team MTS AI",
     author_email="a.nekrasov@mts.ru",
     license="MIT",
@@ -38,7 +52,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Topic :: Utilities",
     ],
-    keywords="pycore mts digital",
+    keywords="fastapi jsonapi mts ai",
     packages=find_packages(exclude=["tests"]),
     zip_safe=False,
     platforms="any",

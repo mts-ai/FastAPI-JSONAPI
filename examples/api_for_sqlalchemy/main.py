@@ -20,8 +20,8 @@ sys.path.append(str(PROJECT_DIR))
 import uvicorn
 from fastapi import FastAPI
 
-from fastapi_rest_jsonapi.schema import collect_app_orm_schemas
-# from fastapi_rest_jsonapi.openapi import custom_openapi
+from fastapi_jsonapi.schema import collect_app_orm_schemas
+# from fastapi_jsonapi.openapi import custom_openapi
 
 from examples.api_for_sqlalchemy.urls import add_routes
 from examples.api_for_sqlalchemy import config

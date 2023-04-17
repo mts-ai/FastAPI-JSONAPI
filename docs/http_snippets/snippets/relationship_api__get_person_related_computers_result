@@ -1,0 +1,55 @@
+HTTP/1.1 200 OK
+Content-Type: application/vnd.api+json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "serial": "Nestor"
+      },
+      "id": "3",
+      "links": {
+        "self": "/computers/3"
+      },
+      "relationships": {
+        "owner": {
+          "links": {
+            "related": "/computers/3/owner",
+            "self": "/computers/3/relationships/owner"
+          }
+        }
+      },
+      "type": "computer"
+    },
+    {
+      "attributes": {
+        "serial": "Commodore"
+      },
+      "id": "4",
+      "links": {
+        "self": "/computers/4"
+      },
+      "relationships": {
+        "owner": {
+          "links": {
+            "related": "/computers/4/owner",
+            "self": "/computers/4/relationships/owner"
+          }
+        }
+      },
+      "type": "computer"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "first": "http://localhost:5000/computers",
+    "last": "http://localhost:5000/computers?page%5Bnumber%5D=2",
+    "next": "http://localhost:5000/computers?page%5Bnumber%5D=2",
+    "self": "http://localhost:5000/computers"
+  },
+  "meta": {
+    "count": 2
+  }
+}

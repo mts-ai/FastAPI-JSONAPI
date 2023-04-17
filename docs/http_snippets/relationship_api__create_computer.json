@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:5000/computers",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"data\": {\n    \"type\": \"computer\",\n    \"attributes\": {\n      \"serial\": \"Amstrad\"\n    }\n  }\n}"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "method": "PATCH",
+  "url": "http://localhost:5000/computers/1",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"data\": {\n    \"type\": \"computer\",\n    \"id\": \"1\",\n    \"attributes\": {\n      \"serial\": \"New Amstrad\"\n    }\n  }\n}"
+  }
+}

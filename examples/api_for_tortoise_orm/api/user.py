@@ -14,13 +14,13 @@ from examples.api_for_tortoise_orm.helpers.updaters.update_user import UpdateUse
 from examples.api_for_tortoise_orm.models.pydantic import UserSchema, UserPatchSchema
 from examples.api_for_tortoise_orm.models.pydantic.user import UserInSchema
 from examples.api_for_tortoise_orm.models.tortoise import User
-from fastapi_rest_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
-from fastapi_rest_jsonapi.exceptions import (
+from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
+from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import JSONAPIResultListSchema
 
 
 class UserDetail:

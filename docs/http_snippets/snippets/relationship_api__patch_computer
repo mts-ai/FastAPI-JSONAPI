@@ -1,0 +1,12 @@
+PATCH /computers/1 HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "data": {
+    "type": "computer",
+    "id": "1",
+    "attributes": {
+      "serial": "New Amstrad"
+    }
+  }
+}

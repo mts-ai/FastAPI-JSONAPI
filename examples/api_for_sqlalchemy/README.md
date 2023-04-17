@@ -2,7 +2,7 @@
 
 ### Start app
 ```shell
-# in dir fastapi-rest-jsonapi
+# in dir fastapi-jsonapi
 
 export PYTHOPATH="${PYTHONPATH}:./" 
 python examples/api_for_tortoise_orm/main.py
