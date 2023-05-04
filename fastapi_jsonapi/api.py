@@ -46,8 +46,12 @@ from fastapi_jsonapi.schema import (
     BaseJSONAPIItemSchema,
     BaseJSONAPIResultSchema,
 )
-from fastapi_jsonapi.schema import BasePatchJSONAPISchema, BasePostJSONAPISchema, JSONAPIObjectSchema, \
-    JSONAPIResultDetailSchema
+from fastapi_jsonapi.schema import (
+    BasePatchJSONAPISchema,
+    BasePostJSONAPISchema,
+    JSONAPIObjectSchema,
+    JSONAPIResultDetailSchema,
+)
 
 JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
 
@@ -333,7 +337,6 @@ class RoutersJSONAPI:
         field: ModelField,
         relationship_info: RelationshipInfo,
     ) -> Union[Type[BaseJSONAPIRelationshipDataToOneSchema], Type[BaseJSONAPIRelationshipDataToManySchema]]:
-
         cache_key = (base_name, field_name, relationship_info.resource_type, relationship_info.many)
         if field in self.relationship_schema_cache:
             return self.relationship_schema_cache[cache_key]
@@ -434,7 +437,6 @@ class RoutersJSONAPI:
         includes: Iterable[str],
         included_schemas: List[Tuple[str, BaseModel, str]],
     ) -> Dict[str, Type[JSONAPIObjectSchema]]:
-
         if includes is not_passed:
             return {
                 # prepare same object schema

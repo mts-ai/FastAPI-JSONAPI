@@ -14,6 +14,7 @@ class User(Base, BaseModelMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     first_name: str = Column(String, nullable=True)
     last_name: str = Column(String, nullable=True)
+    age: int = Column(Integer, nullable=True)
     status = Column(EnumColumn(UserStatusEnum), nullable=False, default=UserStatusEnum.active)
     email: str | None = Column(String, nullable=True)
 

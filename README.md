@@ -36,7 +36,6 @@ from sqlalchemy.sql import Select
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi import SqlalchemyEngine
 from fastapi_jsonapi.data_layers.orm import DBORMType
-from fastapi_jsonapi.openapi import custom_openapi
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultListSchema
 from fastapi_jsonapi.schema import collect_app_orm_schemas
@@ -200,7 +199,6 @@ def create_app() -> FastAPI:
     )
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
-    custom_openapi(app, title="API for SQLAlchemy")
     collect_app_orm_schemas(app)
     return app
 

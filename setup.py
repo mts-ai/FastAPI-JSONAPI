@@ -29,7 +29,7 @@ def get_description():
     """
     Read full description from 'README.md'
     """
-    with open('README.md', 'r', encoding='utf-8') as f:
+    with open("README.md", "r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -37,9 +37,9 @@ setup(
     name="FastAPI-JSONAPI",
     version=__version__,
     description="FastAPI extension to create REST web api according to JSON:API 1.0 specification "
-                "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",
+    "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",
     long_description=get_description(),
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     url="https://github.com/mts-ai/FastAPI-JSONAPI",
     author="Team MTS AI",
     author_email="a.nekrasov@mts.ru",

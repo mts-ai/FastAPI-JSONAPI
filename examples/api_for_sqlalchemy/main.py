@@ -21,7 +21,6 @@ import uvicorn
 from fastapi import FastAPI
 
 from fastapi_jsonapi.schema import collect_app_orm_schemas
-# from fastapi_jsonapi.openapi import custom_openapi
 
 from examples.api_for_sqlalchemy.urls import add_routes
 from examples.api_for_sqlalchemy import config
@@ -48,7 +47,6 @@ def create_app() -> FastAPI:
     )
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
-    # custom_openapi(app, title="API for SQLAlchemy")
     collect_app_orm_schemas(app)
     return app
 
