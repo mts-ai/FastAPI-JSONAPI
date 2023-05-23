@@ -3,55 +3,42 @@ from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
+    Iterable,
     List,
-    Optional,
+    Tuple,
     Type,
     Union,
-    TypeVar,
-    Tuple,
-    Iterable,
-    Callable,
 )
 
 import pydantic
+from fastapi import APIRouter
 from pydantic import BaseConfig
 from pydantic.fields import ModelField
-from fastapi import APIRouter
-from fastapi_jsonapi.schema_base import BaseModel, Field, registry, RelationshipInfo
-from fastapi_jsonapi.splitter import SPLIT_REL
-from fastapi_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
-from fastapi_jsonapi.data_layers.orm import DBORMType
-from fastapi_jsonapi.exceptions import ExceptionResponseSchema
 
-from fastapi_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.orm import DBORMType
 from fastapi_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_jsonapi.methods import (
     delete_detail_jsonapi,
+    delete_list_jsonapi,
     get_detail_jsonapi,
     get_list_jsonapi,
     patch_detail_jsonapi,
     post_list_jsonapi,
-    delete_list_jsonapi,
 )
 from fastapi_jsonapi.schema import (
+    BaseJSONAPIRelationshipDataToManySchema,
+    BaseJSONAPIRelationshipDataToOneSchema,
+    BaseJSONAPIRelationshipSchema,
+    BaseJSONAPIResultSchema,
     BasePatchJSONAPISchema,
     BasePostJSONAPISchema,
     JSONAPIObjectSchema,
     JSONAPIResultDetailSchema,
     JSONAPIResultListSchema,
-    BaseJSONAPIRelationshipSchema,
-    BaseJSONAPIRelationshipDataToOneSchema,
-    BaseJSONAPIRelationshipDataToManySchema,
-    BaseJSONAPIItemSchema,
-    BaseJSONAPIResultSchema,
 )
-from fastapi_jsonapi.schema import (
-    BasePatchJSONAPISchema,
-    BasePostJSONAPISchema,
-    JSONAPIObjectSchema,
-    JSONAPIResultDetailSchema,
-)
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo, registry
+from fastapi_jsonapi.splitter import SPLIT_REL
 
 JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
 
@@ -79,7 +66,7 @@ class RoutersJSONAPI:
     object_schemas_cache = {}
     relationship_schema_cache = {}
 
-    def __init__(  # noqa: WPS211
+    def __init__(
         self,
         routers: APIRouter,
         path: Union[str, List[str]],
@@ -242,7 +229,7 @@ class RoutersJSONAPI:
                     schema_resp=self.list_response_schema,
                     model=self.model,
                     engine=self._engine,
-                )(self.list_views.get)
+                )(self.list_views.get),
             )
 
         if hasattr(self.list_views, "post"):
@@ -259,7 +246,7 @@ class RoutersJSONAPI:
                     schema_resp=self.detail_response_schema,
                     model=self.model,
                     engine=self._engine,
-                )(self.list_views.post)
+                )(self.list_views.post),
             )
 
         if hasattr(self.list_views, "delete"):
@@ -268,7 +255,7 @@ class RoutersJSONAPI:
                     schema=self._schema,
                     model=self.model,
                     engine=self._engine,
-                )(self.list_views.delete)
+                )(self.list_views.delete),
             )
 
         if hasattr(self.detail_views, "get"):
@@ -283,7 +270,7 @@ class RoutersJSONAPI:
                     schema_resp=self.detail_response_schema,
                     model=self.model,
                     engine=self._engine,
-                )(self.detail_views.get)
+                )(self.detail_views.get),
             )
 
         if hasattr(self.detail_views, "patch"):
@@ -300,7 +287,7 @@ class RoutersJSONAPI:
                     schema_resp=self.detail_response_schema,
                     model=self.model,
                     engine=self._engine,
-                )(self.detail_views.patch)
+                )(self.detail_views.patch),
             )
 
         if hasattr(self.detail_views, "delete"):
@@ -309,7 +296,7 @@ class RoutersJSONAPI:
                     schema=self._schema,
                     model=self.model,
                     engine=self._engine,
-                )(self.detail_views.delete)
+                )(self.detail_views.delete),
             )
 
     def create_relationship_schema(
@@ -414,9 +401,9 @@ class RoutersJSONAPI:
         relationships_schema: Type[TypeSchema],
         includes,
     ) -> Type[JSONAPIObjectSchema]:
-        object_jsonapi_schema_fields = dict(
-            attributes=(attributes_schema, ...),
-        )
+        object_jsonapi_schema_fields = {
+            "attributes": (attributes_schema, ...),
+        }
         if includes:
             object_jsonapi_schema_fields.update(
                 relationships=(relationships_schema, None),  # allow None
@@ -563,9 +550,9 @@ class RoutersJSONAPI:
         for includes_schema in includes_schemas:
             included_schema_annotation = Union[included_schema_annotation, includes_schema]
 
-        schema_fields = dict(
-            data=(data_type, ...),
-        )
+        schema_fields = {
+            "data": (data_type, ...),
+        }
         if includes_schemas:
             schema_fields.update(
                 included=(

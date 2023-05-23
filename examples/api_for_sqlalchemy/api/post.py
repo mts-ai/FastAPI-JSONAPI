@@ -1,38 +1,23 @@
-from http import HTTPStatus
-from typing import (
-    List,
-    Union,
-)
-
 from fastapi import Depends
-from sqlalchemy import select, desc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import Select
 from starlette import status
-from tortoise.exceptions import DoesNotExist
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
-from examples.api_for_sqlalchemy.helpers.factories.post import PostFactory, ErrorCreatePostObject
-from examples.api_for_sqlalchemy.helpers.updaters.exceptions import ObjectNotFound
-from examples.api_for_sqlalchemy.helpers.updaters.update_post import UpdatePost, ErrorUpdatePostObject
-from fastapi_rest_jsonapi import SqlalchemyEngine
-from fastapi_rest_jsonapi.exceptions import (
+from examples.api_for_sqlalchemy.helpers.factories.post import ErrorCreatePostObject, PostFactory
+from examples.api_for_sqlalchemy.models.schemas import (
+    PostInSchema,
+)
+from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultListMetaSchema, JSONAPIResultDetailSchema
-from fastapi_rest_jsonapi.views.detail_view import DetailViewBase
-from fastapi_rest_jsonapi.views.list_view import ListViewBase
-
-from examples.api_for_sqlalchemy.models import Post
-from examples.api_for_sqlalchemy.models.schemas import (
-    PostSchema,
-    PostInSchema,
-    PostPatchSchema,
-)
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
+from fastapi_jsonapi.views.detail_view import DetailViewBase
+from fastapi_jsonapi.views.list_view import ListViewBase
 
 
 class PostDetail(DetailViewBase):
@@ -103,7 +88,7 @@ class PostList(ListViewBase):
                 header=query_params.headers,
                 session=session,
             )
-        except IntegrityError as e:
+        except IntegrityError:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 # detail=str(e),

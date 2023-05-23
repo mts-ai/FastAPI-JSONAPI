@@ -6,20 +6,19 @@ from enum import Enum
 from inspect import (
     Parameter,
     Signature,
-    signature,
 )
 from types import GenericAlias
 from typing import (
-    Callable,
+    Any,
     Dict,
     List,
     Optional,
     Set,
-    Type,
-    OrderedDict as OrderedDictType,
     Tuple,
-    Any,
-    Mapping,
+    Type,
+)
+from typing import (
+    OrderedDict as OrderedDictType,
 )
 
 from fastapi import Query
@@ -77,7 +76,11 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
                     # parameter = create_include_parameter(name=name, field=field)
                     # include_params.append(parameter)
                 else:
-                    log.warning("found nested schema %s for field %r. Consider marking it as relationship", field, name)
+                    log.warning(
+                        "found nested schema %s for field %r. Consider marking it as relationship",
+                        field,
+                        name,
+                    )
                 continue
 
             # create filter params

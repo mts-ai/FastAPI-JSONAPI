@@ -14,9 +14,9 @@ from .json_api import (
     InvalidInclude,
     InvalidSort,
     InvalidType,
-    RelationNotFound,
-    RelatedObjectNotFound,
     ObjectNotFound,
+    RelatedObjectNotFound,
+    RelationNotFound,
 )
 
 __all__ = [

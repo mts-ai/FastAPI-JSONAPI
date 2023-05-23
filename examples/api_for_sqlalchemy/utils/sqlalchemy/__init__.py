@@ -1,1 +1,0 @@
-from examples.api_for_sqlalchemy.utils.sqlalchemy.base_model_mixin import BaseModelMixin

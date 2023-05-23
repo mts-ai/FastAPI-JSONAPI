@@ -20,9 +20,9 @@ Main concepts
    :alt: Architecture
 
 | * `JSON:API 1.0 specification <http://jsonapi.org/>`_: this is a very popular specification for client-server interactions through a JSON-based REST API. It helps you work in a team because it is very precise and sharable. Thanks to this specification your API can offer a lot of features such as a strong structure of request and response, filtering, pagination, sparse fieldsets, including related objects, great error formatting, etc.
-| 
+|
 | * **Logical data abstraction**: you usually need to expose resources to clients that don't fit your data table architecture. For example sometimes you don't want to expose all attributes of a table, compute additional attributes or create a resource that uses data from multiple data storages.
-| 
+|
 | * **Data layer**: the data layer is a CRUD interface between your resource manager and your data. Thanks to this you can use any data storage or ORM. There is an already full-featured data layer that uses the SQLAlchemy ORM but you can create and use your own custom data layer to use data from your data storage. You can even create a data layer that uses multiple data storage systems and ORMs, send notifications or perform custom actions during CRUD operations.
 
 Features

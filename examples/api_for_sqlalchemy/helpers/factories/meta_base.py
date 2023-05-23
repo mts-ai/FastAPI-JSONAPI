@@ -1,5 +1,6 @@
 """Base factory module."""
 
+import contextlib
 from typing import (
     Any,
     Callable,
@@ -15,14 +16,16 @@ from typing import (
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from fastapi_jsonapi.data_layers.fields.enum import Enum
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
+
 from .exceptions import (
+    ErrorCreateObject,
     ExceptionAfterCommit,
     ExceptionBeforeCreate,
-    ExceptionNotFactory, ErrorCreateObject,
+    ExceptionNotFactory,
 )
-from fastapi_jsonapi.querystring import HeadersQueryStringManager
-from ...extensions.sqlalchemy import Base
 
 TypeModel = TypeVar("TypeModel", bound=Base)
 
@@ -50,8 +53,12 @@ class _BaseFactory(Generic[TypeModel]):
     """
 
     @classmethod
-    async def _get_data(cls, data: Optional[Dict[str, Any]] = None, mode: FactoryUseMode = FactoryUseMode.test) -> Dict:
-        new_kwargs = dict()
+    async def _get_data(
+        cls,
+        data: Optional[Dict[str, Any]] = None,
+        mode: FactoryUseMode = FactoryUseMode.test,
+    ) -> Dict:
+        new_kwargs = {}
         if data:
             new_kwargs.update(data)
 
@@ -86,19 +93,16 @@ class _BaseFactory(Generic[TypeModel]):
         result_data = []
         for step in range(1, count + 1):
             new_kwargs = await cls._get_data(data=data, mode=mode)
-            try:
+            with contextlib.suppress(ExceptionBeforeCreate):
                 new_kwargs = await cls.before_create(many=True, mode=mode, model_kwargs=new_kwargs)
-            except ExceptionBeforeCreate:
-                pass
+
             new_object = cls.Meta.model(**new_kwargs)
             if save:
                 await new_object.save()
             result_data.append(new_object)
 
-        try:
+        with contextlib.suppress(ExceptionAfterCommit):
             await cls.after_create(result_data=result_data, many=True, saved=save, mode=mode)
-        except ExceptionAfterCommit:
-            pass
 
         return result_data
 
@@ -124,10 +128,8 @@ class _BaseFactory(Generic[TypeModel]):
         """
         new_kwargs = await cls._get_data(data=data, mode=mode)
 
-        try:
+        with contextlib.suppress(ExceptionBeforeCreate):
             new_kwargs = await cls.before_create(many=False, mode=mode, model_kwargs=new_kwargs, header=header)
-        except ExceptionBeforeCreate:
-            pass
 
         result_data = cls.Meta.model(**new_kwargs)
         if save:
@@ -137,10 +139,8 @@ class _BaseFactory(Generic[TypeModel]):
             else:
                 await result_data.save()
 
-        try:
+        with contextlib.suppress(ExceptionAfterCommit):
             await cls.after_create(result_data=result_data, many=False, saved=save, mode=mode, header=header)
-        except ExceptionAfterCommit:
-            pass
 
         return result_data
 
@@ -196,7 +196,7 @@ class _BaseFactory(Generic[TypeModel]):
         if value_for_create is None:
             raise ErrorCreateObject(
                 model=cls.Meta.model,
-                description=f'field required {field_name!r}',
+                description=f"field required {field_name!r}",
                 field=field_name,
             )
         data_for_create[field_name] = value_for_create
@@ -205,7 +205,7 @@ class _BaseFactory(Generic[TypeModel]):
 class Factories:
     """Хранилище фабрик."""
 
-    _factories: Dict[str, Type["_BaseFactory"]] = dict()
+    _factories: Dict[str, Type["_BaseFactory"]] = {}
 
     @classmethod
     def get(cls, name_model: str) -> Type["_BaseFactory"]:
@@ -218,7 +218,8 @@ class Factories:
         """
         factory = cls._factories.get(name_model)
         if factory is None:
-            raise ExceptionNotFactory("Not found factory={model}".format(model=name_model))
+            msg = "Not found factory={model}".format(model=name_model)
+            raise ExceptionNotFactory(msg)
         return factory
 
     @classmethod
@@ -244,12 +245,12 @@ class BaseFactory(_BaseFactory, metaclass=MetaFactory):
     ...
 
 
-TypeBaseFactory = TypeVar('TypeBaseFactory', bound=BaseFactory)  # type: ignore
+TypeBaseFactory = TypeVar("TypeBaseFactory", bound=BaseFactory)  # type: ignore
 
 
 def factory_import(name: str) -> Type[TypeBaseFactory]:
-    components = name.split('.')
-    mod = __import__('.'.join(components[:-1]))  # noqa: WPS421
+    components = name.split(".")
+    mod = __import__(".".join(components[:-1]))
     for comp in components[1:]:
         mod = getattr(mod, comp)
     # TODO Починить при помощи regisry тк такой импорт замедляет
@@ -260,4 +261,3 @@ def factory_import(name: str) -> Type[TypeBaseFactory]:
 async def create_from_factory(factory: str, **kwargs: Union[Any]) -> TypeModel:
     factory_clss: Type[BaseFactory[TypeModel]] = factory_import(factory)
     return await factory_clss(**kwargs).create()
-

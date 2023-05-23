@@ -39,7 +39,6 @@ class BaseDataLayer:
 
         :param dict kwargs: information about data layer instance
         """
-
         # initing this attribute here in the first place
         # because it can be easily overridden by kwargs below
 
@@ -59,7 +58,8 @@ class BaseDataLayer:
         pass
 
     async def create_object(self, data, view_kwargs):
-        """Create an object
+        """
+        Create an object
 
         :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
@@ -68,7 +68,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def get_object(self, view_kwargs):
-        """Retrieve an object
+        """
+        Retrieve an object
 
         :params dict view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object
@@ -76,7 +77,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def get_collection(self, qs, view_kwargs):
-        """Retrieve a collection of objects
+        """
+        Retrieve a collection of objects
 
         :param QueryStringManager qs: a querystring manager to retrieve information from url
         :param dict view_kwargs: kwargs from the resource view
@@ -85,7 +87,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def update_object(self, obj, data, view_kwargs):
-        """Update an object
+        """
+        Update an object
 
         :param DeclarativeMeta obj: an object
         :param dict data: the data validated by schemas
@@ -95,15 +98,23 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def delete_object(self, obj, view_kwargs):
-        """Delete an item through the data layer
+        """
+        Delete an item through the data layer
 
         :param DeclarativeMeta obj: an object
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    async def create_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):
-        """Create a relationship
+    async def create_relationship(
+        self,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Create a relationship
 
         :param dict json_data: the request params
         :param str relationship_field: the model attribute used for relationship
@@ -113,8 +124,15 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def get_relationship(self, relationship_field, related_type_, related_id_field, view_kwargs):
-        """Get information about a relationship
+    async def get_relationship(
+        self,
+        relationship_field,
+        related_type_,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Get information about a relationship
 
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
@@ -124,8 +142,15 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def update_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):
-        """Update a relationship
+    async def update_relationship(
+        self,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Update a relationship
 
         :param dict json_data: the request params
         :param str relationship_field: the model attribute used for relationship
@@ -135,8 +160,15 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def delete_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):
-        """Delete a relationship
+    async def delete_relationship(
+        self,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Delete a relationship
 
         :param dict json_data: the request params
         :param str relationship_field: the model attribute used for relationship
@@ -146,14 +178,16 @@ class BaseDataLayer:
         raise NotImplementedError
 
     def query(self, view_kwargs):
-        """Construct the base query to retrieve wanted data
+        """
+        Construct the base query to retrieve wanted data
 
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
     def before_create_object(self, data, view_kwargs):
-        """Provide additional data before object creation
+        """
+        Provide additional data before object creation
 
         :param dict data: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
@@ -161,7 +195,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     def after_create_object(self, obj, data, view_kwargs):
-        """Provide additional data after object creation
+        """
+        Provide additional data after object creation
 
         :param obj: an object from data layer
         :param dict data: the data validated by schemas
@@ -170,14 +205,16 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def before_get_object(self, view_kwargs):
-        """Make work before to retrieve an object
+        """
+        Make work before to retrieve an object
 
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
     async def after_get_object(self, obj, view_kwargs):
-        """Make work after to retrieve an object
+        """
+        Make work after to retrieve an object
 
         :param obj: an object from data layer
         :param dict view_kwargs: kwargs from the resource view
@@ -185,7 +222,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def before_get_collection(self, qs, view_kwargs):
-        """Make work before to retrieve a collection of objects
+        """
+        Make work before to retrieve a collection of objects
 
         :param QueryStringManager qs: a querystring manager to retrieve information from url
         :param dict view_kwargs: kwargs from the resource view
@@ -193,7 +231,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def after_get_collection(self, collection, qs, view_kwargs):
-        """Make work after to retrieve a collection of objects
+        """
+        Make work after to retrieve a collection of objects
 
         :param iterable collection: the collection of objects
         :param QueryStringManager qs: a querystring manager to retrieve information from url
@@ -202,7 +241,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def before_update_object(self, obj, data, view_kwargs):
-        """Make checks or provide additional data before update object
+        """
+        Make checks or provide additional data before update object
 
         :param obj: an object from data layer
         :param dict data: the data validated by schemas
@@ -211,7 +251,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     def after_update_object(self, obj, data, view_kwargs):
-        """Make work after update object
+        """
+        Make work after update object
 
         :param obj: an object from data layer
         :param dict data: the data validated by schemas
@@ -220,7 +261,8 @@ class BaseDataLayer:
         raise NotImplementedError
 
     def before_delete_object(self, obj, view_kwargs):
-        """Make checks before delete object
+        """
+        Make checks before delete object
 
         :param obj: an object from data layer
         :param dict view_kwargs: kwargs from the resource view
@@ -228,15 +270,23 @@ class BaseDataLayer:
         raise NotImplementedError
 
     def after_delete_object(self, obj, view_kwargs):
-        """Make work after delete object
+        """
+        Make work after delete object
 
         :param obj: an object from data layer
         :param dict view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def before_create_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):
-        """Make work before to create a relationship
+    def before_create_relationship(
+        self,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Make work before to create a relationship
 
         :param dict json_data: the request params
         :param str relationship_field: the model attribute used for relationship
@@ -246,8 +296,17 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_create_relationship(self, obj, updated, json_data, relationship_field, related_id_field, view_kwargs):
-        """Make work after to create a relationship
+    def after_create_relationship(
+        self,
+        obj,
+        updated,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Make work after to create a relationship
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
@@ -259,8 +318,15 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def before_get_relationship(self, relationship_field, related_type_, related_id_field, view_kwargs):
-        """Make work before to get information about a relationship
+    async def before_get_relationship(
+        self,
+        relationship_field,
+        related_type_,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Make work before to get information about a relationship
 
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
@@ -271,9 +337,16 @@ class BaseDataLayer:
         raise NotImplementedError
 
     async def after_get_relationship(
-        self, obj, related_objects, relationship_field, related_type_, related_id_field, view_kwargs,
+        self,
+        obj,
+        related_objects,
+        relationship_field,
+        related_type_,
+        related_id_field,
+        view_kwargs,
     ):
-        """Make work after to get information about a relationship
+        """
+        Make work after to get information about a relationship
 
         :param obj: an object from data layer
         :param iterable related_objects: related objects of the object
@@ -285,8 +358,15 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def before_update_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):
-        """Make work before to update a relationship
+    def before_update_relationship(
+        self,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Make work before to update a relationship
 
         :param dict json_data: the request params
         :param str relationship_field: the model attribute used for relationship
@@ -296,8 +376,17 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_update_relationship(self, obj, updated, json_data, relationship_field, related_id_field, view_kwargs):
-        """Make work after to update a relationship
+    def after_update_relationship(
+        self,
+        obj,
+        updated,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Make work after to update a relationship
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
@@ -309,8 +398,15 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def before_delete_relationship(self, json_data, relationship_field, related_id_field, view_kwargs):
-        """Make work before to delete a relationship
+    def before_delete_relationship(
+        self,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Make work before to delete a relationship
 
         :param dict json_data: the request params
         :param str relationship_field: the model attribute used for relationship
@@ -319,8 +415,17 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_delete_relationship(self, obj, updated, json_data, relationship_field, related_id_field, view_kwargs):
-        """Make work after to delete a relationship
+    def after_delete_relationship(
+        self,
+        obj,
+        updated,
+        json_data,
+        relationship_field,
+        related_id_field,
+        view_kwargs,
+    ):
+        """
+        Make work after to delete a relationship
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
@@ -332,9 +437,10 @@ class BaseDataLayer:
         raise NotImplementedError
 
     def bound_rewritable_methods(self, methods):
-        """Bound additional methods to current instance
+        """
+        Bound additional methods to current instance
 
-        :param class meta: information from Meta class used to configure the data layer instance
+        :param class methods: methods
         """
         for key, value in methods.items():
             if key in self.REWRITABLE_METHODS:

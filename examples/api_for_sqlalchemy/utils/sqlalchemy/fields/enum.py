@@ -1,12 +1,12 @@
-from typing import Union, Type, TypeVar
 from enum import Enum as EnumOriginal
+from typing import Type, TypeVar, Union
 
 from sqlalchemy import types
-
 from sqlalchemy.engine import Dialect
 
+from fastapi_jsonapi.data_layers.fields.mixins import MixinEnum
 
-TypeEnum = TypeVar("TypeEnum", bound="MixinEnum")
+TypeEnum = TypeVar("TypeEnum", bound=MixinEnum)
 
 
 class EnumColumn(types.TypeDecorator):
@@ -19,7 +19,8 @@ class EnumColumn(types.TypeDecorator):
 
     def __init__(self, enum: Union[Type[EnumOriginal], Type[TypeEnum]], *args: list, **kwargs: dict):
         if not issubclass(enum, EnumOriginal):
-            raise TypeError(f"{enum} is not a subtype of Enum")
+            msg = f"{enum} is not a subtype of Enum"
+            raise TypeError(msg)
         self.enum = enum
         super().__init__(*args, **kwargs)
 

@@ -4,7 +4,7 @@
 ```shell
 # in dir fastapi-jsonapi
 
-export PYTHOPATH="${PYTHONPATH}:./" 
+export PYTHOPATH="${PYTHONPATH}:./"
 python examples/api_for_tortoise_orm/main.py
 ```
 http://0.0.0.0:8080/docs

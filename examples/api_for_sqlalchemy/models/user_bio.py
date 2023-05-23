@@ -1,7 +1,7 @@
 """User Bio model."""
 from typing import Dict, List
 
-from sqlalchemy import Column, String, Integer, ForeignKey, JSON
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base

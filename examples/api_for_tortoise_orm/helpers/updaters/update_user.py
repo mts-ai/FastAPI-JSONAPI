@@ -39,7 +39,6 @@ class UpdateUser(BaseUpdater):
         new_data: Dict[str, Any],
         header: Union[HeadersQueryStringManager, None] = None,
     ) -> User:
-
         cls._update_first_name(obj, new_data)
         cls._update_last_name(obj, new_data)
         cls._update_status(obj, new_data)

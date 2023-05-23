@@ -1,13 +1,13 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
-from typing import Any, Iterable, Type, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple, Type
 
 from tortoise.queryset import QuerySet
 
-from fastapi_jsonapi.querystring import QueryStringManager, PaginationQueryStringManager
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.filtering.tortoise_orm import FilterTortoiseORM
 from fastapi_jsonapi.data_layers.sorting.tortoise_orm import SortTortoiseORM
+from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
 
 
 class TortoiseORMEngine(BaseDataLayer):

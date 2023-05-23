@@ -1,12 +1,13 @@
 """Helper to deal with querystring parameters according to jsonapi specification."""
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
     Optional,
     Type,
-    Union, TYPE_CHECKING,
+    Union,
 )
 from urllib.parse import unquote
 
@@ -19,7 +20,6 @@ from pydantic import (
     BaseModel,
     Field,
 )
-
 
 from fastapi_jsonapi.exceptions import (
     BadRequest,
@@ -37,7 +37,6 @@ from fastapi_jsonapi.splitter import SPLIT_REL
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.data_typing import TypeSchema
-
 
 
 class PaginationQueryStringManager(BaseModel):
@@ -83,7 +82,7 @@ class QueryStringManager(object):
         self.request: Request = request
         self.app: FastAPI = request.app
         self.qs: Dict[str, str] = dict(request.query_params)
-        self.config: Dict[str, Any] = getattr(self.app, "config", dict())
+        self.config: Dict[str, Any] = getattr(self.app, "config", {})
         self.schema: Type[BaseModel] = schema
         self.ALLOW_DISABLE_PAGINATION: bool = self.config.get("ALLOW_DISABLE_PAGINATION", True)
         self.MAX_PAGE_SIZE: int = self.config.get("MAX_PAGE_SIZE", 10000)
@@ -99,7 +98,7 @@ class QueryStringManager(object):
         :return: a dict of key / values items
         :raises BadRequest: if an error occurred while parsing the querystring.
         """
-        results: Dict[str, Union[List[str], str]] = dict()
+        results: Dict[str, Union[List[str], str]] = {}
 
         for raw_key, value in self.qs.items():
             key = unquote(raw_key)
@@ -116,7 +115,8 @@ class QueryStringManager(object):
                 else:
                     results.update({item_key: value})
             except Exception:
-                raise BadRequest("Parse error", parameter=key)
+                msg = "Parse error"
+                raise BadRequest(msg, parameter=key)
 
         return results
 
@@ -152,7 +152,8 @@ class QueryStringManager(object):
             try:
                 results.extend(json.loads(filters))
             except (ValueError, TypeError):
-                raise InvalidFilters("Parse error")
+                msg = "Parse error"
+                raise InvalidFilters(msg)
         if self._get_key_values("filter["):
             results.extend(self._simple_filters(self._get_key_values("filter[")))
         return results
@@ -188,7 +189,8 @@ class QueryStringManager(object):
             self._pagination.size = None
         if self._pagination.size:
             if self.ALLOW_DISABLE_PAGINATION is False and self._pagination.size == 0:
-                raise BadRequest("You are not allowed to disable pagination", parameter="page[size]")
+                msg = "You are not allowed to disable pagination"
+                raise BadRequest(msg, parameter="page[size]")
             if self.MAX_PAGE_SIZE and self._pagination.size > self.MAX_PAGE_SIZE:
                 self._pagination.size = self.MAX_PAGE_SIZE
 
@@ -210,16 +212,21 @@ class QueryStringManager(object):
         :raises InvalidField: if result field not in schema.
         """
         if self.request.method != "GET":
-            raise InvalidField("attribute 'fields' allowed only for GET-method")
+            msg = "attribute 'fields' allowed only for GET-method"
+            raise InvalidField(msg)
         fields = self._get_key_values("fields")
         for key, value in fields.items():
             if not isinstance(value, list):
-                value = [value]
+                value = [value]  # noqa: PLW2901
                 fields[key] = value
             schema: Type[BaseModel] = get_schema_from_type(key, self.app)
             for field in value:
                 if field not in schema.__fields__:
-                    raise InvalidField("{schema} has no attribute {field}".format(schema=schema.__name__, field=field))
+                    msg = "{schema} has no attribute {field}".format(
+                        schema=schema.__name__,
+                        field=field,
+                    )
+                    raise InvalidField(msg)
 
         return fields
 
@@ -244,16 +251,14 @@ class QueryStringManager(object):
                 field = sort_field.replace("-", "")
                 if SPLIT_REL not in field:
                     if field not in self.schema.__fields__:
-                        raise InvalidSort(
-                            "{schema} has no attribute {field}".format(
-                                schema=self.schema.__name__,
-                                field=field,
-                            )
+                        msg = "{schema} has no attribute {field}".format(
+                            schema=self.schema.__name__,
+                            field=field,
                         )
+                        raise InvalidSort(msg)
                     if field in get_relationships(self.schema):
-                        raise InvalidSort(
-                            "You can't sort on {field} because it is a relationship field".format(field=field)
-                        )
+                        msg = "You can't sort on {field} because it is a relationship field".format(field=field)
+                        raise InvalidSort(msg)
                     field = get_model_field(self.schema, field)
                 order = "desc" if sort_field.startswith("-") else "asc"
                 sorting_results.append({"field": field, "order": order})
@@ -275,9 +280,8 @@ class QueryStringManager(object):
         if self.MAX_INCLUDE_DEPTH is not None:
             for include_path in includes:
                 if len(include_path.split(SPLIT_REL)) > self.MAX_INCLUDE_DEPTH:
-                    raise InvalidInclude(
-                        "You can't use include through more than {max_include_depth} relationships".format(
-                            max_include_depth=self.MAX_INCLUDE_DEPTH
-                        )
+                    msg = "You can't use include through more than {max_include_depth} relationships".format(
+                        max_include_depth=self.MAX_INCLUDE_DEPTH,
                     )
+                    raise InvalidInclude(msg)
         return includes

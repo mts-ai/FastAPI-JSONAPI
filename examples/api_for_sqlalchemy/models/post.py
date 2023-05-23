@@ -1,6 +1,6 @@
 """Post model."""
 
-from sqlalchemy import Column, String, Text, Integer, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base

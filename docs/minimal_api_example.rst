@@ -53,4 +53,3 @@ Response:
 
 .. literalinclude:: ./http_snippets/snippets/minimal_api__delete_person_result
   :language: HTTP
-

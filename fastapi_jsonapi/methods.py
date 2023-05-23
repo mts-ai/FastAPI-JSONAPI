@@ -23,7 +23,7 @@ from fastapi_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyEngine
 from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
 from fastapi_jsonapi.exceptions.json_api import UnsupportedFeatureORM
 from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultDetailSchema
+from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
 from fastapi_jsonapi.signature import update_signature
 
 
@@ -287,7 +287,7 @@ def get_list_jsonapi(
 
             if isinstance(query, list):
                 return schema_resp(
-                    data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": type_} for i_obj in query]
+                    data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": type_} for i_obj in query],
                 )
 
             session = None
@@ -299,7 +299,8 @@ def get_list_jsonapi(
                     None,
                 )
             if engine is DBORMType.sqlalchemy and session is None:
-                raise UnsupportedFeatureORM("For SQLAlchemy you need to specify session in parameter")
+                msg = "For SQLAlchemy you need to specify session in parameter"
+                raise UnsupportedFeatureORM(msg)
             return await _get_single_response(
                 query,
                 query_params,

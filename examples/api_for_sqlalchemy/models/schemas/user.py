@@ -1,11 +1,10 @@
 """User schemas module."""
 
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING, List
-
-from fastapi_rest_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from typing import TYPE_CHECKING, List, Optional
 
 from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
     from .post import PostSchema

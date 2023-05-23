@@ -1,4 +1,4 @@
-from typing import Type, Union, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple, Type, Union
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 

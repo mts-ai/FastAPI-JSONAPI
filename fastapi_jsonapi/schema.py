@@ -3,18 +3,16 @@ Base JSON:API schemas.
 Pydantic (for FastAPI).
 """
 from typing import (
+    TYPE_CHECKING,
     Dict,
-    Type,
     List,
     Optional,
     Sequence,
-    TYPE_CHECKING,
-    Union,
+    Type,
 )
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_flat_models_from_routes
-
 from pydantic import (
     BaseModel,
     Field,
@@ -189,7 +187,11 @@ def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
     :raises Exception: if the schema from parameter has no attribute for parameter.
     """
     if schema.__fields__.get(field) is None:
-        raise Exception("{schema} has no attribute {field}".format(schema=schema.__name__, field=field))
+        msg = "{schema} has no attribute {field}".format(
+            schema=schema.__name__,
+            field=field,
+        )
+        raise Exception(msg)
     return field
 
 
@@ -227,7 +229,8 @@ def get_schema_from_type(resource_type: str, app: FastAPI) -> Type[BaseModel]:
     try:
         return schemas[resource_type]
     except KeyError:
-        raise Exception("Couldn't find schema for type: {type}".format(type=resource_type))
+        msg = "Couldn't find schema for type: {type}".format(type=resource_type)
+        raise Exception(msg)
 
 
 def collect_app_orm_schemas(app: FastAPI) -> None:
@@ -246,11 +249,14 @@ def collect_app_orm_schemas(app: FastAPI) -> None:
         model_type = getattr(getattr(model, "Config"), "model", None)
         if model_type:
             if model_type in models_dict:
-                raise RuntimeError(
-                    "Get duplication value of Config.model={name} for schema={model}. Duplicate in {model_copy}".format(
-                        name=model_type, model=model.__name__, model_copy=models_dict[model_type].__name__
-                    )
+                msg = (
+                    "Get duplication value of Config.model={name} for schema={model}. Duplicate in {model_copy}"
+                ).format(
+                    name=model_type,
+                    model=model.__name__,
+                    model_copy=models_dict[model_type].__name__,
                 )
+                raise RuntimeError(msg)
             models_dict[model_type] = model
     if models_dict:
         setattr(app, "schemas", models_dict)

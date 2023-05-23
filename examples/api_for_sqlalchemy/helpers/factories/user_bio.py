@@ -4,14 +4,15 @@ from typing import (
     Union,
 )
 
+from examples.api_for_sqlalchemy.models import User, UserBio
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
+
 from .exceptions import ErrorCreateObject
 from .faker import fake
 from .meta_base import (
     BaseFactory,
     FactoryUseMode,
 )
-from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
-from examples.api_for_sqlalchemy.models import User, UserBio
 
 
 class ErrorCreateUserBioObject(ErrorCreateObject):
@@ -21,7 +22,7 @@ class ErrorCreateUserBioObject(ErrorCreateObject):
 
 
 async def create_user(db_se) -> User:
-    raise NotImplemented
+    raise NotImplementedError
 
 
 class UserBioFactory(BaseFactory):

@@ -1,28 +1,30 @@
 import logging
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 from pydantic.fields import ModelField
 
-from fastapi_rest_jsonapi import RoutersJSONAPI
-
-from typing import Type, Iterable, Set, Tuple, Union, Dict, List, Optional
-
-from fastapi_rest_jsonapi.api import JSONAPIObjectSchemas
-from fastapi_rest_jsonapi.data_layers.data_typing import (
+from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI, SqlalchemyEngine
+from fastapi_jsonapi.api import JSONAPIObjectSchemas
+from fastapi_jsonapi.data_layers.data_typing import (
     TypeModel,
     TypeSchema,
 )
-from fastapi_rest_jsonapi.schema import (
+from fastapi_jsonapi.schema import (
     JSONAPIObjectSchema,
+    JSONAPIResultDetailSchema,
     get_related_schema,
 )
-
-from fastapi_rest_jsonapi import SqlalchemyEngine, QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultDetailSchema
-
-
-from fastapi_rest_jsonapi.schema_base import RelationshipInfo
-from fastapi_rest_jsonapi.splitter import SPLIT_REL
-
+from fastapi_jsonapi.schema_base import RelationshipInfo
+from fastapi_jsonapi.splitter import SPLIT_REL
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ class ViewBase:
         known_included: Set[Tuple[Union[int, str], str]],
     ) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
         item_id = str(item_from_db.id)
-        data_for_relationship = dict(id=item_id)
+        data_for_relationship = {"id": item_id}
         key = (item_id, relationship_info.resource_type)
         processed_object = None
         if key not in known_included:
@@ -60,7 +62,9 @@ class ViewBase:
         included_object_schema: Type[TypeSchema],
         known_included: Set[Tuple[Union[int, str], str]],
     ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema]]:
-        def prepare_related_db_item(item_from_db: TypeModel) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
+        def prepare_related_db_item(
+            item_from_db: TypeModel,
+        ) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
             return self.prepare_related_object_data(
                 item_from_db=item_from_db,
                 included_object_schema=included_object_schema,
@@ -101,9 +105,6 @@ class ViewBase:
     ) -> Tuple[Dict[str, TypeSchema], List[JSONAPIObjectSchema]]:
         top_level_relationships = {}
         included_objects = []
-        previous_included = []
-        previous_include_key = None
-        previous_relationship_info = None
         top_level_include = True
         current_db_item: Union[List[TypeModel], TypeModel]
         for related_field_name in include.split(SPLIT_REL):
@@ -111,7 +112,6 @@ class ViewBase:
             #  need to load only bio when includes 'user.bio'
             current_relation_field: ModelField = current_relation_schema.__fields__[related_field_name]
             current_relation_schema: Type[TypeSchema] = current_relation_field.type_
-            parent_db_item: Union[List[TypeModel], TypeModel] = current_db_item
 
             relationship_info: RelationshipInfo = current_relation_field.field_info.extra["relationship"]
             included_object_schema = schemas_include[related_field_name]
@@ -190,10 +190,10 @@ class ViewBase:
         included_objects = []
 
         # noinspection Pydantic
-        schema_kwargs = dict(
-            id=str(item.id),
-            attributes=object_schemas.attributes_schema.from_orm(item),
-        )
+        schema_kwargs = {
+            "id": str(item.id),
+            "attributes": object_schemas.attributes_schema.from_orm(item),
+        }
 
         obj_relationships = {}
         for include in includes:

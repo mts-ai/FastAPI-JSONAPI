@@ -6,12 +6,13 @@ from typing import (
     Union,
 )
 
-from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
+from examples.api_for_sqlalchemy.models import Post
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
+
 from .exceptions import ErrorUpdateObject
 from .meta_base import (
     BaseUpdater,
 )
-from examples.api_for_sqlalchemy.models import Post
 
 
 class ErrorUpdatePostObject(ErrorUpdateObject):
@@ -31,8 +32,8 @@ class UpdatePost(BaseUpdater):
         model = Post
 
     fields_to_update = (
-        'title',
-        'body',
+        "title",
+        "body",
     )
 
     @classmethod
@@ -42,7 +43,6 @@ class UpdatePost(BaseUpdater):
         new_data: Dict[str, Any],
         header: Union[HeadersQueryStringManager, None] = None,
     ) -> Post:
-
         for field in cls.fields_to_update:
             cls._update_field_if_present_and_new(obj, new_data, field)
         return obj

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Dict, List
 
-from fastapi_rest_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
     from .user import UserSchema

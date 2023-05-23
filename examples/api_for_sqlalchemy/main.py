@@ -20,10 +20,9 @@ sys.path.append(str(PROJECT_DIR))
 import uvicorn
 from fastapi import FastAPI
 
-from fastapi_jsonapi.schema import collect_app_orm_schemas
-
-from examples.api_for_sqlalchemy.urls import add_routes
 from examples.api_for_sqlalchemy import config
+from examples.api_for_sqlalchemy.urls import add_routes
+from fastapi_jsonapi.schema import collect_app_orm_schemas
 
 
 async def sqlalchemy_init() -> None:

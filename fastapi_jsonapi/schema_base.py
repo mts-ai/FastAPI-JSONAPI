@@ -7,12 +7,12 @@ __all__ = (
 
 from typing import Dict
 
-from pydantic import BaseModel as BaseModelGeneric, Field
+from pydantic import BaseModel as BaseModelGeneric
+from pydantic import Field
 from pydantic.main import ModelMetaclass
 
 
 class Registry:
-
     def __init__(self):
         self._known = {}
 
@@ -31,7 +31,6 @@ registry = Registry()
 
 
 class RegistryMeta(ModelMetaclass):
-
     def __new__(mcs, *args, **kwargs):
         # any other way to get all known schemas?
         schema = super().__new__(mcs, *args, **kwargs)

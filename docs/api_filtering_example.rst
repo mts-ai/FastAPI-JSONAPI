@@ -86,4 +86,3 @@ Response:
 
 .. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_contains_in_array_result
   :language: HTTP
-

@@ -11,26 +11,27 @@ from fastapi import (
     FastAPI,
 )
 
+from examples.api_for_sqlalchemy.models import Post, User, UserBio
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.data_layers.orm import DBORMType
+
 from .api.post import PostDetail, PostList
-from .api.user_bio import UserBioDetail, UserBioList
-from .models.schemas import (
-    UserSchema,
-    UserInSchema,
-    UserPatchSchema,
-    PostSchema,
-    PostInSchema,
-    PostPatchSchema,
-    UserBioSchema,
-    UserBioPatchSchema,
-    UserBioInSchema,
-)
 from .api.user import (
     UserDetail,
     UserList,
 )
-from examples.api_for_sqlalchemy.models import User, Post, UserBio
+from .api.user_bio import UserBioDetail, UserBioList
+from .models.schemas import (
+    PostInSchema,
+    PostPatchSchema,
+    PostSchema,
+    UserBioInSchema,
+    UserBioPatchSchema,
+    UserBioSchema,
+    UserInSchema,
+    UserPatchSchema,
+    UserSchema,
+)
 
 
 def add_routes(app: FastAPI) -> List[Dict[str, Any]]:

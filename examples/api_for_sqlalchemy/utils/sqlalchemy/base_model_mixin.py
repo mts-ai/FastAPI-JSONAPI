@@ -1,17 +1,21 @@
 from datetime import datetime
-from typing import TypeVar, Generic, List
+from typing import Generic, List, TypeVar
 
 from sqlalchemy import (
     Column,
-    DateTime, inspect, delete, select,
+    DateTime,
+    delete,
+    inspect,
+    select,
 )
+from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import declared_attr
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 
 TypeBase = TypeVar("TypeBase", bound="Base")
-Model = TypeVar('Model', Base, Base)
+Model = TypeVar("Model", Base, Base)
 
 
 class BaseModelMixin(Generic[Model]):
@@ -46,9 +50,7 @@ class BaseModelMixin(Generic[Model]):
         return self
 
     async def delete(self, session: AsyncSession, commit: bool = True) -> "BaseModelMixin[Model]":
-        await session.execute(
-            delete(self)
-        )
+        await session.execute(delete(self))
         if commit:
             await session.commit()
         return self
@@ -60,14 +62,12 @@ class BaseModelMixin(Generic[Model]):
 
     @classmethod
     async def get_by_id(cls, id_: int, session: AsyncSession) -> Model:
-        result = await session.execute(
-            select(cls).where(cls.id == id_)
-        )
+        stmt = select(cls).where(cls.id == id_)
+        result: Result = await session.execute(stmt)
         return result.scalar_one()
 
     @classmethod
     async def get_or_none(cls, id_: int, session: AsyncSession) -> Model:
-        result = await session.execute(
-            select(cls).where(cls.id == id_)
-        )
-        return result.scalar()
+        stmt = select(cls).where(cls.id == id_)
+        result: Result = await session.execute(stmt)
+        return result.scalar_one_or_none()

@@ -1,32 +1,18 @@
-from http import HTTPStatus
-from typing import (
-    List,
-    Union,
-)
-
 from fastapi import Depends
-from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import Select
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
-from examples.api_for_sqlalchemy.helpers.factories.user_bio import UserBioFactory, ErrorCreateUserBioObject
-from examples.api_for_sqlalchemy.helpers.updaters.exceptions import ObjectNotFound
-
-# from examples.api_for_sqlalchemy.helpers.updaters.update_user import UpdateUserBio, ErrorUpdateUserBioObject
-from examples.api_for_sqlalchemy.models.schemas import UserBioSchema, UserBioPatchSchema
+from examples.api_for_sqlalchemy.helpers.factories.user_bio import ErrorCreateUserBioObject, UserBioFactory
 from examples.api_for_sqlalchemy.models.schemas.user_bio import UserBioInSchema
-from examples.api_for_sqlalchemy.models import UserBio
-from fastapi_rest_jsonapi import SqlalchemyEngine
-from fastapi_rest_jsonapi.exceptions import (
+from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi.exceptions import (
     BadRequest,
-    HTTPException,
 )
-from fastapi_rest_jsonapi.querystring import QueryStringManager
-from fastapi_rest_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultDetailSchema
-from fastapi_rest_jsonapi.views.detail_view import DetailViewBase
-from fastapi_rest_jsonapi.views.list_view import ListViewBase
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
+from fastapi_jsonapi.views.detail_view import DetailViewBase
+from fastapi_jsonapi.views.list_view import ListViewBase
 
 
 class UserBioDetail(DetailViewBase):

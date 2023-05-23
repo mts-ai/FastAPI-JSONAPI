@@ -50,7 +50,6 @@ class HTTPException(FastApiHttpException):
 
     @property
     def _dict(self):
-
         return {
             "status_code": self.status_code,
             "source": self.source,

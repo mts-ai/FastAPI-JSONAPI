@@ -1,29 +1,23 @@
 from http import HTTPStatus
-from typing import (
-    List,
-    Union,
-)
 
 from fastapi import Depends
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import Select
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
-from examples.api_for_sqlalchemy.helpers.factories.user import UserFactory, ErrorCreateUserObject
+from examples.api_for_sqlalchemy.helpers.factories.user import ErrorCreateUserObject, UserFactory
 from examples.api_for_sqlalchemy.helpers.updaters.exceptions import ObjectNotFound
-from examples.api_for_sqlalchemy.helpers.updaters.update_user import UpdateUser, ErrorUpdateUserObject
-from examples.api_for_sqlalchemy.models.schemas import UserSchema, UserPatchSchema
-from examples.api_for_sqlalchemy.models.schemas.user import UserInSchema
+from examples.api_for_sqlalchemy.helpers.updaters.update_user import ErrorUpdateUserObject, UpdateUser
 from examples.api_for_sqlalchemy.models import User
+from examples.api_for_sqlalchemy.models.schemas import UserPatchSchema, UserSchema
+from examples.api_for_sqlalchemy.models.schemas.user import UserInSchema
 from fastapi_jsonapi import SqlalchemyEngine
 from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
 from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultListSchema, JSONAPIResultDetailSchema
+from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
 from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.list_view import ListViewBase
 

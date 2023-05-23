@@ -72,7 +72,6 @@ class _BaseUpdater(Generic[TYPE_MODEL]):
         :raises ObjectNotFound: if object does not found.
         """
         if isinstance(model_or_id, int):
-
             try:
                 model = await cls.Meta.model.get(id=model_or_id)
             except DoesNotExist:

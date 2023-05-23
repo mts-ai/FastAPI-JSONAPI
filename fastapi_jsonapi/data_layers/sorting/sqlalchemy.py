@@ -2,15 +2,14 @@
 from typing import Any, List, Tuple, Type, Union
 
 from pydantic.fields import ModelField
-from sqlalchemy.orm import aliased, InstrumentedAttribute, DeclarativeMeta
+from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, aliased
 from sqlalchemy.sql.elements import BinaryExpression
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidSort
-from fastapi_jsonapi.schema import get_relationships, get_model_field
+from fastapi_jsonapi.schema import get_model_field, get_relationships
 from fastapi_jsonapi.splitter import SPLIT_REL
-
 
 Sort = BinaryExpression
 Join = List[Any]
@@ -79,10 +78,10 @@ class Node(object):
         """
         Create sort for a particular node of the sort tree.
         """
-
         field = self.sort_.get("field", "")
         if not hasattr(self.model, field) and SPLIT_REL not in field:
-            raise InvalidSort("{} has no attribute {}".format(self.model.__name__, field))
+            msg = "{} has no attribute {}".format(self.model.__name__, field)
+            raise InvalidSort(msg)
 
         if SPLIT_REL in field:
             value = {"field": SPLIT_REL.join(field.split(SPLIT_REL)[1:]), "order": self.sort_["order"]}
@@ -104,20 +103,23 @@ class Node(object):
 
     @property
     def name(self) -> str:
-        """Return the name of the node or raise a BadRequest exception
+        """
+        Return the name of the node or raise a BadRequest exception
 
         :return str: the name of the sort to sort on
         """
         name = self.sort_.get("field")
 
         if name is None:
-            raise InvalidFilters("Can't find name of a sort")
+            msg = "Can't find name of a sort"
+            raise InvalidFilters(msg)
 
         if SPLIT_REL in name:
             name = name.split(SPLIT_REL)[0]
 
         if name not in self.schema.__fields__:
-            raise InvalidFilters("{} has no attribute {}".format(self.schema.__name__, name))
+            msg = "{} has no attribute {}".format(self.schema.__name__, name)
+            raise InvalidFilters(msg)
 
         return name
 
@@ -135,7 +137,8 @@ class Node(object):
         try:
             return getattr(self.model, model_field)
         except AttributeError:
-            raise InvalidFilters("{} has no attribute {}".format(self.model.__name__, model_field))
+            msg = "{} has no attribute {}".format(self.model.__name__, model_field)
+            raise InvalidFilters(msg)
 
     @property
     def related_model(self) -> DeclarativeMeta:
@@ -147,7 +150,8 @@ class Node(object):
         relationship_field = self.name
 
         if relationship_field not in get_relationships(self.schema):
-            raise InvalidFilters("{} has no relationship attribute {}".format(self.schema.__name__, relationship_field))
+            msg = "{} has no relationship attribute {}".format(self.schema.__name__, relationship_field)
+            raise InvalidFilters(msg)
 
         return getattr(self.model, get_model_field(self.schema, relationship_field)).property.mapper.class_
 
@@ -161,6 +165,7 @@ class Node(object):
         relationship_field = self.name
 
         if relationship_field not in get_relationships(self.schema):
-            raise InvalidFilters("{} has no relationship attribute {}".format(self.schema.__name__, relationship_field))
+            msg = "{} has no relationship attribute {}".format(self.schema.__name__, relationship_field)
+            raise InvalidFilters(msg)
 
         return self.schema.__fields__[relationship_field].type_

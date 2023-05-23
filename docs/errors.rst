@@ -95,4 +95,3 @@ Example:
 
             user = UserSchema.from_orm(user_obj)
             return user
-

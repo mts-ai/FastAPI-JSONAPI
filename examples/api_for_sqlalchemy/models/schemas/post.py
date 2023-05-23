@@ -3,11 +3,11 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
-from fastapi_rest_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
-    from .user import UserSchema
     from .post_comment import PostCommentSchema
+    from .user import UserSchema
 
 
 class PostBaseSchema(BaseModel):

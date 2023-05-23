@@ -1,17 +1,16 @@
 import logging
 from typing import Type
 
-from fastapi_rest_jsonapi import (
+from fastapi_jsonapi import (
     QueryStringManager,
     SqlalchemyEngine,
 )
-from fastapi_rest_jsonapi.data_layers.data_typing import TypeSchema
-from fastapi_rest_jsonapi.schema import (
+from fastapi_jsonapi.data_layers.data_typing import TypeSchema
+from fastapi_jsonapi.schema import (
     JSONAPIResultListMetaSchema,
     JSONAPIResultListSchema,
 )
-from fastapi_rest_jsonapi.views.view_base import ViewBase
-
+from fastapi_jsonapi.views.view_base import ViewBase
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,9 @@ class ListViewBase(ViewBase):
         total_pages = 1
         if query_params.pagination.size:
             total_pages = count // query_params.pagination.size + (
-                (count % query_params.pagination.size) and 1  # noqa: S001
+                # one more page if not a multiple of size
+                (count % query_params.pagination.size)
+                and 1
             )
 
         result_objects, object_schemas, extras = self.process_includes_for_db_items(

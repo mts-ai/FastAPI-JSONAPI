@@ -4,14 +4,15 @@ from typing import (
     Union,
 )
 
+from examples.api_for_sqlalchemy.models import Post, User
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
+
 from .exceptions import ErrorCreateObject
 from .faker import fake
 from .meta_base import (
     BaseFactory,
     FactoryUseMode,
 )
-from fastapi_rest_jsonapi.querystring import HeadersQueryStringManager
-from examples.api_for_sqlalchemy.models import User, Post
 
 
 class ErrorCreatePostObject(ErrorCreateObject):
@@ -21,7 +22,7 @@ class ErrorCreatePostObject(ErrorCreateObject):
 
 
 async def create_user(db_se) -> User:
-    raise NotImplemented
+    raise NotImplementedError
 
 
 class PostFactory(BaseFactory):
@@ -35,8 +36,8 @@ class PostFactory(BaseFactory):
     }
 
     set_field_on_create = (
-        'title',
-        'body',
+        "title",
+        "body",
     )
 
     @classmethod

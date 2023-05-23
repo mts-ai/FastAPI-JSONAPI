@@ -7,13 +7,14 @@ from typing import (
     Union,
 )
 
+from examples.api_for_sqlalchemy.models import User
+from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
 from fastapi_jsonapi.querystring import HeadersQueryStringManager
+
 from .exceptions import ErrorUpdateObject
 from .meta_base import (
     BaseUpdater,
 )
-from ...models.enums import UserStatusEnum
-from examples.api_for_sqlalchemy.models import User
 
 
 class ErrorUpdateUserObject(ErrorUpdateObject):
@@ -39,7 +40,6 @@ class UpdateUser(BaseUpdater):
         new_data: Dict[str, Any],
         header: Union[HeadersQueryStringManager, None] = None,
     ) -> User:
-
         cls._update_first_name(obj, new_data)
         cls._update_last_name(obj, new_data)
         cls._update_status(obj, new_data)

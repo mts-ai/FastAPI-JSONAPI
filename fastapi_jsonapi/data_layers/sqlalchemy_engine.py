@@ -1,7 +1,7 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
-from typing import Any, Iterable, Type, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple, Type
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
@@ -10,18 +10,17 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.sql import Select
 
-from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
 from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
 from fastapi_jsonapi.exceptions import (
-    RelationNotFound,
-    RelatedObjectNotFound,
-    ObjectNotFound,
     InvalidInclude,
+    ObjectNotFound,
+    RelatedObjectNotFound,
+    RelationNotFound,
 )
-from fastapi_jsonapi.querystring import PaginationQueryStringManager
+from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
 from fastapi_jsonapi.schema import (
     get_model_field,
     get_related_schema,
@@ -99,7 +98,8 @@ class SqlalchemyEngine(BaseDataLayer):
         try:
             filter_field = getattr(self.model, id_name_field)
         except Exception:
-            raise Exception(f"{self.model.__name__} has no attribute {id_name_field}")
+            msg = f"{self.model.__name__} has no attribute {id_name_field}"
+            raise Exception(msg)
 
         filter_value = view_kwargs[self.url_field]
 
@@ -111,8 +111,9 @@ class SqlalchemyEngine(BaseDataLayer):
         try:
             obj = (await self.session.execute(query)).scalar_one()
         except NoResultFound:
+            msg = f"{self.model.__name__} #{filter_value} not found"
             raise ObjectNotFound(
-                f"{self.model.__name__} #{filter_value} not found",
+                msg,
                 parameter=self.url_field,
             )
 
@@ -227,13 +228,15 @@ class SqlalchemyEngine(BaseDataLayer):
 
         if obj is None:
             filter_value = view_kwargs[self.url_field]
+            msg = f"{self.model.__name__}: {filter_value} not found"
             raise ObjectNotFound(
-                f"{self.model.__name__}: {filter_value} not found",
+                msg,
                 parameter=self.url_field,
             )
 
         if not hasattr(obj, relationship_field):
-            raise RelationNotFound(f"{obj.__class__.__name__} has no attribute {relationship_field}")
+            msg = f"{obj.__class__.__name__} has no attribute {relationship_field}"
+            raise RelationNotFound(msg)
 
         related_objects = getattr(obj, relationship_field)
 
@@ -298,14 +301,12 @@ class SqlalchemyEngine(BaseDataLayer):
         :params obj: the sqlalchemy object to retrieve related objects from
         :return: a related object
         """
+        stmt = select(related_model).where(getattr(related_model, related_id_field) == obj["id"])
         try:
-            related_object = (
-                await self.session.execute(
-                    select(related_model).where(getattr(related_model, related_id_field) == obj["id"])
-                )
-            ).scalar_one()
+            related_object = (await self.session.execute(stmt)).scalar_one()
         except NoResultFound:
-            raise RelatedObjectNotFound(f"{related_model.__name__}.{related_id_field}: {obj['id']} not found")
+            msg = f"{related_model.__name__}.{related_id_field}: {obj['id']} not found"
+            raise RelatedObjectNotFound(msg)
 
         return related_object
 
@@ -381,15 +382,11 @@ class SqlalchemyEngine(BaseDataLayer):
                 field_to_load: InstrumentedAttribute = getattr(current_model, field_name_to_load)
                 is_many = field_to_load.property.uselist
                 if relation_join_object is None:
-                    if is_many:
-                        relation_join_object = selectinload(field_to_load)
-                    else:
-                        relation_join_object = joinedload(field_to_load)
+                    relation_join_object = selectinload(field_to_load) if is_many else joinedload(field_to_load)
+                elif is_many:
+                    relation_join_object = relation_join_object.selectinload(field_to_load)
                 else:
-                    if is_many:
-                        relation_join_object = relation_join_object.selectinload(field_to_load)
-                    else:
-                        relation_join_object = relation_join_object.joinedload(field_to_load)
+                    relation_join_object = relation_join_object.joinedload(field_to_load)
 
                 current_schema = get_related_schema(current_schema, related_field_name)
 
