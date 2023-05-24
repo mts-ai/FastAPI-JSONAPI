@@ -27,9 +27,7 @@ SORTING_ORDER = [
     "delete",
 ]
 
-ORDER_POS = {
-    i: v for i, v in enumerate(SORTING_ORDER)
-}
+ORDER_POS = {i: v for i, v in enumerate(SORTING_ORDER)}
 
 
 class StrOrderCRUD:
@@ -65,7 +63,7 @@ def run_request_for_module(module_name: str):
 
     http_response_text = []
 
-    response_reason = (response.reason or "")
+    response_reason = response.reason or ""
     if response.status_code != HTTPStatus.OK:
         response_reason = response_reason.title()
 
@@ -81,7 +79,7 @@ def run_request_for_module(module_name: str):
     http_response_text.append(
         "{}: {}".format(
             "Content-Type",
-            response.headers.get('content-type'),
+            response.headers.get("content-type"),
         )
     )
     http_response_text.append("")
@@ -127,8 +125,8 @@ def add_help_lines(lines: list, module_name: str) -> None:
     '''
 
     """
-    literalinclude_file =  ".. literalinclude:: ./http_snippets/snippets/" + module_name
-    rst_language_http    = "  :language: HTTP"
+    literalinclude_file = ".. literalinclude:: ./http_snippets/snippets/" + module_name
+    rst_language_http = "  :language: HTTP"
 
     lines.append("")
     lines.append("Request:")
@@ -153,6 +151,7 @@ def main():
     available_modules = os.listdir(SNIPPETS_DIR)
     log.debug("all available snippets: %s", available_modules)
     modules_to_process = list(
+        # exclude unknown
         filter(lambda name: name.startswith(args.prefix), available_modules)
     )
     modules_to_process.sort(key=StrOrderCRUD)

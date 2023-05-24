@@ -5,8 +5,8 @@
 
 > Waiting for a PR to be merged: https://github.com/Kong/httpsnippet/pull/222
 >
-> Otherwise, extra options cannot be passed 
-> (you'll need to delete Host and Content-Length manually, or use the forked version) 
+> Otherwise, extra options cannot be passed
+> (you'll need to delete Host and Content-Length manually, or use the forked version)
 
 ```shell
 # to use in cli
@@ -73,7 +73,7 @@ httpsnippet ./*.json --target http --output ./snippets
 ```
 
 
-### Create requests and run them, write results 
+### Create requests and run them, write results
 
 ```shell
 # create python-requests requests snippets
@@ -97,7 +97,7 @@ python3 update_snippets_with_responses.py relationship_api
 python3 update_snippets_with_responses.py relationship_api --verbose
 ```
 
-> **Pro tip:** run webserver for specs before running update_snippets_with_responses, otherwise it won't work 😉 
+> **Pro tip:** run webserver for specs before running update_snippets_with_responses, otherwise it won't work 😉
 
 
 Copy-paste resulting help text (from between the "===" lines) to make includes.
