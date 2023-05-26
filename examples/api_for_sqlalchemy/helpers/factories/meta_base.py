@@ -14,11 +14,13 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
+from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.data_layers.fields.enum import Enum
-from fastapi_jsonapi.querystring import HeadersQueryStringManager
+from fastapi_jsonapi.querystring import HeadersQueryStringManager, QueryStringManager
 
 from .exceptions import (
     ErrorCreateObject,
@@ -242,7 +244,26 @@ class MetaFactory(type):
 class BaseFactory(_BaseFactory, metaclass=MetaFactory):
     """Base factory."""
 
-    ...
+    @classmethod
+    async def create_object_generic(
+        cls,
+        data_as_schema: BaseModel,
+        query_params: QueryStringManager,
+        session: AsyncSession,
+        exc: Type[ErrorCreateObject],
+        factory_mode=FactoryUseMode.production,
+    ) -> TypeModel:
+        try:
+            new_obj: TypeModel = await cls.create(
+                data=data_as_schema.dict(),
+                mode=factory_mode,
+                header=query_params.headers,
+                session=session,
+            )
+        except exc as ex:
+            raise BadRequest(ex.description, ex.field)
+
+        return new_obj
 
 
 TypeBaseFactory = TypeVar("TypeBaseFactory", bound=BaseFactory)  # type: ignore
@@ -258,6 +279,6 @@ def factory_import(name: str) -> Type[TypeBaseFactory]:
     return mod  # type: ignore
 
 
-async def create_from_factory(factory: str, **kwargs: Union[Any]) -> TypeModel:
+async def create_from_factory(factory: str, **kwargs: Any) -> TypeModel:
     factory_clss: Type[BaseFactory[TypeModel]] = factory_import(factory)
     return await factory_clss(**kwargs).create()

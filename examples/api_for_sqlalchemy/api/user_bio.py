@@ -4,11 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
 from examples.api_for_sqlalchemy.helpers.factories.user_bio import ErrorCreateUserBioObject, UserBioFactory
+from examples.api_for_sqlalchemy.models import UserBio
 from examples.api_for_sqlalchemy.models.schemas.user_bio import UserBioInSchema
 from fastapi_jsonapi import SqlalchemyEngine
-from fastapi_jsonapi.exceptions import (
-    BadRequest,
-)
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
 from fastapi_jsonapi.views.detail_view import DetailViewBase
@@ -81,16 +79,13 @@ class UserBioList(ListViewBase):
         query_params: QueryStringManager,
         session: AsyncSession = Depends(Connector.get_session),
     ) -> JSONAPIResultDetailSchema:
-        try:
-            user_bio_obj = await UserBioFactory.create(
-                data=data.dict(),
-                mode=FactoryUseMode.production,
-                header=query_params.headers,
-                session=session,
-            )
-        except ErrorCreateUserBioObject as ex:
-            raise BadRequest(ex.description, ex.field)
-
+        user_bio_obj: UserBio = await UserBioFactory.create_object_generic(
+            data_as_schema=data,
+            query_params=query_params,
+            session=session,
+            factory_mode=FactoryUseMode.production,
+            exc=ErrorCreateUserBioObject,
+        )
         dl = SqlalchemyEngine(
             schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,

@@ -88,16 +88,13 @@ class UserList(ListViewBase):
         query_params: QueryStringManager,
         session: AsyncSession = Depends(Connector.get_session),
     ) -> JSONAPIResultDetailSchema:
-        try:
-            user_obj = await UserFactory.create(
-                data=data.dict(),
-                mode=FactoryUseMode.production,
-                header=query_params.headers,
-                session=session,
-            )
-        except ErrorCreateUserObject as ex:
-            raise BadRequest(ex.description, ex.field)
-
+        user_obj: User = await UserFactory.create_object_generic(
+            data_as_schema=data,
+            query_params=query_params,
+            session=session,
+            exc=ErrorCreateUserObject,
+            factory_mode=FactoryUseMode.production,
+        )
         dl = SqlalchemyEngine(
             schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,
