@@ -51,5 +51,6 @@ class PostSchema(PostInSchema):
     comments: List["PostCommentSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="post_comment",
+            many=True,
         ),
     )
