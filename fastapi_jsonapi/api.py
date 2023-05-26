@@ -443,10 +443,12 @@ class RoutersJSONAPI:
                 # find nested from the Schema
                 nested_schema: Type[BaseModel] = current_schema.__fields__[include_part].type_
                 # find all relations for this one
+                nested_schema_includes = set(relations_list[: part_index - 1] + relations_list[part_index:])
                 related_jsonapi_object_schema = self.create_jsonapi_object_schemas(
                     nested_schema,
                     resource_type=resource_type,
-                    includes=relations_list[part_index:],
+                    # higher and lower
+                    includes=nested_schema_includes,
                 ).object_jsonapi_schema
                 # cache it
                 can_be_included_schemas[include_part] = related_jsonapi_object_schema
