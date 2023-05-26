@@ -1,10 +1,10 @@
 import logging
+from functools import partial
 from typing import (
     Dict,
     Iterable,
     List,
     Optional,
-    Set,
     Tuple,
     Type,
     Union,
@@ -23,7 +23,7 @@ from fastapi_jsonapi.schema import (
     JSONAPIResultDetailSchema,
     get_related_schema,
 )
-from fastapi_jsonapi.schema_base import RelationshipInfo
+from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
 
 logger = logging.getLogger(__name__)
@@ -39,19 +39,14 @@ class ViewBase:
         item_from_db: TypeModel,
         included_object_schema: Type[TypeSchema],
         relationship_info: RelationshipInfo,
-        known_included: Set[Tuple[Union[int, str], str]],
     ) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
         item_id = str(item_from_db.id)
         data_for_relationship = {"id": item_id}
-        key = (item_id, relationship_info.resource_type)
-        processed_object = None
-        if key not in known_included:
-            processed_object = included_object_schema(
-                id=item_id,
-                attributes=item_from_db,
-                type=relationship_info.resource_type,
-            )
-            known_included.add(key)
+        processed_object = included_object_schema(
+            id=item_id,
+            attributes=item_from_db,
+            type=relationship_info.resource_type,
+        )
 
         return data_for_relationship, processed_object
 
@@ -60,17 +55,12 @@ class ViewBase:
         related_db_item: Union[List[TypeModel], TypeModel],
         relationship_info: RelationshipInfo,
         included_object_schema: Type[TypeSchema],
-        known_included: Set[Tuple[Union[int, str], str]],
     ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema]]:
-        def prepare_related_db_item(
-            item_from_db: TypeModel,
-        ) -> Tuple[Dict[str, Union[str, int]], Optional[TypeSchema]]:
-            return self.prepare_related_object_data(
-                item_from_db=item_from_db,
-                included_object_schema=included_object_schema,
-                relationship_info=relationship_info,
-                known_included=known_included,
-            )
+        prepare_related_db_item = partial(
+            self.prepare_related_object_data,
+            included_object_schema=included_object_schema,
+            relationship_info=relationship_info,
+        )
 
         included_objects = []
         if isinstance(related_db_item, Iterable):
@@ -91,93 +81,175 @@ class ViewBase:
             )
             if processed_object:
                 included_objects.append(processed_object)
-
         return data_for_relationship, included_objects
 
-    def process_one_include_with_nested(
+    def process_include_with_nested(
         self,
         include: str,
-        current_db_item: TypeModel,
+        current_db_item: Union[List[TypeModel], TypeModel],
+        item_as_schema: TypeSchema,
         current_relation_schema: Type[TypeSchema],
-        relationships_schema: Type[TypeSchema],
-        schemas_include: Dict[str, Type[JSONAPIObjectSchema]],
-        known_included: Set[Tuple[Union[int, str], str]],
     ) -> Tuple[Dict[str, TypeSchema], List[JSONAPIObjectSchema]]:
-        top_level_relationships = {}
-        included_objects = []
-        top_level_include = True
-        current_db_item: Union[List[TypeModel], TypeModel]
+        root_item_key = (item_as_schema.id, item_as_schema.type)
+        included_objects: Dict[Tuple[str, str], TypeSchema] = {
+            root_item_key: item_as_schema,
+        }
+        previous_resource_type = item_as_schema.type
         for related_field_name in include.split(SPLIT_REL):
             # TODO: when including 'user.bio', it loads user AND user's bio.
-            #  need to load only bio when includes 'user.bio'
+            #  need to load only bio when includes 'user.bio' (but how)
+
+            object_schemas = self.jsonapi.create_jsonapi_object_schemas(
+                schema=current_relation_schema,
+                includes=[related_field_name],
+                compute_included_schemas=bool([related_field_name]),
+            )
+            relationships_schema = object_schemas.relationships_schema
+            schemas_include = object_schemas.can_be_included_schemas
+
             current_relation_field: ModelField = current_relation_schema.__fields__[related_field_name]
             current_relation_schema: Type[TypeSchema] = current_relation_field.type_
 
             relationship_info: RelationshipInfo = current_relation_field.field_info.extra["relationship"]
             included_object_schema = schemas_include[related_field_name]
 
+            process_db_item = partial(
+                self.prepare_data_for_relationship,
+                relationship_info=relationship_info,
+                included_object_schema=included_object_schema,
+            )
+
             if isinstance(current_db_item, Iterable):
-                current_db_item = [getattr(item, related_field_name) for item in current_db_item]
-                for db_item in current_db_item:
-                    data_for_relationship, new_included = self.prepare_data_for_relationship(
-                        related_db_item=db_item,
-                        relationship_info=relationship_info,
-                        included_object_schema=included_object_schema,
-                        known_included=known_included,
-                    )
-                    included_objects.extend(new_included)
+                for parent_db_item in current_db_item:
+                    cache_key = (str(parent_db_item.id), previous_resource_type)
+                    current_db_item = getattr(parent_db_item, related_field_name)
+                    relationship_data_schema = get_related_schema(relationships_schema, related_field_name)
+                    if isinstance(current_db_item, Iterable):
+                        relationship_data_items = []
+
+                        for db_item in current_db_item:
+                            data_for_relationship, new_included = process_db_item(
+                                related_db_item=db_item,
+                            )
+
+                            for included in new_included:
+                                included_objects[(included.id, included.type)] = included
+                            relationship_data_items.append(data_for_relationship)
+
+                        parent_included_object = included_objects.get(cache_key)
+                        new_relationships = {}
+                        if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
+                            existing = parent_included_object.relationships
+                            if isinstance(existing, BaseModel):
+                                existing = existing.dict()
+                            new_relationships.update(existing)
+                        new_relationships.update({
+                            **{
+                                related_field_name: relationship_data_schema(
+                                    data=relationship_data_items,
+                                ),
+                            },
+                        })
+                        included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
+                            parent_included_object,
+                        ).copy(
+                            update={"relationships": new_relationships},
+                        )
+                    else:
+                        data_for_relationship, new_included = process_db_item(
+                            related_db_item=current_db_item,
+                        )
+
+                        for included in new_included:
+                            included_objects[(included.id, included.type)] = included
+
+                        parent_included_object = included_objects.get(cache_key)
+                        new_relationships = {}
+                        if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
+                            existing = parent_included_object.relationships
+                            if isinstance(existing, BaseModel):
+                                existing = existing.dict()
+                            new_relationships.update(existing)
+                        new_relationships.update({
+                            **{
+                                related_field_name: relationship_data_schema(
+                                    data=data_for_relationship,
+                                ),
+                            },
+                        })
+                        included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
+                            parent_included_object).copy(
+                            update={"relationships": new_relationships},
+                        )
 
             else:
-                current_db_item = getattr(current_db_item, related_field_name)
-
-                data_for_relationship, new_included = self.prepare_data_for_relationship(
-                    related_db_item=current_db_item,
-                    relationship_info=relationship_info,
-                    included_object_schema=included_object_schema,
-                    known_included=known_included,
-                )
-                included_objects.extend(new_included)
-
-            # if previous_include_key:
-            #     for prev_included_item in previous_included:
-            #         fwd_relationships_schema = get_related_schema(prev_included_item.__class__, "relationships")
-            #         fwd_relationship_data_schema = get_related_schema(
-            #             fwd_relationships_schema,
-            #             previous_include_key,
-            #         )
-            #         # TODO!! xxx
-            #         #  this will overwrite any existing data
-            #         #  due to 'known includes' some items may be not filled :(
-            #         #  idea: use dict instead of set for known and update those
-            #         prev_included_item.relationships = fwd_relationship_data_schema(data=data_for_relationship)
-            #
-            #     for new_included_item in new_included:
-            #         reverse_relationships_schema = get_related_schema(new_included_item.__class__, "relationships")
-            #         # TODO: reverse for many doesn't work here!
-            #         reverse_relationship_data_schema = get_related_schema(
-            #             reverse_relationships_schema,
-            #             previous_include_key,
-            #         )
-            #         # reverse_relationship_data, _ =
-            #         if relationship_info.many:
-            #             data = [dict(id=item.id) for item in parent_db_item]
-            #         else:
-            #             data = dict(id=parent_db_item.id)
-            #         # TODO!! xxx
-            #         #  this will overwrite any existing data
-            #         new_included_item.relationships = reverse_relationship_data_schema(data=data)
-
-            # previous_include_key = related_field_name
-            # previous_included = new_included
-            # previous_relationship_info = relationship_info
-
-            # TODO: level 2+ not finished yet (relationship stays null)
-            if top_level_include:
+                parent_db_item = current_db_item
+                cache_key = (str(parent_db_item.id), previous_resource_type)
+                current_db_item = getattr(parent_db_item, related_field_name)
                 relationship_data_schema = get_related_schema(relationships_schema, related_field_name)
-                top_level_relationships[related_field_name] = relationship_data_schema(data=data_for_relationship)
-                top_level_include = False
+                if isinstance(current_db_item, Iterable):
+                    relationship_data_items = []
 
-        return top_level_relationships, included_objects
+                    for db_item in current_db_item:
+                        data_for_relationship, new_included = process_db_item(
+                            related_db_item=db_item,
+                        )
+
+                        for included in new_included:
+                            included_objects[(included.id, included.type)] = included
+                        relationship_data_items.append(data_for_relationship)
+
+                    parent_included_object = included_objects.get(cache_key)
+                    new_relationships = {}
+                    if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
+                        existing = parent_included_object.relationships
+                        if isinstance(existing, BaseModel):
+                            existing = existing.dict()
+                        new_relationships.update(existing)
+                    new_relationships.update({
+                        **{
+                            related_field_name: relationship_data_schema(
+                                data=relationship_data_items,
+                            ),
+                        },
+                    })
+                    included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
+                        parent_included_object,
+                    ).copy(
+                        update={"relationships": new_relationships},
+                    )
+                else:
+                    data_for_relationship, new_included = process_db_item(
+                        related_db_item=current_db_item,
+                    )
+
+                    for included in new_included:
+                        included_objects[(included.id, included.type)] = included
+
+                    parent_included_object = included_objects.get(cache_key)
+                    new_relationships = {}
+                    if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
+                        existing = parent_included_object.relationships
+                        if isinstance(existing, BaseModel):
+                            existing = existing.dict()
+                        new_relationships.update(existing)
+                    new_relationships.update({
+                        **{
+                            related_field_name: relationship_data_schema(
+                                data=data_for_relationship,
+                            ),
+                        },
+                    })
+                    included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
+                        parent_included_object,
+                    ).copy(
+                        update={"relationships": new_relationships},
+                    )
+
+
+            previous_resource_type = relationship_info.resource_type
+
+        return included_objects.pop(root_item_key), list(included_objects.values())
 
     def process_db_object(
         self,
@@ -185,37 +257,25 @@ class ViewBase:
         item: TypeModel,
         item_schema: Type[TypeSchema],
         object_schemas: JSONAPIObjectSchemas,
-        known_included: Set[Tuple[Union[int, str], str]],
     ):
         included_objects = []
 
-        # noinspection Pydantic
-        schema_kwargs = {
-            "id": str(item.id),
-            "attributes": object_schemas.attributes_schema.from_orm(item),
-        }
 
-        obj_relationships = {}
+        item_as_schema = object_schemas.object_jsonapi_schema(
+            id=str(item.id),  # TODO: error if None?
+            attributes=object_schemas.attributes_schema.from_orm(item),
+        )
+
         for include in includes:
-            top_level_relationships, new_included_objects = self.process_one_include_with_nested(
+            item_as_schema, new_included_objects = self.process_include_with_nested(
                 include=include,
                 current_db_item=item,
+                item_as_schema=item_as_schema,
                 current_relation_schema=item_schema,
-                relationships_schema=object_schemas.relationships_schema,
-                schemas_include=object_schemas.can_be_included_schemas,
-                known_included=known_included,
             )
 
-            obj_relationships.update(top_level_relationships)
             included_objects.extend(new_included_objects)
 
-        if obj_relationships:
-            relationships = object_schemas.relationships_schema(**obj_relationships)
-            schema_kwargs.update(
-                relationships=relationships,
-            )
-
-        item_as_schema = object_schemas.object_jsonapi_schema(**schema_kwargs)
 
         return item_as_schema, included_objects
 
@@ -232,24 +292,33 @@ class ViewBase:
         )
 
         result_objects = []
-        included_objects = []
-        known_included = set()
+        # form:
+        # `(type, id): serialized_object`
+        # helps to exclude duplicates
+        included_objects: Dict[Tuple[str, str], TypeSchema] = {}
         for item in items_from_db:
             jsonapi_object, new_included = self.process_db_object(
                 includes=includes,
                 item=item,
                 item_schema=item_schema,
                 object_schemas=object_schemas,
-                known_included=known_included,
             )
             result_objects.append(jsonapi_object)
-            included_objects.extend(new_included)
+            for included in new_included:
+                # update too?
+                included_objects[(included.type, included.id)] = included
 
         extras = {}
         if includes:
             # if query has includes, add includes to response
             # even if no related objects were found
-            extras.update(included=included_objects)
+            extras.update(included=[
+                value
+                # ignore key
+                for key, value
+                # sort for prettiness
+                in sorted(included_objects.items())],
+            )
 
         return result_objects, object_schemas, extras
 
