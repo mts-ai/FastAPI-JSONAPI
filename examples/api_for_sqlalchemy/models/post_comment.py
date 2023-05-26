@@ -15,7 +15,7 @@ class PostComment(Base, BaseModelMixin):
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False, unique=False)
     post = relationship("Post", back_populates="comments", uselist=False)
 
-    author_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=False)
     author = relationship("User", back_populates="comments", uselist=False)
 
     def __repr__(self):
