@@ -232,7 +232,7 @@ class ViewBase:
                 current_db_item = [current_db_item]
 
             current_db_item = self.process_db_items_and_create_prepare(
-                parent_db_items=list(current_db_item),
+                parent_db_items=current_db_item,
                 previous_resource_type=previous_resource_type,
                 related_field_name=related_field_name,
                 relationship_info=relationship_info,
