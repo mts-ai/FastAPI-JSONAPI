@@ -157,60 +157,20 @@ class ViewBase:
                 included_object_schema=included_object_schema,
             )
 
-            if isinstance(current_db_item, Iterable):
-                next_current_db_item = []
-                parent_db_items = list(current_db_item)
-                for parent_db_item in parent_db_items:
-                    cache_key = (str(parent_db_item.id), previous_resource_type)
-                    current_db_item = getattr(parent_db_item, related_field_name)
-                    if isinstance(current_db_item, Iterable):
-                        relationship_data_items = []
+            if not isinstance(current_db_item, Iterable):
+                # xxx: less if/else
+                current_db_item = [current_db_item]
 
-                        for db_item in current_db_item:
-                            next_current_db_item.append(db_item)
-                            data_for_relationship, new_included = process_db_item(
-                                related_db_item=db_item,
-                            )
-                            relationship_data_items.append(data_for_relationship)
-
-                            for included in new_included:
-                                included_objects[(included.id, included.type)] = included
-
-                        self.update_related_object(
-                            relationship_data=relationship_data_items,
-                            relationships_schema=relationships_schema,
-                            object_schema=object_schemas.object_jsonapi_schema,
-                            included_objects=included_objects,
-                            cache_key=cache_key,
-                            related_field_name=related_field_name,
-                        )
-                    else:
-                        next_current_db_item.append(current_db_item)
-                        data_for_relationship, new_included = process_db_item(
-                            related_db_item=current_db_item,
-                        )
-
-                        for included in new_included:
-                            included_objects[(included.id, included.type)] = included
-
-                        self.update_related_object(
-                            relationship_data=data_for_relationship,
-                            relationships_schema=relationships_schema,
-                            object_schema=object_schemas.object_jsonapi_schema,
-                            included_objects=included_objects,
-                            cache_key=cache_key,
-                            related_field_name=related_field_name,
-                        )
-                current_db_item = next_current_db_item
-
-            else:
-                parent_db_item = current_db_item
+            next_current_db_item = []
+            parent_db_items = list(current_db_item)
+            for parent_db_item in parent_db_items:
                 cache_key = (str(parent_db_item.id), previous_resource_type)
                 current_db_item = getattr(parent_db_item, related_field_name)
                 if isinstance(current_db_item, Iterable):
                     relationship_data_items = []
 
                     for db_item in current_db_item:
+                        next_current_db_item.append(db_item)
                         data_for_relationship, new_included = process_db_item(
                             related_db_item=db_item,
                         )
@@ -228,6 +188,7 @@ class ViewBase:
                         related_field_name=related_field_name,
                     )
                 else:
+                    next_current_db_item.append(current_db_item)
                     data_for_relationship, new_included = process_db_item(
                         related_db_item=current_db_item,
                     )
@@ -243,6 +204,7 @@ class ViewBase:
                         cache_key=cache_key,
                         related_field_name=related_field_name,
                     )
+            current_db_item = next_current_db_item
 
             previous_resource_type = relationship_info.resource_type
 
