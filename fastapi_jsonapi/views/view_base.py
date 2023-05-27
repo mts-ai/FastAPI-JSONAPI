@@ -155,13 +155,16 @@ class ViewBase:
             )
 
             if isinstance(current_db_item, Iterable):
-                for parent_db_item in current_db_item:
+                next_current_db_item = []
+                parent_db_items = list(current_db_item)
+                for parent_db_item in parent_db_items:
                     cache_key = (str(parent_db_item.id), previous_resource_type)
                     current_db_item = getattr(parent_db_item, related_field_name)
                     if isinstance(current_db_item, Iterable):
                         relationship_data_items = []
 
                         for db_item in current_db_item:
+                            next_current_db_item.append(db_item)
                             data_for_relationship, new_included = process_db_item(
                                 related_db_item=db_item,
                             )
@@ -179,6 +182,7 @@ class ViewBase:
                             related_field_name=related_field_name,
                         )
                     else:
+                        next_current_db_item.append(current_db_item)
                         data_for_relationship, new_included = process_db_item(
                             related_db_item=current_db_item,
                         )
@@ -194,6 +198,7 @@ class ViewBase:
                             cache_key=cache_key,
                             related_field_name=related_field_name,
                         )
+                current_db_item = next_current_db_item
 
             else:
                 parent_db_item = current_db_item
