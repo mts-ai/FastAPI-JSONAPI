@@ -118,6 +118,15 @@ class ViewBase:
             update={"relationships": new_relationships},
         )
 
+    @classmethod
+    def update_known_included(
+        cls,
+        included_objects: Dict[Tuple[str, str], TypeSchema],
+        new_included: List[TypeSchema],
+    ):
+        for included in new_included:
+            included_objects[(included.id, included.type)] = included
+
     def process_include_with_nested(
         self,
         include: str,
@@ -174,10 +183,12 @@ class ViewBase:
                         data_for_relationship, new_included = process_db_item(
                             related_db_item=db_item,
                         )
-                        relationship_data_items.append(data_for_relationship)
 
-                        for included in new_included:
-                            included_objects[(included.id, included.type)] = included
+                        self.update_known_included(
+                            included_objects=included_objects,
+                            new_included=new_included,
+                        )
+                        relationship_data_items.append(data_for_relationship)
 
                     self.update_related_object(
                         relationship_data=relationship_data_items,
@@ -193,8 +204,10 @@ class ViewBase:
                         related_db_item=current_db_item,
                     )
 
-                    for included in new_included:
-                        included_objects[(included.id, included.type)] = included
+                    self.update_known_included(
+                        included_objects=included_objects,
+                        new_included=new_included,
+                    )
 
                     self.update_related_object(
                         relationship_data=data_for_relationship,
