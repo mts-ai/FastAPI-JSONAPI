@@ -94,7 +94,6 @@ extend-ignore = [
     "RUF001",  # String contains ambiguous unicode character {confusable} (did you mean {representant}?)
     "RUF002",  # Docstring contains ambiguous unicode character {confusable} (did you mean {representant}?)
     "RUF003",  # Comment contains ambiguous unicode character {confusable} (did you mean {representant}?)
-    "PLR0912", # too many branches (temp)
 ]
 
 [tool.ruff.per-file-ignores]

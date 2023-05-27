@@ -1,6 +1,7 @@
 import logging
 from functools import partial
 from typing import (
+    Callable,
     Dict,
     Iterable,
     List,
@@ -128,7 +129,56 @@ class ViewBase:
             included_objects[(included.id, included.type)] = included
 
     @classmethod
-    def process_db_items_and_create_prepare(
+    def process_single_db_item_and_prepare_includes(
+        cls,
+        parent_db_item: TypeModel,
+        previous_resource_type: str,
+        related_field_name: str,
+        included_objects: Dict[Tuple[str, str], TypeSchema],
+        relationships_schema: Type[BaseModel],
+        object_schema: Type[JSONAPIObjectSchema],
+        process_db_item: Callable,
+    ):
+        next_current_db_item = []
+        cache_key = (str(parent_db_item.id), previous_resource_type)
+        current_db_item = getattr(parent_db_item, related_field_name)
+        current_is_single = False
+        if not isinstance(current_db_item, Iterable):
+            # hack to do less if/else
+            current_db_item = [current_db_item]
+            current_is_single = True
+        relationship_data_items = []
+
+        for db_item in current_db_item:
+            next_current_db_item.append(db_item)
+            data_for_relationship, new_included = process_db_item(
+                related_db_item=db_item,
+            )
+
+            cls.update_known_included(
+                included_objects=included_objects,
+                new_included=new_included,
+            )
+            relationship_data_items.append(data_for_relationship)
+
+        if current_is_single:
+            # if initially was single, get back one dict
+            # hack to do less if/else
+            relationship_data_items = relationship_data_items[0]
+
+        cls.update_related_object(
+            relationship_data=relationship_data_items,
+            relationships_schema=relationships_schema,
+            object_schema=object_schema,
+            included_objects=included_objects,
+            cache_key=cache_key,
+            related_field_name=related_field_name,
+        )
+
+        return next_current_db_item
+
+    @classmethod
+    def process_db_items_and_prepare_includes(
         cls,
         parent_db_items: List[TypeModel],
         previous_resource_type: str,
@@ -148,41 +198,16 @@ class ViewBase:
         next_current_db_item = []
 
         for parent_db_item in parent_db_items:
-            cache_key = (str(parent_db_item.id), previous_resource_type)
-            current_db_item = getattr(parent_db_item, related_field_name)
-            current_is_single = False
-            if not isinstance(current_db_item, Iterable):
-                # hack to do less if/else
-                current_db_item = [current_db_item]
-                current_is_single = True
-            relationship_data_items = []
-
-            for db_item in current_db_item:
-                next_current_db_item.append(db_item)
-                data_for_relationship, new_included = process_db_item(
-                    related_db_item=db_item,
-                )
-
-                cls.update_known_included(
-                    included_objects=included_objects,
-                    new_included=new_included,
-                )
-                relationship_data_items.append(data_for_relationship)
-
-            if current_is_single:
-                # if initially was single, get back one dict
-                # hack to do less if/else
-                relationship_data_items = relationship_data_items[0]
-
-            cls.update_related_object(
-                relationship_data=relationship_data_items,
+            new_next_items = cls.process_single_db_item_and_prepare_includes(
+                parent_db_item=parent_db_item,
+                previous_resource_type=previous_resource_type,
+                related_field_name=related_field_name,
+                included_objects=included_objects,
                 relationships_schema=relationships_schema,
                 object_schema=object_schema,
-                included_objects=included_objects,
-                cache_key=cache_key,
-                related_field_name=related_field_name,
+                process_db_item=process_db_item,
             )
-
+            next_current_db_item.extend(new_next_items)
         return next_current_db_item
 
     def process_include_with_nested(
@@ -222,7 +247,7 @@ class ViewBase:
                 # xxx: less if/else
                 current_db_item = [current_db_item]
 
-            current_db_item = self.process_db_items_and_create_prepare(
+            current_db_item = self.process_db_items_and_prepare_includes(
                 parent_db_items=current_db_item,
                 previous_resource_type=previous_resource_type,
                 related_field_name=related_field_name,
