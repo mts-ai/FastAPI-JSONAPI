@@ -34,8 +34,9 @@ class ViewBase:
         self.jsonapi = jsonapi
         self.options = options
 
+    @classmethod
     def prepare_related_object_data(
-        self,
+        cls,
         item_from_db: TypeModel,
         included_object_schema: Type[TypeSchema],
         relationship_info: RelationshipInfo,
@@ -50,14 +51,15 @@ class ViewBase:
 
         return data_for_relationship, processed_object
 
+    @classmethod
     def prepare_data_for_relationship(
-        self,
+        cls,
         related_db_item: Union[List[TypeModel], TypeModel],
         relationship_info: RelationshipInfo,
         included_object_schema: Type[TypeSchema],
     ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema]]:
         prepare_related_db_item = partial(
-            self.prepare_related_object_data,
+            cls.prepare_related_object_data,
             included_object_schema=included_object_schema,
             relationship_info=relationship_info,
         )
@@ -82,6 +84,39 @@ class ViewBase:
             if processed_object:
                 included_objects.append(processed_object)
         return data_for_relationship, included_objects
+
+    @classmethod
+    def update_related_object(
+        cls,
+        relationship_data: Union[Dict[str, str], List[Dict[str, str]]],
+        relationships_schema: Type[BaseModel],
+        object_schema: Type[JSONAPIObjectSchema],
+        included_objects: Dict[Tuple[str, str], TypeSchema],
+        cache_key: Tuple[str, str],
+        related_field_name: str,
+    ):
+        relationship_data_schema = get_related_schema(relationships_schema, related_field_name)
+        parent_included_object = included_objects.get(cache_key)
+        new_relationships = {}
+        if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
+            existing = parent_included_object.relationships or {}
+            if isinstance(existing, BaseModel):
+                existing = existing.dict()
+            new_relationships.update(existing)
+        new_relationships.update(
+            {
+                **{
+                    related_field_name: relationship_data_schema(
+                        data=relationship_data,
+                    ),
+                },
+            },
+        )
+        included_objects[cache_key] = object_schema.parse_obj(
+            parent_included_object,
+        ).copy(
+            update={"relationships": new_relationships},
+        )
 
     def process_include_with_nested(
         self,
@@ -123,7 +158,6 @@ class ViewBase:
                 for parent_db_item in current_db_item:
                     cache_key = (str(parent_db_item.id), previous_resource_type)
                     current_db_item = getattr(parent_db_item, related_field_name)
-                    relationship_data_schema = get_related_schema(relationships_schema, related_field_name)
                     if isinstance(current_db_item, Iterable):
                         relationship_data_items = []
 
@@ -131,29 +165,18 @@ class ViewBase:
                             data_for_relationship, new_included = process_db_item(
                                 related_db_item=db_item,
                             )
+                            relationship_data_items.append(data_for_relationship)
 
                             for included in new_included:
                                 included_objects[(included.id, included.type)] = included
-                            relationship_data_items.append(data_for_relationship)
 
-                        parent_included_object = included_objects.get(cache_key)
-                        new_relationships = {}
-                        if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
-                            existing = parent_included_object.relationships
-                            if isinstance(existing, BaseModel):
-                                existing = existing.dict()
-                            new_relationships.update(existing)
-                        new_relationships.update({
-                            **{
-                                related_field_name: relationship_data_schema(
-                                    data=relationship_data_items,
-                                ),
-                            },
-                        })
-                        included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
-                            parent_included_object,
-                        ).copy(
-                            update={"relationships": new_relationships},
+                        self.update_related_object(
+                            relationship_data=relationship_data_items,
+                            relationships_schema=relationships_schema,
+                            object_schema=object_schemas.object_jsonapi_schema,
+                            included_objects=included_objects,
+                            cache_key=cache_key,
+                            related_field_name=related_field_name,
                         )
                     else:
                         data_for_relationship, new_included = process_db_item(
@@ -163,30 +186,19 @@ class ViewBase:
                         for included in new_included:
                             included_objects[(included.id, included.type)] = included
 
-                        parent_included_object = included_objects.get(cache_key)
-                        new_relationships = {}
-                        if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
-                            existing = parent_included_object.relationships
-                            if isinstance(existing, BaseModel):
-                                existing = existing.dict()
-                            new_relationships.update(existing)
-                        new_relationships.update({
-                            **{
-                                related_field_name: relationship_data_schema(
-                                    data=data_for_relationship,
-                                ),
-                            },
-                        })
-                        included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
-                            parent_included_object).copy(
-                            update={"relationships": new_relationships},
+                        self.update_related_object(
+                            relationship_data=data_for_relationship,
+                            relationships_schema=relationships_schema,
+                            object_schema=object_schemas.object_jsonapi_schema,
+                            included_objects=included_objects,
+                            cache_key=cache_key,
+                            related_field_name=related_field_name,
                         )
 
             else:
                 parent_db_item = current_db_item
                 cache_key = (str(parent_db_item.id), previous_resource_type)
                 current_db_item = getattr(parent_db_item, related_field_name)
-                relationship_data_schema = get_related_schema(relationships_schema, related_field_name)
                 if isinstance(current_db_item, Iterable):
                     relationship_data_items = []
 
@@ -194,29 +206,18 @@ class ViewBase:
                         data_for_relationship, new_included = process_db_item(
                             related_db_item=db_item,
                         )
+                        relationship_data_items.append(data_for_relationship)
 
                         for included in new_included:
                             included_objects[(included.id, included.type)] = included
-                        relationship_data_items.append(data_for_relationship)
 
-                    parent_included_object = included_objects.get(cache_key)
-                    new_relationships = {}
-                    if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
-                        existing = parent_included_object.relationships
-                        if isinstance(existing, BaseModel):
-                            existing = existing.dict()
-                        new_relationships.update(existing)
-                    new_relationships.update({
-                        **{
-                            related_field_name: relationship_data_schema(
-                                data=relationship_data_items,
-                            ),
-                        },
-                    })
-                    included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
-                        parent_included_object,
-                    ).copy(
-                        update={"relationships": new_relationships},
+                    self.update_related_object(
+                        relationship_data=relationship_data_items,
+                        relationships_schema=relationships_schema,
+                        object_schema=object_schemas.object_jsonapi_schema,
+                        included_objects=included_objects,
+                        cache_key=cache_key,
+                        related_field_name=related_field_name,
                     )
                 else:
                     data_for_relationship, new_included = process_db_item(
@@ -226,26 +227,14 @@ class ViewBase:
                     for included in new_included:
                         included_objects[(included.id, included.type)] = included
 
-                    parent_included_object = included_objects.get(cache_key)
-                    new_relationships = {}
-                    if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
-                        existing = parent_included_object.relationships
-                        if isinstance(existing, BaseModel):
-                            existing = existing.dict()
-                        new_relationships.update(existing)
-                    new_relationships.update({
-                        **{
-                            related_field_name: relationship_data_schema(
-                                data=data_for_relationship,
-                            ),
-                        },
-                    })
-                    included_objects[cache_key] = object_schemas.object_jsonapi_schema.parse_obj(
-                        parent_included_object,
-                    ).copy(
-                        update={"relationships": new_relationships},
+                    self.update_related_object(
+                        relationship_data=data_for_relationship,
+                        relationships_schema=relationships_schema,
+                        object_schema=object_schemas.object_jsonapi_schema,
+                        included_objects=included_objects,
+                        cache_key=cache_key,
+                        related_field_name=related_field_name,
                     )
-
 
             previous_resource_type = relationship_info.resource_type
 
@@ -259,7 +248,6 @@ class ViewBase:
         object_schemas: JSONAPIObjectSchemas,
     ):
         included_objects = []
-
 
         item_as_schema = object_schemas.object_jsonapi_schema(
             id=str(item.id),  # TODO: error if None?
@@ -275,7 +263,6 @@ class ViewBase:
             )
 
             included_objects.extend(new_included_objects)
-
 
         return item_as_schema, included_objects
 
@@ -312,12 +299,13 @@ class ViewBase:
         if includes:
             # if query has includes, add includes to response
             # even if no related objects were found
-            extras.update(included=[
-                value
-                # ignore key
-                for key, value
-                # sort for prettiness
-                in sorted(included_objects.items())],
+            extras.update(
+                included=[
+                    # ignore key
+                    value
+                    # sort for prettiness
+                    for key, value in sorted(included_objects.items())
+                ],
             )
 
         return result_objects, object_schemas, extras
