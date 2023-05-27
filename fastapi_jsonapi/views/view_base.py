@@ -150,48 +150,39 @@ class ViewBase:
         for parent_db_item in parent_db_items:
             cache_key = (str(parent_db_item.id), previous_resource_type)
             current_db_item = getattr(parent_db_item, related_field_name)
-            if isinstance(current_db_item, Iterable):
-                relationship_data_items = []
+            current_is_single = False
+            if not isinstance(current_db_item, Iterable):
+                # hack to do less if/else
+                current_db_item = [current_db_item]
+                current_is_single = True
+            relationship_data_items = []
 
-                for db_item in current_db_item:
-                    next_current_db_item.append(db_item)
-                    data_for_relationship, new_included = process_db_item(
-                        related_db_item=db_item,
-                    )
-
-                    cls.update_known_included(
-                        included_objects=included_objects,
-                        new_included=new_included,
-                    )
-                    relationship_data_items.append(data_for_relationship)
-
-                cls.update_related_object(
-                    relationship_data=relationship_data_items,
-                    relationships_schema=relationships_schema,
-                    object_schema=object_schema,
-                    included_objects=included_objects,
-                    cache_key=cache_key,
-                    related_field_name=related_field_name,
-                )
-            else:
-                next_current_db_item.append(current_db_item)
+            for db_item in current_db_item:
+                next_current_db_item.append(db_item)
                 data_for_relationship, new_included = process_db_item(
-                    related_db_item=current_db_item,
+                    related_db_item=db_item,
                 )
 
                 cls.update_known_included(
                     included_objects=included_objects,
                     new_included=new_included,
                 )
+                relationship_data_items.append(data_for_relationship)
 
-                cls.update_related_object(
-                    relationship_data=data_for_relationship,
-                    relationships_schema=relationships_schema,
-                    object_schema=object_schema,
-                    included_objects=included_objects,
-                    cache_key=cache_key,
-                    related_field_name=related_field_name,
-                )
+            if current_is_single:
+                # if initially was single, get back one dict
+                # hack to do less if/else
+                relationship_data_items = relationship_data_items[0]
+
+            cls.update_related_object(
+                relationship_data=relationship_data_items,
+                relationships_schema=relationships_schema,
+                object_schema=object_schema,
+                included_objects=included_objects,
+                cache_key=cache_key,
+                related_field_name=related_field_name,
+            )
+
         return next_current_db_item
 
     def process_include_with_nested(
