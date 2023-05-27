@@ -127,6 +127,73 @@ class ViewBase:
         for included in new_included:
             included_objects[(included.id, included.type)] = included
 
+    @classmethod
+    def process_db_items_and_create_prepare(
+        cls,
+        parent_db_items: List[TypeModel],
+        previous_resource_type: str,
+        related_field_name: str,
+        relationship_info: RelationshipInfo,
+        included_object_schema: Type[JSONAPIObjectSchema],
+        included_objects: Dict[Tuple[str, str], TypeSchema],
+        relationships_schema: Type[BaseModel],
+        object_schema: Type[JSONAPIObjectSchema],
+    ):
+        process_db_item = partial(
+            cls.prepare_data_for_relationship,
+            relationship_info=relationship_info,
+            included_object_schema=included_object_schema,
+        )
+
+        next_current_db_item = []
+
+        for parent_db_item in parent_db_items:
+            cache_key = (str(parent_db_item.id), previous_resource_type)
+            current_db_item = getattr(parent_db_item, related_field_name)
+            if isinstance(current_db_item, Iterable):
+                relationship_data_items = []
+
+                for db_item in current_db_item:
+                    next_current_db_item.append(db_item)
+                    data_for_relationship, new_included = process_db_item(
+                        related_db_item=db_item,
+                    )
+
+                    cls.update_known_included(
+                        included_objects=included_objects,
+                        new_included=new_included,
+                    )
+                    relationship_data_items.append(data_for_relationship)
+
+                cls.update_related_object(
+                    relationship_data=relationship_data_items,
+                    relationships_schema=relationships_schema,
+                    object_schema=object_schema,
+                    included_objects=included_objects,
+                    cache_key=cache_key,
+                    related_field_name=related_field_name,
+                )
+            else:
+                next_current_db_item.append(current_db_item)
+                data_for_relationship, new_included = process_db_item(
+                    related_db_item=current_db_item,
+                )
+
+                cls.update_known_included(
+                    included_objects=included_objects,
+                    new_included=new_included,
+                )
+
+                cls.update_related_object(
+                    relationship_data=data_for_relationship,
+                    relationships_schema=relationships_schema,
+                    object_schema=object_schema,
+                    included_objects=included_objects,
+                    cache_key=cache_key,
+                    related_field_name=related_field_name,
+                )
+        return next_current_db_item
+
     def process_include_with_nested(
         self,
         include: str,
@@ -158,66 +225,22 @@ class ViewBase:
             current_relation_schema: Type[TypeSchema] = current_relation_field.type_
 
             relationship_info: RelationshipInfo = current_relation_field.field_info.extra["relationship"]
-            included_object_schema = schemas_include[related_field_name]
-
-            process_db_item = partial(
-                self.prepare_data_for_relationship,
-                relationship_info=relationship_info,
-                included_object_schema=included_object_schema,
-            )
+            included_object_schema: Type[JSONAPIObjectSchema] = schemas_include[related_field_name]
 
             if not isinstance(current_db_item, Iterable):
                 # xxx: less if/else
                 current_db_item = [current_db_item]
 
-            next_current_db_item = []
-            parent_db_items = list(current_db_item)
-            for parent_db_item in parent_db_items:
-                cache_key = (str(parent_db_item.id), previous_resource_type)
-                current_db_item = getattr(parent_db_item, related_field_name)
-                if isinstance(current_db_item, Iterable):
-                    relationship_data_items = []
-
-                    for db_item in current_db_item:
-                        next_current_db_item.append(db_item)
-                        data_for_relationship, new_included = process_db_item(
-                            related_db_item=db_item,
-                        )
-
-                        self.update_known_included(
-                            included_objects=included_objects,
-                            new_included=new_included,
-                        )
-                        relationship_data_items.append(data_for_relationship)
-
-                    self.update_related_object(
-                        relationship_data=relationship_data_items,
-                        relationships_schema=relationships_schema,
-                        object_schema=object_schemas.object_jsonapi_schema,
-                        included_objects=included_objects,
-                        cache_key=cache_key,
-                        related_field_name=related_field_name,
-                    )
-                else:
-                    next_current_db_item.append(current_db_item)
-                    data_for_relationship, new_included = process_db_item(
-                        related_db_item=current_db_item,
-                    )
-
-                    self.update_known_included(
-                        included_objects=included_objects,
-                        new_included=new_included,
-                    )
-
-                    self.update_related_object(
-                        relationship_data=data_for_relationship,
-                        relationships_schema=relationships_schema,
-                        object_schema=object_schemas.object_jsonapi_schema,
-                        included_objects=included_objects,
-                        cache_key=cache_key,
-                        related_field_name=related_field_name,
-                    )
-            current_db_item = next_current_db_item
+            current_db_item = self.process_db_items_and_create_prepare(
+                parent_db_items=list(current_db_item),
+                previous_resource_type=previous_resource_type,
+                related_field_name=related_field_name,
+                relationship_info=relationship_info,
+                included_object_schema=included_object_schema,
+                included_objects=included_objects,
+                relationships_schema=relationships_schema,
+                object_schema=object_schemas.object_jsonapi_schema,
+            )
 
             previous_resource_type = relationship_info.resource_type
 
