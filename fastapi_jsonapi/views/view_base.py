@@ -131,8 +131,11 @@ class ViewBase:
         }
         previous_resource_type = item_as_schema.type
         for related_field_name in include.split(SPLIT_REL):
-            # TODO: when including 'user.bio', it loads user AND user's bio.
-            #  need to load only bio when includes 'user.bio' (but how)
+            #  TODO: right now if you want to do:
+            #   `include=user.posts.comments.author`,
+            #   you actually have to do:
+            #   `include=user,user.posts,user.posts.comments,user.posts.comments.author`
+            #   (pass all levels to the nested)
 
             object_schemas = self.jsonapi.create_jsonapi_object_schemas(
                 schema=current_relation_schema,
