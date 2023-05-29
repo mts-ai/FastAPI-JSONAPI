@@ -1,3 +1,52 @@
+[tool.poetry]
+name = "fastapi-jsonapi"
+version = "0.4.0"
+description = "FastAPI extension to create REST web api according to JSON:API specification"
+authors = [
+    "Aleksei Nekrasov <nekrasov.aleks@mail.ru>",
+    "Suren Khorenyan <surenkhorenyan@gmail.com>",
+]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "fastapi_jsonapi"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = ">=0.79.0"
+pydantic = ">=1.9.1"
+simplejson = ">=3.17.6"
+uvicorn = ">=0.18.2"
+
+sqlalchemy = { version = ">=1.4.39,<2.0.0", optional = true, extras = ["asyncio"] }
+tortoise-orm = { version = ">=0.19.2", optional = true }
+
+[tool.poetry.group.tests.dependencies]
+pytest = "^7.3.1"
+faker = "^18.9.0"
+httpx = "^0.24.1"
+pytest-asyncio = "^0.21.0"
+
+[tool.poetry.group.lint.dependencies]
+black = "^23.3.0"
+ruff = "^0.0.270"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.0.1"
+
+
+[tool.poetry.group.examples.dependencies]
+aiosqlite = "0.17.0"
+
+[tool.poetry.extras]
+sqla = ["sqlalchemy"]
+tortoise = ["tortoise-orm"]
+databases = ["sqlalchemy", "tortoise-orm"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
 [tool.black]
 line-length = 119
 target-version = ["py38"]
@@ -78,6 +127,7 @@ extend-ignore = [
     "D102",  # Missing docstring in public method
     "D103",  # Missing docstring in public function
     "D104",  # Missing docstring in public package
+    "D105",  # Missing docstring in magic method
     "D106",  # Missing docstring in public nested class
     "D107",  # Missing docstring in `__init__`
     "D200",  # One-line docstring should fit on one line

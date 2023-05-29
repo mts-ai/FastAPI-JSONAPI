@@ -1,6 +1,4 @@
-from http import HTTPStatus
-
-from fastapi import Depends
+from fastapi import Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
@@ -60,7 +58,7 @@ class UserDetail(DetailViewBase):
         except ErrorUpdateUserObject as ex:
             raise BadRequest(ex.description, ex.field)
         except ObjectNotFound as ex:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ex.description)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ex.description)
 
         user = UserSchema.from_orm(user_obj)
         return user
