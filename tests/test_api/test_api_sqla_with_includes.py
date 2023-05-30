@@ -18,6 +18,7 @@ from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListS
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.list_view import ListViewBase
+from fastapi_jsonapi.views.view_base import ViewBase
 
 pytestmark = pytest.mark.asyncio
 
@@ -802,7 +803,7 @@ async def test_get_users(client: AsyncClient, user_1: User, user_2: User):
     users = [user_1, user_2]
     assert len(users_data) == len(users)
     for user_data, user in zip(users_data, users):
-        assert user_data["id"] == str(user.id)
+        assert user_data["id"] == ViewBase.get_db_item_id(user)
         assert user_data["type"] == "user"
 
 
@@ -816,11 +817,11 @@ async def test_get_user_with_bio_relation(
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     assert "data" in response_data, response_data
-    assert response_data["data"]["id"] == str(user_1.id)
+    assert response_data["data"]["id"] == ViewBase.get_db_item_id(user_1)
     assert response_data["data"]["type"] == "user"
     assert "included" in response_data, response_data
     included_bio = response_data["included"][0]
-    assert included_bio["id"] == str(user_1_bio.id)
+    assert included_bio["id"] == ViewBase.get_db_item_id(user_1_bio)
     assert included_bio["type"] == "user_bio"
 
 
@@ -839,12 +840,12 @@ async def test_get_users_with_bio_relation(
     users = [user_1, user_2]
     assert len(users_data) == len(users)
     for user_data, user in zip(users_data, users):
-        assert user_data["id"] == str(user.id)
+        assert user_data["id"] == ViewBase.get_db_item_id(user)
         assert user_data["type"] == "user"
 
     assert "included" in response_data, response_data
     included_bio = response_data["included"][0]
-    assert included_bio["id"] == str(user_1_bio.id)
+    assert included_bio["id"] == ViewBase.get_db_item_id(user_1_bio)
     assert included_bio["type"] == "user_bio"
 
 
@@ -872,11 +873,11 @@ async def test_get_posts_with_users(
     included_users = response_data["included"]
     assert len(included_users) == len(users)
     for user_data, user in zip(included_users, users):
-        assert user_data["id"] == str(user.id)
+        assert user_data["id"] == ViewBase.get_db_item_id(user)
         assert user_data["type"] == "user"
 
     for post_data, post in zip(posts_data, posts):
-        assert post_data["id"] == str(post.id)
+        assert post_data["id"] == ViewBase.get_db_item_id(post)
         assert post_data["type"] == "post"
 
     all_posts_data = list(posts_data)
@@ -892,7 +893,7 @@ async def test_get_posts_with_users(
         idx_start = next_idx
 
         u1_relation = {
-            "id": str(user.id),
+            "id": ViewBase.get_db_item_id(user),
             "type": "user",
         }
         for post_data in posts_data:
@@ -937,7 +938,7 @@ async def test_get_users_with_all_inner_relations(
         users_data,
         [(user_1, user_1_posts, user_1_bio), (user_2, user_2_posts, None)],
     ):
-        assert user_data["id"] == str(user.id)
+        assert user_data["id"] == ViewBase.get_db_item_id(user)
         assert user_data["type"] == "user"
         user_relationships = user_data["relationships"]
         posts_relation = user_relationships["posts"]["data"]
@@ -952,7 +953,7 @@ async def test_get_users_with_all_inner_relations(
             continue
 
         assert bio_relation == {
-            "id": str(user_1_bio.id),
+            "id": ViewBase.get_db_item_id(user_1_bio),
             "type": "user_bio",
         }
 
@@ -962,7 +963,7 @@ async def test_get_users_with_all_inner_relations(
         (user_2_posts, user_1_comments_for_u2_posts, user_1),
     ]:
         for post, post_comment in zip(posts, comments):
-            post_data = included_data[("post", str(post.id))]
+            post_data = included_data[("post", ViewBase.get_db_item_id(post))]
             post_relationships = post_data["relationships"]
             assert "comments" in post_relationships
             post_comments_relation = post_relationships["comments"]["data"]
@@ -970,13 +971,13 @@ async def test_get_users_with_all_inner_relations(
             assert len(post_comments_relation) == len(post_comments)
             for comment_relation_data, comment in zip(post_comments_relation, post_comments):
                 assert comment_relation_data == {
-                    "id": str(comment.id),
+                    "id": ViewBase.get_db_item_id(comment),
                     "type": "post_comment",
                 }
 
-                comment_data = included_data[("post_comment", str(comment.id))]
+                comment_data = included_data[("post_comment", ViewBase.get_db_item_id(comment))]
                 assert comment_data["relationships"]["author"]["data"] == {
-                    "id": str(comment_author.id),
+                    "id": ViewBase.get_db_item_id(comment_author),
                     "type": "user",
                 }
-                assert ("user", str(comment_author.id)) in included_data
+                assert ("user", ViewBase.get_db_item_id(comment_author)) in included_data
