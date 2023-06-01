@@ -53,14 +53,14 @@ FastAPI-JSONAPI with FastAPI.
    minimal_api_example
    api_filtering_example
    quickstart
-   logical_data_abstraction
-   resource_manager
-   data_layer
    routing
    filtering
    include_related_objects
    include_many_to_many
    custom_sql_filtering
+   logical_data_abstraction
+   resource_manager
+   data_layer
    sparse_fieldsets
    pagination
    sorting
