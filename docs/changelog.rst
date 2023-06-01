@@ -1,6 +1,14 @@
 Changelog
 *********
 
+**0.4.0**
+=========
+
+Backward-incompatible changes, improvements, bug fixes
+======================================================
+
+* Includes (see doc TODO link)
+
 **0.2.1**
 =========
 
