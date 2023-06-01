@@ -5,7 +5,7 @@ import pytest
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pytest_asyncio import fixture as async_fixture
-from sqlalchemy import JSON, Column, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -205,6 +205,102 @@ class PostCommentSchema(PostCommentInSchema):
     )
 
 
+# Parents and Children associations ⬇️⬇️
+
+
+# Association Schemas ⬇️
+
+
+class ParentToChildAssociationSchema(BaseModel):
+    id: int
+    extra_data: str
+
+    parent: "ParentSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="parent",
+        ),
+    )
+
+    child: "ChildSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="child",
+        ),
+    )
+
+
+# Parent Schemas ⬇️
+
+
+class ParentBaseSchema(BaseModel):
+    """Parent base schema."""
+
+    class Config:
+        """Pydantic schema config."""
+
+        orm_mode = True
+
+    name: str
+
+
+class ParentPatchSchema(ParentBaseSchema):
+    """Parent PATCH schema."""
+
+
+class ParentInSchema(ParentBaseSchema):
+    """Parent input schema."""
+
+
+class ParentSchema(ParentInSchema):
+    """PostComment item schema."""
+
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
+
+    id: int
+
+    children: List["ParentToChildAssociationSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="parent_child_association",
+            many=True,
+        ),
+    )
+
+
+# Child Schemas ⬇️
+
+
+class ChildBaseSchema(BaseModel):
+    """Child base schema."""
+
+    class Config:
+        """Pydantic schema config."""
+
+        orm_mode = True
+
+    name: str
+
+
+class ChildPatchSchema(ChildBaseSchema):
+    """Child PATCH schema."""
+
+
+class ChildInSchema(ChildBaseSchema):
+    """Child input schema."""
+
+
+class ChildSchema(ChildInSchema):
+    """PostComment item schema."""
+
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
+
+    id: int
+
+
 # Schemas ⬆️
 
 # DB Models ⬇️
@@ -219,6 +315,8 @@ class Base:
         """
         return f"{cls.__name__.lower()}s"
 
+
+class AutoIdMixin:
     @declared_attr
     def id(cls):
         return Column(Integer, primary_key=True, autoincrement=True)
@@ -227,7 +325,7 @@ class Base:
 Base = declarative_base(cls=Base)
 
 
-class User(Base):
+class User(AutoIdMixin, Base):
     name: str = Column(String, nullable=False, unique=True)
     age: int = Column(Integer, nullable=True)
     email: Optional[str] = Column(String, nullable=True)
@@ -250,7 +348,7 @@ class User(Base):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r})"
 
 
-class UserBio(Base):
+class UserBio(AutoIdMixin, Base):
     birth_city: str = Column(String, nullable=False, default="", server_default="")
     favourite_movies: str = Column(String, nullable=False, default="", server_default="")
     keys_to_ids_list: Dict[str, List[int]] = Column(JSON)
@@ -273,7 +371,7 @@ class UserBio(Base):
         )
 
 
-class Post(Base):
+class Post(AutoIdMixin, Base):
     title = Column(String, nullable=False)
     body = Column(Text, nullable=False, default="", server_default="")
 
@@ -295,7 +393,7 @@ class Post(Base):
         return f"{self.__class__.__name__}(id={self.id} title={self.title!r} user_id={self.user_id})"
 
 
-class PostComment(Base):
+class PostComment(AutoIdMixin, Base):
     text: str = Column(String, nullable=False, default="", server_default="")
 
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False, unique=False)
@@ -321,6 +419,51 @@ class PostComment(Base):
             f" post_id={self.post_id}"
             ")"
         )
+
+
+class Parent(AutoIdMixin, Base):
+    __tablename__ = "left_table_parents"
+    name = Column(String, nullable=False)
+    children = relationship(
+        "ParentToChildAssociation",
+        back_populates="parent",
+    )
+
+
+class Child(AutoIdMixin, Base):
+    __tablename__ = "right_table_children"
+    name = Column(String, nullable=False)
+    parents = relationship(
+        "ParentToChildAssociation",
+        back_populates="child",
+    )
+
+
+class ParentToChildAssociation(AutoIdMixin, Base):
+    __table_args__ = (
+        # JSON:API requires `id` field on any model,
+        # so we can't create a composite PK here
+        # that's why we need to create this index
+        Index(
+            "ix_parent_child_association_unique",
+            "parent_left_id",
+            "child_right_id",
+            unique=True,
+        ),
+    )
+
+    __tablename__ = "parent_to_child_association_table"
+    parent_left_id = Column(
+        ForeignKey(Parent.id),
+        nullable=False,
+    )
+    child_right_id = Column(
+        ForeignKey(Child.id),
+        nullable=False,
+    )
+    extra_data = Column(String(50))
+    parent = relationship("Parent", back_populates="children")
+    child = relationship("Child", back_populates="parents")
 
 
 # DB Models ⬆️
@@ -497,21 +640,241 @@ async def user_2_comment_for_one_u1_post(async_session: AsyncSession, user_2, us
     await async_session.commit()
 
 
+@async_fixture()
+async def parent_1(async_session: AsyncSession):
+    parent = Parent(
+        name="parent_1",
+    )
+    async_session.add(parent)
+    await async_session.commit()
+
+    await async_session.refresh(parent)
+
+    yield parent
+
+    await async_session.delete(parent)
+    await async_session.commit()
+
+
+@async_fixture()
+async def parent_2(async_session: AsyncSession):
+    parent = Parent(
+        name="parent_2",
+    )
+    async_session.add(parent)
+    await async_session.commit()
+
+    await async_session.refresh(parent)
+
+    yield parent
+
+    await async_session.delete(parent)
+    await async_session.commit()
+
+
+@async_fixture()
+async def parent_3(async_session: AsyncSession):
+    parent = Parent(
+        name="parent_3",
+    )
+    async_session.add(parent)
+    await async_session.commit()
+
+    await async_session.refresh(parent)
+
+    yield parent
+
+    await async_session.delete(parent)
+    await async_session.commit()
+
+
+@async_fixture()
+async def child_1(async_session: AsyncSession):
+    child = Child(
+        name="child_1",
+    )
+    async_session.add(child)
+    await async_session.commit()
+
+    await async_session.refresh(child)
+
+    yield child
+
+    await async_session.delete(child)
+    await async_session.commit()
+
+
+@async_fixture()
+async def child_2(async_session: AsyncSession):
+    child = Child(
+        name="child_2",
+    )
+    async_session.add(child)
+    await async_session.commit()
+
+    await async_session.refresh(child)
+
+    yield child
+
+    await async_session.delete(child)
+    await async_session.commit()
+
+
+@async_fixture()
+async def child_3(async_session: AsyncSession):
+    child = Child(
+        name="child_3",
+    )
+    async_session.add(child)
+    await async_session.commit()
+
+    await async_session.refresh(child)
+
+    yield child
+
+    await async_session.delete(child)
+    await async_session.commit()
+
+
+@async_fixture()
+async def child_4(async_session: AsyncSession):
+    child = Child(
+        name="child_4",
+    )
+    async_session.add(child)
+    await async_session.commit()
+
+    await async_session.refresh(child)
+
+    yield child
+
+    await async_session.delete(child)
+    await async_session.commit()
+
+
+@async_fixture()
+async def p1_c1_association(
+    async_session: AsyncSession,
+    parent_1: Parent,
+    child_1: Child,
+):
+    assoc = ParentToChildAssociation(
+        parent=parent_1,
+        child=child_1,
+        extra_data="assoc_p1c1_extra",
+    )
+    async_session.add(assoc)
+    await async_session.commit()
+
+    await async_session.refresh(assoc)
+
+    yield assoc
+
+    await async_session.delete(assoc)
+    await async_session.commit()
+
+
+@async_fixture()
+async def p2_c1_association(
+    async_session: AsyncSession,
+    parent_2: Parent,
+    child_1: Child,
+):
+    assoc = ParentToChildAssociation(
+        parent=parent_2,
+        child=child_1,
+        extra_data="assoc_p2c1_extra",
+    )
+    async_session.add(assoc)
+    await async_session.commit()
+
+    await async_session.refresh(assoc)
+
+    yield assoc
+
+    await async_session.delete(assoc)
+    await async_session.commit()
+
+
+@async_fixture()
+async def p1_c2_association(
+    async_session: AsyncSession,
+    parent_1: Parent,
+    child_2: Child,
+):
+    assoc = ParentToChildAssociation(
+        parent=parent_1,
+        child=child_2,
+        extra_data="assoc_p1c2_extra",
+    )
+    async_session.add(assoc)
+    await async_session.commit()
+
+    await async_session.refresh(assoc)
+
+    yield assoc
+
+    await async_session.delete(assoc)
+    await async_session.commit()
+
+
+@async_fixture()
+async def p2_c2_association(
+    async_session: AsyncSession,
+    parent_2: Parent,
+    child_2: Child,
+):
+    assoc = ParentToChildAssociation(
+        parent=parent_2,
+        child=child_2,
+        extra_data="assoc_p2c2_extra",
+    )
+    async_session.add(assoc)
+    await async_session.commit()
+
+    await async_session.refresh(assoc)
+
+    yield assoc
+
+    await async_session.delete(assoc)
+    await async_session.commit()
+
+
+@async_fixture()
+async def p2_c3_association(
+    async_session: AsyncSession,
+    parent_2: Parent,
+    child_3: Child,
+):
+    assoc = ParentToChildAssociation(
+        parent=parent_2,
+        child=child_3,
+        extra_data="assoc_p2c3_extra",
+    )
+    async_session.add(assoc)
+    await async_session.commit()
+
+    await async_session.refresh(assoc)
+
+    yield assoc
+
+    await async_session.delete(assoc)
+    await async_session.commit()
+
+
 # DB objects ⬆️
 
 # Views ⬇️⬇️
-# User ⬇️
 
 
 @pytest.fixture(scope="module")
-def user_detail_view(async_session_dependency):
-    """
-    TODO: patch
-    :param async_session_dependency:
-    :return:
-    """
+def detail_view_base_generic(async_session_dependency):
+    class DetailViewBaseGeneric(DetailViewBase):
+        """
+        TODO: patch
 
-    class UserDetail(DetailViewBase):
+        """
+
         async def get(
             self,
             obj_id,
@@ -530,18 +893,12 @@ def user_detail_view(async_session_dependency):
                 query_params=query_params,
             )
 
-    return UserDetail
+    return DetailViewBaseGeneric
 
 
 @pytest.fixture(scope="module")
-def user_list_view(async_session_dependency):
-    """
-    TODO: post
-    :param async_session_dependency:
-    :return:
-    """
-
-    class UserList(ListViewBase):
+def list_view_base_generic(async_session_dependency):
+    class ListViewBaseGeneric(ListViewBase):
         async def get(
             self,
             query_params: QueryStringManager,
@@ -556,6 +913,35 @@ def user_list_view(async_session_dependency):
                 dl=dl,
                 query_params=query_params,
             )
+
+    return ListViewBaseGeneric
+
+
+# User ⬇️
+
+
+@pytest.fixture(scope="module")
+def user_detail_view(detail_view_base_generic):
+    """
+    :param detail_view_base_generic:
+    :return:
+    """
+
+    class UserDetail(detail_view_base_generic):
+        ...
+
+    return UserDetail
+
+
+@pytest.fixture(scope="module")
+def user_list_view(list_view_base_generic):
+    """
+    :param list_view_base_generic:
+    :return:
+    """
+
+    class UserList(list_view_base_generic):
+        ...
 
     return UserList
 
@@ -564,58 +950,27 @@ def user_list_view(async_session_dependency):
 
 
 @pytest.fixture(scope="module")
-def user_bio_detail_view(async_session_dependency):
+def user_bio_detail_view(detail_view_base_generic):
     """
-    TODO: patch
-    :param async_session_dependency:
+    :param detail_view_base_generic:
     :return:
     """
 
-    class UserBioDetail(DetailViewBase):
-        async def get(
-            self,
-            obj_id,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultDetailSchema:
-            dl = SqlalchemyEngine(
-                schema=self.jsonapi.schema_detail,
-                model=self.jsonapi.model,
-                session=session,
-            )
-            view_kwargs = {"id": obj_id}
-            return await self.get_detailed_result(
-                dl=dl,
-                view_kwargs=view_kwargs,
-                query_params=query_params,
-            )
+    class UserBioDetail(detail_view_base_generic):
+        ...
 
     return UserBioDetail
 
 
 @pytest.fixture(scope="module")
-def user_bio_list_view(async_session_dependency):
+def user_bio_list_view(list_view_base_generic):
     """
-    TODO: post
-    :param async_session_dependency:
+    :param list_view_base_generic:
     :return:
     """
 
-    class UserBioList(ListViewBase):
-        async def get(
-            self,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultListSchema:
-            dl = SqlalchemyEngine(
-                schema=self.jsonapi.schema_list,
-                model=self.jsonapi.model,
-                session=session,
-            )
-            return await self.get_paginated_result(
-                dl=dl,
-                query_params=query_params,
-            )
+    class UserBioList(list_view_base_generic):
+        ...
 
     return UserBioList
 
@@ -624,60 +979,87 @@ def user_bio_list_view(async_session_dependency):
 
 
 @pytest.fixture(scope="module")
-def post_detail_view(async_session_dependency):
+def post_detail_view(detail_view_base_generic):
     """
-    TODO: patch
-    :param async_session_dependency:
+    :param detail_view_base_generic:
     :return:
     """
 
-    class PostDetail(DetailViewBase):
-        async def get(
-            self,
-            obj_id,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultDetailSchema:
-            dl = SqlalchemyEngine(
-                schema=self.jsonapi.schema_detail,
-                model=self.jsonapi.model,
-                session=session,
-            )
-            view_kwargs = {"id": obj_id}
-            return await self.get_detailed_result(
-                dl=dl,
-                view_kwargs=view_kwargs,
-                query_params=query_params,
-            )
+    class PostDetail(detail_view_base_generic):
+        ...
 
     return PostDetail
 
 
 @pytest.fixture(scope="module")
-def post_list_view(async_session_dependency):
+def post_list_view(list_view_base_generic):
     """
-    TODO: post
-    :param async_session_dependency:
+    :param list_view_base_generic:
     :return:
     """
 
-    class PostList(ListViewBase):
-        async def get(
-            self,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultListSchema:
-            dl = SqlalchemyEngine(
-                schema=self.jsonapi.schema_list,
-                model=self.jsonapi.model,
-                session=session,
-            )
-            return await self.get_paginated_result(
-                dl=dl,
-                query_params=query_params,
-            )
+    class PostList(list_view_base_generic):
+        ...
 
     return PostList
+
+
+# Parent ⬇️
+
+
+@pytest.fixture(scope="module")
+def parent_detail_view(detail_view_base_generic):
+    """
+    :param detail_view_base_generic:
+    :return:
+    """
+
+    class ParentDetail(detail_view_base_generic):
+        ...
+
+    return ParentDetail
+
+
+@pytest.fixture(scope="module")
+def parent_list_view(list_view_base_generic):
+    """
+    :param list_view_base_generic:
+    :return:
+    """
+
+    class ParentList(list_view_base_generic):
+        ...
+
+    return ParentList
+
+
+# Child ⬇️
+
+
+@pytest.fixture(scope="module")
+def child_detail_view(detail_view_base_generic):
+    """
+    :param detail_view_base_generic:
+    :return:
+    """
+
+    class ChildDetail(detail_view_base_generic):
+        ...
+
+    return ChildDetail
+
+
+@pytest.fixture(scope="module")
+def child_list_view(list_view_base_generic):
+    """
+    :param list_view_base_generic:
+    :return:
+    """
+
+    class ChildList(list_view_base_generic):
+        ...
+
+    return ChildList
 
 
 # Views ⬆️
@@ -716,6 +1098,10 @@ def app(
     user_bio_list_view,
     post_detail_view,
     post_list_view,
+    parent_detail_view,
+    parent_list_view,
+    child_detail_view,
+    child_list_view,
 ):
     # tags = [
     #     {
@@ -775,6 +1161,34 @@ def app(
         engine=DBORMType.sqlalchemy,
     )
 
+    RoutersJSONAPI(
+        routers=router,
+        path="/parents",
+        tags=["Parent"],
+        class_detail=parent_detail_view,
+        class_list=parent_list_view,
+        schema=ParentSchema,
+        type_resource="parent",
+        schema_in_patch=PostPatchSchema,
+        schema_in_post=PostInSchema,
+        model=Parent,
+        engine=DBORMType.sqlalchemy,
+    )
+
+    RoutersJSONAPI(
+        routers=router,
+        path="/children",
+        tags=["Child"],
+        class_detail=child_detail_view,
+        class_list=child_list_view,
+        schema=ChildSchema,
+        type_resource="child",
+        schema_in_patch=ChildPatchSchema,
+        schema_in_post=ChildInSchema,
+        model=Child,
+        engine=DBORMType.sqlalchemy,
+    )
+
     app_plain.include_router(router, prefix="")
 
     return app_plain
@@ -787,6 +1201,10 @@ async def client(app: FastAPI) -> AsyncClient:
 
 
 # app ⬆️
+
+
+def association_key(data: dict):
+    return data["type"], data["id"]
 
 
 async def test_root(client: AsyncClient):
@@ -932,7 +1350,7 @@ async def test_get_users_with_all_inner_relations(
     assert "included" in response_data, response_data
     included: List[Dict] = response_data["included"]
 
-    included_data = {(data["type"], data["id"]): data for data in included}
+    included_data = {association_key(data): data for data in included}
 
     for user_data, (user, user_posts, expected_bio) in zip(
         users_data,
@@ -944,7 +1362,7 @@ async def test_get_users_with_all_inner_relations(
         posts_relation = user_relationships["posts"]["data"]
         assert len(posts_relation) == len(user_posts)
         for post_relation in posts_relation:
-            assert (post_relation["type"], post_relation["id"]) in included_data
+            assert association_key(post_relation) in included_data
 
         bio_relation = user_relationships["bio"]["data"]
         if bio_relation is None:
@@ -981,3 +1399,57 @@ async def test_get_users_with_all_inner_relations(
                     "type": "user",
                 }
                 assert ("user", ViewBase.get_db_item_id(comment_author)) in included_data
+
+
+async def test_many_to_many_load_inner_includes_to_parents(
+    client: AsyncClient,
+    parent_1,
+    parent_2,
+    parent_3,
+    child_1,
+    child_2,
+    child_3,
+    child_4,
+    p1_c1_association,
+    p2_c1_association,
+    p1_c2_association,
+    p2_c2_association,
+    p2_c3_association,
+):
+    url = "/parents?include=children,children.child"
+    response = await client.get(url)
+    assert response.status_code == status.HTTP_200_OK, response
+    response_data = response.json()
+    parents_data = response_data["data"]
+    parents = [parent_1, parent_2, parent_3]
+    assert len(parents_data) == len(parents)
+
+    included = response_data["included"]
+    included_data = {(data["type"], data["id"]): data for data in included}
+
+    for parent_data, (parent, expected_assocs) in zip(
+        parents_data,
+        [
+            (parent_1, [(p1_c1_association, child_1), (p1_c2_association, child_2)]),
+            (parent_2, [(p2_c1_association, child_1), (p2_c2_association, child_2), (p2_c3_association, child_3)]),
+            (parent_3, []),
+        ],
+    ):
+        assert parent_data["id"] == ViewBase.get_db_item_id(parent)
+        assert parent_data["type"] == "parent"
+
+        parent_relationships = parent_data["relationships"]
+        parent_to_children_assocs = parent_relationships["children"]["data"]
+        assert len(parent_to_children_assocs) == len(expected_assocs)
+        for assoc_data, (assoc, child) in zip(parent_to_children_assocs, expected_assocs):
+            assert assoc_data["id"] == ViewBase.get_db_item_id(assoc)
+            assert assoc_data["type"] == "parent_child_association"
+            assoc_key = association_key(assoc_data)
+            assert assoc_key in included_data
+            p_to_c_assoc_data = included_data[assoc_key]
+            assert p_to_c_assoc_data["relationships"]["child"]["data"] == {
+                "id": ViewBase.get_db_item_id(child),
+                "type": "child",
+            }
+
+    assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data
