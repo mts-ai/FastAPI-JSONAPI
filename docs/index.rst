@@ -60,6 +60,7 @@ FastAPI-JSONAPI with FastAPI.
    filtering
    include_related_objects
    include_many_to_many
+   custom_sql_filtering
    sparse_fieldsets
    pagination
    sorting

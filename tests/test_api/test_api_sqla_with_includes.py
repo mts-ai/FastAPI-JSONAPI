@@ -52,11 +52,6 @@ class UserInSchema(UserBaseSchema):
 class UserSchema(UserInSchema):
     """User item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
-
     id: int
     posts: List["PostSchema"] = Field(
         relationship=RelationshipInfo(
@@ -100,13 +95,7 @@ class UserBioInSchema(UserBioBaseSchema):
 class UserBioSchema(UserBioInSchema):
     """UserBio item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
-
     id: int
-
     user: "UserSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="user",
@@ -140,19 +129,12 @@ class PostInSchema(PostBaseSchema):
 class PostSchema(PostInSchema):
     """Post item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
-
     id: int
-
     user: "UserSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="user",
         ),
     )
-
     comments: List["PostCommentSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="post_comment",
@@ -186,13 +168,7 @@ class PostCommentInSchema(PostCommentBaseSchema):
 class PostCommentSchema(PostCommentInSchema):
     """PostComment item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
-
     id: int
-
     post: "PostSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="post",
@@ -214,7 +190,6 @@ class PostCommentSchema(PostCommentInSchema):
 class ParentToChildAssociationSchema(BaseModel):
     id: int
     extra_data: str
-
     parent: "ParentSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="parent",
@@ -251,15 +226,9 @@ class ParentInSchema(ParentBaseSchema):
 
 
 class ParentSchema(ParentInSchema):
-    """PostComment item schema."""
-
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    """Parent item schema."""
 
     id: int
-
     children: List["ParentToChildAssociationSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="parent_child_association",
@@ -291,12 +260,7 @@ class ChildInSchema(ChildBaseSchema):
 
 
 class ChildSchema(ChildInSchema):
-    """PostComment item schema."""
-
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    """Child item schema."""
 
     id: int
 

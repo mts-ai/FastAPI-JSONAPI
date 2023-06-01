@@ -5,8 +5,6 @@ class ChildBaseSchema(BaseModel):
     """Child base schema."""
 
     class Config:
-        """Pydantic schema config."""
-
         orm_mode = True
 
     name: str
@@ -21,11 +19,6 @@ class ChildInSchema(ChildBaseSchema):
 
 
 class ChildSchema(ChildInSchema):
-    """PostComment item schema."""
-
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    """Child item schema."""
 
     id: int

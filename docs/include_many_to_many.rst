@@ -1,54 +1,79 @@
 .. _include_many_to_many:
 
-Include related M2M
-===================
+Include nested and related Many-to-Many
+#######################################
 
 .. currentmodule:: fastapi_jsonapi
 
-The same as usual includes. Here's an example with an association object:
+The same as usual includes. Here's an example with an association object.
 
 Example (sources `here <https://github.com/mts-ai/FastAPI-JSONAPI/tree/main/examples/api_for_sqlalchemy>`_):
 
+Prepare models and schemas
+==========================
+
 
 Define SQLAlchemy models
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
-Parent:
+
+Parent model
+^^^^^^^^^^^^
+
+``models/parent.py``:
 
 .. literalinclude:: ../examples/api_for_sqlalchemy/models/parent.py
     :language: python
 
 
-Child:
+
+Child model
+^^^^^^^^^^^
+
+``models/child.py``:
 
 .. literalinclude:: ../examples/api_for_sqlalchemy/models/child.py
     :language: python
 
 
-Parent to Child Association object:
+
+Parent to Child Association model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``models/parent_child_association.py``:
 
 .. literalinclude:: ../examples/api_for_sqlalchemy/models/parent_child_association.py
     :language: python
 
 
 
+
 Define pydantic schemas
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 
-Parent Schema:
+Parent Schema
+^^^^^^^^^^^^^
+
+``schemas/parent.py``:
 
 .. literalinclude:: ../examples/api_for_sqlalchemy/models/schemas/parent.py
     :language: python
 
 
-Child Schema:
+Child Schema
+^^^^^^^^^^^^
+
+``schemas/child.py``:
 
 .. literalinclude:: ../examples/api_for_sqlalchemy/models/schemas/child.py
     :language: python
 
 
-Parent to Child Association Schema:
+Parent to Child Association Schema
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``schemas/parent_child_association.py``:
 
 .. literalinclude:: ../examples/api_for_sqlalchemy/models/schemas/parent_child_association.py
     :language: python
@@ -56,8 +81,40 @@ Parent to Child Association Schema:
 
 
 
+Define view classes
+-------------------
+
+
+Base Views
+^^^^^^^^^^
+
+``api/base.py``:
+
+.. literalinclude:: ../examples/api_for_sqlalchemy/api/base.py
+    :language: python
+
+
+Parent Views
+^^^^^^^^^^^^
+
+``schemas/child.py``:
+
+.. literalinclude:: ../examples/api_for_sqlalchemy/api/parent.py
+    :language: python
+
+
+Child Views
+^^^^^^^^^^^
+
+``schemas/child.py``:
+
+.. literalinclude:: ../examples/api_for_sqlalchemy/api/child.py
+    :language: python
+
+
+
 List Parent objects with Children through an Association object
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------------------
 
 Request:
 

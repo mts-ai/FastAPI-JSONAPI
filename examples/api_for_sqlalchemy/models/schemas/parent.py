@@ -10,8 +10,6 @@ class ParentBaseSchema(BaseModel):
     """Parent base schema."""
 
     class Config:
-        """Pydantic schema config."""
-
         orm_mode = True
 
     name: str
@@ -26,15 +24,9 @@ class ParentInSchema(ParentBaseSchema):
 
 
 class ParentSchema(ParentInSchema):
-    """PostComment item schema."""
-
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    """Parent item schema."""
 
     id: int
-
     children: List["ParentToChildAssociationSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="parent_child_association",
