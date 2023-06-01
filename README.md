@@ -1,3 +1,6 @@
+[![Documentation Status](https://readthedocs.org/projects/fastapi-jsonapi/badge/?version=latest)](https://fastapi-jsonapi.readthedocs.io/en/latest/?badge=latest)
+![PyPI](https://img.shields.io/pypi/v/fastapi-jsonapi?label=PyPI)
+
 # FastAPI-JSONAPI
 
 FastAPI-JSONAPI is a FastAPI extension for building REST APIs.
