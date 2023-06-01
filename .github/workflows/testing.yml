@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip poetry pre-commit
           poetry config virtualenvs.create false --local
       - name: Install dependencies
-        run: poetry install --extras "sqla"
+        run: poetry install --all-extras
       - name: Lint code
         run: pre-commit run --all-files
       - name: Test with pytest
