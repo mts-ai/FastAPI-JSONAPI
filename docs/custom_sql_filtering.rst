@@ -32,10 +32,12 @@ Search for objects
 
 Request:
 
-.. sourcecode:: HTTP
 
-    GET /pictures?filter=[{"name":"picture.meta","op":"jsonb_contains","val":{"location":"Moscow"}}]
+.. sourcecode:: http
+
+    GET /pictures?filter=[{"name":"picture.meta","op":"jsonb_contains","val":{"location":"Moscow"}}] HTTP/1.1
     Accept: application/vnd.api+json
+
 
 Filter value has to be a valid JSON:
 

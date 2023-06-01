@@ -38,7 +38,7 @@ class UserBaseSchema(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     age: Optional[int] = None
-    email: str | None = None
+    email: Optional[str] = None
 
 
 class UserPatchSchema(UserBaseSchema):
