@@ -23,7 +23,7 @@ from .exceptions import (
 )
 
 TYPE_VAR = TypeVar("TYPE_VAR")
-TYPE_MODEL = TypeVar("TYPE_MODEL", bound=models.Model)
+TYPE_MODEL = TypeVar("TypeModel", bound=models.Model)
 
 
 class _BaseUpdater(Generic[TYPE_MODEL]):
@@ -72,7 +72,6 @@ class _BaseUpdater(Generic[TYPE_MODEL]):
         :raises ObjectNotFound: if object does not found.
         """
         if isinstance(model_or_id, int):
-
             try:
                 model = await cls.Meta.model.get(id=model_or_id)
             except DoesNotExist:

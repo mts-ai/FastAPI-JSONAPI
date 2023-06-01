@@ -1,13 +1,13 @@
-import os
-from setuptools import setup, find_packages
+from pathlib import Path
+
+from setuptools import find_packages, setup
 
 __version__ = "1.0.0"
 
-
-requirements_filepath = os.path.join(os.path.dirname(__name__), "requirements.txt")
-readme_filepath = os.path.join(os.path.dirname(__name__), "README.md")
-with open(requirements_filepath) as fp:
-    install_requires = fp.read()
+base_dir = Path(__file__).parent
+requirements_filepath = base_dir / "requirements.txt"
+readme_filepath = base_dir / "README.md"
+install_requires = requirements_filepath.read_text()
 
 extra_packages = {
     "tests": ["pytest"],
@@ -29,17 +29,16 @@ def get_description():
     """
     Read full description from 'README.md'
     """
-    with open('README.md', 'r', encoding='utf-8') as f:
-        return f.read()
+    return Path("README.md").read_text(encoding="utf-8")
 
 
 setup(
     name="FastAPI-JSONAPI",
     version=__version__,
     description="FastAPI extension to create REST web api according to JSON:API 1.0 specification "
-                "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",
+    "with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)",
     long_description=get_description(),
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     url="https://github.com/mts-ai/FastAPI-JSONAPI",
     author="Team MTS AI",
     author_email="a.nekrasov@mts.ru",

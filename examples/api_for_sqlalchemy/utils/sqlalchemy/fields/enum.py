@@ -1,41 +1,12 @@
-from typing import Union, Type, TypeVar
 from enum import Enum as EnumOriginal
+from typing import Type, TypeVar, Union
 
 from sqlalchemy import types
-
-from enum import Enum
-
 from sqlalchemy.engine import Dialect
 
+from fastapi_jsonapi.data_layers.fields.mixins import MixinEnum
 
-class MixinEnum(Enum):
-    @classmethod
-    def names(cls) -> str:
-        return ",".join(x.name for x in cls)
-
-    @classmethod
-    def values(cls) -> list:
-        return [value for _, value in cls._member_map_.items()]
-
-    @classmethod
-    def keys(cls) -> list:
-        return [key for key, _ in cls._member_map_.items()]
-
-    @classmethod
-    def inverse(cls) -> dict:
-        return {value: key for key, value in cls._member_map_.items()}
-
-    @classmethod
-    def value_to_enum(cls, value):
-        _value_to_enum = {value.value: value for _, value in cls._member_map_.items()}
-        return _value_to_enum.get(value)
-
-
-class Enum(MixinEnum):
-    pass
-
-
-TypeEnum = TypeVar("TypeEnum", bound="Enum")
+TypeEnum = TypeVar("TypeEnum", bound=MixinEnum)
 
 
 class EnumColumn(types.TypeDecorator):
@@ -48,7 +19,8 @@ class EnumColumn(types.TypeDecorator):
 
     def __init__(self, enum: Union[Type[EnumOriginal], Type[TypeEnum]], *args: list, **kwargs: dict):
         if not issubclass(enum, EnumOriginal):
-            raise TypeError(f"{enum} is not a subtype of Enum")
+            msg = f"{enum} is not a subtype of Enum"
+            raise TypeError(msg)
         self.enum = enum
         super().__init__(*args, **kwargs)
 

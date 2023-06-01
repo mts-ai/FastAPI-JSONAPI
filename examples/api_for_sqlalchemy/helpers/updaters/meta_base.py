@@ -1,5 +1,6 @@
 """Base updaters module."""
 
+import contextlib
 from typing import (
     Any,
     Dict,
@@ -25,23 +26,24 @@ from .exceptions import (
 )
 
 TYPE_VAR = TypeVar("TYPE_VAR")
-TYPE_MODEL = TypeVar("TYPE_MODEL", bound=models.Model)
+TypeModel = TypeVar("TypeModel", bound=models.Model)
+empty = object()
 
 
-class _BaseUpdater(Generic[TYPE_MODEL]):
+class _BaseUpdater(Generic[TypeModel]):
     class Meta(object):
         model: Any
 
     @classmethod
     async def update(
         cls,
-        model_or_id: Union[TYPE_MODEL, int],
+        model_or_id: Union[TypeModel, int],
         new_data: Dict[str, Any],
         header: Union[HeadersQueryStringManager, None] = None,
         save: bool = True,
         update_fields: Optional[Iterable[str]] = None,
         session: Optional[AsyncSession] = None,
-    ) -> TYPE_MODEL:
+    ) -> TypeModel:
         """
         Create objects.
 
@@ -56,10 +58,8 @@ class _BaseUpdater(Generic[TYPE_MODEL]):
         """
         model_obj = await cls._preload_model(model_or_id, session)
 
-        try:
+        with contextlib.suppress(ExceptionBeforeUpdate):
             model_obj = await cls.before_update(obj=model_obj, new_data=new_data, header=header)
-        except ExceptionBeforeUpdate:
-            pass
 
         if save:
             if session:
@@ -70,7 +70,7 @@ class _BaseUpdater(Generic[TYPE_MODEL]):
         return model_obj
 
     @classmethod
-    async def _preload_model(cls, model_or_id: Union[TYPE_MODEL, int], session: AsyncSession) -> TYPE_MODEL:
+    async def _preload_model(cls, model_or_id: Union[TypeModel, int], session: AsyncSession) -> TypeModel:
         """
         Preload model method.
 
@@ -79,23 +79,23 @@ class _BaseUpdater(Generic[TYPE_MODEL]):
         :raises ObjectNotFound: if object does not found.
         """
         if isinstance(model_or_id, int):
-
             try:
-                model = (await session.execute(select(cls.Meta.model).where(cls.Meta.model.id == model_or_id))).scalar_one()
+                stmt = select(cls.Meta.model).where(cls.Meta.model.id == model_or_id)
+                model_instance = (await session.execute(stmt)).scalar_one()
             except DoesNotExist:
                 raise ObjectNotFound(cls.Meta.model, description="Object does not exist")
 
-            return model
+            return model_instance
         else:
             return model_or_id
 
     @classmethod
     async def before_update(
         cls,
-        obj: TYPE_MODEL,
+        obj: TypeModel,
         new_data: Dict[Any, Any],
         header: Union[HeadersQueryStringManager, None] = None,
-    ) -> TYPE_MODEL:
+    ) -> TypeModel:
         """
         Perform logic before the updater starts.
 
@@ -108,10 +108,10 @@ class _BaseUpdater(Generic[TYPE_MODEL]):
         raise ExceptionBeforeUpdate
 
 
-class Updaters(object):
+class Updaters:
     """Updaters factory."""
 
-    _updaters: Dict[str, Type["_BaseUpdater"]] = dict()
+    _updaters: Dict[str, Type["_BaseUpdater"]] = {}
 
     @classmethod
     def get(cls, name_model: str) -> Type["_BaseUpdater"]:
@@ -119,7 +119,8 @@ class Updaters(object):
         try:
             return cls._updaters[name_model]
         except KeyError:
-            raise ExceptionNotUpdater("Not found updater={model}".format(model=name_model))
+            msg = "Not found updater={model}".format(model=name_model)
+            raise ExceptionNotUpdater(msg)
 
     @classmethod
     def add(cls, name_updater: str, updater: Type["_BaseUpdater"]) -> None:
@@ -141,4 +142,20 @@ class MetaUpdater(type):
 class BaseUpdater(_BaseUpdater, metaclass=MetaUpdater):
     """Base updater."""
 
-    ...
+    @classmethod
+    def _update_field_if_present_and_new(
+        cls,
+        obj: TypeModel,
+        new_data: Dict[str, Any],
+        field: str,
+        field_data: str = empty,
+    ) -> None:
+        if field_data is empty:
+            field_data = field
+
+        if field_data not in new_data:
+            return
+
+        value = Optional[Any] = new_data.get(field_data)
+        if value != getattr(obj, field):
+            setattr(obj, field, value)

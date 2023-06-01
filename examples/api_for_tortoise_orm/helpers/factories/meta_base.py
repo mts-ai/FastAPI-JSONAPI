@@ -25,7 +25,7 @@ from fastapi_jsonapi.querystring import HeadersQueryStringManager
 
 
 TYPE_VAR = TypeVar("TYPE_VAR")
-TYPE_MODEL = TypeVar("TYPE_MODEL", bound=models.Model)
+TYPE_MODEL = TypeVar("TypeModel", bound=models.Model)
 
 
 class FactoryUseMode(Enum):
@@ -51,7 +51,11 @@ class _BaseFactory(Generic[TYPE_MODEL]):
     """
 
     @classmethod
-    async def _get_data(cls, data: Optional[Dict[str, Any]] = None, mode: FactoryUseMode = FactoryUseMode.test) -> Dict:
+    async def _get_data(
+        cls,
+        data: Optional[Dict[str, Any]] = None,
+        mode: FactoryUseMode = FactoryUseMode.test,
+    ) -> Dict:
         new_kwargs = dict()
         if data:
             new_kwargs.update(data)

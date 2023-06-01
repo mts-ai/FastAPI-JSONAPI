@@ -18,7 +18,6 @@ from tortoise import Tortoise
 
 from examples.api_for_tortoise_orm.urls import add_routes
 from fastapi_jsonapi.schema import collect_app_orm_schemas
-from fastapi_jsonapi.openapi import custom_openapi
 
 
 async def tortoise_init() -> None:
@@ -26,8 +25,8 @@ async def tortoise_init() -> None:
     #  also specify the app name of "models"
     #  which contain models from "app.models"
     await Tortoise.init(
-        db_url='sqlite://db.sqlite3',
-        modules={'models': ['models.tortoise']}
+        db_url="sqlite://db.sqlite3",
+        modules={"models": ["models.tortoise"]},
     )
     # Generate the schema
     await Tortoise.generate_schemas()
@@ -47,7 +46,6 @@ def create_app() -> FastAPI:
     )
     add_routes(app)
     app.on_event("startup")(tortoise_init)
-    custom_openapi(app, title="API for Tortoise ORM")
     collect_app_orm_schemas(app)
     return app
 

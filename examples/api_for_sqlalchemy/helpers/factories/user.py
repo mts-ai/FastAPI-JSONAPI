@@ -4,7 +4,9 @@ from typing import (
     Union,
 )
 
+from examples.api_for_sqlalchemy.models import User
 from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
 
 from .exceptions import ErrorCreateObject
 from .faker import fake
@@ -12,8 +14,6 @@ from .meta_base import (
     BaseFactory,
     FactoryUseMode,
 )
-from fastapi_jsonapi.querystring import HeadersQueryStringManager
-from ...models.sqlalchemy import User
 
 
 class ErrorCreateUserObject(ErrorCreateObject):
@@ -23,7 +23,7 @@ class ErrorCreateUserObject(ErrorCreateObject):
 
 
 class UserFactory(BaseFactory):
-    class Meta(object):
+    class Meta:
         model = User
 
     data = {
@@ -40,7 +40,7 @@ class UserFactory(BaseFactory):
         model_kwargs: Dict,
         header: Union[HeadersQueryStringManager, None] = None,
     ) -> Dict:
-        data_for_create_user: Dict[str, Any] = dict()
+        data_for_create_user: Dict[str, Any] = {}
         cls._set_first_name(data_for_create_user, model_kwargs)
         cls._set_last_name(data_for_create_user, model_kwargs)
         cls._set_status(data_for_create_user, model_kwargs)

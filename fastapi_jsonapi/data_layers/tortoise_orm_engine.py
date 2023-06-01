@@ -1,13 +1,13 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
-from typing import Any, Iterable, Type, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple, Type
 
 from tortoise.queryset import QuerySet
 
-from fastapi_jsonapi.querystring import QueryStringManager, PaginationQueryStringManager
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_jsonapi.data_layers.data_typing import TypeSchema, TypeModel
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.filtering.tortoise_orm import FilterTortoiseORM
 from fastapi_jsonapi.data_layers.sorting.tortoise_orm import SortTortoiseORM
+from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
 
 
 class TortoiseORMEngine(BaseDataLayer):
@@ -114,7 +114,7 @@ class TortoiseORMEngine(BaseDataLayer):
         Update an object through sqlalchemy.
 
         :params obj: an object from sqlalchemy.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
@@ -322,7 +322,7 @@ class TortoiseORMEngine(BaseDataLayer):
         Make checks or provide additional data before update object.
 
         :params obj: an object from data layer.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
@@ -332,7 +332,7 @@ class TortoiseORMEngine(BaseDataLayer):
         Make work after update object.
 
         :params obj: an object from data layer.
-        :params data: the data validated by pydantic.
+        :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         """
         pass

@@ -2,22 +2,24 @@
 
 from typing import (
     Any,
+    Dict,
+    List,
+    Optional,
     Tuple,
-    Type, Generic,
+    Type,
+    Union,
 )
-from typing import Union, Dict, List, Optional
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 from tortoise.expressions import Q
 from tortoise.queryset import QuerySet
 
-from fastapi_jsonapi.data_layers.data_typing import TypeQuery, TypeModel
+from fastapi_jsonapi.data_layers.data_typing import TypeModel
 from fastapi_jsonapi.data_layers.fields.enum import Enum
 from fastapi_jsonapi.data_layers.filtering.tortoise_operation import prepare_field_name_for_filtering
 from fastapi_jsonapi.data_layers.orm import DBORMOperandType
-from fastapi_jsonapi.exceptions import InvalidFilters
-from fastapi_jsonapi.exceptions import QueryError
+from fastapi_jsonapi.exceptions import InvalidFilters, QueryError
 from fastapi_jsonapi.jsonapi_typing import Filters
 from fastapi_jsonapi.querystring import QueryStringManager
 
@@ -29,7 +31,6 @@ def prepare_filter_pair(field: Type[ModelField], field_name: str, type_op: str, 
 
 
 class FilterTortoiseORM:
-
     def __init__(self, model: TypeModel):
         self.model = model
 
@@ -51,7 +52,7 @@ class FilterTortoiseORM:
         if op is DBORMOperandType.or_:
             result_filter = None
             for i_filter in filters:
-                i_filter = i_filter[0] if isinstance(i_filter, list) else i_filter
+                i_filter = i_filter[0] if isinstance(i_filter, list) else i_filter  # noqa: PLW2901
                 if result_filter is None:
                     result_filter = self.create_query(i_filter)
                 else:
@@ -60,7 +61,7 @@ class FilterTortoiseORM:
         if op is DBORMOperandType.and_:
             result_filter = None
             for i_filter in filters:
-                i_filter = i_filter[0] if isinstance(i_filter, list) else i_filter
+                i_filter = i_filter[0] if isinstance(i_filter, list) else i_filter  # noqa: PLW2901
                 if result_filter is None:
                     result_filter = self.create_query(i_filter)
                 else:
@@ -78,7 +79,7 @@ class FilterTortoiseORM:
         """
         Make a list with filters, which can be used in the tortoise filter.
 
-        :param schema: pydantic schema of object.
+        :param schema: schemas schema of object.
         :param filters: list of JSON API filters.
         :return: list of filters, prepared for use in tortoise model.
         :raises InvalidFilters: if the filter was created with an error.
@@ -107,7 +108,7 @@ class FilterTortoiseORM:
                             "name": ".".join(model_fields[1:]),
                             "op": i_filter["op"],
                             "val": i_filter["val"],
-                        }
+                        },
                     ],
                 )
                 converted_filters.append(result)
@@ -126,10 +127,10 @@ class FilterTortoiseORM:
         return converted_filters
 
     async def json_api_filter(
-            self,
-            query,
-            schema: Type[BaseModel],
-            query_params: QueryStringManager,
+        self,
+        query,
+        schema: Type[BaseModel],
+        query_params: QueryStringManager,
     ) -> QuerySet:
         """Make queries with filtering from request."""
         filters = self.filter_converter(
@@ -169,4 +170,5 @@ class FilterTortoiseORM:
         elif filter_q is None:
             return None
         else:
-            raise QueryError("An unexpected argument for Q (result_filter={type})".format(type=type(filter_q)))
+            msg = "An unexpected argument for Q (result_filter={type})".format(type=type(filter_q))
+            raise QueryError(msg)

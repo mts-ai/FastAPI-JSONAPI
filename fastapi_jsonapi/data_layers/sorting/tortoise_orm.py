@@ -1,10 +1,9 @@
-from typing import List, Dict
+from typing import Dict, List
 
 from tortoise.queryset import QuerySet
 
 
 class SortTortoiseORM:
-
     @classmethod
     def sort(
         cls,

@@ -1,1 +1,1 @@
-"""Models package. Contains pydantic and tortoise models."""
+"""Models package. Contains schemas and tortoise models."""

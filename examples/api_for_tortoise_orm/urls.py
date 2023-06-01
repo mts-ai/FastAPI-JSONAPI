@@ -15,7 +15,8 @@ from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.data_layers.orm import DBORMType
 from .models.pydantic import UserPatchSchema
 from .models.pydantic.user import (
-    UserSchema, UserInSchema,
+    UserSchema,
+    UserInSchema,
 )
 from .api.user import (
     UserDetail,
@@ -34,7 +35,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
 
     routers: APIRouter = APIRouter()
     RoutersJSONAPI(
-        routers=routers,
+        router=routers,
         path="/user",
         tags=["User"],
         class_detail=UserDetail,

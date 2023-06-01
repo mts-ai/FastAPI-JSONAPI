@@ -1,14 +1,14 @@
-"""User base schemas module."""
+"""User schemas module."""
 
 from datetime import datetime
-from typing import Optional
-
-from pydantic import (
-    BaseModel,
-    Field,
-)
+from typing import TYPE_CHECKING, List, Optional
 
 from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+
+if TYPE_CHECKING:
+    from .post import PostSchema
+    from .user_bio import UserBioSchema
 
 
 class UserBaseSchema(BaseModel):
@@ -28,6 +28,7 @@ class UserBaseSchema(BaseModel):
     last_name: Optional[str] = None
     age: Optional[int] = None
     status: UserStatusEnum = Field(default=UserStatusEnum.active)
+    email: str | None = None
 
 
 class UserPatchSchema(UserBaseSchema):
@@ -45,8 +46,19 @@ class UserSchema(UserInSchema):
         """Pydantic model config."""
 
         orm_mode = True
-        model = "users"
 
     id: int
-    created_at: datetime = Field(description="Время создания данных")
-    modified_at: datetime = Field(description="Время изменения данных")
+    created_at: datetime = Field(description="Create datetime")
+    modified_at: datetime = Field(description="Update datetime")
+    posts: List["PostSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post",
+            many=True,
+        ),
+    )
+
+    bio: Optional["UserBioSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user_bio",
+        ),
+    )

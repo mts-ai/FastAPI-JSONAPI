@@ -1,3 +1,6 @@
+[![Documentation Status](https://readthedocs.org/projects/fastapi-jsonapi/badge/?version=latest)](https://fastapi-jsonapi.readthedocs.io/en/latest/?badge=latest)
+![PyPI](https://img.shields.io/pypi/v/fastapi-jsonapi?label=PyPI)
+
 # FastAPI-JSONAPI
 
 FastAPI-JSONAPI is a FastAPI extension for building REST APIs.
@@ -36,7 +39,6 @@ from sqlalchemy.sql import Select
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi import SqlalchemyEngine
 from fastapi_jsonapi.data_layers.orm import DBORMType
-from fastapi_jsonapi.openapi import custom_openapi
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultListSchema
 from fastapi_jsonapi.schema import collect_app_orm_schemas
@@ -115,7 +117,12 @@ class UserDetail:
         return UserSchema.from_orm(user)
 
     @classmethod
-    async def patch(cls, obj_id: int, data: UserPatchSchema, session: AsyncSession = Depends(Connector.get_session)) -> UserSchema:
+    async def patch(
+        cls,
+        obj_id: int,
+        data: UserPatchSchema,
+        session: AsyncSession = Depends(Connector.get_session),
+    ) -> UserSchema:
         user: User = (await session.execute(select(User).where(User.id == obj_id))).scalar_one()
         user.first_name = data.first_name
         await session.commit()
@@ -131,7 +138,9 @@ class UserDetail:
 class UserList:
     @classmethod
     async def get(
-            cls, query_params: QueryStringManager, session: AsyncSession = Depends(Connector.get_session)
+        cls,
+        query_params: QueryStringManager,
+        session: AsyncSession = Depends(Connector.get_session),
     ) -> Union[Select, JSONAPIResultListSchema]:
         user_query = select(User)
         dl = SqlalchemyEngine(query=user_query, schema=UserSchema, model=User, session=session)
@@ -161,7 +170,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
 
     routers: APIRouter = APIRouter()
     RoutersJSONAPI(
-        routers=routers,
+        router=routers,
         path="/user",
         tags=["User"],
         class_detail=UserDetail,
@@ -200,13 +209,11 @@ def create_app() -> FastAPI:
     )
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
-    custom_openapi(app, title="API for SQLAlchemy")
     collect_app_orm_schemas(app)
     return app
 
 
 app = create_app()
-
 
 if __name__ == "__main__":
     uvicorn.run(

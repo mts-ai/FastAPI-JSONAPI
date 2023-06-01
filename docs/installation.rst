@@ -15,14 +15,14 @@ The development version can be downloaded from `its page at GitHub
 
     git clone https://github.com/mts-ai/FastAPI-JSONAPI.git
     cd fastapi-jsonapi
-    python3 -m venv venv
-    . ./venv/bin/activate
-    pip install -U pip
-    python setup.py install
-    pip install -r requirements-dev.txt
+    poetry install poetry install --all-extras
 
 .. note::
 
     If you don't have virtualenv please install it
 
     $ pip install virtualenv
+
+    If you don't have poetry please install it
+
+    $ pip install poetry

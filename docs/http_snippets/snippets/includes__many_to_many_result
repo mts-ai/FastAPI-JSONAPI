@@ -1,0 +1,170 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "name": "parent_1"
+      },
+      "id": "1",
+      "relationships": {
+        "children": {
+          "data": [
+            {
+              "id": "1",
+              "type": "parent_child_association"
+            },
+            {
+              "id": "3",
+              "type": "parent_child_association"
+            }
+          ]
+        }
+      },
+      "type": "parent"
+    },
+    {
+      "attributes": {
+        "name": "parent_2"
+      },
+      "id": "2",
+      "relationships": {
+        "children": {
+          "data": [
+            {
+              "id": "2",
+              "type": "parent_child_association"
+            },
+            {
+              "id": "4",
+              "type": "parent_child_association"
+            },
+            {
+              "id": "5",
+              "type": "parent_child_association"
+            }
+          ]
+        }
+      },
+      "type": "parent"
+    },
+    {
+      "attributes": {
+        "name": "parent_3"
+      },
+      "id": "3",
+      "relationships": {
+        "children": {
+          "data": []
+        }
+      },
+      "type": "parent"
+    }
+  ],
+  "included": [
+    {
+      "attributes": {
+        "name": "child_1"
+      },
+      "id": "1",
+      "type": "child"
+    },
+    {
+      "attributes": {
+        "name": "child_2"
+      },
+      "id": "2",
+      "type": "child"
+    },
+    {
+      "attributes": {
+        "name": "child_3"
+      },
+      "id": "3",
+      "type": "child"
+    },
+    {
+      "attributes": {
+        "extra_data": "assoc_p1c1_extra"
+      },
+      "id": "1",
+      "relationships": {
+        "child": {
+          "data": {
+            "id": "1",
+            "type": "child"
+          }
+        }
+      },
+      "type": "parent_child_association"
+    },
+    {
+      "attributes": {
+        "extra_data": "assoc_p2c1_extra"
+      },
+      "id": "2",
+      "relationships": {
+        "child": {
+          "data": {
+            "id": "1",
+            "type": "child"
+          }
+        }
+      },
+      "type": "parent_child_association"
+    },
+    {
+      "attributes": {
+        "extra_data": "assoc_p1c2_extra"
+      },
+      "id": "3",
+      "relationships": {
+        "child": {
+          "data": {
+            "id": "2",
+            "type": "child"
+          }
+        }
+      },
+      "type": "parent_child_association"
+    },
+    {
+      "attributes": {
+        "extra_data": "assoc_p2c2_extra"
+      },
+      "id": "4",
+      "relationships": {
+        "child": {
+          "data": {
+            "id": "2",
+            "type": "child"
+          }
+        }
+      },
+      "type": "parent_child_association"
+    },
+    {
+      "attributes": {
+        "extra_data": "assoc_p2c3_extra"
+      },
+      "id": "5",
+      "relationships": {
+        "child": {
+          "data": {
+            "id": "3",
+            "type": "child"
+          }
+        }
+      },
+      "type": "parent_child_association"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "count": 3,
+    "totalPages": 1
+  }
+}

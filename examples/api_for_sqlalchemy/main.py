@@ -20,16 +20,16 @@ sys.path.append(str(PROJECT_DIR))
 import uvicorn
 from fastapi import FastAPI
 
+from examples.api_for_sqlalchemy import config
 from examples.api_for_sqlalchemy.urls import add_routes
 from fastapi_jsonapi.schema import collect_app_orm_schemas
-from fastapi_jsonapi.openapi import custom_openapi
 
 
 async def sqlalchemy_init() -> None:
-    uri = "sqlite+aiosqlite:///db.sqlite3"
-    engine = create_async_engine(url=make_url(uri))
+    engine = create_async_engine(url=make_url(config.SQLA_URI), echo=config.SQLA_ECHO)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # We don't want to drop tables on each app restart!
+        # await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
 
@@ -45,9 +45,9 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
         docs_url="/docs",
     )
+    app.config = {"MAX_INCLUDE_DEPTH": 5}
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
-    custom_openapi(app, title="API for SQLAlchemy")
     collect_app_orm_schemas(app)
     return app
 
