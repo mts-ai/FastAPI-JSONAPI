@@ -32,7 +32,7 @@ Search for objects
 
 Request:
 
-.. sourcecode:: http
+.. sourcecode:: HTTP
 
     GET /pictures?filter=[{"name":"picture.meta","op":"jsonb_contains","val":{"location":"Moscow"}}]
     Accept: application/vnd.api+json
