@@ -2,7 +2,7 @@ Changelog
 #########
 
 
-**0.4.0**
+**1.0.0**
 *********
 
 Backward-incompatible changes, improvements, bug fixes
