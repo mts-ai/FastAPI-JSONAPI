@@ -1,5 +1,6 @@
 .. _custom_sql_filtering:
 
+
 Custom SQL filtering
 ####################
 
@@ -39,6 +40,7 @@ Request:
 Filter value has to be a valid JSON:
 
 .. sourcecode:: JSON
+
     [
        {
           "name":"picture.meta",

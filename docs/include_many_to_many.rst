@@ -1,7 +1,7 @@
 .. _include_many_to_many:
 
-Include nested and related Many-to-Many
-#######################################
+Include nested and related, Many-to-Many
+########################################
 
 .. currentmodule:: fastapi_jsonapi
 
@@ -114,7 +114,7 @@ Child Views
 
 
 List Parent objects with Children through an Association object
----------------------------------------------------------------
+===============================================================
 
 Request:
 

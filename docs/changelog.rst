@@ -11,10 +11,7 @@ Backward-incompatible changes, improvements, bug fixes
 * Includes (see :ref:`example with many-to-many <include_many_to_many>`:) - any level of includes is now supported (tested with 4);
 * View Classes generics (Detail View and List View);
 * View Classes now use instance-level methods (breaking change, previously ``classmethods`` were used);
-* Pydantic schemas now have to be inherited from custom BaseModel methods (breaking change
-, previously all schemas were supported
-). It uses custom :ref:`registry class <https://github.com/mts-ai/FastAPI-JSONAPI/blob/188093e967bb80b7a1f0a86e754a52e47f252044/fastapi_jsonapi/schema_base.py#L33>`:
-, so we can collect and resolve all schemas. Maybe there's some workaround to collect all known schemas;
+* Pydantic schemas now have to be inherited from custom BaseModel methods (breaking change, previously all schemas were supported). It uses custom :ref:`registry class <https://github.com/mts-ai/FastAPI-JSONAPI/blob/188093e967bb80b7a1f0a86e754a52e47f252044/fastapi_jsonapi/schema_base.py#L33>`:, so we can collect and resolve all schemas. Maybe there's some workaround to collect all known schemas;
 * Improved docs, request and response examples have more info, more schemas appear in docs;
 * Reworked schemas resolving and building;
 * Fixed filtering (schemas resolving fix);
