@@ -35,7 +35,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
 
     routers: APIRouter = APIRouter()
     RoutersJSONAPI(
-        routers=routers,
+        router=routers,
         path="/user",
         tags=["User"],
         class_detail=UserDetail,

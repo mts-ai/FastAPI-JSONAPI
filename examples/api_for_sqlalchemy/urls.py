@@ -11,10 +11,12 @@ from fastapi import (
     FastAPI,
 )
 
-from examples.api_for_sqlalchemy.models import Post, User, UserBio
+from examples.api_for_sqlalchemy.models import Child, Parent, Post, User, UserBio
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.data_layers.orm import DBORMType
 
+from .api.child import ChildDetail, ChildList
+from .api.parent import ParentDetail, ParentList
 from .api.post import PostDetail, PostList
 from .api.user import (
     UserDetail,
@@ -22,6 +24,10 @@ from .api.user import (
 )
 from .api.user_bio import UserBioDetail, UserBioList
 from .models.schemas import (
+    ChildInSchema,
+    ChildPatchSchema,
+    ChildSchema,
+    ParentSchema,
     PostInSchema,
     PostPatchSchema,
     PostSchema,
@@ -46,9 +52,9 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         },
     ]
 
-    routers: APIRouter = APIRouter()
+    router: APIRouter = APIRouter()
     RoutersJSONAPI(
-        routers=routers,
+        router=router,
         path="/users",
         tags=["User"],
         class_detail=UserDetail,
@@ -62,7 +68,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
     )
 
     RoutersJSONAPI(
-        routers=routers,
+        router=router,
         path="/posts",
         tags=["Post"],
         class_detail=PostDetail,
@@ -76,7 +82,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
     )
 
     RoutersJSONAPI(
-        routers=routers,
+        router=router,
         path="/user-bio",
         tags=["Bio"],
         class_detail=UserBioDetail,
@@ -89,5 +95,33 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         engine=DBORMType.sqlalchemy,
     )
 
-    app.include_router(routers, prefix="")
+    RoutersJSONAPI(
+        router=router,
+        path="/parents",
+        tags=["Parent"],
+        class_detail=ParentDetail,
+        class_list=ParentList,
+        schema=ParentSchema,
+        type_resource="parent",
+        schema_in_patch=PostPatchSchema,
+        schema_in_post=PostInSchema,
+        model=Parent,
+        engine=DBORMType.sqlalchemy,
+    )
+
+    RoutersJSONAPI(
+        router=router,
+        path="/children",
+        tags=["Child"],
+        class_detail=ChildDetail,
+        class_list=ChildList,
+        schema=ChildSchema,
+        type_resource="child",
+        schema_in_patch=ChildPatchSchema,
+        schema_in_post=ChildInSchema,
+        model=Child,
+        engine=DBORMType.sqlalchemy,
+    )
+
+    app.include_router(router, prefix="")
     return tags

@@ -1,0 +1,13 @@
+{
+  "method": "GET",
+  "url": "http://localhost:8082/parents?include=children,children.child",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ]
+}

@@ -3,10 +3,6 @@
 
 ## Install
 
-> Waiting for a PR to be merged: https://github.com/Kong/httpsnippet/pull/222
->
-> Otherwise, extra options cannot be passed
-> (you'll need to delete Host and Content-Length manually, or use the forked version)
 
 ```shell
 # to use in cli

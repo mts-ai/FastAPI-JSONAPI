@@ -59,6 +59,7 @@ FastAPI-JSONAPI with FastAPI.
    routing
    filtering
    include_related_objects
+   include_many_to_many
    sparse_fieldsets
    pagination
    sorting

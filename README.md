@@ -114,7 +114,12 @@ class UserDetail:
         return UserSchema.from_orm(user)
 
     @classmethod
-    async def patch(cls, obj_id: int, data: UserPatchSchema, session: AsyncSession = Depends(Connector.get_session)) -> UserSchema:
+    async def patch(
+        cls,
+        obj_id: int,
+        data: UserPatchSchema,
+        session: AsyncSession = Depends(Connector.get_session),
+    ) -> UserSchema:
         user: User = (await session.execute(select(User).where(User.id == obj_id))).scalar_one()
         user.first_name = data.first_name
         await session.commit()
@@ -130,7 +135,9 @@ class UserDetail:
 class UserList:
     @classmethod
     async def get(
-            cls, query_params: QueryStringManager, session: AsyncSession = Depends(Connector.get_session)
+        cls,
+        query_params: QueryStringManager,
+        session: AsyncSession = Depends(Connector.get_session),
     ) -> Union[Select, JSONAPIResultListSchema]:
         user_query = select(User)
         dl = SqlalchemyEngine(query=user_query, schema=UserSchema, model=User, session=session)
@@ -160,7 +167,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
 
     routers: APIRouter = APIRouter()
     RoutersJSONAPI(
-        routers=routers,
+        router=routers,
         path="/user",
         tags=["User"],
         class_detail=UserDetail,
@@ -204,7 +211,6 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
 
 if __name__ == "__main__":
     uvicorn.run(

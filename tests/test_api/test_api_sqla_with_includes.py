@@ -1120,7 +1120,7 @@ def app(
 
     router: APIRouter = APIRouter()
     RoutersJSONAPI(
-        routers=router,
+        router=router,
         path="/users",
         tags=["User"],
         class_detail=user_detail_view,
@@ -1134,7 +1134,7 @@ def app(
     )
 
     RoutersJSONAPI(
-        routers=router,
+        router=router,
         path="/posts",
         tags=["Post"],
         class_detail=post_detail_view,
@@ -1148,7 +1148,7 @@ def app(
     )
 
     RoutersJSONAPI(
-        routers=router,
+        router=router,
         path="/user-bio",
         tags=["Bio"],
         class_detail=user_bio_detail_view,
@@ -1162,21 +1162,21 @@ def app(
     )
 
     RoutersJSONAPI(
-        routers=router,
+        router=router,
         path="/parents",
         tags=["Parent"],
         class_detail=parent_detail_view,
         class_list=parent_list_view,
         schema=ParentSchema,
         type_resource="parent",
-        schema_in_patch=PostPatchSchema,
-        schema_in_post=PostInSchema,
+        schema_in_patch=ParentPatchSchema,
+        schema_in_post=ParentPatchSchema,
         model=Parent,
         engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
-        routers=router,
+        router=router,
         path="/children",
         tags=["Child"],
         class_detail=child_detail_view,
@@ -1451,5 +1451,6 @@ async def test_many_to_many_load_inner_includes_to_parents(
                 "id": ViewBase.get_db_item_id(child),
                 "type": "child",
             }
+            assert p_to_c_assoc_data["attributes"]["extra_data"] == assoc.extra_data
 
     assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data

@@ -68,7 +68,7 @@ class RoutersJSONAPI:
 
     def __init__(
         self,
-        routers: APIRouter,
+        router: APIRouter,
         path: Union[str, List[str]],
         tags: List[str],
         class_detail: Any,
@@ -100,7 +100,7 @@ class RoutersJSONAPI:
                         Необходимо для автоматического построения запросов.
         :params schema_detail: Схема для detail resource. Если не передано, будет использовано значение schema.
         """
-        self._routers: APIRouter = routers
+        self._router: APIRouter = router
         self._path: Union[str, List[str]] = path
         self._tags: List[str] = tags
         self.detail_views: Any = class_detail(jsonapi=self)
@@ -216,7 +216,7 @@ class RoutersJSONAPI:
         }
         if hasattr(self.list_views, "get"):
             # Добавляем в APIRouter API с выгрузкой списка элементов данного ресурса
-            self._routers.get(
+            self._router.get(
                 path,
                 tags=self._tags,
                 responses=list_response_example | error_responses,
@@ -233,7 +233,7 @@ class RoutersJSONAPI:
             )
 
         if hasattr(self.list_views, "post"):
-            self._routers.post(
+            self._router.post(
                 path,
                 tags=self._tags,
                 responses=detail_response_example | error_responses,
@@ -250,7 +250,7 @@ class RoutersJSONAPI:
             )
 
         if hasattr(self.list_views, "delete"):
-            self._routers.delete(path, tags=self._tags, summary=f"Delete list objects of type `{self._type}`")(
+            self._router.delete(path, tags=self._tags, summary=f"Delete list objects of type `{self._type}`")(
                 delete_list_jsonapi(
                     schema=self._schema,
                     model=self.model,
@@ -259,7 +259,7 @@ class RoutersJSONAPI:
             )
 
         if hasattr(self.detail_views, "get"):
-            self._routers.get(
+            self._router.get(
                 path + "/{obj_id}",
                 tags=self._tags,
                 responses=detail_response_example | error_responses,
@@ -274,7 +274,7 @@ class RoutersJSONAPI:
             )
 
         if hasattr(self.detail_views, "patch"):
-            self._routers.patch(
+            self._router.patch(
                 path + "/{obj_id}",
                 tags=self._tags,
                 responses=detail_response_example | error_responses,
@@ -291,7 +291,7 @@ class RoutersJSONAPI:
             )
 
         if hasattr(self.detail_views, "delete"):
-            self._routers.delete(path + "/{obj_id}", tags=self._tags, summary=f"Delete object of type `{self._type}`")(
+            self._router.delete(path + "/{obj_id}", tags=self._tags, summary=f"Delete object of type `{self._type}`")(
                 delete_detail_jsonapi(
                     schema=self._schema,
                     model=self.model,

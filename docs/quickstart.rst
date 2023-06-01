@@ -15,11 +15,11 @@ around a small tutorial that uses the SQLAlchemy data layer.
 This tutorial shows you an example of a person and their computers.
 
 Advanced example
--------------
+----------------
 
 An example of FastAPI-JSONAPI API looks like this:
 
-.. literalinclude:: ../examples/api_for_sqlalchemy
+.. literalinclude:: ../examples/api_for_sqlalchemy/urls.py
     :language: python
 
 This example provides the following API:

@@ -28,7 +28,8 @@ from fastapi_jsonapi.schema import collect_app_orm_schemas
 async def sqlalchemy_init() -> None:
     engine = create_async_engine(url=make_url(config.SQLA_URI), echo=config.SQLA_ECHO)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # We don't want to drop tables on each app restart!
+        # await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
 

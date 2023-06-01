@@ -1,6 +1,19 @@
 """schemas package."""
 
 
+from .child import (
+    ChildInSchema,
+    ChildPatchSchema,
+    ChildSchema,
+)
+from .parent import (
+    ParentInSchema,
+    ParentPatchSchema,
+    ParentSchema,
+)
+from .parent_child_association import (
+    ParentToChildAssociationSchema,
+)
 from .post import (
     PostInSchema,
     PostPatchSchema,
@@ -35,4 +48,11 @@ __all__ = [
     "PostCommentSchema",
     "PostCommentInSchema",
     "PostCommentPatchSchema",
+    "ParentInSchema",
+    "ParentPatchSchema",
+    "ParentSchema",
+    "ChildInSchema",
+    "ChildPatchSchema",
+    "ChildSchema",
+    "ParentToChildAssociationSchema",
 ]
