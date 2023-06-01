@@ -46,7 +46,10 @@ JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
 not_passed = object()
 
 
-@dataclass(frozen=True, slots=True)
+# todo: when 3.9 support is dropped, return back `slots=True to JSONAPIObjectSchemas dataclass`
+
+
+@dataclass(frozen=True)
 class JSONAPIObjectSchemas:
     attributes_schema: Type[BaseModel]
     relationships_schema: Type[BaseModel]
