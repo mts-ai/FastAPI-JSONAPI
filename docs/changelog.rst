@@ -25,7 +25,7 @@ Backward-incompatible changes, improvements, bug fixes
 * Upgrade examples;
 * Update docs.
 
-- `@mahenzon`_
+`@mahenzon`_
 
 
 **0.2.1**

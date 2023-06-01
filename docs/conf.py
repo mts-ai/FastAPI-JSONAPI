@@ -138,6 +138,8 @@ html_theme_options = {
     "page_width": "1080px",
     "fixed_sidebar": True,
     "code_font_size": "0.8em",
+    "show_nav_level": 2,
+    "navigation_depth": 2,
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
