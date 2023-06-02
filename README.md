@@ -1,5 +1,5 @@
 [![Documentation Status](https://readthedocs.org/projects/fastapi-jsonapi/badge/?version=latest)](https://fastapi-jsonapi.readthedocs.io/en/latest/?badge=latest)
-![PyPI](https://img.shields.io/pypi/v/fastapi-jsonapi?label=PyPI)
+[![PyPI](https://img.shields.io/pypi/v/fastapi-jsonapi?label=PyPI)](https://pypi.org/project/FastAPI-JSONAPI/)
 
 # FastAPI-JSONAPI
 
