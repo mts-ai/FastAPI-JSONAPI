@@ -21,16 +21,13 @@ jobs:
         python-version: '3.11'
 
     - name: Install Hatch 🐣
-      run: pip install --upgrade pip "hatch==1.7.0"
+      run: pip install --upgrade pip setuptools wheel twine "hatch==1.7.0"
 
     - name: Build 🔨
       run: hatch build
 
-    - name: Publish package 🚀
-      uses: pypa/gh-action-pypi-publish@v1.8.6
-      with:
-        repository-url: https://pypi.org/project/FastAPI-JSONAPI/
-        password: ${{ secrets.PYPI_PASSWORD }}
-
-        # fail loudly on duplicates
-        # skip-existing: true
+    - name: 🚀 Publish
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: twine upload dist/*
