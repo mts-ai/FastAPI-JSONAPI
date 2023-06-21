@@ -42,6 +42,9 @@ sphinx = "^7.0.1"
 aiosqlite = "0.17.0"
 
 
+[tool.poetry.group.dev.dependencies]
+hatch = "^1.7.0"
+
 [tool.poetry.extras]
 sqla = ["sqlalchemy"]
 tortoise = ["tortoise-orm"]
