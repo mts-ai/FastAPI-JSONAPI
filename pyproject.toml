@@ -1,6 +1,81 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "FastAPI-JSONAPI"
+dynamic = ["version"]
+description = "FastAPI extension to create REST web api according to JSON:API 1.0 specification with FastAPI, Pydantic and data provider of your choice (SQLAlchemy, Tortoise ORM)"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Aleksey Nekrasov", email = "a.nekrasov@mts.ai" },
+    { name = "Suren Khorenyan", email = "s.khorenyan@mts.ai" },
+]
+keywords = [
+    "fastapi",
+    "jsonapi",
+    "json:api",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "fastapi>=0.79.0",
+    "greenlet>=1.1.2",
+    "pydantic>=1.9.1",
+    "simplejson>=3.17.6",
+    "SQLAlchemy>=1.4.39,<2.0.0",
+    "tortoise-orm>=0.19.2",
+    "uvicorn>=0.18.2",
+]
+
+[project.optional-dependencies]
+all = [
+    "pytest",
+    "sphinx",
+    "SQLAlchemy>=1.4.39,<2.0.0",
+    "tortoise-orm>=0.19.2",
+]
+docs = [
+    "sphinx",
+]
+sqlalchemy = [
+    "SQLAlchemy>=1.4.39,<2.0.0",
+]
+tests = [
+    "pytest",
+]
+tortoise-orm = [
+    "tortoise-orm>=0.19.2",
+]
+
+[project.urls]
+Documentation = "https://fastapi-jsonapi.readthedocs.io/"
+Source = "https://github.com/mts-ai/FastAPI-JSONAPI"
+
+[tool.hatch.version]
+path = "fastapi_jsonapi/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/fastapi_jsonapi",
+    "/examples",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "fastapi_jsonapi"
+]
+
 [tool.poetry]
 name = "fastapi-jsonapi"
-version = "1.0.0"
+version = "1.0.1"
 description = "FastAPI extension to create REST web api according to JSON:API specification"
 authors = [
     "Aleksei Nekrasov <nekrasov.aleks@mail.ru>",
@@ -49,11 +124,6 @@ hatch = "^1.7.0"
 sqla = ["sqlalchemy"]
 tortoise = ["tortoise-orm"]
 databases = ["sqlalchemy", "tortoise-orm"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 
 [tool.black]
 line-length = 119
