@@ -7,12 +7,11 @@ from typing import (
 )
 
 from examples.api_for_sqlalchemy.models import Post
-from fastapi_jsonapi.querystring import HeadersQueryStringManager
-
-from .exceptions import ErrorUpdateObject
-from .meta_base import (
+from fastapi_jsonapi.misc.sqla.updaters.exceptions import ErrorUpdateObject
+from fastapi_jsonapi.misc.sqla.updaters.meta_base import (
     BaseUpdater,
 )
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
 
 
 class ErrorUpdatePostObject(ErrorUpdateObject):

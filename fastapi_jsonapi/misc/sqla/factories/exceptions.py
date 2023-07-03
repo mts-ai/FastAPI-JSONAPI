@@ -2,8 +2,9 @@
 
 from typing import Type, TypeVar
 
-from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
+from sqlalchemy.ext.declarative import declarative_base
 
+Base = declarative_base()
 TypeModel = TypeVar("TypeModel", bound=Base)
 
 

@@ -5,14 +5,14 @@ from typing import (
 )
 
 from examples.api_for_sqlalchemy.models import User, UserBio
-from fastapi_jsonapi.querystring import HeadersQueryStringManager
-
-from .exceptions import ErrorCreateObject
-from .faker import fake
-from .meta_base import (
+from fastapi_jsonapi.misc.sqla.factories.exceptions import ErrorCreateObject
+from fastapi_jsonapi.misc.sqla.factories.meta_base import (
     BaseFactory,
     FactoryUseMode,
 )
+from fastapi_jsonapi.querystring import HeadersQueryStringManager
+
+from .faker import fake
 
 
 class ErrorCreateUserBioObject(ErrorCreateObject):
