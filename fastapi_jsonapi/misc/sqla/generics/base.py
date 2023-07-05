@@ -48,23 +48,24 @@ class DetailViewBaseGeneric(
         super().__init__(jsonapi=jsonapi, **options)
         self.check_session_dependency()
 
-    async def get(
-        self,
-        obj_id,
-        query_params: QueryStringManager = Depends(QueryStringManager),
-        session: AsyncSession = session_dependency,
-    ) -> JSONAPIResultDetailSchema:
-        dl = SqlalchemyEngine(
-            schema=self.jsonapi.schema_detail,
-            model=self.jsonapi.model,
-            session=session,
-        )
-        view_kwargs = {"id": obj_id}
-        return await self.get_detailed_result(
-            dl=dl,
-            view_kwargs=view_kwargs,
-            query_params=query_params,
-        )
+        async def get(
+            obj_id,
+            query_params: QueryStringManager = Depends(QueryStringManager),
+            session: AsyncSession = self.session_dependency,
+        ) -> JSONAPIResultDetailSchema:
+            dl = SqlalchemyEngine(
+                schema=self.jsonapi.schema_detail,
+                model=self.jsonapi.model,
+                session=session,
+            )
+            view_kwargs = {"id": obj_id}
+            return await self.get_detailed_result(
+                dl=dl,
+                view_kwargs=view_kwargs,
+                query_params=query_params,
+            )
+
+        self.get = get
 
 
 class ListViewBaseGeneric(
@@ -77,17 +78,18 @@ class ListViewBaseGeneric(
         super().__init__(jsonapi=jsonapi, **options)
         self.check_session_dependency()
 
-    async def get(
-        self,
-        query_params: QueryStringManager = Depends(QueryStringManager),
-        session: AsyncSession = session_dependency,
-    ) -> JSONAPIResultListSchema:
-        dl = SqlalchemyEngine(
-            schema=self.jsonapi.schema_list,
-            model=self.jsonapi.model,
-            session=session,
-        )
-        return await self.get_paginated_result(
-            dl=dl,
-            query_params=query_params,
-        )
+        async def get(
+            query_params: QueryStringManager = Depends(QueryStringManager),
+            session: AsyncSession = self.session_dependency,
+        ) -> JSONAPIResultListSchema:
+            dl = SqlalchemyEngine(
+                schema=self.jsonapi.schema_list,
+                model=self.jsonapi.model,
+                session=session,
+            )
+            return await self.get_paginated_result(
+                dl=dl,
+                query_params=query_params,
+            )
+
+        self.get = get
