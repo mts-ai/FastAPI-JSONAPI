@@ -6,7 +6,7 @@ from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
 from fastapi_jsonapi.exceptions import BadRequest
 from fastapi_jsonapi.querystring import QueryStringManager
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 __all__ = [
     "BadRequest",
