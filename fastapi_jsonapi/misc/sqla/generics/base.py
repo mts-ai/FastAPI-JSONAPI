@@ -27,7 +27,7 @@ dummy_dependency = Depends(lambda: "Dummy")
 class ValidateSessionDependencyMixin:
     session_dependency: DependsParams
 
-    def check_session_dependency(self):
+    def _check_session_dependency(self):
         """Checks that session dependency is a valid argument option acceptable by Fastapi views"""
         if any(
             [
@@ -46,22 +46,25 @@ class DetailViewBaseGeneric(
 
     def __init__(self, jsonapi: RoutersJSONAPI, **options):
         super().__init__(jsonapi=jsonapi, **options)
-        self.check_session_dependency()
+        self._check_session_dependency()
+        self._init_generic_methods()
 
-        try:
-            getattr(self, "get")
-        except AttributeError:
+    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyEngine:
+        return SqlalchemyEngine(
+            schema=self.jsonapi.schema_detail,
+            model=self.jsonapi.model,
+            session=session,
+        )
+
+    def _init_generic_methods(self):
+        if not hasattr(self, "get"):
 
             async def get(
                 obj_id,
                 query_params: QueryStringManager = Depends(QueryStringManager),
                 session: AsyncSession = self.session_dependency,
             ) -> JSONAPIResultDetailSchema:
-                dl = SqlalchemyEngine(
-                    schema=self.jsonapi.schema_detail,
-                    model=self.jsonapi.model,
-                    session=session,
-                )
+                dl = self._get_data_layer(session)
                 view_kwargs = {"id": obj_id}
                 return await self.get_detailed_result(
                     dl=dl,
@@ -80,21 +83,24 @@ class ListViewBaseGeneric(
 
     def __init__(self, jsonapi: RoutersJSONAPI, **options):
         super().__init__(jsonapi=jsonapi, **options)
-        self.check_session_dependency()
+        self._check_session_dependency()
+        self._init_generic_methods()
 
-        try:
-            getattr(self, "get")
-        except AttributeError:
+    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyEngine:
+        return SqlalchemyEngine(
+            schema=self.jsonapi.schema_detail,
+            model=self.jsonapi.model,
+            session=session,
+        )
+
+    def _init_generic_methods(self):
+        if not hasattr(self, "get"):
 
             async def get(
                 query_params: QueryStringManager = Depends(QueryStringManager),
                 session: AsyncSession = self.session_dependency,
             ) -> JSONAPIResultListSchema:
-                dl = SqlalchemyEngine(
-                    schema=self.jsonapi.schema_list,
-                    model=self.jsonapi.model,
-                    session=session,
-                )
+                dl = self._get_data_layer(session)
                 return await self.get_paginated_result(
                     dl=dl,
                     query_params=query_params,
