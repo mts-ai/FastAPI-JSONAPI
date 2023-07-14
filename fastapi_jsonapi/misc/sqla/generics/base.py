@@ -88,7 +88,7 @@ class ListViewBaseGeneric(
 
     def _get_data_layer(self, session: AsyncSession) -> SqlalchemyEngine:
         return SqlalchemyEngine(
-            schema=self.jsonapi.schema_detail,
+            schema=self.jsonapi.schema_list,
             model=self.jsonapi.model,
             session=session,
         )
