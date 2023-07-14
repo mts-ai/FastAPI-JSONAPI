@@ -16,8 +16,8 @@ from typing import (
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.declarative import declarative_base
 
-from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.data_layers.fields.enum import Enum
 from fastapi_jsonapi.querystring import HeadersQueryStringManager, QueryStringManager
@@ -29,6 +29,7 @@ from .exceptions import (
     ExceptionNotFactory,
 )
 
+Base = declarative_base()
 TypeModel = TypeVar("TypeModel", bound=Base)
 
 

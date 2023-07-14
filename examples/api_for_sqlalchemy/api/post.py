@@ -3,9 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from examples.api_for_sqlalchemy.api.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
-from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
 from examples.api_for_sqlalchemy.helpers.factories.post import ErrorCreatePostObject, PostFactory
 from examples.api_for_sqlalchemy.models.schemas import (
     PostInSchema,
@@ -15,20 +13,24 @@ from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
+from fastapi_jsonapi.misc.sqla.factories.meta_base import FactoryUseMode
+from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema
 
 
 class PostDetail(DetailViewBaseGeneric):
-    ...
+    session_dependency = Depends(Connector.get_session)
 
 
 class PostList(ListViewBaseGeneric):
+    session_dependency = Depends(Connector.get_session)
+
     async def post(
         self,
         data: PostInSchema,
         query_params: QueryStringManager,
-        session: AsyncSession = Depends(Connector.get_session),
+        session: AsyncSession = session_dependency,
     ) -> JSONAPIResultDetailSchema:
         try:
             post_obj = await PostFactory.create(

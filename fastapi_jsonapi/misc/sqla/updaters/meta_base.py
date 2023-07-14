@@ -14,8 +14,8 @@ from typing import (
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from tortoise import models
-from tortoise.exceptions import DoesNotExist
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.exc import NoResultFound
 
 from fastapi_jsonapi.querystring import HeadersQueryStringManager
 
@@ -25,8 +25,9 @@ from .exceptions import (
     ObjectNotFound,
 )
 
-TYPE_VAR = TypeVar("TYPE_VAR")
-TypeModel = TypeVar("TypeModel", bound=models.Model)
+Base = declarative_base()
+
+TypeModel = TypeVar("TypeModel", bound=Base)
 empty = object()
 
 
@@ -82,7 +83,7 @@ class _BaseUpdater(Generic[TypeModel]):
             try:
                 stmt = select(cls.Meta.model).where(cls.Meta.model.id == model_or_id)
                 model_instance = (await session.execute(stmt)).scalar_one()
-            except DoesNotExist:
+            except NoResultFound:
                 raise ObjectNotFound(cls.Meta.model, description="Object does not exist")
 
             return model_instance

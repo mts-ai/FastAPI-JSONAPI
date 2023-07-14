@@ -1,11 +1,8 @@
 from fastapi import Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from examples.api_for_sqlalchemy.api.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
-from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
 from examples.api_for_sqlalchemy.helpers.factories.user import ErrorCreateUserObject, UserFactory
-from examples.api_for_sqlalchemy.helpers.updaters.exceptions import ObjectNotFound
 from examples.api_for_sqlalchemy.helpers.updaters.update_user import ErrorUpdateUserObject, UpdateUser
 from examples.api_for_sqlalchemy.models import User
 from examples.api_for_sqlalchemy.models.schemas import UserPatchSchema, UserSchema
@@ -15,18 +12,23 @@ from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
 )
+from fastapi_jsonapi.misc.sqla.factories.meta_base import FactoryUseMode
+from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
+from fastapi_jsonapi.misc.sqla.updaters.exceptions import ObjectNotFound
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema
 
 
 class UserDetail(DetailViewBaseGeneric):
+    session_dependency = Depends(Connector.get_session)
+
     @classmethod
     async def patch(
         cls,
         obj_id,
         data: UserPatchSchema,
         query_params: QueryStringManager,
-        session: AsyncSession = Depends(Connector.get_session),
+        session: AsyncSession = session_dependency,
     ) -> UserSchema:
         user_obj: User
         try:
@@ -46,11 +48,13 @@ class UserDetail(DetailViewBaseGeneric):
 
 
 class UserList(ListViewBaseGeneric):
+    session_dependency = Depends(Connector.get_session)
+
     async def post(
         self,
         data: UserInSchema,
         query_params: QueryStringManager,
-        session: AsyncSession = Depends(Connector.get_session),
+        session: AsyncSession = session_dependency,
     ) -> JSONAPIResultDetailSchema:
         user_obj: User = await UserFactory.create_object_generic(
             data_as_schema=data,
