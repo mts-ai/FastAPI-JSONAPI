@@ -2,7 +2,7 @@ from fastapi import Depends
 from fastapi.params import Depends as DependsParams
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyEngine
+from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyDataLayer
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
 from fastapi_jsonapi.views.detail_view import DetailViewBase
@@ -49,8 +49,8 @@ class DetailViewBaseGeneric(
         self._check_session_dependency()
         self._init_generic_methods()
 
-    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyEngine:
-        return SqlalchemyEngine(
+    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyDataLayer:
+        return SqlalchemyDataLayer(
             schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,
             session=session,
@@ -86,8 +86,8 @@ class ListViewBaseGeneric(
         self._check_session_dependency()
         self._init_generic_methods()
 
-    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyEngine:
-        return SqlalchemyEngine(
+    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyDataLayer:
+        return SqlalchemyDataLayer(
             schema=self.jsonapi.schema_list,
             model=self.jsonapi.model,
             session=session,

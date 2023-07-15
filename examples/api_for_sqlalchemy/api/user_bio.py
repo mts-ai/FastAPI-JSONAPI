@@ -5,7 +5,7 @@ from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from examples.api_for_sqlalchemy.helpers.factories.user_bio import ErrorCreateUserBioObject, UserBioFactory
 from examples.api_for_sqlalchemy.models import UserBio
 from examples.api_for_sqlalchemy.models.schemas.user_bio import UserBioInSchema
-from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi import SqlalchemyDataLayer
 from fastapi_jsonapi.misc.sqla.factories.meta_base import FactoryUseMode
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from fastapi_jsonapi.querystring import QueryStringManager
@@ -32,7 +32,7 @@ class UserBioList(ListViewBaseGeneric):
             factory_mode=FactoryUseMode.production,
             exc=ErrorCreateUserBioObject,
         )
-        dl = SqlalchemyEngine(
+        dl = SqlalchemyDataLayer(
             schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,
             session=session,

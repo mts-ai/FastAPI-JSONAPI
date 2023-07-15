@@ -12,7 +12,7 @@ from typing import (
 
 from pydantic.fields import ModelField
 
-from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI, SqlalchemyEngine
+from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI, SqlalchemyDataLayer
 from fastapi_jsonapi.api import JSONAPIObjectSchemas
 from fastapi_jsonapi.data_layers.data_typing import (
     TypeModel,
@@ -320,7 +320,7 @@ class ViewBase:
 
     async def get_detailed_result(
         self,
-        dl: SqlalchemyEngine,
+        dl: SqlalchemyDataLayer,
         view_kwargs: Dict[str, Union[str, int]],
         query_params: QueryStringManager = None,
         schema: Type[TypeSchema] = None,

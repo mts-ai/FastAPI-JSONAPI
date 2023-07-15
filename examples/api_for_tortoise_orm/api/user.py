@@ -14,7 +14,7 @@ from examples.api_for_tortoise_orm.helpers.updaters.update_user import UpdateUse
 from examples.api_for_tortoise_orm.models.pydantic import UserSchema, UserPatchSchema
 from examples.api_for_tortoise_orm.models.pydantic.user import UserInSchema
 from examples.api_for_tortoise_orm.models.tortoise import User
-from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
+from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseDataLayer
 from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
@@ -72,7 +72,7 @@ class UserList:
     @classmethod
     async def get(cls, query_params: QueryStringManager) -> Union[QuerySet, JSONAPIResultListSchema]:
         user_query = User.filter().order_by("-id")
-        dl = TortoiseORMEngine(query=user_query, schema=UserSchema, model=User)
+        dl = TortoiseDataLayer(query=user_query, schema=UserSchema, model=User)
         count, users_db = await dl.get_collection(qs=query_params)
         total_pages = count // query_params.pagination.size + (count % query_params.pagination.size and 1)
         users: List[UserSchema] = [UserSchema.from_orm(i_user) for i_user in users_db]
