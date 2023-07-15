@@ -5,6 +5,9 @@ you must inherit from this base class
 """
 
 import types
+from typing import Type
+
+from fastapi_jsonapi.data_layers.data_typing import TypeModel
 
 
 class BaseDataLayer:
@@ -57,11 +60,11 @@ class BaseDataLayer:
         """
         pass
 
-    async def create_object(self, data, view_kwargs):
+    async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
         """
         Create an object
 
-        :param dict data: the data validated by schemas
+        :param dict model_kwargs: the data validated by schemas
         :param dict view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object
         """
@@ -174,6 +177,22 @@ class BaseDataLayer:
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
         :param dict view_kwargs: kwargs from the resource view
+        """
+        raise NotImplementedError
+
+    async def get_related_object(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        id_value: str,
+    ) -> TypeModel:
+        """
+        Get related object.
+
+        :params related_model: ORM model class
+        :params related_id_field: id field of the related model (usually it's `id`)
+        :params id_value: related object id value
+        :return: a related ORM object
         """
         raise NotImplementedError
 

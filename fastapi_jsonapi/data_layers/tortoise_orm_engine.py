@@ -1,4 +1,4 @@
-"""This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
+"""This module is a CRUD interface between resource managers and the Tortoise ORM"""
 from typing import Any, Iterable, Optional, Tuple, Type
 
 from tortoise.queryset import QuerySet
@@ -46,23 +46,23 @@ class TortoiseORMEngine(BaseDataLayer):
         self.id_name_field = id_name_field
         self.url_field = url_field
 
-    async def create_object(self, data: dict, view_kwargs: dict):
+    async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
         """
-        Create an object through sqlalchemy.
+        Create an object through Tortoise.
 
-        :params data: the data validated by marshmallow.
+        :params model_kwargs: the data validated by marshmallow.
         :params view_kwargs: kwargs from the resource view.
-        :return DeclarativeMeta: an object from sqlalchemy.
+        :return DeclarativeMeta: an object from Tortoise.
         """
         pass
 
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
-        Retrieve an object through sqlalchemy.
+        Retrieve an object through Tortoise.
 
         :params view_kwargs: kwargs from the resource view
         :params qs:
-        :return DeclarativeMeta: an object from sqlalchemy
+        :return DeclarativeMeta: an object from Tortoise
         """
         pass
 
@@ -80,7 +80,7 @@ class TortoiseORMEngine(BaseDataLayer):
 
     async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, Iterable]:
         """
-        Retrieve a collection of objects through sqlalchemy.
+        Retrieve a collection of objects through Tortoise.
 
         :params qs: a querystring manager to retrieve information from url.
         :params view_kwargs: kwargs from the resource view.
@@ -111,9 +111,9 @@ class TortoiseORMEngine(BaseDataLayer):
 
     async def update_object(self, obj: Any, data: dict, view_kwargs: dict) -> bool:
         """
-        Update an object through sqlalchemy.
+        Update an object through Tortoise.
 
-        :params obj: an object from sqlalchemy.
+        :params obj: an object from Tortoise.
         :params data: the data validated by schemas.
         :params view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
@@ -122,9 +122,9 @@ class TortoiseORMEngine(BaseDataLayer):
 
     async def delete_object(self, obj: Any, view_kwargs: dict):
         """
-        Delete an object through sqlalchemy.
+        Delete an object through Tortoise.
 
-        :params obj: an item from sqlalchemy.
+        :params obj: an item from Tortoise.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
@@ -200,13 +200,18 @@ class TortoiseORMEngine(BaseDataLayer):
         """
         pass
 
-    async def get_related_object(self, related_model: TypeModel, related_id_field: str, obj: Any) -> Any:
+    async def get_related_object(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        id_value: str,
+    ) -> TypeModel:
         """
-        Get a related object.
+        Get related object.
 
-        :params related_model: an sqlalchemy model
+        :params related_model: Tortoise model
         :params related_id_field: the identifier field of the related model
-        :params obj: the sqlalchemy object to retrieve related objects from
+        :params id_value: related object id value
         :return: a related object
         """
         pass
@@ -215,7 +220,7 @@ class TortoiseORMEngine(BaseDataLayer):
         """
         Paginate query according to jsonapi 1.0.
 
-        :params query: sqlalchemy queryset.
+        :params query: Tortoise queryset.
         :params paginate_info: pagination information.
         :return: the paginated query
         """
@@ -230,9 +235,9 @@ class TortoiseORMEngine(BaseDataLayer):
 
     def eagerload_includes(self, query: QuerySet, qs: QueryStringManager) -> QuerySet:
         """
-        Use eagerload feature of sqlalchemy to optimize data retrieval for include querystring parameter.
+        Use eagerload feature of Tortoise to optimize data retrieval for include querystring parameter.
 
-        :params query: sqlalchemy queryset.
+        :params query: Tortoise queryset.
         :params qs: a querystring manager to retrieve information from url.
         :return: the query with includes eagerloaded.
         """
@@ -250,7 +255,7 @@ class TortoiseORMEngine(BaseDataLayer):
         :params view_kwargs: kwargs from the resource view
         :params filter_field: the field to filter on
         :params filter_value: the value to filter with
-        :return sqlalchemy query: a query from sqlalchemy
+        :return Tortoise query: a query from Tortoise
         """
         pass
 

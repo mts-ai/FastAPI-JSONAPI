@@ -71,13 +71,13 @@ class SqlalchemyEngine(BaseDataLayer):
         self.eagerload_includes_ = eagerload_includes
         self._query = query
 
-    async def create_object(self, data: dict, view_kwargs: dict):
+    async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
         """
         Create an object through sqlalchemy.
 
-        :params data: the data validated by marshmallow.
+        :params model_kwargs: the data validated by marshmallow.
         :params view_kwargs: kwargs from the resource view.
-        :return DeclarativeMeta: an object from sqlalchemy.
+        :return:
         """
         pass
 
@@ -292,20 +292,25 @@ class SqlalchemyEngine(BaseDataLayer):
         """
         pass
 
-    async def get_related_object(self, related_model: TypeModel, related_id_field: str, obj: Any) -> Any:
+    async def get_related_object(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        id_value: str,
+    ) -> TypeModel:
         """
-        Get a related object.
+        Get related object.
 
-        :params related_model: an sqlalchemy model
-        :params related_id_field: the identifier field of the related model
-        :params obj: the sqlalchemy object to retrieve related objects from
-        :return: a related object
+        :params related_model: SQLA ORM model class
+        :params related_id_field: id field of the related model (usually it's `id`)
+        :params id_value: related object id value
+        :return: a related SQLA ORM object
         """
-        stmt = select(related_model).where(getattr(related_model, related_id_field) == obj["id"])
+        stmt = select(related_model).where(getattr(related_model, related_id_field) == id_value)
         try:
             related_object = (await self.session.execute(stmt)).scalar_one()
         except NoResultFound:
-            msg = f"{related_model.__name__}.{related_id_field}: {obj['id']} not found"
+            msg = f"{related_model.__name__}.{related_id_field}: {id_value} not found"
             raise RelatedObjectNotFound(msg)
 
         return related_object
@@ -427,21 +432,21 @@ class SqlalchemyEngine(BaseDataLayer):
             return self._query
         return select(self.model)
 
-    def before_create_object(self, data: dict, view_kwargs: dict):
+    async def before_create_object(self, model_kwargs: dict, view_kwargs: dict):
         """
         Provide additional data before object creation.
 
-        :params data: the data validated by marshmallow.
+        :params model_kwargs: the data validated by marshmallow.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
 
-    def after_create_object(self, obj: Any, data: dict, view_kwargs: dict):
+    async def after_create_object(self, obj: TypeModel, model_kwargs: dict, view_kwargs: dict):
         """
         Provide additional data after object creation.
 
         :params obj: an object from data layer.
-        :params data: the data validated by marshmallow.
+        :params model_kwargs: the data validated by marshmallow.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
