@@ -7,18 +7,23 @@ from typing import (
 )
 
 from fastapi import HTTPException as FastApiHttpException
+from fastapi import status
 
 
 class HTTPException(FastApiHttpException):
     """Base HTTP Exception class customized for json_api exceptions."""
+
+    title: str = ""
+    status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+    parameter: str = ""
 
     def __init__(
         self,
         detail: str = "",
         pointer: str = "",
         parameter: str = "",
-        status_code: int = HTTPStatus.BAD_REQUEST,
-        title: str = "",
+        title: Optional[str] = None,
+        status_code: Optional[int] = None,
         errors: Optional[List["HTTPException"]] = None,
     ):
         """
@@ -31,6 +36,13 @@ class HTTPException(FastApiHttpException):
         :param title: a short, human-readable summary of the problem
         :param errors: may be passed over other arguments as list of `HTTPException` objects
         """
+        if status_code is not None:
+            self.status_code = status_code
+
+        if title is not None:
+            self.title = title
+
+        parameter = parameter or self.parameter
         if not errors:
             if pointer:
                 pointer = pointer if pointer.startswith("/") else "/data/" + pointer
@@ -40,8 +52,8 @@ class HTTPException(FastApiHttpException):
             else:
                 self.source = {"pointer": ""}
 
-            self.status_code = HTTPStatus(int(status_code))
-            self.title = title or self.status_code.phrase
+            self.status_code = int(self.status_code)
+            self.title = self.title or HTTPStatus(self.status_code).phrase
             self._detail = detail
 
             errors = [self]
@@ -58,244 +70,103 @@ class HTTPException(FastApiHttpException):
         }
 
 
-class UnsupportedFeatureORM(HTTPException):
-    """Unsupported feature ORM exception class customized for json_api exceptions."""
+class InternalServerError(HTTPException):
+    """
+    Verbose name, it's the same as HTTP Exception
+    """
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.INTERNAL_SERVER_ERROR,
-        parameter: str = "",
-    ):
-        """
-        Init for invalid ORM exception.
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            parameter=parameter,
-            title="Invalid server.",
-            status_code=status_code,
-        )
+
+class UnsupportedFeatureORM(InternalServerError):
+    """
+    Unsupported feature ORM exception class customized for json_api exceptions.
+    Init for invalid ORM exception.
+    """
+
+    title = "Unsupported ORM"
 
 
 class BadRequest(HTTPException):
-    """Bad request HTTP exception class customized for json_api exceptions."""
+    """
+    Bad request HTTP exception class customized for json_api exceptions.
 
-    def __init__(
-        self,
-        detail: str = "",
-        pointer: str = "",
-        parameter: str = "",
-        title: str = "",
-    ):
-        """
-        Init bad request HTTP exception.
+    Init bad request HTTP exception.
+    """
 
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param pointer:  a JSON Pointer
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param title: a short, human-readable summary of the problem
-        """
-        super().__init__(
-            detail=detail,
-            pointer=pointer,
-            parameter=parameter,
-            title=title,
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
+    status_code = status.HTTP_400_BAD_REQUEST
 
 
-class InvalidSort(HTTPException):
+class NotFound(BadRequest):
+    """
+    Error to warn that a relationship is not found on a model
+    """
+
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class InvalidSort(BadRequest):
     """Customized Exception for invalid sort."""
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.BAD_REQUEST,
-        parameter: str = "sort",
-    ):
-        """
-        Init for invalid sort exception.
-
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            parameter=parameter,
-            title="Invalid sort querystring parameter.",
-            status_code=status_code,
-        )
+    title = "Invalid sort querystring parameter."
+    parameter: str = "sort"
 
 
-class InvalidFilters(HTTPException):
+class InvalidFilters(BadRequest):
     """Customized Exception for invalid filters."""
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.BAD_REQUEST,
-        parameter: str = "filters",
-    ):
-        """
-        Invalid filters querystring parameter.
-
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            title="Invalid filters querystring parameter.",
-            parameter=parameter,
-            status_code=status_code,
-        )
+    title = "Invalid filters querystring parameter."
+    parameter: str = "filters"
 
 
-class InvalidField(HTTPException):
-    """Customized Exception for invalid field."""
+class InvalidField(BadRequest):
+    """
+    Customized Exception for invalid field.
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.BAD_REQUEST,
-        parameter: str = "fields",
-    ):
-        """
-        Invalid fields querystring parameter.
+    Invalid fields querystring parameter.
+    """
 
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            title="Invalid fields querystring parameter.",
-            parameter=parameter,
-            status_code=status_code,
-        )
+    title = "Invalid fields querystring parameter."
+    parameter: str = "fields"
 
 
-class InvalidInclude(HTTPException):
-    """Customized Exception for invalid include."""
+class InvalidInclude(BadRequest):
+    """
+    Customized Exception for invalid include.
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.BAD_REQUEST,
-        parameter: str = "include",
-    ):
-        """
-        Invalid include querystring parameter.
+    Invalid include querystring parameter.
+    """
 
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            title="Invalid include querystring parameter.",
-            parameter=parameter,
-            status_code=status_code,
-        )
+    title = "Invalid include querystring parameter."
+    parameter: str = "include"
 
 
 class InvalidType(HTTPException):
-    """Error to warn that there is a conflit between resource types"""
+    """
+    Error to warn that there is a conflit between resource types
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.CONFLICT,
-        parameter: str = "",
-    ):
-        """
-        Error to warn that there is a conflit between resource types.
+    Error to warn that there is a conflict between resource types.
+    """
 
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            title="Invalid type.",
-            parameter=parameter,
-            status_code=status_code,
-        )
+    title = "Invalid type."
+    status_code = status.HTTP_409_CONFLICT
 
 
-class RelationNotFound(HTTPException):
-    """Error to warn that a relationship is not found on a model"""
+class RelationNotFound(NotFound):
+    """
+    Error to warn that a relationship is not found on a model
+    """
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.NOT_FOUND,
-        parameter: str = "",
-    ):
-        """
-        Error to warn that a relationship is not found on a model.
-
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            title="Relation not found.",
-            parameter=parameter,
-            status_code=status_code,
-        )
+    title = "Relation not found."
 
 
-class RelatedObjectNotFound(HTTPException):
+class RelatedObjectNotFound(NotFound):
     """Error to warn that a related object is not found"""
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.NOT_FOUND,
-        parameter: str = "",
-    ):
-        """
-        Error to warn that a related object is not found.
-
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            title="Related object not found.",
-            parameter=parameter,
-            status_code=status_code,
-        )
+    title = "Related object not found."
 
 
-class ObjectNotFound(HTTPException):
+class ObjectNotFound(NotFound):
     """Error to warn that an object is not found in a database"""
 
-    def __init__(
-        self,
-        detail: str = "",
-        status_code: int = HTTPStatus.NOT_FOUND,
-        parameter: str = "",
-    ):
-        """
-        Error to warn that an object is not found in a database.
-
-        :param detail: a human-readable explanation specific to this occurrence of the problem
-        :param parameter: a string indicating which URI query parameter caused the error
-        :param status_code: the HTTP status code applicable to this problem
-        """
-        super().__init__(
-            detail=detail,
-            title="Object not found.",
-            parameter=parameter,
-            status_code=status_code,
-        )
+    title = "Object not found."
