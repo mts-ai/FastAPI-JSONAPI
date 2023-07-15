@@ -7,7 +7,7 @@ from examples.api_for_sqlalchemy.helpers.updaters.update_user import ErrorUpdate
 from examples.api_for_sqlalchemy.models import User
 from examples.api_for_sqlalchemy.models.schemas import UserPatchSchema, UserSchema
 from examples.api_for_sqlalchemy.models.schemas.user import UserInSchema
-from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi import SqlalchemyDataLayer
 from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
@@ -63,7 +63,7 @@ class UserList(ListViewBaseGeneric):
             exc=ErrorCreateUserObject,
             factory_mode=FactoryUseMode.production,
         )
-        dl = SqlalchemyEngine(
+        dl = SqlalchemyDataLayer(
             schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,
             session=session,

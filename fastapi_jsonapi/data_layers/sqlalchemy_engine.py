@@ -28,7 +28,7 @@ from fastapi_jsonapi.schema import (
 from fastapi_jsonapi.splitter import SPLIT_REL
 
 
-class SqlalchemyEngine(BaseDataLayer):
+class SqlalchemyDataLayer(BaseDataLayer):
     """Sqlalchemy data layer"""
 
     def __init__(

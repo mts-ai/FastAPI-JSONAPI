@@ -3,7 +3,7 @@ from typing import Type
 
 from fastapi_jsonapi import (
     QueryStringManager,
-    SqlalchemyEngine,
+    SqlalchemyDataLayer,
 )
 from fastapi_jsonapi.data_layers.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class ListViewBase(ViewBase):
     async def get_paginated_result(
         self,
-        dl: SqlalchemyEngine,
+        dl: SqlalchemyDataLayer,
         query_params: QueryStringManager,
         schema: Type[TypeSchema] = None,
     ) -> JSONAPIResultListSchema:

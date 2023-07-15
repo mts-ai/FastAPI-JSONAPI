@@ -10,8 +10,8 @@ from fastapi_jsonapi.data_layers.sorting.tortoise_orm import SortTortoiseORM
 from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
 
 
-class TortoiseORMEngine(BaseDataLayer):
-    """Sqlalchemy data layer"""
+class TortoiseDataLayer(BaseDataLayer):
+    """Tortoise data layer"""
 
     def __init__(
         self,
@@ -25,7 +25,7 @@ class TortoiseORMEngine(BaseDataLayer):
         **kwargs: Any,
     ):
         """
-        Initialize an instance of SqlalchemyDataLayer.
+        Initialize an instance of TortoiseDataLayer.
 
         :params schema:
         :params model: Tortoise
@@ -34,7 +34,7 @@ class TortoiseORMEngine(BaseDataLayer):
         :params default_collection_count: For example `disable_collection_count = (True, 999)`
         :params id_name_field: Первичный ключ модели
         :params url_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
-        :params kwargs: initialization parameters of an SqlalchemyDataLayer instance
+        :params kwargs: initialization parameters of an TortoiseDataLayer instance
         """
         super().__init__(kwargs)
 
@@ -68,7 +68,7 @@ class TortoiseORMEngine(BaseDataLayer):
 
     async def get_collection_count(self, query: QuerySet) -> int:
         """
-        :params query: SQLAlchemy query
+        :params query: Tortoise query
         :params qs: QueryString
         :params view_kwargs: view kwargs
         :return:

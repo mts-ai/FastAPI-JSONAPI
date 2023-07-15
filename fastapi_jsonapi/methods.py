@@ -19,8 +19,8 @@ from starlette.responses import Response
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel
 from fastapi_jsonapi.data_layers.orm import DBORMType
-from fastapi_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyEngine
-from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseORMEngine
+from fastapi_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyDataLayer
+from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseDataLayer
 from fastapi_jsonapi.exceptions.json_api import UnsupportedFeatureORM
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
@@ -213,9 +213,9 @@ async def _get_single_response(
     session: Optional[AsyncSession] = None,
 ) -> Any:
     if engine is DBORMType.sqlalchemy:
-        dl = SqlalchemyEngine(schema=schema, model=model, session=session, query=query)
+        dl = SqlalchemyDataLayer(schema=schema, model=model, session=session, query=query)
     elif engine is DBORMType.tortoise:
-        dl = TortoiseORMEngine(schema=schema, model=model, query=query)
+        dl = TortoiseDataLayer(schema=schema, model=model, query=query)
     else:
         raise UnsupportedFeatureORM()
 

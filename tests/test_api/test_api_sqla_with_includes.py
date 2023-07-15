@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship, sessionmaker
 
-from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyEngine
+from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyDataLayer
 from fastapi_jsonapi.data_layers.orm import DBORMType
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema, collect_app_orm_schemas
@@ -845,7 +845,7 @@ def detail_view_base_generic(async_session_dependency):
             query_params: QueryStringManager,
             session: AsyncSession = Depends(async_session_dependency),
         ) -> JSONAPIResultDetailSchema:
-            dl = SqlalchemyEngine(
+            dl = SqlalchemyDataLayer(
                 schema=self.jsonapi.schema_detail,
                 model=self.jsonapi.model,
                 session=session,
@@ -868,7 +868,7 @@ def list_view_base_generic(async_session_dependency):
             query_params: QueryStringManager,
             session: AsyncSession = Depends(async_session_dependency),
         ) -> JSONAPIResultListSchema:
-            dl = SqlalchemyEngine(
+            dl = SqlalchemyDataLayer(
                 schema=self.jsonapi.schema_list,
                 model=self.jsonapi.model,
                 session=session,

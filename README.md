@@ -37,7 +37,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import Select
 
 from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi import SqlalchemyDataLayer
 from fastapi_jsonapi.data_layers.orm import DBORMType
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultListSchema
@@ -143,7 +143,7 @@ class UserList:
         session: AsyncSession = Depends(Connector.get_session),
     ) -> Union[Select, JSONAPIResultListSchema]:
         user_query = select(User)
-        dl = SqlalchemyEngine(query=user_query, schema=UserSchema, model=User, session=session)
+        dl = SqlalchemyDataLayer(query=user_query, schema=UserSchema, model=User, session=session)
         count, users_db = await dl.get_collection(qs=query_params)
         total_pages = count // query_params.pagination.size + (count % query_params.pagination.size and 1)
         users: List[UserSchema] = [UserSchema.from_orm(i_user) for i_user in users_db]

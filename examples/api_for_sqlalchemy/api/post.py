@@ -8,7 +8,7 @@ from examples.api_for_sqlalchemy.helpers.factories.post import ErrorCreatePostOb
 from examples.api_for_sqlalchemy.models.schemas import (
     PostInSchema,
 )
-from fastapi_jsonapi import SqlalchemyEngine
+from fastapi_jsonapi import SqlalchemyDataLayer
 from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,
@@ -47,7 +47,7 @@ class PostList(ListViewBaseGeneric):
         except ErrorCreatePostObject as ex:
             raise BadRequest(ex.description, ex.field)
 
-        dl = SqlalchemyEngine(
+        dl = SqlalchemyDataLayer(
             schema=self.jsonapi.schema_detail,
             model=self.jsonapi.model,
             session=session,
