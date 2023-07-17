@@ -1,13 +1,16 @@
 """Decorators and utils for JSON API routers."""
+import inspect
 from collections import OrderedDict
 from inspect import signature
 from typing import (
     Any,
     Callable,
+    Dict,
     List,
+    Mapping,
     Optional,
     Type,
-    TypeVar,
+    Union,
 )
 
 from fastapi import Query
@@ -27,6 +30,80 @@ from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListS
 from fastapi_jsonapi.signature import update_signature
 
 
+class ViewHelper:
+    def __init__(
+        self,
+        request: Request,
+        schema: Type[BaseModel],
+        obj_id: Union[int, str, None] = None,
+        schema_in: Optional[Type[BaseModel]] = None,
+        input_data: Optional[BaseModel] = None,
+    ):
+        """
+        :param request:
+        :param schema:
+        :param obj_id:
+        :param schema_in:
+            TODO:
+             1. any name.
+             2. any type:
+                - JSON:API accepts only str, but view funcs may accept int, uuid, etc
+        :param input_data:
+        """
+        self.schema: Type[BaseModel] = schema
+        self.request: Request = request
+        self.obj_id: Union[int, str, None] = obj_id
+        self.schema_in: Optional[Type[BaseModel]] = schema_in
+        self.input_data: Optional[BaseModel] = input_data
+
+    def prepare_depends_kwargs(
+        self,
+        func_params: Mapping[str, inspect.Parameter],
+    ) -> Dict[str, Any]:
+        """
+        :param func_params:
+        :return:
+        """
+        data_dict = {}
+        # TODO: why ordered dict? old solution 🤔
+        for i_name, i_type in OrderedDict(func_params).items():
+            if i_type.annotation is Request:
+                data_dict[i_name] = self.request
+            elif i_type.annotation is QueryStringManager:
+                data_dict[i_name] = QueryStringManager(request=self.request, schema=self.schema)
+            elif (self.schema_in is not None) and (i_type.annotation is self.schema_in.__fields__["attributes"].type_):
+                # TODO: Pydantic V2 .__fields__ -> .fields
+                # TODO: XXX refactor (old solution)
+                #  or get rid of it at all...
+                data_dict[i_name] = getattr(self.input_data, "attributes", self.input_data)
+
+        return data_dict
+
+    async def call_original_view(
+        self,
+        view_func: Callable,
+        view_func_kwargs: Dict[str, Any],
+    ):
+        func_signature = signature(view_func)
+        func_params = func_signature.parameters
+
+        kw = self.prepare_depends_kwargs(
+            func_params=func_params,
+        )
+        if self.obj_id is not None:
+            # TODO: any name? any type?
+            kw["obj_id"] = self.obj_id
+
+        kw.update(view_func_kwargs)
+        safe_kwargs = {i_k: i_v for i_k, i_v in kw.items() if i_k in func_params}
+
+        is_awaitable = inspect.isawaitable(view_func) or inspect.iscoroutinefunction(view_func)
+        result = view_func(**safe_kwargs)
+        if is_awaitable:
+            result = await result
+        return result
+
+
 def get_detail_jsonapi(
     schema: Type[BaseModel],
     schema_resp: Any,
@@ -37,20 +114,21 @@ def get_detail_jsonapi(
 
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, **kwargs):
-            query_params = QueryStringManager(request=request, schema=schema)
-            data_dict = {"obj_id": obj_id}
-            func_signature = signature(func).parameters
-            for i_name, i_type in OrderedDict(func_signature).items():
-                if i_type.annotation is Request:
-                    data_dict[i_name] = request
-                elif i_type.annotation is QueryStringManager:
-                    data_dict[i_name] = query_params
-
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
-            data_schema: Any = await func(**data_dict)
+            vh = ViewHelper(
+                request=request,
+                schema=schema,
+                obj_id=obj_id,
+            )
+            data_schema = await vh.call_original_view(
+                view_func=func,
+                view_func_kwargs=kwargs,
+            )
             if isinstance(data_schema, JSONAPIResultDetailSchema):
                 return data_schema
+            if isinstance(data_schema, dict):
+                # todo: do we need it?
+                return data_schema
+
             return schema_resp(
                 data={
                     "id": data_schema.id,
@@ -71,12 +149,9 @@ def get_detail_jsonapi(
     return inner
 
 
-MODEL = TypeVar("MODEL")
-
-
 def patch_detail_jsonapi(
     schema: Type[BaseModel],
-    schema_in: Type[MODEL],
+    schema_in: Type[BaseModel],
     type_: str,
     schema_resp: Any,
     model: Type[TypeModel],
@@ -89,20 +164,17 @@ def patch_detail_jsonapi(
 
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, data: schema_in, **kwargs):  # type: ignore
-            query_params = QueryStringManager(request=request, schema=schema)
-            data_dict = {"obj_id": obj_id}
-            func_signature = signature(func).parameters
-            for i_name, i_type in OrderedDict(func_signature).items():
-                if i_type.annotation is schema_in.__fields__["attributes"].type_:
-                    data_dict[i_name] = getattr(data, "attributes", data)
-                elif i_type.annotation is Request:
-                    data_dict[i_name] = request
-                elif i_type.annotation is QueryStringManager:
-                    data_dict[i_name] = query_params
-
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
-            data_schema: Any = await func(**data_dict)
+            vh = ViewHelper(
+                request=request,
+                schema=schema,
+                obj_id=obj_id,
+                schema_in=schema_in,
+                input_data=data,
+            )
+            data_schema = await vh.call_original_view(
+                view_func=func,
+                view_func_kwargs=kwargs,
+            )
             if isinstance(data_schema, JSONAPIResultDetailSchema):
                 return data_schema
             return schema_resp(
@@ -132,18 +204,15 @@ def delete_detail_jsonapi(
 
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, obj_id: int, **kwargs):  # type: ignore
-            query_params = QueryStringManager(request=request, schema=schema)
-            data_dict = {"obj_id": obj_id}
-            func_signature = signature(func).parameters
-            for i_name, i_type in OrderedDict(func_signature).items():
-                if i_type.annotation is Request:
-                    data_dict[i_name] = request
-                elif i_type.annotation is QueryStringManager:
-                    data_dict[i_name] = query_params
-
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
-            await func(**data_dict)
+            vh = ViewHelper(
+                request=request,
+                schema=schema,
+                obj_id=obj_id,
+            )
+            await vh.call_original_view(
+                view_func=func,
+                view_func_kwargs=kwargs,
+            )
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
         # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
@@ -176,19 +245,14 @@ def delete_list_jsonapi(
             ),
             **kwargs,
         ):
-            query_params = QueryStringManager(request=request, schema=schema)
-            data_dict = {}
-            func_signature = signature(func).parameters
-            for i_name, i_type in OrderedDict(func_signature).items():
-                if i_type.annotation is Request:
-                    data_dict[i_name] = request
-                elif i_type.annotation is QueryStringManager:
-                    data_dict[i_name] = query_params
-
-            params_function = OrderedDict(signature(func).parameters)
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in params_function})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in params_function}
-            await func(**data_dict)
+            vh = ViewHelper(
+                request=request,
+                schema=schema,
+            )
+            await vh.call_original_view(
+                view_func=func,
+                view_func_kwargs=kwargs,
+            )
             return Response(status_code=status.HTTP_204_NO_CONTENT)
 
         # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
@@ -212,6 +276,11 @@ async def _get_single_response(
     engine: DBORMType,
     session: Optional[AsyncSession] = None,
 ) -> Any:
+    """
+    TODO: move logic to data layers, get rid of this func
+    Also will fix this issue:
+    https://github.com/mts-ai/FastAPI-JSONAPI/issues/21
+    """
     if engine is DBORMType.sqlalchemy:
         dl = SqlalchemyDataLayer(schema=schema, model=model, session=session, query=query)
     elif engine is DBORMType.tortoise:
@@ -260,18 +329,14 @@ def get_list_jsonapi(
             ),
             **kwargs,
         ):
-            query_params = QueryStringManager(request=request, schema=schema)
-            data_dict = {}
-            func_signature = signature(func).parameters
-            for i_name, i_type in OrderedDict(func_signature).items():
-                if i_type.annotation is Request:
-                    data_dict[i_name] = request
-                elif i_type.annotation is QueryStringManager:
-                    data_dict[i_name] = query_params
-
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_signature})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
-            query = await func(**data_dict)
+            vh = ViewHelper(
+                request=request,
+                schema=schema,
+            )
+            query = await vh.call_original_view(
+                view_func=func,
+                view_func_kwargs=kwargs,
+            )
 
             if isinstance(query, JSONAPIResultListSchema):
                 return query
@@ -282,6 +347,9 @@ def get_list_jsonapi(
                 )
 
             session = None
+            query_params = QueryStringManager(request=request, schema=schema)
+            func_signature = signature(func).parameters
+
             if engine is DBORMType.sqlalchemy:
                 # Для SQLAlchemy нужно указывать session, для Tortoise достаточно модели
                 session: Optional[AsyncSession] = next(
@@ -330,21 +398,16 @@ def post_list_jsonapi(
 
     def inner(func: Callable) -> Callable:
         async def wrapper(request: Request, data: schema_in, **kwargs):  # type: ignore
-            query_params = QueryStringManager(request=request, schema=schema)
-            data_dict = {}
-            func_signature = signature(func).parameters
-            func_params = OrderedDict(func_signature)
-            for i_name, i_type in func_params.items():
-                if i_type.annotation is schema_in.__fields__["attributes"].type_:
-                    data_dict[i_name] = getattr(data, "attributes", data)
-                elif i_type.annotation is Request:
-                    data_dict[i_name] = request
-                elif i_type.annotation is QueryStringManager:
-                    data_dict[i_name] = query_params
-
-            data_dict.update({i_k: i_v for i_k, i_v in kwargs.items() if i_k in func_params})
-            data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_params}
-            data_pydantic: Any = await func(**data_dict)
+            vh = ViewHelper(
+                request=request,
+                schema=schema,
+                schema_in=schema_in,
+                input_data=data,
+            )
+            data_pydantic = await vh.call_original_view(
+                view_func=func,
+                view_func_kwargs=kwargs,
+            )
             if isinstance(data_pydantic, JSONAPIResultDetailSchema):
                 return data_pydantic
             return schema_resp(

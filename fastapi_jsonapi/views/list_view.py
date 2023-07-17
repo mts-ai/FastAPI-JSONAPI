@@ -1,10 +1,10 @@
 import logging
-from typing import Type
+from typing import Any, Type
 
 from fastapi_jsonapi import (
     QueryStringManager,
-    SqlalchemyDataLayer,
 )
+from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
     JSONAPIResultListMetaSchema,
@@ -16,13 +16,30 @@ logger = logging.getLogger(__name__)
 
 
 class ListViewBase(ViewBase):
+    def _get_data_layer(self, **kwargs: Any) -> BaseDataLayer:
+        """
+        :param kwargs: Any extra kwargs for the data layer. if
+        :return:
+        """
+        return self.data_layer_cls(
+            schema=self.jsonapi.schema_list,
+            model=self.jsonapi.model,
+            **kwargs,
+        )
+
+    async def get_view_result(self, query_params: QueryStringManager, **kwargs):
+        dl = self._get_data_layer(**kwargs)
+        return await self.get_paginated_result(
+            dl=dl,
+            query_params=query_params,
+        )
+
     async def get_paginated_result(
         self,
-        dl: SqlalchemyDataLayer,
+        dl: BaseDataLayer,
         query_params: QueryStringManager,
         schema: Type[TypeSchema] = None,
     ) -> JSONAPIResultListSchema:
-        # todo: generate dl?
         count, items_from_db = await dl.get_collection(qs=query_params)
         total_pages = 1
         if query_params.pagination.size:

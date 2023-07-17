@@ -42,19 +42,13 @@ class DetailViewBaseGeneric(
     DetailViewBase,
     ValidateSessionDependencyMixin,
 ):
+    data_layer_cls = SqlalchemyDataLayer
     session_dependency: DependsParams = dummy_dependency
 
     def __init__(self, jsonapi: RoutersJSONAPI, **options):
         super().__init__(jsonapi=jsonapi, **options)
         self._check_session_dependency()
         self._init_generic_methods()
-
-    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyDataLayer:
-        return SqlalchemyDataLayer(
-            schema=self.jsonapi.schema_detail,
-            model=self.jsonapi.model,
-            session=session,
-        )
 
     def _init_generic_methods(self):
         if not hasattr(self, "get"):
@@ -64,12 +58,11 @@ class DetailViewBaseGeneric(
                 query_params: QueryStringManager = Depends(QueryStringManager),
                 session: AsyncSession = self.session_dependency,
             ) -> JSONAPIResultDetailSchema:
-                dl = self._get_data_layer(session)
                 view_kwargs = {"id": obj_id}
-                return await self.get_detailed_result(
-                    dl=dl,
-                    view_kwargs=view_kwargs,
+                return await self.get_view_result(
                     query_params=query_params,
+                    view_kwargs=view_kwargs,
+                    session=session,
                 )
 
             self.get = get
@@ -79,19 +72,13 @@ class ListViewBaseGeneric(
     ListViewBase,
     ValidateSessionDependencyMixin,
 ):
+    data_layer_cls = SqlalchemyDataLayer
     session_dependency: DependsParams = dummy_dependency
 
     def __init__(self, jsonapi: RoutersJSONAPI, **options):
         super().__init__(jsonapi=jsonapi, **options)
         self._check_session_dependency()
         self._init_generic_methods()
-
-    def _get_data_layer(self, session: AsyncSession) -> SqlalchemyDataLayer:
-        return SqlalchemyDataLayer(
-            schema=self.jsonapi.schema_list,
-            model=self.jsonapi.model,
-            session=session,
-        )
 
     def _init_generic_methods(self):
         if not hasattr(self, "get"):
@@ -100,10 +87,9 @@ class ListViewBaseGeneric(
                 query_params: QueryStringManager = Depends(QueryStringManager),
                 session: AsyncSession = self.session_dependency,
             ) -> JSONAPIResultListSchema:
-                dl = self._get_data_layer(session)
-                return await self.get_paginated_result(
-                    dl=dl,
+                return await self.get_view_result(
                     query_params=query_params,
+                    session=session,
                 )
 
             self.get = get
