@@ -273,15 +273,6 @@ def get_list_jsonapi(
             data_dict = {i_k: i_v for i_k, i_v in data_dict.items() if i_k in func_signature}
             query = await func(**data_dict)
 
-            session = None
-            if engine is DBORMType.sqlalchemy:
-                # Для SQLAlchemy нужно указывать session, для Tortoise достаточно модели
-                session: Optional[AsyncSession] = next(
-                    # get first of type AsyncSession or None if not found
-                    filter(lambda v: isinstance(v, AsyncSession), func_signature.values()),
-                    None,
-                )
-
             if isinstance(query, JSONAPIResultListSchema):
                 return query
 
