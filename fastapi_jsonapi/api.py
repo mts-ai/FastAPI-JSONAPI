@@ -11,7 +11,7 @@ from typing import (
 )
 
 import pydantic
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from pydantic import BaseConfig
 from pydantic.fields import ModelField
 
@@ -241,6 +241,7 @@ class RoutersJSONAPI:
                 tags=self._tags,
                 responses=detail_response_example | error_responses,
                 summary=f"Create object `{self._type}`",
+                status_code=status.HTTP_201_CREATED,
             )(
                 post_list_jsonapi(
                     schema=self._schema,
@@ -294,7 +295,12 @@ class RoutersJSONAPI:
             )
 
         if hasattr(self.detail_views, "delete"):
-            self._router.delete(path + "/{obj_id}", tags=self._tags, summary=f"Delete object of type `{self._type}`")(
+            self._router.delete(
+                path + "/{obj_id}",
+                tags=self._tags,
+                summary=f"Delete object of type `{self._type}`",
+                status_code=status.HTTP_204_NO_CONTENT,
+            )(
                 delete_detail_jsonapi(
                     schema=self._schema,
                     model=self.model,

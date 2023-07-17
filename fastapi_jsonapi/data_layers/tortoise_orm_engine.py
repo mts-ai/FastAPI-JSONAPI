@@ -78,7 +78,7 @@ class TortoiseDataLayer(BaseDataLayer):
 
         return await query.count()
 
-    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, Iterable]:
+    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
         """
         Retrieve a collection of objects through Tortoise.
 
@@ -107,7 +107,7 @@ class TortoiseDataLayer(BaseDataLayer):
 
         collection = await self.after_get_collection(collection, qs, view_kwargs)
 
-        return objects_count, collection
+        return objects_count, list(collection)
 
     async def update_object(self, obj: Any, data: dict, view_kwargs: dict) -> bool:
         """

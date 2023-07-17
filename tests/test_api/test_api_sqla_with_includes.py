@@ -13,12 +13,14 @@ from sqlalchemy.orm import declared_attr, relationship, sessionmaker
 
 from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyDataLayer
 from fastapi_jsonapi.data_layers.orm import DBORMType
+from fastapi_jsonapi.misc.sqla.generics.base import ListViewBaseGeneric as ListViewBaseGenericHelper
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema, collect_app_orm_schemas
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.list_view import ListViewBase
 from fastapi_jsonapi.views.view_base import ViewBase
+from tests.conftest import fake
 
 pytestmark = pytest.mark.asyncio
 
@@ -35,8 +37,7 @@ class UserBaseSchema(BaseModel):
 
         orm_mode = True
 
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    name: str
     age: Optional[int] = None
     email: Optional[str] = None
 
@@ -443,7 +444,7 @@ def sqla_uri():
 # DB connections ⬇️
 
 
-@async_fixture(scope="module")
+@async_fixture(scope="class")
 async def async_engine(sqla_uri):
     engine = create_async_engine(url=make_url(sqla_uri))
     async with engine.begin() as conn:
@@ -452,7 +453,7 @@ async def async_engine(sqla_uri):
     return engine
 
 
-@async_fixture(scope="module")
+@async_fixture(scope="class")
 async def async_session_plain(async_engine):
     session = sessionmaker(
         bind=async_engine,
@@ -462,14 +463,14 @@ async def async_session_plain(async_engine):
     return session
 
 
-@async_fixture(scope="module")
+@async_fixture(scope="class")
 async def async_session(async_session_plain):
     async with async_session_plain() as session:
         yield session
         # async with session.begin():
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def async_session_dependency(async_session_plain):
     async def get_session():
         """
@@ -831,7 +832,7 @@ async def p2_c3_association(
 # Views ⬇️⬇️
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def detail_view_base_generic(async_session_dependency):
     class DetailViewBaseGeneric(DetailViewBase):
         """
@@ -860,7 +861,7 @@ def detail_view_base_generic(async_session_dependency):
     return DetailViewBaseGeneric
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def list_view_base_generic(async_session_dependency):
     class ListViewBaseGeneric(ListViewBase):
         async def get(
@@ -881,10 +882,18 @@ def list_view_base_generic(async_session_dependency):
     return ListViewBaseGeneric
 
 
+@pytest.fixture(scope="class")
+def list_view_base_generic_helper_for_sqla(async_session_dependency):
+    class ListViewBaseGeneric(ListViewBaseGenericHelper):
+        session_dependency = Depends(async_session_dependency)
+
+    return ListViewBaseGeneric
+
+
 # User ⬇️
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def user_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -897,14 +906,47 @@ def user_detail_view(detail_view_base_generic):
     return UserDetail
 
 
-@pytest.fixture(scope="module")
-def user_list_view(list_view_base_generic):
+@pytest.fixture(scope="class")
+def user_list_view(list_view_base_generic, async_session_dependency):
     """
     :param list_view_base_generic:
     :return:
     """
 
     class UserList(list_view_base_generic):
+        async def post(
+            self,
+            query_params: QueryStringManager,
+            user_in: UserInSchema,
+            session: AsyncSession = Depends(async_session_dependency),
+        ) -> JSONAPIResultDetailSchema:
+            # TODO: this should be in generic
+            user = User(**user_in.dict())
+            session.add(user)
+            await session.commit()
+            dl = SqlalchemyDataLayer(
+                schema=self.jsonapi.schema_detail,
+                model=self.jsonapi.model,
+                session=session,
+            )
+            view_kwargs = {"id": user.id}
+            return await self.get_detailed_result(
+                dl=dl,
+                view_kwargs=view_kwargs,
+                query_params=query_params,
+            )
+
+    return UserList
+
+
+@pytest.fixture(scope="class")
+def user_list_view_generic(list_view_base_generic_helper_for_sqla):
+    """
+    :param list_view_base_generic_helper_for_sqla:
+    :return:
+    """
+
+    class UserList(list_view_base_generic_helper_for_sqla):
         ...
 
     return UserList
@@ -913,7 +955,7 @@ def user_list_view(list_view_base_generic):
 # User Bio ⬇️
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def user_bio_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -926,7 +968,21 @@ def user_bio_detail_view(detail_view_base_generic):
     return UserBioDetail
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
+def user_detail_view_sync(detail_view_base_generic):
+    """
+    :param detail_view_base_generic:
+    :return:
+    """
+
+    class UserDetail(detail_view_base_generic):
+        def get(self):
+            return {"ok": True}
+
+    return UserDetail
+
+
+@pytest.fixture(scope="class")
 def user_bio_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -942,7 +998,7 @@ def user_bio_list_view(list_view_base_generic):
 # Post ⬇️
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def post_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -955,7 +1011,7 @@ def post_detail_view(detail_view_base_generic):
     return PostDetail
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def post_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -971,7 +1027,7 @@ def post_list_view(list_view_base_generic):
 # Parent ⬇️
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def parent_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -984,7 +1040,7 @@ def parent_detail_view(detail_view_base_generic):
     return ParentDetail
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def parent_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -1000,7 +1056,7 @@ def parent_list_view(list_view_base_generic):
 # Child ⬇️
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def child_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -1013,7 +1069,7 @@ def child_detail_view(detail_view_base_generic):
     return ChildDetail
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def child_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -1067,21 +1123,6 @@ def app(
     child_detail_view,
     child_list_view,
 ):
-    # tags = [
-    #     {
-    #         "name": "User",
-    #         "description": "Users API",
-    #     },
-    #     {
-    #         "name": "Bio",
-    #         "description": "User Bio API",
-    #     },
-    #     {
-    #         "name": "Post",
-    #         "description": "Posts API",
-    #     },
-    # ]
-
     router: APIRouter = APIRouter()
     RoutersJSONAPI(
         router=router,
@@ -1158,9 +1199,41 @@ def app(
     return app_plain
 
 
+@pytest.fixture()
+def app2(
+    app_plain: FastAPI,
+    user_detail_view_sync,
+    user_list_view_generic,
+):
+    router: APIRouter = APIRouter()
+    RoutersJSONAPI(
+        router=router,
+        path="/users",
+        tags=["User"],
+        class_detail=user_detail_view_sync,
+        class_list=user_list_view_generic,
+        schema=UserSchema,
+        type_resource="user",
+        schema_in_patch=UserPatchSchema,
+        schema_in_post=UserInSchema,
+        model=User,
+        engine=DBORMType.sqlalchemy,
+    )
+
+    app_plain.include_router(router, prefix="")
+
+    return app_plain
+
+
 @async_fixture()
 async def client(app: FastAPI) -> AsyncClient:
     async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+
+
+@async_fixture()
+async def client2(app2: FastAPI) -> AsyncClient:
+    async with AsyncClient(app=app2, base_url="http://test") as ac:
         yield ac
 
 
@@ -1418,3 +1491,45 @@ async def test_many_to_many_load_inner_includes_to_parents(
             assert p_to_c_assoc_data["attributes"]["extra_data"] == assoc.extra_data
 
     assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data
+
+
+async def test_method_not_allowed(client: AsyncClient):
+    res = await client.put("/users", json={})
+    assert res.status_code == status.HTTP_405_METHOD_NOT_ALLOWED, res.status_code
+
+
+async def test_create_user(client: AsyncClient):
+    create_user_data = UserInSchema(
+        name=fake.name(),
+        age=fake.pyint(),
+        email=fake.email(),
+    )
+    res = await client.post("/users", json={"attributes": create_user_data.dict()})
+    assert res.status_code == status.HTTP_201_CREATED, res.text
+    response_data = res.json()
+    assert "data" in response_data, response_data
+    assert response_data["data"]["attributes"] == create_user_data.dict()
+
+
+class TestApp2:
+    async def test_sync_view(self, client2: AsyncClient):
+        res = await client2.get("/users/0")
+        assert res
+        assert res.status_code == status.HTTP_200_OK
+        assert res.json() == {"ok": True}
+
+    async def test_list_view_generic(self, client2: AsyncClient, user_1: User):
+        res = await client2.get("/users")
+        assert res
+        assert res.status_code == status.HTTP_200_OK
+        response_json = res.json()
+        users_data = response_json["data"]
+        assert len(users_data) == 1, users_data
+        user_data = users_data[0]
+        assert user_data["id"] == str(user_1.id)
+        assert user_data["attributes"] == UserBaseSchema.from_orm(user_1)
+
+
+# todo: test filters
+# todo: test sorts
+# todo: test object not found

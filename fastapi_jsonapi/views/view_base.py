@@ -1,6 +1,7 @@
 import logging
 from contextvars import ContextVar
 from typing import (
+    Any,
     Dict,
     Iterable,
     List,
@@ -12,8 +13,9 @@ from typing import (
 
 from pydantic.fields import ModelField
 
-from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI, SqlalchemyDataLayer
+from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
 from fastapi_jsonapi.api import JSONAPIObjectSchemas
+from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.data_typing import (
     TypeModel,
     TypeSchema,
@@ -28,7 +30,6 @@ from fastapi_jsonapi.splitter import SPLIT_REL
 
 logger = logging.getLogger(__name__)
 
-
 previous_resource_type_ctx_var: ContextVar[str] = ContextVar("previous_resource_type_ctx_var")
 related_field_name_ctx_var: ContextVar[str] = ContextVar("related_field_name_ctx_var")
 relationships_schema_ctx_var: ContextVar[Type[BaseModel]] = ContextVar("relationships_schema_ctx_var")
@@ -38,9 +39,18 @@ relationship_info_ctx_var: ContextVar[RelationshipInfo] = ContextVar("relationsh
 
 
 class ViewBase:
+    data_layer_cls = BaseDataLayer
+
     def __init__(self, jsonapi: RoutersJSONAPI, **options):
         self.jsonapi = jsonapi
         self.options = options
+
+    def _get_data_layer(self, **kwargs: Any) -> BaseDataLayer:
+        """
+        :param kwargs: get data layer
+        :return:
+        """
+        raise NotImplementedError
 
     @classmethod
     def get_db_item_id(cls, item_from_db: TypeModel):
@@ -320,7 +330,7 @@ class ViewBase:
 
     async def get_detailed_result(
         self,
-        dl: SqlalchemyDataLayer,
+        dl: BaseDataLayer,
         view_kwargs: Dict[str, Union[str, int]],
         query_params: QueryStringManager = None,
         schema: Type[TypeSchema] = None,

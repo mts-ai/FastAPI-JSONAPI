@@ -5,9 +5,10 @@ you must inherit from this base class
 """
 
 import types
-from typing import Type
+from typing import Optional, Tuple, Type
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_jsonapi.querystring import QueryStringManager
 
 
 class BaseDataLayer:
@@ -70,7 +71,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def get_object(self, view_kwargs):
+    async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
         Retrieve an object
 
@@ -79,7 +80,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def get_collection(self, qs, view_kwargs):
+    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
         """
         Retrieve a collection of objects
 

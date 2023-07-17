@@ -2,6 +2,9 @@ import asyncio
 import logging
 
 import pytest
+from faker import Faker
+
+fake = Faker()
 
 
 def init_tests():

@@ -15,6 +15,7 @@ from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
 from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
 from fastapi_jsonapi.exceptions import (
+    HTTPException,
     InvalidInclude,
     ObjectNotFound,
     RelatedObjectNotFound,
@@ -79,7 +80,21 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params view_kwargs: kwargs from the resource view.
         :return:
         """
-        pass
+        await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
+
+        obj = self.model(**model_kwargs)
+
+        self.session.add(obj)
+        try:
+            await self.session.commit()
+        except Exception as e:
+            await self.session.rollback()
+            msg = f"Object creation error: {e}"
+            raise HTTPException(msg, pointer="/data")
+
+        await self.after_create_object(obj=obj, model_kwargs=model_kwargs, view_kwargs=view_kwargs)
+
+        return obj
 
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
