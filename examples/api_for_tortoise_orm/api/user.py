@@ -14,7 +14,7 @@ from examples.api_for_tortoise_orm.helpers.updaters.update_user import UpdateUse
 from examples.api_for_tortoise_orm.models.pydantic import UserSchema, UserPatchSchema
 from examples.api_for_tortoise_orm.models.pydantic.user import UserInSchema
 from examples.api_for_tortoise_orm.models.tortoise import User
-from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseDataLayer
+from fastapi_jsonapi.data_layers.tortoise_orm import TortoiseDataLayer
 from fastapi_jsonapi.exceptions import (
     BadRequest,
     HTTPException,

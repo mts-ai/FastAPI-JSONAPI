@@ -22,8 +22,8 @@ from starlette.responses import Response
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel
 from fastapi_jsonapi.data_layers.orm import DBORMType
-from fastapi_jsonapi.data_layers.sqlalchemy_engine import SqlalchemyDataLayer
-from fastapi_jsonapi.data_layers.tortoise_orm_engine import TortoiseDataLayer
+from fastapi_jsonapi.data_layers.sqla_orm import SqlalchemyDataLayer
+from fastapi_jsonapi.data_layers.tortoise_orm import TortoiseDataLayer
 from fastapi_jsonapi.exceptions.json_api import UnsupportedFeatureORM
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
