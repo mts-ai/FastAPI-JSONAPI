@@ -60,7 +60,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params query: подготовленный заранее запрос.
         :params kwargs: initialization parameters of an SqlalchemyDataLayer instance
         """
-        super().__init__(kwargs)
+        super().__init__(**kwargs)
 
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count

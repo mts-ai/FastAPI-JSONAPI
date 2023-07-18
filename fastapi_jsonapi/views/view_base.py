@@ -45,12 +45,27 @@ class ViewBase:
         self.jsonapi = jsonapi
         self.options = options
 
-    def _get_data_layer(self, **kwargs: Any) -> BaseDataLayer:
+    def _get_data_layer_for_detail(self, **kwargs: Any) -> BaseDataLayer:
         """
-        :param kwargs: get data layer
+        :param kwargs: Any extra kwargs for the data layer. if
         :return:
         """
-        raise NotImplementedError
+        return self.data_layer_cls(
+            schema=self.jsonapi.schema_detail,
+            model=self.jsonapi.model,
+            **kwargs,
+        )
+
+    def _get_data_layer_for_list(self, **kwargs: Any) -> BaseDataLayer:
+        """
+        :param kwargs: Any extra kwargs for the data layer. if
+        :return:
+        """
+        return self.data_layer_cls(
+            schema=self.jsonapi.schema_list,
+            model=self.jsonapi.model,
+            **kwargs,
+        )
 
     @classmethod
     def get_db_item_id(cls, item_from_db: TypeModel):
@@ -356,4 +371,17 @@ class ViewBase:
         return detail_jsonapi_schema(
             data=result_object,
             **extras,
+        )
+
+    async def get_detail_view_result(
+        self,
+        query_params: QueryStringManager,
+        view_kwargs: Dict[str, Any],
+        **kwargs: Any,
+    ):
+        dl = self._get_data_layer_for_detail(**kwargs)
+        return await self.get_detailed_result(
+            dl=dl,
+            view_kwargs=view_kwargs,
+            query_params=query_params,
         )

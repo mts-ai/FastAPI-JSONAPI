@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Type
+from typing import Any, Dict, Type
 
 from fastapi_jsonapi import (
     QueryStringManager,
@@ -16,19 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class ListViewBase(ViewBase):
-    def _get_data_layer(self, **kwargs: Any) -> BaseDataLayer:
-        """
-        :param kwargs: Any extra kwargs for the data layer. if
-        :return:
-        """
-        return self.data_layer_cls(
-            schema=self.jsonapi.schema_list,
-            model=self.jsonapi.model,
-            **kwargs,
-        )
-
     async def get_view_result(self, query_params: QueryStringManager, **kwargs):
-        dl = self._get_data_layer(**kwargs)
+        dl = self._get_data_layer_for_list(**kwargs)
         return await self.get_paginated_result(
             dl=dl,
             query_params=query_params,
@@ -67,3 +56,18 @@ class ListViewBase(ViewBase):
             data=result_objects,
             **extras,
         )
+
+    async def create_object(
+        self,
+        data_create: Dict[str, Any],
+        view_kwargs: Dict[str, Any],
+        **dl_kwargs: Any,
+    ):
+        """
+        :param data_create:
+        :param view_kwargs:
+        :param dl_kwargs:
+        :return:
+        """
+        dl = self._get_data_layer_for_list(**dl_kwargs)
+        return await dl.create_object(model_kwargs=data_create, view_kwargs=view_kwargs)

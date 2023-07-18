@@ -1,3 +1,5 @@
+from types import MethodType
+
 from fastapi import Depends
 from fastapi.params import Depends as DependsParams
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,6 +70,20 @@ class DetailViewBaseGeneric(
             self.get = get
 
 
+def create_generic_get(session_dependency: DependsParams):
+    async def get(
+        self: "ListViewBaseGeneric",
+        query_params: QueryStringManager = Depends(QueryStringManager),
+        session: AsyncSession = session_dependency,
+    ) -> JSONAPIResultListSchema:
+        return await self.get_view_result(
+            query_params=query_params,
+            session=session,
+        )
+
+    return get
+
+
 class ListViewBaseGeneric(
     ListViewBase,
     ValidateSessionDependencyMixin,
@@ -82,14 +98,4 @@ class ListViewBaseGeneric(
 
     def _init_generic_methods(self):
         if not hasattr(self, "get"):
-
-            async def get(
-                query_params: QueryStringManager = Depends(QueryStringManager),
-                session: AsyncSession = self.session_dependency,
-            ) -> JSONAPIResultListSchema:
-                return await self.get_view_result(
-                    query_params=query_params,
-                    session=session,
-                )
-
-            self.get = get
+            self.get = MethodType(create_generic_get(self.session_dependency), self)
