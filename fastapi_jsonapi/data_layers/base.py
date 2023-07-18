@@ -37,17 +37,10 @@ class BaseDataLayer:
         "retrieve_object_query",
     )
 
-    def __init__(self, kwargs):
+    def __init__(self, **kwargs):
         """
-        Intialize an data layer instance with kwargs.
-
-        :param dict kwargs: information about data layer instance
+        :param kwargs:
         """
-        # initing this attribute here in the first place
-        # because it can be easily overridden by kwargs below
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
     def post_init(self):
         """

@@ -15,10 +15,9 @@ from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyDataLayer
 from fastapi_jsonapi.data_layers.orm import DBORMType
 from fastapi_jsonapi.misc.sqla.generics.base import ListViewBaseGeneric as ListViewBaseGenericHelper
 from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema, collect_app_orm_schemas
+from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, collect_app_orm_schemas
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 from fastapi_jsonapi.views.detail_view import DetailViewBase
-from fastapi_jsonapi.views.list_view import ListViewBase
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.conftest import fake
 
@@ -863,21 +862,9 @@ def detail_view_base_generic(async_session_dependency):
 
 @pytest.fixture(scope="class")
 def list_view_base_generic(async_session_dependency):
-    class ListViewBaseGeneric(ListViewBase):
-        async def get(
-            self,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultListSchema:
-            dl = SqlalchemyDataLayer(
-                schema=self.jsonapi.schema_list,
-                model=self.jsonapi.model,
-                session=session,
-            )
-            return await self.get_paginated_result(
-                dl=dl,
-                query_params=query_params,
-            )
+    class ListViewBaseGeneric(ListViewBaseGenericHelper):
+        data_layer_cls = SqlalchemyDataLayer
+        session_dependency = Depends(async_session_dependency)
 
     return ListViewBaseGeneric
 
@@ -886,6 +873,24 @@ def list_view_base_generic(async_session_dependency):
 def list_view_base_generic_helper_for_sqla(async_session_dependency):
     class ListViewBaseGeneric(ListViewBaseGenericHelper):
         session_dependency = Depends(async_session_dependency)
+
+        async def post(
+            self,
+            data: UserInSchema,
+            query_params: QueryStringManager,
+            session: AsyncSession = session_dependency,
+        ) -> JSONAPIResultDetailSchema:
+            user_obj: User = await self.create_object(
+                data_create=data.dict(),
+                view_kwargs={},
+                session=session,
+            )
+
+            return await self.get_detail_view_result(
+                query_params=query_params,
+                view_kwargs={"id": user_obj.id},
+                session=session,
+            )
 
     return ListViewBaseGeneric
 
@@ -916,24 +921,20 @@ def user_list_view(list_view_base_generic, async_session_dependency):
     class UserList(list_view_base_generic):
         async def post(
             self,
+            data: UserInSchema,
             query_params: QueryStringManager,
-            user_in: UserInSchema,
             session: AsyncSession = Depends(async_session_dependency),
         ) -> JSONAPIResultDetailSchema:
-            # TODO: this should be in generic
-            user = User(**user_in.dict())
-            session.add(user)
-            await session.commit()
-            dl = SqlalchemyDataLayer(
-                schema=self.jsonapi.schema_detail,
-                model=self.jsonapi.model,
+            user_obj: User = await self.create_object(
+                data_create=data.dict(),
+                view_kwargs={},
                 session=session,
             )
-            view_kwargs = {"id": user.id}
-            return await self.get_detailed_result(
-                dl=dl,
-                view_kwargs=view_kwargs,
+
+            return await self.get_detail_view_result(
                 query_params=query_params,
+                view_kwargs={"id": user_obj.id},
+                session=session,
             )
 
     return UserList
@@ -1511,6 +1512,28 @@ async def test_create_user(client: AsyncClient):
     assert response_data["data"]["attributes"] == create_user_data.dict()
 
 
+async def test_create_user_and_fetch_data(client: AsyncClient):
+    create_user_data = UserInSchema(
+        name=fake.name(),
+        age=fake.pyint(),
+        email=fake.email(),
+    )
+    res = await client.post("/users", json={"attributes": create_user_data.dict()})
+    assert res.status_code == status.HTTP_201_CREATED, res.text
+    response_data = res.json()
+    assert "data" in response_data, response_data
+    assert response_data["data"]["attributes"] == create_user_data.dict()
+
+    user_id = response_data["data"]["id"]
+
+    res = await client.get(f"/users/{user_id}")
+    assert res.status_code == status.HTTP_200_OK, res.text
+    response_data = res.json()
+    assert "data" in response_data, response_data
+    assert response_data["data"]["attributes"] == create_user_data.dict()
+    assert response_data["data"]["id"] == user_id
+
+
 class TestApp2:
     async def test_sync_view(self, client2: AsyncClient):
         res = await client2.get("/users/0")
@@ -1518,7 +1541,7 @@ class TestApp2:
         assert res.status_code == status.HTTP_200_OK
         assert res.json() == {"ok": True}
 
-    async def test_list_view_generic(self, client2: AsyncClient, user_1: User):
+    async def test_get_list_view_generic(self, client2: AsyncClient, user_1: User):
         res = await client2.get("/users")
         assert res
         assert res.status_code == status.HTTP_200_OK
@@ -1528,6 +1551,18 @@ class TestApp2:
         user_data = users_data[0]
         assert user_data["id"] == str(user_1.id)
         assert user_data["attributes"] == UserBaseSchema.from_orm(user_1)
+
+    async def test_create_object(self, client2: AsyncClient):
+        create_user_data = UserInSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        )
+        res = await client2.post("/users", json={"attributes": create_user_data.dict()})
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        response_data = res.json()
+        assert "data" in response_data, response_data
+        assert response_data["data"]["attributes"] == create_user_data.dict()
 
 
 # todo: test filters
