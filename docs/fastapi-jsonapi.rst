@@ -89,18 +89,18 @@ fastapi_jsonapi.data_layers.shared module
     :undoc-members:
     :show-inheritance:
 
-fastapi_jsonapi.data_layers.sqlalchemy_engine module
+fastapi_jsonapi.data_layers.sqla_orm module
 -------------------------------------------------------
 
-.. automodule:: fastapi_jsonapi.data_layers.sqlalchemy_engine
+.. automodule:: fastapi_jsonapi.data_layers.sqla_orm
     :members:
     :undoc-members:
     :show-inheritance:
 
-fastapi_jsonapi.data_layers.tortoise_orm_engine module
+fastapi_jsonapi.data_layers.tortoise_orm module
 -------------------------------------------------------
 
-.. automodule:: fastapi_jsonapi.data_layers.tortoise_orm_engine
+.. automodule:: fastapi_jsonapi.data_layers.tortoise_orm
     :members:
     :undoc-members:
     :show-inheritance:
