@@ -40,7 +40,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         disable_collection_count: bool = False,
         default_collection_count: int = -1,
         id_name_field: Optional[str] = None,
-        url_field: str = "id",
+        url_id_field: str = "id",
         eagerload_includes: bool = True,
         query: Optional[Select] = None,
         **kwargs: Any,
@@ -60,7 +60,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params query: подготовленный заранее запрос.
         :params kwargs: initialization parameters of an SqlalchemyDataLayer instance
         """
-        super().__init__(**kwargs)
+        super().__init__(url_id_field=url_id_field, **kwargs)
 
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
@@ -68,9 +68,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.model = model
         self.session = session
         self.id_name_field = id_name_field
-        self.url_field = url_field
         self.eagerload_includes_ = eagerload_includes
         self._query = query
+
+    async def apply_relationships(self, data, obj: TypeModel) -> None:
+        # TODO!
+        pass
 
     async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
         """
@@ -83,6 +86,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
 
         obj = self.model(**model_kwargs)
+        await self.apply_relationships(model_kwargs, obj)
 
         self.session.add(obj)
         try:
@@ -116,7 +120,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             msg = f"{self.model.__name__} has no attribute {id_name_field}"
             raise Exception(msg)
 
-        filter_value = view_kwargs[self.url_field]
+        filter_value = view_kwargs[self.url_id_field]
 
         query = self.retrieve_object_query(view_kwargs, filter_field, filter_value)
 
@@ -129,7 +133,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             msg = f"{self.model.__name__} #{filter_value} not found"
             raise ObjectNotFound(
                 msg,
-                parameter=self.url_field,
+                parameter=self.url_id_field,
             )
 
         await self.after_get_object(obj, view_kwargs)
@@ -164,11 +168,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         query = self.query(view_kwargs)
 
-        if qs.filters:
-            query = self.filter_query(query, qs.filters)
+        if filters_qs := qs.filters:
+            query = self.filter_query(query, filters_qs)
 
-        if qs.sorting:
-            query = self.sort_query(query, qs.sorting)
+        if sorts := qs.get_sorts(schema=self.schema):
+            query = self.sort_query(query, sorts)
 
         objects_count = await self.get_collection_count(query, qs, view_kwargs)
 
@@ -242,11 +246,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj = await self.get_object(view_kwargs)
 
         if obj is None:
-            filter_value = view_kwargs[self.url_field]
+            filter_value = view_kwargs[self.url_id_field]
             msg = f"{self.model.__name__}: {filter_value} not found"
             raise ObjectNotFound(
                 msg,
-                parameter=self.url_field,
+                parameter=self.url_id_field,
             )
 
         if not hasattr(obj, relationship_field):

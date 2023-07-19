@@ -13,16 +13,12 @@ from fastapi import (
 
 from examples.api_for_sqlalchemy.models import Child, Parent, Post, User, UserBio
 from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi.data_layers.orm import DBORMType
 
 from .api.child import ChildDetail, ChildList
 from .api.parent import ParentDetail, ParentList
 from .api.post import PostDetail, PostList
-from .api.user import (
-    UserDetail,
-    UserList,
-)
 from .api.user_bio import UserBioDetail, UserBioList
+from .api.views_base import DetailViewBase, ListViewBase
 from .models.schemas import (
     ChildInSchema,
     ChildPatchSchema,
@@ -57,14 +53,13 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         router=router,
         path="/users",
         tags=["User"],
-        class_detail=UserDetail,
-        class_list=UserList,
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
         schema=UserSchema,
-        type_resource="user",
+        resource_type="user",
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
         model=User,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -74,11 +69,10 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_detail=PostDetail,
         class_list=PostList,
         schema=PostSchema,
-        type_resource="post",
+        resource_type="post",
         schema_in_patch=PostPatchSchema,
         schema_in_post=PostInSchema,
         model=Post,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -88,11 +82,10 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_detail=UserBioDetail,
         class_list=UserBioList,
         schema=UserBioSchema,
-        type_resource="user_bio",
+        resource_type="user_bio",
         schema_in_patch=UserBioPatchSchema,
         schema_in_post=UserBioInSchema,
         model=UserBio,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -102,11 +95,10 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_detail=ParentDetail,
         class_list=ParentList,
         schema=ParentSchema,
-        type_resource="parent",
+        resource_type="parent",
         schema_in_patch=PostPatchSchema,
         schema_in_post=PostInSchema,
         model=Parent,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -116,11 +108,10 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_detail=ChildDetail,
         class_list=ChildList,
         schema=ChildSchema,
-        type_resource="child",
+        resource_type="child",
         schema_in_patch=ChildPatchSchema,
         schema_in_post=ChildInSchema,
         model=Child,
-        engine=DBORMType.sqlalchemy,
     )
 
     app.include_router(router, prefix="")

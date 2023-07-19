@@ -57,6 +57,8 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
     if not schema:
         return filter_params, include_params
 
+    available_includes_names = []
+
     # TODO! ?
     schema.update_forward_refs(**registry.schemas)
     for name, field in (schema.__fields__ or {}).items():
@@ -70,11 +72,7 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
             # process inner models, find relationships
             if inspect.isclass(field.type_) and issubclass(field.type_, (BaseModel, BaseModelOriginal)):
                 if field.field_info.extra.get("relationship"):
-                    # TODO?
-                    # build enum?
-                    pass
-                    # parameter = create_include_parameter(name=name, field=field)
-                    # include_params.append(parameter)
+                    available_includes_names.append(name)
                 else:
                     log.warning(
                         "found nested schema %s for field %r. Consider marking it as relationship",
@@ -92,16 +90,23 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
         except Exception as ex:
             log.warning("could not create filter for field %s %s", name, field, exc_info=ex)
 
-    include_param = Parameter(
-        "_jsonapi_include",
-        kind=Parameter.POSITIONAL_OR_KEYWORD,
-        annotation=Optional[str],
-        default=Query(None, alias="include"),
-    )
-    include_params.append(include_param)
+    if available_includes_names:
+        doc_available_includes = "\n".join([f"* `{name}`" for name in available_includes_names])
+        include_param = Parameter(
+            "_jsonapi_include",
+            kind=Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Optional[str],
+            default=Query(
+                ",".join(available_includes_names),
+                alias="include",
+                description=f"Available includes:\n {doc_available_includes}",
+            ),
+        )
+        include_params.append(include_param)
     return filter_params, include_params
 
 
+# TODO: get rid of this helper update_signature
 def update_signature(
     sig: Signature,
     schema: Optional[Type[BaseModel]] = None,

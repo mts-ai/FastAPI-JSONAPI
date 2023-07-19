@@ -12,7 +12,6 @@ from fastapi import (
 )
 
 from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi.data_layers.orm import DBORMType
 from .models.pydantic import UserPatchSchema
 from .models.pydantic.user import (
     UserSchema,
@@ -34,6 +33,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
     ]
 
     routers: APIRouter = APIRouter()
+    # TODO: fix example
     RoutersJSONAPI(
         router=routers,
         path="/user",
@@ -41,11 +41,10 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_detail=UserDetail,
         class_list=UserList,
         schema=UserSchema,
-        type_resource="user",
+        resource_type="user",
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
         model=User,
-        engine=DBORMType.tortoise,
     )
 
     app.include_router(routers, prefix="")

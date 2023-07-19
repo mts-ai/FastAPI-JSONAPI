@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 
+from fastapi import Request
 from pydantic.fields import ModelField
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
@@ -22,7 +23,6 @@ from fastapi_jsonapi.data_layers.data_typing import (
 )
 from fastapi_jsonapi.schema import (
     JSONAPIObjectSchema,
-    JSONAPIResultDetailSchema,
     get_related_schema,
 )
 from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
@@ -39,33 +39,89 @@ relationship_info_ctx_var: ContextVar[RelationshipInfo] = ContextVar("relationsh
 
 
 class ViewBase:
+    """
+    Views are inited for each request
+    """
+
     data_layer_cls = BaseDataLayer
 
-    def __init__(self, jsonapi: RoutersJSONAPI, **options):
-        self.jsonapi = jsonapi
-        self.options = options
+    def __init__(self, *, request: Request, jsonapi: RoutersJSONAPI, **options):
+        self.request: Request = request
+        self.jsonapi: RoutersJSONAPI = jsonapi
+        self.options: dict = options
+        self.query_params: QueryStringManager = QueryStringManager(request=request)
+
+    async def init_dependencies(self):
+        """
+        :return:
+        """
+
+    # noinspection PyMethodMayBeStatic
+    def get_data_layer_kwargs(self):
+        """
+        # TODO: async?
+
+        Add any additional Data Layer kwargs (like session, etc)
+        :return:
+        """
+        return {}
+
+    def _get_data_layer(self, schema: Type[BaseModel], **kwargs):
+        dl_kwargs = self.get_data_layer_kwargs()
+        return self.data_layer_cls(
+            schema=schema,
+            model=self.jsonapi.model,
+            **dl_kwargs,
+            **kwargs,
+        )
 
     def _get_data_layer_for_detail(self, **kwargs: Any) -> BaseDataLayer:
         """
-        :param kwargs: Any extra kwargs for the data layer. if
+        :param kwargs: Any extra kwargs for the data layer
         :return:
         """
-        return self.data_layer_cls(
+        return self._get_data_layer(
             schema=self.jsonapi.schema_detail,
-            model=self.jsonapi.model,
             **kwargs,
         )
 
     def _get_data_layer_for_list(self, **kwargs: Any) -> BaseDataLayer:
         """
-        :param kwargs: Any extra kwargs for the data layer. if
+        :param kwargs: Any extra kwargs for the data layer
         :return:
         """
-        return self.data_layer_cls(
+        return self._get_data_layer(
             schema=self.jsonapi.schema_list,
-            model=self.jsonapi.model,
             **kwargs,
         )
+
+    async def get_resource_detail_result(self, object_id: Union[int, str]):
+        dl = self._get_data_layer_for_detail()
+        view_kwargs = {dl.url_id_field: object_id}
+        db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
+
+        result_objects, object_schemas, extras = self.process_includes_for_db_items(
+            includes=self.query_params.include,
+            # as list to reuse helper
+            items_from_db=[db_object],
+            item_schema=self.jsonapi.schema_detail,
+        )
+        # is it ok to do through list?
+        result_object = result_objects[0]
+
+        # we need to build a new schema here
+        # because we'd like to exclude/set some fields (relationships, includes, etc)
+        detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
+            name=f"Result{self.__class__.__name__}",
+            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
+            includes_schemas=object_schemas.included_schemas_list,
+        )
+        return detail_jsonapi_schema(
+            data=result_object,
+            **extras,
+        )
+
+    # data preparing below:
 
     @classmethod
     def get_db_item_id(cls, item_from_db: TypeModel):
@@ -342,46 +398,3 @@ class ViewBase:
             )
 
         return result_objects, object_schemas, extras
-
-    async def get_detailed_result(
-        self,
-        dl: BaseDataLayer,
-        view_kwargs: Dict[str, Union[str, int]],
-        query_params: QueryStringManager = None,
-        schema: Type[TypeSchema] = None,
-    ) -> JSONAPIResultDetailSchema:
-        # todo: generate dl?
-        db_object = await dl.get_object(view_kwargs=view_kwargs, qs=query_params)
-
-        result_objects, object_schemas, extras = self.process_includes_for_db_items(
-            includes=query_params.include,
-            items_from_db=[db_object],
-            item_schema=schema or self.jsonapi.schema_detail,
-        )
-        # todo: is it ok to do through list?
-        result_object = result_objects[0]
-
-        # we need to build a new schema here
-        # because we'd like to exclude some fields (relationships, includes, etc)
-        detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
-            name=f"Result{self.__class__.__name__}",
-            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
-            includes_schemas=object_schemas.included_schemas_list,
-        )
-        return detail_jsonapi_schema(
-            data=result_object,
-            **extras,
-        )
-
-    async def get_detail_view_result(
-        self,
-        query_params: QueryStringManager,
-        view_kwargs: Dict[str, Any],
-        **kwargs: Any,
-    ):
-        dl = self._get_data_layer_for_detail(**kwargs)
-        return await self.get_detailed_result(
-            dl=dl,
-            view_kwargs=view_kwargs,
-            query_params=query_params,
-        )

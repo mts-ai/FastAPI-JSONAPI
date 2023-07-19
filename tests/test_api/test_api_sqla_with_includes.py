@@ -12,7 +12,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship, sessionmaker
 
 from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyDataLayer
-from fastapi_jsonapi.data_layers.orm import DBORMType
 from fastapi_jsonapi.misc.sqla.generics.base import ListViewBaseGeneric as ListViewBaseGenericHelper
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, collect_app_orm_schemas
@@ -78,10 +77,15 @@ class UserBioBaseSchema(BaseModel):
 
         orm_mode = True
 
-    user_id: str
     birth_city: str
     favourite_movies: str
     keys_to_ids_list: Dict[str, List[int]] = None
+
+    user: "UserSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
 
 
 class UserBioPatchSchema(UserBioBaseSchema):
@@ -96,11 +100,6 @@ class UserBioSchema(UserBioInSchema):
     """UserBio item schema."""
 
     id: int
-    user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
-    )
 
 
 # Post Schemas ⬇️
@@ -863,8 +862,8 @@ def detail_view_base_generic(async_session_dependency):
 @pytest.fixture(scope="class")
 def list_view_base_generic(async_session_dependency):
     class ListViewBaseGeneric(ListViewBaseGenericHelper):
-        data_layer_cls = SqlalchemyDataLayer
-        session_dependency = Depends(async_session_dependency)
+        async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
+            self.session = session
 
     return ListViewBaseGeneric
 
@@ -872,13 +871,15 @@ def list_view_base_generic(async_session_dependency):
 @pytest.fixture(scope="class")
 def list_view_base_generic_helper_for_sqla(async_session_dependency):
     class ListViewBaseGeneric(ListViewBaseGenericHelper):
-        session_dependency = Depends(async_session_dependency)
+        async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
+            self.session = session
 
+        # TODO: remove, use generic
         async def post(
             self,
             data: UserInSchema,
             query_params: QueryStringManager,
-            session: AsyncSession = session_dependency,
+            session: AsyncSession = Depends(async_session_dependency),
         ) -> JSONAPIResultDetailSchema:
             user_obj: User = await self.create_object(
                 data_create=data.dict(),
@@ -886,11 +887,7 @@ def list_view_base_generic_helper_for_sqla(async_session_dependency):
                 session=session,
             )
 
-            return await self.get_detail_view_result(
-                query_params=query_params,
-                view_kwargs={"id": user_obj.id},
-                session=session,
-            )
+            return await self.get_resource_detail_result(object_id=user_obj.id)
 
     return ListViewBaseGeneric
 
@@ -915,10 +912,12 @@ def user_detail_view(detail_view_base_generic):
 def user_list_view(list_view_base_generic, async_session_dependency):
     """
     :param list_view_base_generic:
+    :param async_session_dependency:
     :return:
     """
 
     class UserList(list_view_base_generic):
+        # todo: remove
         async def post(
             self,
             data: UserInSchema,
@@ -1132,11 +1131,10 @@ def app(
         class_detail=user_detail_view,
         class_list=user_list_view,
         schema=UserSchema,
-        type_resource="user",
+        resource_type="user",
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
         model=User,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -1146,11 +1144,10 @@ def app(
         class_detail=post_detail_view,
         class_list=post_list_view,
         schema=PostSchema,
-        type_resource="post",
+        resource_type="post",
         schema_in_patch=PostPatchSchema,
         schema_in_post=PostInSchema,
         model=Post,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -1160,11 +1157,10 @@ def app(
         class_detail=user_bio_detail_view,
         class_list=user_bio_list_view,
         schema=UserBioSchema,
-        type_resource="user_bio",
+        resource_type="user_bio",
         schema_in_patch=UserBioPatchSchema,
         schema_in_post=UserBioInSchema,
         model=UserBio,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -1174,11 +1170,10 @@ def app(
         class_detail=parent_detail_view,
         class_list=parent_list_view,
         schema=ParentSchema,
-        type_resource="parent",
+        resource_type="parent",
         schema_in_patch=ParentPatchSchema,
         schema_in_post=ParentPatchSchema,
         model=Parent,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
@@ -1188,11 +1183,10 @@ def app(
         class_detail=child_detail_view,
         class_list=child_list_view,
         schema=ChildSchema,
-        type_resource="child",
+        resource_type="child",
         schema_in_patch=ChildPatchSchema,
         schema_in_post=ChildInSchema,
         model=Child,
-        engine=DBORMType.sqlalchemy,
     )
 
     app_plain.include_router(router, prefix="")
@@ -1214,11 +1208,10 @@ def app2(
         class_detail=user_detail_view_sync,
         class_list=user_list_view_generic,
         schema=UserSchema,
-        type_resource="user",
+        resource_type="user",
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
         model=User,
-        engine=DBORMType.sqlalchemy,
     )
 
     app_plain.include_router(router, prefix="")

@@ -37,10 +37,11 @@ class BaseDataLayer:
         "retrieve_object_query",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, url_id_field: str, **kwargs):
         """
         :param kwargs:
         """
+        self.url_id_field = url_id_field
 
     def post_init(self):
         """

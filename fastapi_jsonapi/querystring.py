@@ -1,5 +1,5 @@
 """Helper to deal with querystring parameters according to jsonapi specification."""
-
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,6 +20,7 @@ from pydantic import (
     BaseModel,
     Field,
 )
+from starlette.datastructures import QueryParams
 
 from fastapi_jsonapi.exceptions import (
     BadRequest,
@@ -68,12 +69,12 @@ class HeadersQueryStringManager(BaseModel):
     accept_language: Optional[str] = Field(None, alias="accept-language")
 
 
-class QueryStringManager(object):
+class QueryStringManager:
     """Querystring parser according to jsonapi reference."""
 
     managed_keys = ("filter", "page", "fields", "sort", "include", "q")
 
-    def __init__(self, request: Request, schema: Type["TypeSchema"]) -> None:
+    def __init__(self, request: Request) -> None:
         """
         Initialize instance.
 
@@ -81,13 +82,11 @@ class QueryStringManager(object):
         """
         self.request: Request = request
         self.app: FastAPI = request.app
-        self.qs: Dict[str, str] = dict(request.query_params)
+        self.qs: QueryParams = request.query_params
         self.config: Dict[str, Any] = getattr(self.app, "config", {})
-        self.schema: Type[BaseModel] = schema
         self.ALLOW_DISABLE_PAGINATION: bool = self.config.get("ALLOW_DISABLE_PAGINATION", True)
         self.MAX_PAGE_SIZE: int = self.config.get("MAX_PAGE_SIZE", 10000)
         self.MAX_INCLUDE_DEPTH: int = self.config.get("MAX_INCLUDE_DEPTH", 3)
-        self._pagination: Optional[PaginationQueryStringManager] = None
         self.headers: HeadersQueryStringManager = HeadersQueryStringManager(**dict(self.request.headers))
 
     def _get_key_values(self, name: str) -> Dict[str, Union[List[str], str]]:
@@ -100,7 +99,7 @@ class QueryStringManager(object):
         """
         results: Dict[str, Union[List[str], str]] = {}
 
-        for raw_key, value in self.qs.items():
+        for raw_key, value in self.qs.multi_items():
             key = unquote(raw_key)
             try:
                 if not key.startswith(name):
@@ -134,7 +133,7 @@ class QueryStringManager(object):
         """
         return {
             key: value
-            for (key, value) in self.qs.items()
+            for (key, value) in self.qs.multi_items()
             if key.startswith(self.managed_keys) or self._get_key_values("filter[")
         }
 
@@ -158,7 +157,7 @@ class QueryStringManager(object):
             results.extend(self._simple_filters(self._get_key_values("filter[")))
         return results
 
-    @property
+    @cached_property
     def pagination(self) -> PaginationQueryStringManager:
         """
         Return all page parameters as a dict.
@@ -180,22 +179,22 @@ class QueryStringManager(object):
 
         :raises BadRequest: if the client is not allowed to disable pagination.
         """
-        if self._pagination:
-            return self._pagination
         # check values type
         pagination_data: Dict[str, Union[List[str], str]] = self._get_key_values("page")
-        self._pagination = PaginationQueryStringManager(**pagination_data)
+        pagination = PaginationQueryStringManager(**pagination_data)
         if pagination_data.get("size") is None:
-            self._pagination.size = None
-        if self._pagination.size:
-            if self.ALLOW_DISABLE_PAGINATION is False and self._pagination.size == 0:
+            pagination.size = None
+        if pagination.size:
+            if self.ALLOW_DISABLE_PAGINATION is False and pagination.size == 0:
                 msg = "You are not allowed to disable pagination"
                 raise BadRequest(msg, parameter="page[size]")
-            if self.MAX_PAGE_SIZE and self._pagination.size > self.MAX_PAGE_SIZE:
-                self._pagination.size = self.MAX_PAGE_SIZE
+            if self.MAX_PAGE_SIZE and pagination.size > self.MAX_PAGE_SIZE:
+                pagination.size = self.MAX_PAGE_SIZE
 
-        return self._pagination
+        return pagination
 
+    # TODO: finally use this! upgrade Sqlachemy Data Layer
+    #  and add to all views (get list/detail, create, patch)
     @property
     def fields(self) -> Dict[str, List[str]]:
         """
@@ -230,8 +229,7 @@ class QueryStringManager(object):
 
         return fields
 
-    @property
-    def sorting(self) -> List[Dict[str, str]]:
+    def get_sorts(self, schema: Type["TypeSchema"]) -> List[Dict[str, str]]:
         """
         Return fields to sort by including sort name for SQLAlchemy and row sort parameter for other ORMs.
 
@@ -245,21 +243,21 @@ class QueryStringManager(object):
 
         :raises InvalidSort: if sort field wrong.
         """
-        if self.qs.get("sort"):
+        if sort_q := self.qs.get("sort"):
             sorting_results = []
-            for sort_field in self.qs["sort"].split(","):
+            for sort_field in sort_q.split(","):
                 field = sort_field.replace("-", "")
                 if SPLIT_REL not in field:
-                    if field not in self.schema.__fields__:
+                    if field not in schema.__fields__:
                         msg = "{schema} has no attribute {field}".format(
-                            schema=self.schema.__name__,
+                            schema=schema.__name__,
                             field=field,
                         )
                         raise InvalidSort(msg)
-                    if field in get_relationships(self.schema):
+                    if field in get_relationships(schema):
                         msg = "You can't sort on {field} because it is a relationship field".format(field=field)
                         raise InvalidSort(msg)
-                    field = get_model_field(self.schema, field)
+                    field = get_model_field(schema, field)
                 order = "desc" if sort_field.startswith("-") else "asc"
                 sorting_results.append({"field": field, "order": order})
             return sorting_results

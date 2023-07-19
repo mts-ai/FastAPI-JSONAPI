@@ -1,12 +1,7 @@
-from types import MethodType
-
 from fastapi import Depends
-from fastapi.params import Depends as DependsParams
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyDataLayer
-from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
+from fastapi_jsonapi import SqlalchemyDataLayer
 from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.list_view import ListViewBase
 
@@ -15,87 +10,43 @@ class GenericViewInitializationError(Exception):
     pass
 
 
-def build_view_initialization_error(class_name: str) -> GenericViewInitializationError:
-    return GenericViewInitializationError(
+def raise_view_initialization_error():
+    msg = (
         "You have to inject session dependency to start using view. "
-        f'Please set attribute "session_dependency" for class "{class_name}" as something like '
-        f"{class_name}.session_dependency = Depends(AnyCallableWhichReturnAsyncSession)",
+        'Please override "init_dependencies" in your view class.'
+        "See examples on GitHub"
     )
+    raise GenericViewInitializationError(msg)
 
 
-dummy_dependency = Depends(lambda: "Dummy")
+class SqlaViewMixin:
+    """
+    SQL Alchemy mixin for views
 
+    override init_dependencies, set session
 
-class ValidateSessionDependencyMixin:
-    session_dependency: DependsParams
+    Make sure to add mixin first (due to mro)
+    """
 
-    def _check_session_dependency(self):
-        """Checks that session dependency is a valid argument option acceptable by Fastapi views"""
-        if any(
-            [
-                not isinstance(self.session_dependency, DependsParams),
-                self.session_dependency is dummy_dependency,
-            ],
-        ):
-            raise build_view_initialization_error(self.__class__.__name__)
+    data_layer_cls = SqlalchemyDataLayer
+    session: AsyncSession
+
+    async def init_dependencies(self, session: AsyncSession = Depends(raise_view_initialization_error)):
+        self.session = session
+
+    def get_data_layer_kwargs(self):
+        return {"session": self.session}
 
 
 class DetailViewBaseGeneric(
+    SqlaViewMixin,
     DetailViewBase,
-    ValidateSessionDependencyMixin,
 ):
-    data_layer_cls = SqlalchemyDataLayer
-    session_dependency: DependsParams = dummy_dependency
-
-    def __init__(self, jsonapi: RoutersJSONAPI, **options):
-        super().__init__(jsonapi=jsonapi, **options)
-        self._check_session_dependency()
-        self._init_generic_methods()
-
-    def _init_generic_methods(self):
-        if not hasattr(self, "get"):
-
-            async def get(
-                obj_id,
-                query_params: QueryStringManager = Depends(QueryStringManager),
-                session: AsyncSession = self.session_dependency,
-            ) -> JSONAPIResultDetailSchema:
-                view_kwargs = {"id": obj_id}
-                return await self.get_view_result(
-                    query_params=query_params,
-                    view_kwargs=view_kwargs,
-                    session=session,
-                )
-
-            self.get = get
-
-
-def create_generic_get(session_dependency: DependsParams):
-    async def get(
-        self: "ListViewBaseGeneric",
-        query_params: QueryStringManager = Depends(QueryStringManager),
-        session: AsyncSession = session_dependency,
-    ) -> JSONAPIResultListSchema:
-        return await self.get_view_result(
-            query_params=query_params,
-            session=session,
-        )
-
-    return get
+    pass
 
 
 class ListViewBaseGeneric(
+    SqlaViewMixin,
     ListViewBase,
-    ValidateSessionDependencyMixin,
 ):
-    data_layer_cls = SqlalchemyDataLayer
-    session_dependency: DependsParams = dummy_dependency
-
-    def __init__(self, jsonapi: RoutersJSONAPI, **options):
-        super().__init__(jsonapi=jsonapi, **options)
-        self._check_session_dependency()
-        self._init_generic_methods()
-
-    def _init_generic_methods(self):
-        if not hasattr(self, "get"):
-            self.get = MethodType(create_generic_get(self.session_dependency), self)
+    pass
