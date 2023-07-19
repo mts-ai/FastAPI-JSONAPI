@@ -50,5 +50,6 @@ class RelationshipInfo(BaseModel):
     resource_id_example: str = "1"
     id_field_name: str = "id"
 
+    # TODO: Pydantic V2 use model_config
     class Config:
         frozen = True

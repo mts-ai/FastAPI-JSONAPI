@@ -64,34 +64,4 @@ Example:
 
 .. code-block:: python
 
-    # all required imports are not displayed in this example
-    from fastapi import Depends
-    from sqlalchemy.ext.asyncio import AsyncSession
-
-    from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
-    from examples.api_for_sqlalchemy.helpers.factories.user import UserFactory, ErrorCreateUserObject
-    from examples.api_for_sqlalchemy.models.pydantic import UserSchema
-    from examples.api_for_sqlalchemy.models.pydantic.user import UserInSchema
-    from fastapi_jsonapi.exceptions import (
-        BadRequest,
-        HTTPException,
-    )
-    from fastapi_jsonapi.querystring import QueryStringManager
-
-
-    class UserList:
-
-        @classmethod
-        async def post(cls, data: UserInSchema, query_params: QueryStringManager, session: AsyncSession = Depends(Connector.get_session)) -> UserSchema:
-            try:
-                user_obj = await UserFactory.create(
-                    data=data.dict(),
-                    mode=FactoryUseMode.production,
-                    header=query_params.headers,
-                    session=session,
-                )
-            except ErrorCreateUserObject as ex:
-                raise BadRequest(ex.description, ex.field)
-
-            user = UserSchema.from_orm(user_obj)
-            return user
+    TODO

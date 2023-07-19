@@ -30,6 +30,19 @@ class UserBaseSchema(BaseModel):
     status: UserStatusEnum = Field(default=UserStatusEnum.active)
     email: str | None = None
 
+    posts: List["PostSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post",
+            many=True,
+        ),
+    )
+
+    bio: Optional["UserBioSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user_bio",
+        ),
+    )
+
 
 class UserPatchSchema(UserBaseSchema):
     """User PATCH schema."""
@@ -50,15 +63,3 @@ class UserSchema(UserInSchema):
     id: int
     created_at: datetime = Field(description="Create datetime")
     modified_at: datetime = Field(description="Update datetime")
-    posts: List["PostSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-            many=True,
-        ),
-    )
-
-    bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user_bio",
-        ),
-    )

@@ -6,7 +6,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Mapping,
     Optional,
     Type,
@@ -15,21 +14,17 @@ from typing import (
 
 from fastapi import Query
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import Response
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel
-from fastapi_jsonapi.data_layers.orm import DBORMType
-from fastapi_jsonapi.data_layers.sqla_orm import SqlalchemyDataLayer
-from fastapi_jsonapi.data_layers.tortoise_orm import TortoiseDataLayer
-from fastapi_jsonapi.exceptions.json_api import UnsupportedFeatureORM
 from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, JSONAPIResultListSchema
+from fastapi_jsonapi.schema import JSONAPIResultDetailSchema
 from fastapi_jsonapi.signature import update_signature
 
 
+# TODO: get rid of this ViewHelper
 class ViewHelper:
     def __init__(
         self,
@@ -43,11 +38,11 @@ class ViewHelper:
         :param request:
         :param schema:
         :param obj_id:
-        :param schema_in:
-            TODO:
+            TODO (obj_id):
              1. any name.
              2. any type:
                 - JSON:API accepts only str, but view funcs may accept int, uuid, etc
+        :param schema_in:
         :param input_data:
         """
         self.schema: Type[BaseModel] = schema
@@ -108,7 +103,6 @@ def get_detail_jsonapi(
     schema: Type[BaseModel],
     schema_resp: Any,
     model: Type[TypeModel],
-    engine: DBORMType,
 ) -> Callable:
     """GET DETAIL method router (Decorator for JSON API)."""
 
@@ -155,7 +149,6 @@ def patch_detail_jsonapi(
     type_: str,
     schema_resp: Any,
     model: Type[TypeModel],
-    engine: DBORMType,
 ) -> Callable:
     """
     PATCH method router (Decorator for JSON API).
@@ -198,7 +191,6 @@ def patch_detail_jsonapi(
 def delete_detail_jsonapi(
     schema: Type[BaseModel],
     model: Type[TypeModel],
-    engine: DBORMType,
 ) -> Callable:
     """DELETE method router (Decorator for JSON API)."""
 
@@ -228,7 +220,6 @@ def delete_detail_jsonapi(
 def delete_list_jsonapi(
     schema: Type[BaseModel],
     model: Type[TypeModel],
-    engine: DBORMType,
 ) -> Callable:
     """DELETE method router (Decorator for JSON API)."""
 
@@ -266,130 +257,12 @@ def delete_list_jsonapi(
     return inner
 
 
-async def _get_single_response(
-    query,
-    query_params: QueryStringManager,
-    schema: Type[BaseModel],
-    type_: str,
-    schema_resp: Any,
-    model: Type[TypeModel],
-    engine: DBORMType,
-    session: Optional[AsyncSession] = None,
-) -> Any:
-    """
-    TODO: move logic to data layers, get rid of this func
-    Also will fix this issue:
-    https://github.com/mts-ai/FastAPI-JSONAPI/issues/21
-    """
-    if engine is DBORMType.sqlalchemy:
-        dl = SqlalchemyDataLayer(schema=schema, model=model, session=session, query=query)
-    elif engine is DBORMType.tortoise:
-        dl = TortoiseDataLayer(schema=schema, model=model, query=query)
-    else:
-        raise UnsupportedFeatureORM()
-
-    count, data_model = await dl.get_collection(qs=query_params, view_kwargs={})
-    total_pages = count // query_params.pagination.size + (count % query_params.pagination.size and 1)
-
-    data_schema: List[Any] = [schema.from_orm(i_obj) for i_obj in data_model]
-    return schema_resp(
-        data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": type_} for i_obj in data_schema],
-        meta={"count": count, "totalPages": total_pages},
-    )
-
-
-def get_list_jsonapi(
-    schema: Type[BaseModel],
-    type_: str,
-    schema_resp: Any,
-    model: Type[TypeModel],
-    engine: DBORMType,
-) -> Callable:
-    """GET LIST method router (Decorator for JSON API)."""
-
-    def inner(func: Callable) -> Callable:
-        async def wrapper(
-            request: Request,
-            size: int = Query(25, alias="page[size]"),
-            number: int = Query(1, alias="page[number]"),
-            offset: int = Query(None, alias="page[offset]"),
-            limit: Optional[int] = Query(None, alias="page[limit]"),
-            filters_list: Optional[str] = Query(
-                None,
-                alias="filter",
-                description="[Filtering docs](https://fastapi-jsonapi.readthedocs.io/en/latest/filtering.html)"
-                "\nExamples:\n* filter for timestamp interval: "
-                '`[{"name": "timestamp", "op": "ge", "val": "2020-07-16T11:35:33.383"},'
-                '{"name": "timestamp", "op": "le", "val": "2020-07-21T11:35:33.383"}]`',
-            ),
-            sort: Optional[str] = Query(
-                None,
-                alias="sort",
-                description="[Sorting docs](https://fastapi-jsonapi.readthedocs.io/en/latest/sorting.html)",
-            ),
-            **kwargs,
-        ):
-            vh = ViewHelper(
-                request=request,
-                schema=schema,
-            )
-            query = await vh.call_original_view(
-                view_func=func,
-                view_func_kwargs=kwargs,
-            )
-
-            if isinstance(query, JSONAPIResultListSchema):
-                return query
-
-            if isinstance(query, list):
-                return schema_resp(
-                    data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": type_} for i_obj in query],
-                )
-
-            session = None
-            query_params = QueryStringManager(request=request, schema=schema)
-            func_signature = signature(func).parameters
-
-            if engine is DBORMType.sqlalchemy:
-                # Для SQLAlchemy нужно указывать session, для Tortoise достаточно модели
-                session: Optional[AsyncSession] = next(
-                    # get first of type AsyncSession or None if not found
-                    filter(lambda v: isinstance(v, AsyncSession), func_signature.values()),
-                    None,
-                )
-            if engine is DBORMType.sqlalchemy and session is None:
-                msg = "For SQLAlchemy you need to specify session in parameter"
-                raise UnsupportedFeatureORM(msg)
-            return await _get_single_response(
-                query,
-                query_params,
-                schema,
-                type_,
-                schema_resp,
-                model=model,
-                engine=engine,
-                session=session,
-            )  # QuerySet
-
-        # mypy ругается что нет метода __signature__, как это обойти красиво- не знаю
-        wrapper.__signature__ = update_signature(  # type: ignore
-            sig=signature(wrapper),
-            schema=schema,
-            other=OrderedDict(signature(func).parameters),
-            # return_annotation=schema_resp,
-        )
-        return wrapper
-
-    return inner
-
-
 def post_list_jsonapi(
     schema: Type[BaseModel],
     schema_in: Type[BaseModel],
     type_: str,
     schema_resp: Any,
     model: Type[TypeModel],
-    engine: DBORMType,
 ) -> Callable:
     """
     POST method router (Decorator for JSON API).

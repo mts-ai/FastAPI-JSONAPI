@@ -22,6 +22,12 @@ class UserBioBaseSchema(BaseModel):
     favourite_movies: str
     keys_to_ids_list: Dict[str, List[int]] = None
 
+    user: "UserSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
+
 
 class UserBioPatchSchema(UserBioBaseSchema):
     """UserBio PATCH schema."""
@@ -42,9 +48,3 @@ class UserBioSchema(UserBioInSchema):
     id: int
     created_at: datetime = Field(description="Create datetime")
     modified_at: datetime = Field(description="Update datetime")
-
-    user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
-    )

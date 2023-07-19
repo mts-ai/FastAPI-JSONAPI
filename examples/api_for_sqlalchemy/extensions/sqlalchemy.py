@@ -18,10 +18,11 @@ class Connector:
     @classmethod
     async def get_session(cls):
         """
-        Получение сессии к БД.
+        Get session as dependency
 
         :return:
         """
         sess = async_session()
-        async with sess() as db_session:
+        async with sess() as db_session:  # type: AsyncSession
             yield db_session
+            await db_session.rollback()

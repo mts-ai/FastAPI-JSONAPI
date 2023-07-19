@@ -20,7 +20,7 @@ class TortoiseDataLayer(BaseDataLayer):
         disable_collection_count: bool = False,
         default_collection_count: int = -1,
         id_name_field: Optional[str] = None,
-        url_field: str = "id",
+        url_id_field: str = "id",
         query: Optional[QuerySet] = None,
         **kwargs: Any,
     ):
@@ -33,10 +33,10 @@ class TortoiseDataLayer(BaseDataLayer):
                                           has to be bool or list/tuple with exactly 2 values!\n
         :params default_collection_count: For example `disable_collection_count = (True, 999)`
         :params id_name_field: Первичный ключ модели
-        :params url_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
+        :params url_id_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
         :params kwargs: initialization parameters of an TortoiseDataLayer instance
         """
-        super().__init__(kwargs)
+        super().__init__(url_id_field=url_id_field, **kwargs)
 
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
@@ -44,7 +44,6 @@ class TortoiseDataLayer(BaseDataLayer):
         self.model = model
         self.query_: QuerySet = query or model.filter()
         self.id_name_field = id_name_field
-        self.url_field = url_field
 
     async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
         """
@@ -91,13 +90,13 @@ class TortoiseDataLayer(BaseDataLayer):
 
         query = self.query(view_kwargs)
 
-        if qs.filters:
-            filters = FilterTortoiseORM(model=self.model).filter_converter(schema=self.schema, filters=qs.filters)
+        if filters_qs := qs.filters:
+            filters = FilterTortoiseORM(model=self.model).filter_converter(schema=self.schema, filters=filters_qs)
             for i_filter in filters:
                 query = query.filter(**{i_filter[0]: i_filter[1]})
 
-        if qs.sorting:
-            query = SortTortoiseORM.sort(query=query, query_params_sorting=qs.sorting)
+        if sorts := qs.get_sorts(schema=self.schema):
+            query = SortTortoiseORM.sort(query=query, query_params_sorting=sorts)
 
         objects_count = await self.get_collection_count(query)
 

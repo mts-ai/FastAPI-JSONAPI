@@ -22,6 +22,8 @@ pip install FastAPI-JSONAPI
 Create a test.py file and copy the following code into it
 
 ```python
+# TODO: upgrade with example from sqla examples
+
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Union, Optional
@@ -38,7 +40,6 @@ from sqlalchemy.sql import Select
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi import SqlalchemyDataLayer
-from fastapi_jsonapi.data_layers.orm import DBORMType
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultListSchema
 from fastapi_jsonapi.schema import collect_app_orm_schemas
@@ -176,11 +177,10 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_detail=UserDetail,
         class_list=UserList,
         schema=UserSchema,
-        type_resource="user",
+        resource_type="user",
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
         model=User,
-        engine=DBORMType.sqlalchemy,
     )
 
     app.include_router(routers, prefix="")

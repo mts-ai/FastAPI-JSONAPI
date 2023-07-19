@@ -1,14 +1,8 @@
 import logging
-from typing import Any, Dict, Type
+from typing import Any, Dict
 
-from fastapi_jsonapi import (
-    QueryStringManager,
-)
-from fastapi_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_jsonapi.data_layers.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
     JSONAPIResultListMetaSchema,
-    JSONAPIResultListSchema,
 )
 from fastapi_jsonapi.views.view_base import ViewBase
 
@@ -16,19 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class ListViewBase(ViewBase):
-    async def get_view_result(self, query_params: QueryStringManager, **kwargs):
-        dl = self._get_data_layer_for_list(**kwargs)
-        return await self.get_paginated_result(
-            dl=dl,
-            query_params=query_params,
-        )
-
-    async def get_paginated_result(
-        self,
-        dl: BaseDataLayer,
-        query_params: QueryStringManager,
-        schema: Type[TypeSchema] = None,
-    ) -> JSONAPIResultListSchema:
+    async def get_resource_list_result(self):
+        dl = self._get_data_layer_for_list()
+        query_params = self.query_params
         count, items_from_db = await dl.get_collection(qs=query_params)
         total_pages = 1
         if query_params.pagination.size:
@@ -41,7 +25,7 @@ class ListViewBase(ViewBase):
         result_objects, object_schemas, extras = self.process_includes_for_db_items(
             includes=query_params.include,
             items_from_db=items_from_db,
-            item_schema=schema or self.jsonapi.schema_list,
+            item_schema=self.jsonapi.schema_list,
         )
 
         # we need to build a new schema here
