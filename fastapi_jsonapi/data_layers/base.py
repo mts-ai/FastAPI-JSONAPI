@@ -9,6 +9,7 @@ from typing import Optional, Tuple, Type
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel
 from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
 
 
 class BaseDataLayer:
@@ -37,11 +38,22 @@ class BaseDataLayer:
         "retrieve_object_query",
     )
 
-    def __init__(self, url_id_field: str, **kwargs):
+    def __init__(
+        self,
+        model: Type[TypeModel],
+        url_id_field: str,
+        id_name_field: Optional[str] = None,
+        **kwargs,
+    ):
         """
+        :param model:
+        :param url_id_field:
+        :param id_name_field:
         :param kwargs:
         """
+        self.model = model
         self.url_id_field = url_id_field
+        self.id_name_field = id_name_field
 
     def post_init(self):
         """
@@ -55,15 +67,31 @@ class BaseDataLayer:
         """
         pass
 
-    async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
+    async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object
 
-        :param dict model_kwargs: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data_create: validated data
+        :param view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object
         """
         raise NotImplementedError
+
+    def get_object_id_field_name(self):
+        """
+        compound key may cause errors
+        :return:
+        """
+        return self.id_name_field
+
+    def get_object_id_field(self):
+        id_name_field = self.get_object_id_field_name()
+        try:
+            return getattr(self.model, id_name_field)
+        except AttributeError:
+            msg = f"{self.model.__name__} has no attribute {id_name_field}"
+            # TODO: any custom exception type?
+            raise Exception(msg)
 
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
@@ -184,10 +212,26 @@ class BaseDataLayer:
         """
         Get related object.
 
-        :params related_model: ORM model class
+        :params related_model: Related ORM model class (not instance)
         :params related_id_field: id field of the related model (usually it's `id`)
         :params id_value: related object id value
-        :return: a related ORM object
+        :return: an ORM object
+        """
+        raise NotImplementedError
+
+    async def get_related_objects_list(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        ids: list[str],
+    ) -> list[TypeModel]:
+        """
+        Get related objects list.
+
+        :params related_model: Related ORM model class (not instance)
+        :params related_id_field: id field of the related model (usually it's `id`)
+        :params ids: related object id values list
+        :return: a list of ORM objects
         """
         raise NotImplementedError
 

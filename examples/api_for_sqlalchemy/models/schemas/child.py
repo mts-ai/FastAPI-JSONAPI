@@ -1,4 +1,9 @@
-from fastapi_jsonapi.schema_base import BaseModel
+from typing import TYPE_CHECKING, List
+
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+
+if TYPE_CHECKING:
+    from .parent_child_association import ParentToChildAssociationSchema
 
 
 class ChildBaseSchema(BaseModel):
@@ -8,6 +13,13 @@ class ChildBaseSchema(BaseModel):
         orm_mode = True
 
     name: str
+
+    parents: List["ParentToChildAssociationSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="parent_child_association",
+            many=True,
+        ),
+    )
 
 
 class ChildPatchSchema(ChildBaseSchema):

@@ -218,6 +218,8 @@ class QueryStringManager:
             if not isinstance(value, list):
                 value = [value]  # noqa: PLW2901
                 fields[key] = value
+            # TODO: we have registry for models (BaseModel)
+            # TODO: create `type to schemas` registry
             schema: Type[BaseModel] = get_schema_from_type(key, self.app)
             for field in value:
                 if field not in schema.__fields__:

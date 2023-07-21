@@ -14,6 +14,13 @@ class ParentBaseSchema(BaseModel):
 
     name: str
 
+    children: List["ParentToChildAssociationSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="parent_child_association",
+            many=True,
+        ),
+    )
+
 
 class ParentPatchSchema(ParentBaseSchema):
     """Parent PATCH schema."""
@@ -27,9 +34,3 @@ class ParentSchema(ParentInSchema):
     """Parent item schema."""
 
     id: int
-    children: List["ParentToChildAssociationSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="parent_child_association",
-            many=True,
-        ),
-    )

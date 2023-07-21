@@ -42,7 +42,6 @@ from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi import SqlalchemyDataLayer
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultListSchema
-from fastapi_jsonapi.schema import collect_app_orm_schemas
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
@@ -209,7 +208,6 @@ def create_app() -> FastAPI:
     )
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
-    collect_app_orm_schemas(app)
     return app
 
 

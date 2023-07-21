@@ -11,12 +11,14 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
 import pydantic
 from fastapi import APIRouter, Path, Query, Request, status
 from pydantic import BaseConfig
+from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import ModelField
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
@@ -25,18 +27,17 @@ from fastapi_jsonapi.methods import (
     delete_detail_jsonapi,
     delete_list_jsonapi,
     patch_detail_jsonapi,
-    post_list_jsonapi,
 )
 from fastapi_jsonapi.schema import (
+    BaseJSONAPIItemInSchema,
     BaseJSONAPIRelationshipDataToManySchema,
     BaseJSONAPIRelationshipDataToOneSchema,
     BaseJSONAPIRelationshipSchema,
     BaseJSONAPIResultSchema,
-    BasePatchJSONAPISchema,
-    BasePostJSONAPISchema,
     JSONAPIObjectSchema,
     JSONAPIResultDetailSchema,
     JSONAPIResultListSchema,
+    RelationshipInfoSchema,
 )
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo, registry
 from fastapi_jsonapi.signature import create_additional_query_params
@@ -49,6 +50,7 @@ if TYPE_CHECKING:
 
 JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
 
+JSONAPIObjectSchemaType = TypeVar("JSONAPIObjectSchemaType", bound=PydanticBaseModel)
 
 not_passed = object()
 
@@ -75,20 +77,20 @@ class RoutersJSONAPI:
     # shared between ALL RoutersJSONAPI instances
     object_schemas_cache = {}
     relationship_schema_cache = {}
-    related_schemas_cache = {}
+    base_jsonapi_object_schemas_cache = {}
 
     def __init__(
         self,
         router: APIRouter,
         path: Union[str, List[str]],
         tags: List[str],
-        class_detail: Type["DetailViewBase"],
         class_list: Type["ListViewBase"],
+        class_detail: Type["DetailViewBase"],
+        model: Type[TypeModel],
         schema: Type[BaseModel],
         resource_type: str,
-        schema_in_patch: Type[BaseModel],
-        schema_in_post: Type[BaseModel],
-        model: Type[TypeModel],
+        schema_in_post: Optional[Type[BaseModel]] = None,
+        schema_in_patch: Optional[Type[BaseModel]] = None,
         pagination_default_size: Optional[int] = 25,
         pagination_default_number: Optional[int] = 1,
         pagination_default_offset: Optional[int] = None,
@@ -102,11 +104,11 @@ class RoutersJSONAPI:
         :param tags: swagger tags
         :param class_detail: detail view class
         :param class_list: list view class
+        :param model: SQLA / Tortoise / any other ORM model
         :param schema: full object schema for this resource
         :param resource_type: `resource type` (JSON:API required)
-        :param schema_in_patch: schema for PATCH
-        :param schema_in_post: schema for POST
-        :param model: SQLA / Tortoise / etc ORM model
+        :param schema_in_post: schema for POST - custom schema to use instead of `schema`
+        :param schema_in_patch: schema for PATCH - custom schema to use instead of `schema`
 
         # default pagination params for swagger
         :param pagination_default_size: `page[size]`
@@ -136,6 +138,15 @@ class RoutersJSONAPI:
         self.pagination_default_offset: Optional[int] = pagination_default_offset
         self.pagination_default_limit: Optional[int] = pagination_default_limit
 
+        self._prepare_responses()
+        self._create_schemas(
+            schema=schema,
+            schema_in_post=schema_in_post,
+            schema_in_patch=schema_in_patch,
+        )
+        self._create_and_register_generic_views()
+
+    def _prepare_responses(self):
         self.default_error_responses: JSON_API_RESPONSE_TYPE = {
             status.HTTP_400_BAD_REQUEST: {"model": ExceptionResponseSchema},
             status.HTTP_401_UNAUTHORIZED: {"model": ExceptionResponseSchema},
@@ -143,89 +154,97 @@ class RoutersJSONAPI:
             status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": ExceptionResponseSchema},
         }
 
+    def _create_schemas_objects_list(self):
+        object_jsonapi_list_schema, list_jsonapi_schema = self.build_list_schemas(self.schema_list)
+        # TODO: do we need this `object_jsonapi_list_schema` field? it's not used anywhere 🤔
+        self.object_jsonapi_list_schema: Type[JSONAPIObjectSchema] = object_jsonapi_list_schema
+        self.list_response_schema: Type[JSONAPIResultListSchema] = list_jsonapi_schema
+
+    def _create_schemas_object_detail(self):
+        object_jsonapi_detail_schema, detail_jsonapi_schema = self.build_detail_schemas(self.schema_detail)
+        # TODO: do we need this `object_jsonapi_detail_schema` field? it's not used anywhere 🤔
+        self.object_jsonapi_detail_schema: Type[JSONAPIObjectSchema] = object_jsonapi_detail_schema
+        self.detail_response_schema: Type[JSONAPIResultDetailSchema] = detail_jsonapi_schema
+
+    def _create_schemas(
+        self,
+        schema: Type[BaseModel],
+        schema_in_post: Optional[Type[BaseModel]] = None,
+        schema_in_patch: Optional[Type[BaseModel]] = None,
+    ):
+        # TODO: generic?
+        schema_in_post = schema_in_post
+        schema_name_suffix = ""
+        if schema_in_post is None:
+            schema_in_post = schema
+            schema_name_suffix = "InPost"
+
+        schema_in_patch = schema_in_patch
+        if schema_in_patch is None:
+            schema_in_patch = schema
+            schema_in_patch_base_name = f"{schema.__name__}InPatch"
+        else:
+            schema_in_patch_base_name = schema_in_patch.__name__
+
         patch_jsonapi_schema = pydantic.create_model(
-            "{base_name}JSONAPI".format(base_name=schema_in_patch.__name__),
+            "{base_name}JSONAPI".format(base_name=schema_in_patch_base_name),
             attributes=(schema_in_patch, ...),
             type=(str, Field(default=self._type, description="Resource type")),
-            __base__=BasePatchJSONAPISchema,
+            __base__=BaseJSONAPIItemInSchema,
         )
         self._schema_in_patch_base: Type[BaseModel] = schema_in_patch
         self._schema_in_patch: Type[BaseModel] = patch_jsonapi_schema
 
-        post_jsonapi_schema = pydantic.create_model(
-            "{base_name}JSONAPI".format(base_name=schema_in_post.__name__),
-            attributes=(schema_in_post, ...),
-            type=(str, Field(default=self._type, description="Resource type")),
-            __base__=BasePostJSONAPISchema,
+        # TODO: reuse for PATCH / create something similar
+        schemas_in_post = self.build_schema_in(
+            schema_in=schema_in_post,
+            schema_name_suffix=schema_name_suffix,
         )
-        self._schema_in_post_base: Type[BaseModel] = schema_in_post
-        self._schema_in_post: Type[BaseModel] = post_jsonapi_schema
+        self._schema_in_post = schemas_in_post
 
-        # schemas_in_wip = self.build_schema_in(schema_in=schema_in_post)
-        # self._schema_in_post_base: Type[BaseModel] = schemas_in_wip.attributes_schema
-        # self._schema_in_post: Type[BaseModel] = schemas_in_wip.object_jsonapi_schema
+        self._create_schemas_objects_list()
+        self._create_schemas_object_detail()
 
-        object_jsonapi_detail_schema, detail_jsonapi_schema = self.build_detail_schemas(self.schema_detail)
-        self.object_jsonapi_detail_schema: Type[JSONAPIObjectSchema] = object_jsonapi_detail_schema
-        self.detail_response_schema: Type[JSONAPIResultDetailSchema] = detail_jsonapi_schema
-
-        object_jsonapi_list_schema, list_jsonapi_schema = self.build_list_schemas(self.schema_list)
-        self.object_jsonapi_list_schema: Type[JSONAPIObjectSchema] = object_jsonapi_list_schema
-        self.list_response_schema: Type[JSONAPIResultListSchema] = list_jsonapi_schema
-
+    def _create_and_register_generic_views(self):
         if isinstance(self._path, Iterable) and not isinstance(self._path, (str, bytes)):
             for i_path in self._path:
                 self._register_views(i_path)
         else:
             self._register_views(self._path)
 
-    def build_schema_in(self, schema_in: Type[BaseModel]):
-        schemas = self.create_jsonapi_object_schemas(schema=schema_in)
-
-        return schemas
+    def build_schema_in(
+        self,
+        schema_in: Type[BaseModel],
+        schema_name_suffix: str = "",
+    ) -> Type[BaseJSONAPIItemInSchema]:
         base_schema_name = schema_in.__name__
         if base_schema_name.endswith("Schema"):
             base_schema_name = base_schema_name[: -len("Schema")]
 
-        for name, field in (schema_in.__fields__ or {}).items():
-            if isinstance(field.field_info.extra.get("relationship"), RelationshipInfo):
-                field.field_info.extra["relationship"]
-                # schema_name = f"{base_schema_name}To{name.title()}"
-                # relationship_schema = self.create_relationship_schema(
-                #     name=schema_name,
-                #     relationship_info=relationship_info,
-                # )
-                # relationships_schema_fields[name] = (relationship_schema, None)  # allow to not pass relationships
+        base_schema_name += schema_name_suffix
 
-        post_schema_kwargs = {
-            "type": (str, Field(default=self._type, description="Resource type")),
-            "attributes": (schema_in, ...),
-        }
-
-        # # TODO: pydantic V2 model_config
-        # class ConfigOrmMode(BaseConfig):
-        #     orm_mode = True
-        #
-        # # TODO: reuse generic code
-        # relationships_schema = pydantic.create_model(
-        #     f"{base_schema_name}RelationshipsJSONAPI",
-        #     **relationships_schema_fields,
-        #     __config__=ConfigOrmMode,
-        # )
-        #
-        # print(relationships_schema)
-
-        # if relationships_schema_fields:
-        #     # allow not to pass relationships
-        #     post_schema_kwargs.update(relationships=(relationships_schema, None))
-
-        post_jsonapi_schema = pydantic.create_model(
-            "{base_name}JSONAPI".format(base_name=schema_in.__name__),
-            **post_schema_kwargs,
-            __base__=BasePostJSONAPISchema,
+        (
+            # pre-built attributed
+            attributes_schema,
+            # relationships
+            relationships_schema,
+            # anything that can be included
+            included_schemas,
+        ) = self._get_info_from_schema_for_building(
+            base_name=base_schema_name,
+            schema=schema_in,
         )
 
-        return post_jsonapi_schema
+        object_jsonapi_schema = self._build_jsonapi_object(
+            base_name=base_schema_name,
+            resource_type=self._type,
+            attributes_schema=attributes_schema,
+            relationships_schema=relationships_schema,
+            includes=not_passed,
+            model_base=BaseJSONAPIItemInSchema,
+        )
+
+        return object_jsonapi_schema
 
     def _build_schema(
         self,
@@ -285,11 +304,24 @@ class RoutersJSONAPI:
             endpoint=self._create_get_resource_list_view(),
         )
 
+    def _register_post_resource_list(self, path: str):
+        create_resource_response_example = {
+            status.HTTP_201_CREATED: {"model": self.detail_response_schema},
+        }
+        self._router.add_api_route(
+            path=path,
+            tags=self._tags,
+            responses=create_resource_response_example | self.default_error_responses,
+            methods=["POST"],
+            summary=f"Create object `{self._type}`",
+            status_code=status.HTTP_201_CREATED,
+            endpoint=self._create_post_resource_list_view(),
+        )
+
     def _register_get_resource_detail(self, path: str):
         detail_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
         }
-
         self._router.add_api_route(
             # TODO: variable path param name (set default name on DetailView class)
             # TODO: trailing slash (optional)
@@ -408,7 +440,7 @@ class RoutersJSONAPI:
 
     def _create_get_resource_list_view(self):
         """
-        Create wrapper for GET list
+        Create wrapper for GET list (get objects list)
         :return:
         """
 
@@ -425,9 +457,32 @@ class RoutersJSONAPI:
         wrapper.__signature__ = self._update_signature_for_resource_list_view(wrapper)
         return wrapper
 
+    def _create_post_resource_list_view(self):
+        """
+        Create wrapper for POST list (create a new object)
+
+        :return:
+        """
+        schema_in = self._schema_in_post
+
+        async def wrapper(request: Request, data_create: schema_in, **kwargs):
+            resource = self.list_view_resource(
+                request=request,
+                jsonapi=self,
+            )
+            await DependencyHelper(request=request).run(resource.init_dependencies)
+
+            response = await resource.post_resource_list_result(data_create=data_create)
+            return response
+
+        # POST request returns result as for detail view
+        wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
+        return wrapper
+
     def _create_get_resource_detail_view(self):
         """
-        Create wrapper for GET detail
+        Create wrapper for GET detail (get object by id)
+
         :return:
         """
 
@@ -460,28 +515,9 @@ class RoutersJSONAPI:
         detail_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
         }
-        create_resource_response_example = {
-            status.HTTP_201_CREATED: {"model": self.detail_response_schema},
-        }
         self._register_get_resource_list(path)
+        self._register_post_resource_list(path)
         self._register_get_resource_detail(path)
-
-        if hasattr(self.list_views, "post"):
-            self._router.post(
-                path,
-                tags=self._tags,
-                responses=create_resource_response_example | error_responses,
-                summary=f"Create object `{self._type}`",
-                status_code=status.HTTP_201_CREATED,
-            )(
-                post_list_jsonapi(
-                    schema=self._schema,
-                    schema_in=self._schema_in_post,
-                    type_=self._type,
-                    schema_resp=self.detail_response_schema,
-                    model=self.model,
-                )(self.list_views.post),
-            )
 
         if hasattr(self.list_views, "delete"):
             self._router.delete(path, tags=self._tags, summary=f"Delete list objects of type `{self._type}`")(
@@ -546,7 +582,7 @@ class RoutersJSONAPI:
         base_name: str,
         field: ModelField,
         relationship_info: RelationshipInfo,
-    ) -> Union[Type[BaseJSONAPIRelationshipDataToOneSchema], Type[BaseJSONAPIRelationshipDataToManySchema]]:
+    ) -> RelationshipInfoSchema:
         cache_key = (base_name, field_name, relationship_info.resource_type, relationship_info.many)
         if cache_key in self.relationship_schema_cache:
             return self.relationship_schema_cache[cache_key]
@@ -565,6 +601,7 @@ class RoutersJSONAPI:
 
         relationship_data_schema = pydantic.create_model(
             f"{schema_name}RelationshipDataJSONAPI",
+            # TODO: on create (post request) sometimes it's required and at the same time on fetch it's not required
             data=(relationship_schema, Field(... if field.required else None)),
             __base__=base,
         )
@@ -575,7 +612,7 @@ class RoutersJSONAPI:
         self,
         base_name: str,
         schema: Type[BaseModel],
-        includes: Iterable[str],
+        includes: Iterable[str] = not_passed,
     ):
         attributes_schema_fields = {}
         relationships_schema_fields = {}
@@ -627,7 +664,10 @@ class RoutersJSONAPI:
         attributes_schema: Type[TypeSchema],
         relationships_schema: Type[TypeSchema],
         includes,
-    ) -> Type[JSONAPIObjectSchema]:
+        model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
+    ) -> Type[JSONAPIObjectSchemaType]:
+        if base_name in self.base_jsonapi_object_schemas_cache:
+            return self.base_jsonapi_object_schemas_cache[base_name]
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
         }
@@ -640,8 +680,9 @@ class RoutersJSONAPI:
             f"{base_name}ObjectJSONAPI",
             **object_jsonapi_schema_fields,
             type=(str, Field(default=resource_type or self._type, description="Resource type")),
-            __base__=JSONAPIObjectSchema,
+            __base__=model_base,
         )
+        self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
         return object_jsonapi_schema
 
     def find_all_included_schemas(

@@ -20,7 +20,7 @@ from fastapi_jsonapi.misc.sqla.generics.base import (
     ListViewBaseGeneric as ListViewBaseGenericHelper,
 )
 from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, collect_app_orm_schemas
+from fastapi_jsonapi.schema import JSONAPIResultDetailSchema
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.conftest import fake
@@ -86,25 +86,16 @@ class UserBioBaseSchema(BaseModel):
     favourite_movies: str
     keys_to_ids_list: Dict[str, List[int]] = None
 
+
+class UserBioSchema(UserBioBaseSchema):
+    """UserBio item schema."""
+
+    id: int
     user: "UserSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="user",
         ),
     )
-
-
-class UserBioPatchSchema(UserBioBaseSchema):
-    """UserBio PATCH schema."""
-
-
-class UserBioInSchema(UserBioBaseSchema):
-    """UserBio input schema."""
-
-
-class UserBioSchema(UserBioInSchema):
-    """UserBio item schema."""
-
-    id: int
 
 
 # Post Schemas ⬇️
@@ -894,38 +885,7 @@ def user_detail_view(detail_view_base_generic):
 
 
 @pytest.fixture(scope="class")
-def user_list_view(list_view_base_generic, async_session_dependency):
-    """
-    :param list_view_base_generic:
-    :param async_session_dependency:
-    :return:
-    """
-
-    class UserList(list_view_base_generic):
-        # todo: remove
-        async def post(
-            self,
-            data: UserInSchema,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultDetailSchema:
-            user_obj: User = await self.create_object(
-                data_create=data.dict(),
-                view_kwargs={},
-                session=session,
-            )
-
-            return await self.get_detail_view_result(
-                query_params=query_params,
-                view_kwargs={"id": user_obj.id},
-                session=session,
-            )
-
-    return UserList
-
-
-@pytest.fixture(scope="class")
-def user_list_view_generic(list_view_base_generic_helper_for_sqla):
+def user_list_view(list_view_base_generic_helper_for_sqla):
     """
     :param list_view_base_generic_helper_for_sqla:
     :return:
@@ -951,20 +911,6 @@ def user_bio_detail_view(detail_view_base_generic):
         ...
 
     return UserBioDetail
-
-
-@pytest.fixture(scope="class")
-def user_detail_view_sync(detail_view_base_generic):
-    """
-    :param detail_view_base_generic:
-    :return:
-    """
-
-    class UserDetail(detail_view_base_generic):
-        def get(self):
-            return {"ok": True}
-
-    return UserDetail
 
 
 @pytest.fixture(scope="class")
@@ -1087,7 +1033,6 @@ def app_plain(app_max_include_depth) -> FastAPI:
         docs_url="/docs",
     )
     app.config = {"MAX_INCLUDE_DEPTH": app_max_include_depth}
-    collect_app_orm_schemas(app)
     return app
 
 
@@ -1143,8 +1088,6 @@ def app(
         class_list=user_bio_list_view,
         schema=UserBioSchema,
         resource_type="user_bio",
-        schema_in_patch=UserBioPatchSchema,
-        schema_in_post=UserBioInSchema,
         model=UserBio,
     )
 
@@ -1180,40 +1123,9 @@ def app(
     return app_plain
 
 
-@pytest.fixture()
-def app2(
-    app_plain: FastAPI,
-    user_detail_view_sync,
-    user_list_view_generic,
-):
-    router: APIRouter = APIRouter()
-    RoutersJSONAPI(
-        router=router,
-        path="/users",
-        tags=["User"],
-        class_detail=user_detail_view_sync,
-        class_list=user_list_view_generic,
-        schema=UserSchema,
-        resource_type="user",
-        schema_in_patch=UserPatchSchema,
-        schema_in_post=UserInSchema,
-        model=User,
-    )
-
-    app_plain.include_router(router, prefix="")
-
-    return app_plain
-
-
 @async_fixture()
 async def client(app: FastAPI) -> AsyncClient:
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
-
-
-@async_fixture()
-async def client2(app2: FastAPI) -> AsyncClient:
-    async with AsyncClient(app=app2, base_url="http://test") as ac:
         yield ac
 
 
@@ -1478,49 +1390,26 @@ async def test_method_not_allowed(client: AsyncClient):
     assert res.status_code == status.HTTP_405_METHOD_NOT_ALLOWED, res.status_code
 
 
-async def test_create_user(client: AsyncClient):
-    create_user_data = UserInSchema(
-        name=fake.name(),
-        age=fake.pyint(),
-        email=fake.email(),
-    )
-    res = await client.post("/users", json={"attributes": create_user_data.dict()})
-    assert res.status_code == status.HTTP_201_CREATED, res.text
-    response_data = res.json()
-    assert "data" in response_data, response_data
-    assert response_data["data"]["attributes"] == create_user_data.dict()
-
-
-async def test_create_user_and_fetch_data(client: AsyncClient):
-    create_user_data = UserInSchema(
-        name=fake.name(),
-        age=fake.pyint(),
-        email=fake.email(),
-    )
-    res = await client.post("/users", json={"attributes": create_user_data.dict()})
-    assert res.status_code == status.HTTP_201_CREATED, res.text
-    response_data = res.json()
-    assert "data" in response_data, response_data
-    assert response_data["data"]["attributes"] == create_user_data.dict()
-
-    user_id = response_data["data"]["id"]
-
-    res = await client.get(f"/users/{user_id}")
-    assert res.status_code == status.HTTP_200_OK, res.text
-    response_data = res.json()
-    assert "data" in response_data, response_data
-    assert response_data["data"]["attributes"] == create_user_data.dict()
-    assert response_data["data"]["id"] == user_id
+async def test_get_list_view_generic(client: AsyncClient, user_1: User):
+    res = await client.get("/users")
+    assert res
+    assert res.status_code == status.HTTP_200_OK
+    response_json = res.json()
+    users_data = response_json["data"]
+    assert len(users_data) == 1, users_data
+    user_data = users_data[0]
+    assert user_data["id"] == str(user_1.id)
+    assert user_data["attributes"] == UserBaseSchema.from_orm(user_1)
 
 
 async def test_get_user_not_found(client: AsyncClient):
-    fake_id = 1
+    fake_id = fake.pyint()
     res = await client.get(f"/users/{fake_id}")
 
     assert res.json() == {
         "errors": [
             {
-                "detail": "Resource User `1` not found",
+                "detail": f"Resource User `{fake_id}` not found",
                 "title": "Resource not found.",
                 "status_code": 404,
                 "meta": {"parameter": "id"},
@@ -1529,35 +1418,89 @@ async def test_get_user_not_found(client: AsyncClient):
     }
 
 
-class TestApp2:
-    async def test_sync_view(self, client2: AsyncClient):
-        res = await client2.get("/users/0")
-        assert res
-        assert res.status_code == status.HTTP_200_OK
-        assert res.json() == {"ok": True}
-
-    async def test_get_list_view_generic(self, client2: AsyncClient, user_1: User):
-        res = await client2.get("/users")
-        assert res
-        assert res.status_code == status.HTTP_200_OK
-        response_json = res.json()
-        users_data = response_json["data"]
-        assert len(users_data) == 1, users_data
-        user_data = users_data[0]
-        assert user_data["id"] == str(user_1.id)
-        assert user_data["attributes"] == UserBaseSchema.from_orm(user_1)
-
-    async def test_create_object(self, client2: AsyncClient):
+class TestCreateObjects:
+    async def test_create_object(self, client: AsyncClient):
         create_user_data = UserInSchema(
             name=fake.name(),
             age=fake.pyint(),
             email=fake.email(),
         )
-        res = await client2.post("/users", json={"attributes": create_user_data.dict()})
+        res = await client.post("/users", json={"attributes": create_user_data.dict()})
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data = res.json()
         assert "data" in response_data, response_data
         assert response_data["data"]["attributes"] == create_user_data.dict()
+
+    async def test_create_object_with_relationship_and_fetch_include(self, client: AsyncClient, user_1: User):
+        create_user_bio_data = UserBioBaseSchema(
+            birth_city=fake.word(),
+            favourite_movies=fake.sentence(),
+            keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
+        )
+        res = await client.post(
+            "/user-bio?include=user",
+            json={
+                "attributes": create_user_bio_data.dict(),
+                "relationships": {"user": {"data": {"type": "user", "id": user_1.id}}},
+            },
+        )
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        response_data = res.json()
+        assert "data" in response_data, response_data
+        assert response_data["data"]["attributes"] == create_user_bio_data.dict()
+        included_data = response_data.get("included")
+        assert included_data, response_data
+        assert isinstance(included_data, list), included_data
+        included_user = included_data[0]
+        assert isinstance(included_user, dict), included_user
+        assert included_user["type"] == "user"
+        assert included_user["id"] == str(user_1.id)
+        assert included_user["attributes"] == UserBaseSchema.from_orm(user_1)
+
+    async def test_create_user(self, client: AsyncClient):
+        create_user_data = UserInSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        )
+        res = await client.post("/users", json={"attributes": create_user_data.dict()})
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        response_data: dict = res.json()
+        assert "data" in response_data, response_data
+        assert response_data["data"]["attributes"] == create_user_data.dict()
+
+    async def test_create_user_and_fetch_data(self, client: AsyncClient):
+        create_user_data = UserInSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        )
+        res = await client.post("/users", json={"attributes": create_user_data.dict()})
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        response_data = res.json()
+        assert "data" in response_data, response_data
+        assert response_data["data"]["attributes"] == create_user_data.dict()
+
+        user_id = response_data["data"]["id"]
+
+        res = await client.get(f"/users/{user_id}")
+        assert res.status_code == status.HTTP_200_OK, res.text
+        response_data = res.json()
+        assert "data" in response_data, response_data
+        assert response_data["data"]["attributes"] == create_user_data.dict()
+        assert response_data["data"]["id"] == user_id
+
+
+class TestOpenApi:
+    def test_openapi_method_ok(self, app: FastAPI):
+        data = app.openapi()
+        assert isinstance(data, dict)
+
+    async def test_openapi_endpoint_ok(self, client: AsyncClient, app: FastAPI):
+        response = await client.get(app.openapi_url)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        resp = response.json()
+        assert isinstance(resp, dict)
 
 
 # todo: test filters
