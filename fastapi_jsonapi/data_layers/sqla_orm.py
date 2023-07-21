@@ -130,7 +130,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         try:
             obj = (await self.session.execute(query)).scalar_one()
         except NoResultFound:
-            msg = f"{self.model.__name__} #{filter_value} not found"
+            msg = f"Resource {self.model.__name__} `{filter_value}` not found"
             raise ObjectNotFound(
                 msg,
                 parameter=self.url_id_field,

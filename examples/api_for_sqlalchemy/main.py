@@ -22,6 +22,7 @@ from fastapi import FastAPI
 
 from examples.api_for_sqlalchemy import config
 from examples.api_for_sqlalchemy.urls import add_routes
+from fastapi_jsonapi.exceptions.handlers import register_exception_handlers
 from fastapi_jsonapi.schema import collect_app_orm_schemas
 
 
@@ -49,6 +50,8 @@ def create_app() -> FastAPI:
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
     collect_app_orm_schemas(app)
+    register_exception_handlers(app)
+
     return app
 
 
