@@ -11,12 +11,16 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship, sessionmaker
 
-from fastapi_jsonapi import RoutersJSONAPI, SqlalchemyDataLayer
-from fastapi_jsonapi.misc.sqla.generics.base import ListViewBaseGeneric as ListViewBaseGenericHelper
+from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi.misc.sqla.generics.base import (
+    DetailViewBaseGeneric as DetailViewBaseGenericHelper,
+)
+from fastapi_jsonapi.misc.sqla.generics.base import (
+    ListViewBaseGeneric as ListViewBaseGenericHelper,
+)
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import JSONAPIResultDetailSchema, collect_app_orm_schemas
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
-from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.conftest import fake
 
@@ -832,29 +836,9 @@ async def p2_c3_association(
 
 @pytest.fixture(scope="class")
 def detail_view_base_generic(async_session_dependency):
-    class DetailViewBaseGeneric(DetailViewBase):
-        """
-        TODO: patch
-
-        """
-
-        async def get(
-            self,
-            obj_id,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultDetailSchema:
-            dl = SqlalchemyDataLayer(
-                schema=self.jsonapi.schema_detail,
-                model=self.jsonapi.model,
-                session=session,
-            )
-            view_kwargs = {"id": obj_id}
-            return await self.get_detailed_result(
-                dl=dl,
-                view_kwargs=view_kwargs,
-                query_params=query_params,
-            )
+    class DetailViewBaseGeneric(DetailViewBaseGenericHelper):
+        async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
+            self.session = session
 
     return DetailViewBaseGeneric
 
