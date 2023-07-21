@@ -169,4 +169,13 @@ class RelatedObjectNotFound(NotFound):
 class ObjectNotFound(NotFound):
     """Error to warn that an object is not found in a database"""
 
-    title = "Object not found."
+    title = "Resource not found."
+
+    @property
+    def _dict(self):
+        return {
+            "status_code": self.status_code,
+            "meta": self.source,
+            "title": self.title,
+            "detail": self._detail,
+        }

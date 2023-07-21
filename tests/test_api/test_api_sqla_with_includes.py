@@ -12,6 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship, sessionmaker
 
 from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi.exceptions.handlers import register_exception_handlers
 from fastapi_jsonapi.misc.sqla.generics.base import (
     DetailViewBaseGeneric as DetailViewBaseGenericHelper,
 )
@@ -1174,6 +1175,7 @@ def app(
     )
 
     app_plain.include_router(router, prefix="")
+    register_exception_handlers(app_plain)
 
     return app_plain
 
@@ -1509,6 +1511,22 @@ async def test_create_user_and_fetch_data(client: AsyncClient):
     assert "data" in response_data, response_data
     assert response_data["data"]["attributes"] == create_user_data.dict()
     assert response_data["data"]["id"] == user_id
+
+
+async def test_get_user_not_found(client: AsyncClient):
+    fake_id = 1
+    res = await client.get(f"/users/{fake_id}")
+
+    assert res.json() == {
+        "errors": [
+            {
+                "detail": "Resource User `1` not found",
+                "title": "Resource not found.",
+                "status_code": 404,
+                "meta": {"parameter": "id"},
+            },
+        ],
+    }
 
 
 class TestApp2:
