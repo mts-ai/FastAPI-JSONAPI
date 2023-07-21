@@ -17,7 +17,6 @@ class UserBioBaseSchema(BaseModel):
 
         orm_mode = True
 
-    user_id: str
     birth_city: str
     favourite_movies: str
     keys_to_ids_list: Dict[str, List[int]] = None

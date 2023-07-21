@@ -36,20 +36,23 @@ class TortoiseDataLayer(BaseDataLayer):
         :params url_id_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
         :params kwargs: initialization parameters of an TortoiseDataLayer instance
         """
-        super().__init__(url_id_field=url_id_field, **kwargs)
+        super().__init__(
+            model=model,
+            url_id_field=url_id_field,
+            id_name_field=id_name_field,
+            **kwargs,
+        )
 
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
         self.schema = schema
-        self.model = model
-        self.query_: QuerySet = query or model.filter()
-        self.id_name_field = id_name_field
+        self.query_: QuerySet = query or self.model.filter()
 
     async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
         """
         Create an object through Tortoise.
 
-        :params model_kwargs: the data validated by marshmallow.
+        :params model_kwargs: the data validated by pydantic.
         :params view_kwargs: kwargs from the resource view.
         :return DeclarativeMeta: an object from Tortoise.
         """
@@ -270,7 +273,7 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Provide additional data before object creation.
 
-        :params data: the data validated by marshmallow.
+        :params data: the data validated by pydantic.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
@@ -280,7 +283,7 @@ class TortoiseDataLayer(BaseDataLayer):
         Provide additional data after object creation.
 
         :params obj: an object from data layer.
-        :params data: the data validated by marshmallow.
+        :params data: the data validated by pydantic.
         :params view_kwargs: kwargs from the resource view.
         """
         pass

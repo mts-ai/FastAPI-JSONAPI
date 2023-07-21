@@ -1,7 +1,7 @@
 import logging
-from typing import Any, Dict
 
 from fastapi_jsonapi.schema import (
+    BaseJSONAPIItemInSchema,
     JSONAPIResultListMetaSchema,
 )
 from fastapi_jsonapi.views.view_base import ViewBase
@@ -41,17 +41,11 @@ class ListViewBase(ViewBase):
             **extras,
         )
 
-    async def create_object(
-        self,
-        data_create: Dict[str, Any],
-        view_kwargs: Dict[str, Any],
-        **dl_kwargs: Any,
-    ):
-        """
-        :param data_create:
-        :param view_kwargs:
-        :param dl_kwargs:
-        :return:
-        """
-        dl = self._get_data_layer_for_list(**dl_kwargs)
-        return await dl.create_object(model_kwargs=data_create, view_kwargs=view_kwargs)
+    async def post_resource_list_result(self, data_create: BaseJSONAPIItemInSchema):
+        dl = self._get_data_layer_for_list()
+        created_object = await dl.create_object(
+            data_create=data_create,
+            view_kwargs={},
+        )
+        created_object_id = getattr(created_object, dl.get_object_id_field_name())
+        return await self.get_resource_detail_result(object_id=created_object_id)

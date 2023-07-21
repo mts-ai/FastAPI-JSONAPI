@@ -1,8 +1,9 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
-from typing import Any, Iterable, Optional, Tuple, Type
+import logging
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Tuple, Type
 
 from sqlalchemy import func, select
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import DatabaseError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
@@ -23,10 +24,20 @@ from fastapi_jsonapi.exceptions import (
 )
 from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
 from fastapi_jsonapi.schema import (
+    BaseJSONAPIItemInSchema,
+    BaseJSONAPIRelationshipDataToManySchema,
+    BaseJSONAPIRelationshipDataToOneSchema,
     get_model_field,
     get_related_schema,
 )
+from fastapi_jsonapi.schema_base import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
+
+if TYPE_CHECKING:
+    pass
+
+
+log = logging.getLogger(__name__)
 
 
 class SqlalchemyDataLayer(BaseDataLayer):
@@ -60,37 +71,98 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params query: подготовленный заранее запрос.
         :params kwargs: initialization parameters of an SqlalchemyDataLayer instance
         """
-        super().__init__(url_id_field=url_id_field, **kwargs)
+        super().__init__(
+            model=model,
+            url_id_field=url_id_field,
+            id_name_field=id_name_field,
+            **kwargs,
+        )
 
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
         self.schema = schema
-        self.model = model
         self.session = session
-        self.id_name_field = id_name_field
         self.eagerload_includes_ = eagerload_includes
         self._query = query
 
-    async def apply_relationships(self, data, obj: TypeModel) -> None:
-        # TODO!
-        pass
+    async def apply_relationships(self, obj: TypeModel, data_create: BaseJSONAPIItemInSchema) -> None:
+        """
+        TODO: move generic code to another method
 
-    async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
+        :param obj:
+        :param data_create:
+        :return:
+        """
+        relationships = data_create.relationships  # type: PydanticBaseModel
+        if relationships is None:
+            return
+
+        schema_fields = self.schema.__fields__ or {}
+        for relation_name, relationship_in in relationships:  # type: str, RelationshipInfoSchema
+            field = schema_fields.get(relation_name)
+            if field is None:
+                # should not happen if schema is built properly
+                # there may be an error if schema and schema_in are different
+                log.warning("field for %s in schema %s not found", relation_name, self.schema.__name__)
+                continue
+
+            if "relationship" not in field.field_info.extra:
+                log.warning(
+                    "relationship info for %s in schema %s extra not found",
+                    relation_name,
+                    self.schema.__name__,
+                )
+                continue
+
+            relationship_info: RelationshipInfo = field.field_info.extra["relationship"]
+            # todo: use alias (custom names)!!
+            # field.field_info.alias
+            # field.field_info.title
+
+            # ...
+            related_model = getattr(obj.__class__, relation_name).property.mapper.class_
+
+            if relationship_info.many:
+                assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToManySchema)
+                related_data = await self.get_related_objects_list(
+                    related_model=related_model,
+                    related_id_field=relationship_info.id_field_name,
+                    ids=[r.id for r in relationship_in.data],
+                )
+            else:
+                assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToOneSchema)
+                related_data = await self.get_related_object(
+                    related_model=related_model,
+                    related_id_field=relationship_info.id_field_name,
+                    id_value=relationship_in.data.id,
+                )
+            # todo: relation name may be different?
+            setattr(obj, relation_name, related_data)
+
+    async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object through sqlalchemy.
 
-        :params model_kwargs: the data validated by marshmallow.
+        :params model_kwargs: the data validated by pydantic.
         :params view_kwargs: kwargs from the resource view.
         :return:
         """
+        # todo: pydantic v2 model_dump()
+        model_kwargs = data_create.attributes.dict()
         await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
 
+        # TODO: accept custom `id` ( Client-Generated IDs )
+        #  https://jsonapi.org/format/#crud-creating-client-ids
         obj = self.model(**model_kwargs)
-        await self.apply_relationships(model_kwargs, obj)
+        await self.apply_relationships(obj, data_create)
 
         self.session.add(obj)
         try:
             await self.session.commit()
+        except DatabaseError:
+            log.exception("Could not create object with data create %s", data_create)
+            msg = "Object creation error"
+            raise HTTPException(msg, pointer="/data")
         except Exception as e:
             await self.session.rollback()
             msg = f"Object creation error: {e}"
@@ -100,6 +172,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return obj
 
+    def get_object_id_field_name(self):
+        """
+        compound key may cause errors
+        :return:
+        """
+        return self.id_name_field or inspect(self.model).primary_key[0].key
+
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
         Retrieve an object through sqlalchemy.
@@ -108,18 +187,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params qs:
         :return DeclarativeMeta: an object from sqlalchemy
         """
-        # Нужно выталкивать из sqlalchemy Закешированные запросы, иначе не удастся загрузить данные о current_user
-        self.session.expire_all()
-
         await self.before_get_object(view_kwargs)
 
-        id_name_field = self.id_name_field or inspect(self.model).primary_key[0].key
-        try:
-            filter_field = getattr(self.model, id_name_field)
-        except Exception:
-            msg = f"{self.model.__name__} has no attribute {id_name_field}"
-            raise Exception(msg)
-
+        filter_field = self.get_object_id_field()
         filter_value = view_kwargs[self.url_id_field]
 
         query = self.retrieve_object_query(view_kwargs, filter_field, filter_value)
@@ -161,8 +231,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return: the number of object and the list of objects.
         """
         view_kwargs = view_kwargs or {}
-        # Нужно выталкивать из sqlalchemy Закешированные запросы, иначе не удастся загрузить данные о current_user
-        self.session.expire_all()
 
         await self.before_get_collection(qs, view_kwargs)
 
@@ -334,6 +402,26 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return related_object
 
+    async def get_related_objects_list(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        ids: list[str],
+    ) -> list[TypeModel]:
+        """
+
+        :param related_model:
+        :param related_id_field:
+        :param ids:
+        :return:
+        """
+        # TODO: check ids / count and raise if some objects not found
+        stmt = select(related_model).where(getattr(related_model, related_id_field).in_(ids))
+
+        related_objects = (await self.session.execute(stmt)).scalars().all()
+
+        return list(related_objects)
+
     def filter_query(self, query: Select, filter_info: Optional[list]) -> Select:
         """
         Filter query according to jsonapi 1.0.
@@ -455,7 +543,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Provide additional data before object creation.
 
-        :params model_kwargs: the data validated by marshmallow.
+        :params model_kwargs: the data validated by pydantic.
         :params view_kwargs: kwargs from the resource view.
         """
         pass
@@ -465,7 +553,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         Provide additional data after object creation.
 
         :params obj: an object from data layer.
-        :params model_kwargs: the data validated by marshmallow.
+        :params model_kwargs: the data validated by pydantic.
         :params view_kwargs: kwargs from the resource view.
         """
         pass

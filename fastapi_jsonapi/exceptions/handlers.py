@@ -30,4 +30,4 @@ def register_exception_handlers(app: FastAPI, exclude_exception_handlers: Option
     exclude_exception_handlers = exclude_exception_handlers or []
 
     if object_not_found_exception_handler not in exclude_exception_handlers:
-        app.exception_handler(ObjectNotFound)(object_not_found_exception_handler)
+        app.add_exception_handler(ObjectNotFound, object_not_found_exception_handler)
