@@ -19,8 +19,6 @@ from fastapi_jsonapi.misc.sqla.generics.base import (
 from fastapi_jsonapi.misc.sqla.generics.base import (
     ListViewBaseGeneric as ListViewBaseGenericHelper,
 )
-from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultDetailSchema
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.conftest import fake
@@ -850,21 +848,6 @@ def list_view_base_generic_helper_for_sqla(async_session_dependency):
         async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
             self.session = session
 
-        # TODO: remove, use generic
-        async def post(
-            self,
-            data: UserInSchema,
-            query_params: QueryStringManager,
-            session: AsyncSession = Depends(async_session_dependency),
-        ) -> JSONAPIResultDetailSchema:
-            user_obj: User = await self.create_object(
-                data_create=data.dict(),
-                view_kwargs={},
-                session=session,
-            )
-
-            return await self.get_resource_detail_result(object_id=user_obj.id)
-
     return ListViewBaseGeneric
 
 
@@ -1420,34 +1403,39 @@ async def test_get_user_not_found(client: AsyncClient):
 
 class TestCreateObjects:
     async def test_create_object(self, client: AsyncClient):
-        create_user_data = UserInSchema(
-            name=fake.name(),
-            age=fake.pyint(),
-            email=fake.email(),
-        )
-        res = await client.post("/users", json={"attributes": create_user_data.dict()})
+        create_user_body = {
+            "data": {
+                "attributes": {
+                    **UserInSchema(
+                        name=fake.name(),
+                        age=fake.pyint(),
+                        email=fake.email(),
+                    ).dict(),
+                },
+            },
+        }
+        res = await client.post("/users", json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data = res.json()
         assert "data" in response_data, response_data
-        assert response_data["data"]["attributes"] == create_user_data.dict()
+        assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
 
     async def test_create_object_with_relationship_and_fetch_include(self, client: AsyncClient, user_1: User):
-        create_user_bio_data = UserBioBaseSchema(
-            birth_city=fake.word(),
-            favourite_movies=fake.sentence(),
-            keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
-        )
-        res = await client.post(
-            "/user-bio?include=user",
-            json={
-                "attributes": create_user_bio_data.dict(),
+        create_user_bio_body = {
+            "data": {
+                "attributes": UserBioBaseSchema(
+                    birth_city=fake.word(),
+                    favourite_movies=fake.sentence(),
+                    keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
+                ).dict(),
                 "relationships": {"user": {"data": {"type": "user", "id": user_1.id}}},
             },
-        )
+        }
+        res = await client.post("/user-bio?include=user", json=create_user_bio_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data = res.json()
         assert "data" in response_data, response_data
-        assert response_data["data"]["attributes"] == create_user_bio_data.dict()
+        assert response_data["data"]["attributes"] == create_user_bio_body["data"]["attributes"]
         included_data = response_data.get("included")
         assert included_data, response_data
         assert isinstance(included_data, list), included_data
@@ -1458,28 +1446,36 @@ class TestCreateObjects:
         assert included_user["attributes"] == UserBaseSchema.from_orm(user_1)
 
     async def test_create_user(self, client: AsyncClient):
-        create_user_data = UserInSchema(
-            name=fake.name(),
-            age=fake.pyint(),
-            email=fake.email(),
-        )
-        res = await client.post("/users", json={"attributes": create_user_data.dict()})
+        create_user_body = {
+            "data": {
+                "attributes": UserInSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
+            },
+        }
+        res = await client.post("/users", json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data: dict = res.json()
         assert "data" in response_data, response_data
-        assert response_data["data"]["attributes"] == create_user_data.dict()
+        assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
 
     async def test_create_user_and_fetch_data(self, client: AsyncClient):
-        create_user_data = UserInSchema(
-            name=fake.name(),
-            age=fake.pyint(),
-            email=fake.email(),
-        )
-        res = await client.post("/users", json={"attributes": create_user_data.dict()})
+        create_user_body = {
+            "data": {
+                "attributes": UserInSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
+            },
+        }
+        res = await client.post("/users", json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data = res.json()
         assert "data" in response_data, response_data
-        assert response_data["data"]["attributes"] == create_user_data.dict()
+        assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
 
         user_id = response_data["data"]["id"]
 
@@ -1487,7 +1483,7 @@ class TestCreateObjects:
         assert res.status_code == status.HTTP_200_OK, res.text
         response_data = res.json()
         assert "data" in response_data, response_data
-        assert response_data["data"]["attributes"] == create_user_data.dict()
+        assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
         assert response_data["data"]["id"] == user_id
 
 

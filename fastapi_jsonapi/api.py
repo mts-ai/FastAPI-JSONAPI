@@ -242,6 +242,7 @@ class RoutersJSONAPI:
             relationships_schema=relationships_schema,
             includes=not_passed,
             model_base=BaseJSONAPIItemInSchema,
+            wrapp_schema_to_data=True,
         )
 
         return object_jsonapi_schema
@@ -665,6 +666,7 @@ class RoutersJSONAPI:
         relationships_schema: Type[TypeSchema],
         includes,
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
+        wrapp_schema_to_data: bool = False,
     ) -> Type[JSONAPIObjectSchemaType]:
         if base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
@@ -683,7 +685,18 @@ class RoutersJSONAPI:
             __base__=model_base,
         )
         self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
-        return object_jsonapi_schema
+
+        # TODO: refactor and check cache keys non unique intersection
+        if wrapp_schema_to_data:
+            wrapped_object_jsonapi_schema = pydantic.create_model(
+                f"{base_name}ObjectDataJSONAPI",
+                data=(object_jsonapi_schema, ...),
+                __base__=BaseModel,
+            )
+            self.base_jsonapi_object_schemas_cache[base_name] = wrapped_object_jsonapi_schema
+            return wrapped_object_jsonapi_schema
+        else:
+            return object_jsonapi_schema
 
     def find_all_included_schemas(
         self,
