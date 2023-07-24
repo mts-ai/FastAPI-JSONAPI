@@ -20,6 +20,8 @@ from .models.schemas import (
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
+    ParentInSchema,
+    ParentPatchSchema,
     ParentSchema,
     PostInSchema,
     PostPatchSchema,
@@ -94,8 +96,8 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         model=Parent,
         schema=ParentSchema,
         resource_type="parent",
-        schema_in_patch=PostPatchSchema,
-        schema_in_post=PostInSchema,
+        schema_in_patch=ParentPatchSchema,
+        schema_in_post=ParentInSchema,
     )
 
     RoutersJSONAPI(
