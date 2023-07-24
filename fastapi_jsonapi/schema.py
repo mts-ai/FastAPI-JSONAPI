@@ -60,6 +60,10 @@ class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
     relationships: Optional["TypeSchema"] = Field(None, description="Resource object relationships")
 
 
+class BaseJSONAPIDataInSchema(BaseModel):
+    data: BaseJSONAPIItemInSchema
+
+
 class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
     """Base JSON:API object schema."""
 
