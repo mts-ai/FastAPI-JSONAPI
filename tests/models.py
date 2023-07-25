@@ -175,4 +175,8 @@ class Computer(AutoIdMixin, Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    user = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user = relationship("User", back_populates="computers")
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(\nid={self.id},\n name={self.name!r},\n user_id={self.user_id})"
