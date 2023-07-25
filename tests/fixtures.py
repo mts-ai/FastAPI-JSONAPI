@@ -31,6 +31,9 @@ from tests.schemas import (
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
+    ComputerInSchema,
+    ComputerPatchSchema,
+    ComputerSchema,
     ParentPatchSchema,
     ParentSchema,
     PostInSchema,
@@ -205,6 +208,7 @@ async def computer_1(async_session: AsyncSession):
     yield computer
 
     await async_session.delete(computer)
+    await async_session.commit()
 
 
 @async_fixture
@@ -218,6 +222,7 @@ async def computer_2(async_session: AsyncSession):
     yield computer
 
     await async_session.delete(computer)
+    await async_session.commit()
 
 
 @async_fixture()
@@ -638,6 +643,32 @@ def child_list_view(list_view_base_generic):
     return ChildList
 
 
+@fixture(scope="class")
+def computer_detail_view(detail_view_base_generic):
+    """
+    :param detail_view_base_generic:
+    :return:
+    """
+
+    class ComputerDetail(detail_view_base_generic):
+        ...
+
+    return ComputerDetail
+
+
+@fixture(scope="class")
+def computer_list_view(list_view_base_generic):
+    """
+    :param detail_view_base_generic:
+    :return:
+    """
+
+    class ComputerList(list_view_base_generic):
+        ...
+
+    return ComputerList
+
+
 # Views ⬆️
 
 
@@ -677,6 +708,8 @@ def app(
     parent_list_view,
     child_detail_view,
     child_list_view,
+    computer_detail_view,
+    computer_list_view,
 ):
     router: APIRouter = APIRouter()
     RoutersJSONAPI(
@@ -740,6 +773,18 @@ def app(
         schema_in_patch=ChildPatchSchema,
         schema_in_post=ChildInSchema,
         model=Child,
+    )
+    RoutersJSONAPI(
+        router=router,
+        path="/computers",
+        tags=["Computer"],
+        class_detail=computer_detail_view,
+        class_list=computer_list_view,
+        model=Computer,
+        schema=ComputerSchema,
+        resource_type="computer",
+        schema_in_patch=ComputerPatchSchema,
+        schema_in_post=ComputerInSchema,
     )
 
     app_plain.include_router(router, prefix="")

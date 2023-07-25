@@ -21,6 +21,8 @@ from tests.fixtures import (  # noqa
     client,
     computer_1,
     computer_2,
+    computer_detail_view,
+    computer_list_view,
     detail_view_base_generic,
     list_view_base_generic,
     list_view_base_generic_helper_for_sqla,

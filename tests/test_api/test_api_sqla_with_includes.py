@@ -17,7 +17,6 @@ from tests.models import (
 from tests.schemas import (
     UserBaseSchema,
     UserBioBaseSchema,
-    UserInSchema,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -314,11 +313,9 @@ class TestCreateObjects:
         create_user_body = {
             "data": {
                 "attributes": {
-                    **UserInSchema(
-                        name=fake.name(),
-                        age=fake.pyint(),
-                        email=fake.email(),
-                    ).dict(),
+                    "name": fake.name(),
+                    "age": fake.pyint(),
+                    "email": fake.email(),
                 },
             },
         }
@@ -361,11 +358,11 @@ class TestCreateObjects:
     ):
         create_user_body = {
             "data": {
-                "attributes": UserInSchema(
-                    name=fake.name(),
-                    age=fake.pyint(),
-                    email=fake.email(),
-                ).dict(),
+                "attributes": {
+                    "name": fake.name(),
+                    "age": fake.pyint(),
+                    "email": fake.email(),
+                },
                 "relationships": {
                     "computers": {
                         "data": [
@@ -385,17 +382,54 @@ class TestCreateObjects:
         res = await client.post("/users?include=computers", json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
 
-        # TODO: fix
-        assert res.json() == {}
+        response_data = res.json()
+        assert "data" in response_data
+        assert response_data["data"].pop("id")
+        assert response_data == {
+            "data": {
+                "attributes": create_user_body["data"]["attributes"],
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "id": str(computer_1.id),
+                                "type": "computer",
+                            },
+                            {
+                                "id": str(computer_2.id),
+                                "type": "computer",
+                            },
+                        ],
+                    },
+                },
+                "type": "user",
+            },
+            "included": [
+                {
+                    "attributes": {"name": computer_1.name},
+                    "id": str(computer_1.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+                {
+                    "attributes": {"name": computer_2.name},
+                    "id": str(computer_2.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
 
     async def test_create_user(self, client: AsyncClient):
         create_user_body = {
             "data": {
-                "attributes": UserInSchema(
-                    name=fake.name(),
-                    age=fake.pyint(),
-                    email=fake.email(),
-                ).dict(),
+                "attributes": {
+                    "name": fake.name(),
+                    "age": fake.pyint(),
+                    "email": fake.email(),
+                },
             },
         }
         res = await client.post("/users", json=create_user_body)
@@ -407,11 +441,11 @@ class TestCreateObjects:
     async def test_create_user_and_fetch_data(self, client: AsyncClient):
         create_user_body = {
             "data": {
-                "attributes": UserInSchema(
-                    name=fake.name(),
-                    age=fake.pyint(),
-                    email=fake.email(),
-                ).dict(),
+                "attributes": {
+                    "name": fake.name(),
+                    "age": fake.pyint(),
+                    "email": fake.email(),
+                },
             },
         }
         res = await client.post("/users", json=create_user_body)

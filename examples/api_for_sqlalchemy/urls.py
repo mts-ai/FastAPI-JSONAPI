@@ -130,7 +130,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         class_list=ListViewBase,
         model=Computer,
         schema=ComputerSchema,
-        resource_type="child",
+        resource_type="computer",
         schema_in_patch=ComputerPatchSchema,
         schema_in_post=ComputerInSchema,
     )
