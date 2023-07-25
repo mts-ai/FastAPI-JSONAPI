@@ -7,7 +7,13 @@ from httpx import AsyncClient
 
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.conftest import fake
-from tests.models import Post, PostComment, User, UserBio
+from tests.models import (
+    Computer,
+    Post,
+    PostComment,
+    User,
+    UserBio,
+)
 from tests.schemas import (
     UserBaseSchema,
     UserBioBaseSchema,
@@ -346,6 +352,41 @@ class TestCreateObjects:
         assert included_user["type"] == "user"
         assert included_user["id"] == str(user_1.id)
         assert included_user["attributes"] == UserBaseSchema.from_orm(user_1)
+
+    async def test_create_object_with_to_many_relationship_and_fetch_include(
+        self,
+        client: AsyncClient,
+        computer_1: Computer,
+        computer_2: Computer,
+    ):
+        create_user_body = {
+            "data": {
+                "attributes": UserInSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "id": computer_1.id,
+                                "type": "computer",
+                            },
+                            {
+                                "id": computer_2.id,
+                                "type": "computer",
+                            },
+                        ],
+                    },
+                },
+            },
+        }
+        res = await client.post("/users?include=computers", json=create_user_body)
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+
+        # TODO: fix
+        assert res.json() == {}
 
     async def test_create_user(self, client: AsyncClient):
         create_user_body = {

@@ -1,8 +1,8 @@
 from typing import List
 
-import pytest
 from fastapi import APIRouter, Depends, FastAPI
 from httpx import AsyncClient
+from pytest import fixture  # noqa
 from pytest_asyncio import fixture as async_fixture
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -19,6 +19,7 @@ from fastapi_jsonapi.misc.sqla.generics.base import (
 from tests.models import (
     Base,
     Child,
+    Computer,
     Parent,
     ParentToChildAssociation,
     Post,
@@ -42,9 +43,10 @@ from tests.schemas import (
 )
 
 
-@pytest.fixture(scope="session")
+@fixture(scope="session")
 def sqla_uri():
-    return "sqlite+aiosqlite:///:memory:"
+    return "sqlite+aiosqlite:///tests/db.sqlite3"
+    # return "sqlite+aiosqlite:///:memory:"
 
 
 # DB connections ⬇️
@@ -76,7 +78,7 @@ async def async_session(async_session_plain):
         # async with session.begin():
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def async_session_dependency(async_session_plain):
     async def get_session():
         """
@@ -187,9 +189,35 @@ async def user_1_comments_for_u2_posts(async_session: AsyncSession, user_1, user
     await async_session.commit()
 
 
-@pytest.fixture()
+@fixture()
 def user_1_post_for_comments(user_1_posts: List[Post]) -> Post:
     return user_1_posts[0]
+
+
+@async_fixture
+async def computer_1(async_session: AsyncSession):
+    computer = Computer(name="Halo")
+
+    async_session.add(computer)
+    await async_session.commit()
+    await async_session.refresh(computer)
+
+    yield computer
+
+    await async_session.delete(computer)
+
+
+@async_fixture
+async def computer_2(async_session: AsyncSession):
+    computer = Computer(name="Nestor")
+
+    async_session.add(computer)
+    await async_session.commit()
+    await async_session.refresh(computer)
+
+    yield computer
+
+    await async_session.delete(computer)
 
 
 @async_fixture()
@@ -438,7 +466,7 @@ async def p2_c3_association(
 # Views ⬇️⬇️
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def detail_view_base_generic(async_session_dependency):
     class DetailViewBaseGeneric(DetailViewBaseGenericHelper):
         async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
@@ -447,7 +475,7 @@ def detail_view_base_generic(async_session_dependency):
     return DetailViewBaseGeneric
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def list_view_base_generic(async_session_dependency):
     class ListViewBaseGeneric(ListViewBaseGenericHelper):
         async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
@@ -456,7 +484,7 @@ def list_view_base_generic(async_session_dependency):
     return ListViewBaseGeneric
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def list_view_base_generic_helper_for_sqla(async_session_dependency):
     class ListViewBaseGeneric(ListViewBaseGenericHelper):
         async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
@@ -468,7 +496,7 @@ def list_view_base_generic_helper_for_sqla(async_session_dependency):
 # User ⬇️
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def user_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -481,7 +509,7 @@ def user_detail_view(detail_view_base_generic):
     return UserDetail
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def user_list_view(list_view_base_generic_helper_for_sqla):
     """
     :param list_view_base_generic_helper_for_sqla:
@@ -497,7 +525,7 @@ def user_list_view(list_view_base_generic_helper_for_sqla):
 # User Bio ⬇️
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def user_bio_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -510,7 +538,7 @@ def user_bio_detail_view(detail_view_base_generic):
     return UserBioDetail
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def user_bio_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -526,7 +554,7 @@ def user_bio_list_view(list_view_base_generic):
 # Post ⬇️
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def post_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -539,7 +567,7 @@ def post_detail_view(detail_view_base_generic):
     return PostDetail
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def post_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -555,7 +583,7 @@ def post_list_view(list_view_base_generic):
 # Parent ⬇️
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def parent_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -568,7 +596,7 @@ def parent_detail_view(detail_view_base_generic):
     return ParentDetail
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def parent_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -584,7 +612,7 @@ def parent_list_view(list_view_base_generic):
 # Child ⬇️
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def child_detail_view(detail_view_base_generic):
     """
     :param detail_view_base_generic:
@@ -597,7 +625,7 @@ def child_detail_view(detail_view_base_generic):
     return ChildDetail
 
 
-@pytest.fixture(scope="class")
+@fixture(scope="class")
 def child_list_view(list_view_base_generic):
     """
     :param list_view_base_generic:
@@ -616,12 +644,12 @@ def child_list_view(list_view_base_generic):
 # app ⬇️
 
 
-@pytest.fixture()
+@fixture()
 def app_max_include_depth():
     return 5
 
 
-@pytest.fixture()
+@fixture()
 def app_plain(app_max_include_depth) -> FastAPI:
     app = FastAPI(
         title="FastAPI and SQLAlchemy",
@@ -636,7 +664,7 @@ def app_plain(app_max_include_depth) -> FastAPI:
 # Routing ⬇️
 
 
-@pytest.fixture()
+@fixture()
 def app(
     app_plain: FastAPI,
     user_detail_view,
