@@ -6,6 +6,11 @@ from .child import (
     ChildPatchSchema,
     ChildSchema,
 )
+from .computer import (
+    ComputerInSchema,
+    ComputerPatchSchema,
+    ComputerSchema,
+)
 from .parent import (
     ParentInSchema,
     ParentPatchSchema,
@@ -51,6 +56,9 @@ __all__ = [
     "ParentInSchema",
     "ParentPatchSchema",
     "ParentSchema",
+    "ComputerSchema",
+    "ComputerInSchema",
+    "ComputerPatchSchema",
     "ChildInSchema",
     "ChildPatchSchema",
     "ChildSchema",

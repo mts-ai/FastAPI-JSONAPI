@@ -41,6 +41,13 @@ class UserSchema(UserInSchema):
         ),
     )
 
+    computers: Optional["ComputerSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="computer",
+            many=True,
+        ),
+    )
+
 
 # User Bio Schemas ⬇️
 
@@ -227,5 +234,40 @@ class ChildInSchema(ChildBaseSchema):
 
 class ChildSchema(ChildInSchema):
     """Child item schema."""
+
+    id: int
+
+
+class ComputerBaseSchema(BaseModel):
+    """Computer base schema."""
+
+    class Config:
+        """Pydantic schema config."""
+
+        orm_mode = True
+
+    name: str
+    user: Optional["UserSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
+
+
+class ComputerPatchSchema(ComputerBaseSchema):
+    """Computer PATCH schema."""
+
+
+class ComputerInSchema(ComputerBaseSchema):
+    """Computer input schema."""
+
+
+class ComputerSchema(ComputerInSchema):
+    """Computer item schema."""
+
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
 
     id: int

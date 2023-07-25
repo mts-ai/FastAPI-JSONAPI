@@ -1,4 +1,5 @@
 from examples.api_for_sqlalchemy.models.child import Child
+from examples.api_for_sqlalchemy.models.computer import Computer
 from examples.api_for_sqlalchemy.models.parent import Parent
 from examples.api_for_sqlalchemy.models.parent_child_association import ParentToChildAssociation
 from examples.api_for_sqlalchemy.models.post import Post
@@ -12,6 +13,7 @@ __all__ = (
     "UserBio",
     "PostComment",
     "Parent",
+    "Computer",
     "Child",
     "ParentToChildAssociation",
 )

@@ -100,6 +100,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         schema_fields = self.schema.__fields__ or {}
         for relation_name, relationship_in in relationships:  # type: str, RelationshipInfoSchema
+            if relationship_in is None:
+                continue
+
             field = schema_fields.get(relation_name)
             if field is None:
                 # should not happen if schema is built properly

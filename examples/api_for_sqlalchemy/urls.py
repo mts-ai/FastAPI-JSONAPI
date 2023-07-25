@@ -11,7 +11,14 @@ from fastapi import (
     FastAPI,
 )
 
-from examples.api_for_sqlalchemy.models import Child, Parent, Post, User, UserBio
+from examples.api_for_sqlalchemy.models import (
+    Child,
+    Computer,
+    Parent,
+    Post,
+    User,
+    UserBio,
+)
 from fastapi_jsonapi import RoutersJSONAPI
 
 from .api.user_bio import UserBioDetail, UserBioList
@@ -20,6 +27,9 @@ from .models.schemas import (
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
+    ComputerInSchema,
+    ComputerPatchSchema,
+    ComputerSchema,
     ParentInSchema,
     ParentPatchSchema,
     ParentSchema,
@@ -111,6 +121,18 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         resource_type="child",
         schema_in_patch=ChildPatchSchema,
         schema_in_post=ChildInSchema,
+    )
+    RoutersJSONAPI(
+        router=router,
+        path="/computers",
+        tags=["Computer"],
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
+        model=Computer,
+        schema=ComputerSchema,
+        resource_type="child",
+        schema_in_patch=ComputerPatchSchema,
+        schema_in_post=ComputerInSchema,
     )
 
     app.include_router(router, prefix="")

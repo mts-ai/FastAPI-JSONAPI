@@ -42,6 +42,11 @@ class User(AutoIdMixin, Base):
         uselist=True,
         cascade="save-update, merge, delete, delete-orphan",
     )
+    computers = relationship(
+        "Computer",
+        back_populates="user",
+        uselist=True,
+    )
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r})"
@@ -163,3 +168,11 @@ class ParentToChildAssociation(AutoIdMixin, Base):
     extra_data = Column(String(50))
     parent = relationship("Parent", back_populates="children")
     child = relationship("Child", back_populates="parents")
+
+
+class Computer(AutoIdMixin, Base):
+    __tablename__ = "computers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    user = Column(Integer, ForeignKey("users.id"), nullable=True)

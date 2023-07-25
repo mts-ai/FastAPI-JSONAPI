@@ -7,6 +7,7 @@ from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
+    from .computer import ComputerSchema
     from .post import PostSchema
     from .user_bio import UserBioSchema
 
@@ -40,6 +41,13 @@ class UserBaseSchema(BaseModel):
     bio: Optional["UserBioSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="user_bio",
+        ),
+    )
+
+    computers: Optional["ComputerSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="computer",
+            many=True,
         ),
     )
 

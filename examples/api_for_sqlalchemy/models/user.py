@@ -1,5 +1,6 @@
 """User model."""
 
+
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -21,6 +22,7 @@ class User(Base, BaseModelMixin):
     posts = relationship("Post", back_populates="user", uselist=True)
     bio = relationship("UserBio", back_populates="user", uselist=False)
     comments = relationship("PostComment", back_populates="author", uselist=True)
+    computers = relationship("Computer", back_populates="user", uselist=True)
 
     def __repr__(self):
         return (
