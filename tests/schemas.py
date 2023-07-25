@@ -23,11 +23,37 @@ class UserPatchSchema(UserBaseSchema):
 class UserInSchema(UserBaseSchema):
     """User input schema."""
 
+    posts: List["PostSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post",
+            many=True,
+        ),
+    )
+
+    bio: Optional["UserBioSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user_bio",
+        ),
+    )
+
+    computers: Optional["ComputerSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="computer",
+            many=True,
+        ),
+    )
+
 
 class UserSchema(UserInSchema):
     """User item schema."""
 
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
+
     id: int
+
     posts: List["PostSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="post",
