@@ -24,7 +24,6 @@ from fastapi_jsonapi.exceptions import (
 )
 from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
 from fastapi_jsonapi.schema import (
-    BaseJSONAPIDataInSchema,
     BaseJSONAPIItemInSchema,
     BaseJSONAPIRelationshipDataToManySchema,
     BaseJSONAPIRelationshipDataToOneSchema,
@@ -143,7 +142,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             # todo: relation name may be different?
             setattr(obj, relation_name, related_data)
 
-    async def create_object(self, data_create: BaseJSONAPIDataInSchema, view_kwargs: dict) -> TypeModel:
+    async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object through sqlalchemy.
 
@@ -152,19 +151,19 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return:
         """
         # todo: pydantic v2 model_dump()
-        model_kwargs = data_create.data.attributes.dict()
+        model_kwargs = data_create.attributes.dict()
         await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
 
         # TODO: accept custom `id` ( Client-Generated IDs )
         #  https://jsonapi.org/format/#crud-creating-client-ids
         obj = self.model(**model_kwargs)
-        await self.apply_relationships(obj, data_create.data)
+        await self.apply_relationships(obj, data_create)
 
         self.session.add(obj)
         try:
             await self.session.commit()
         except DatabaseError:
-            log.exception("Could not create object with data create %s", data_create.data)
+            log.exception("Could not create object with data create %s", data_create)
             msg = "Object creation error"
             raise HTTPException(msg, pointer="/data")
         except Exception as e:

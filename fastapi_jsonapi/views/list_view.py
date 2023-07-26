@@ -1,7 +1,7 @@
 import logging
 
 from fastapi_jsonapi.schema import (
-    BaseJSONAPIItemInSchema,
+    BaseJSONAPIDataInSchema,
     JSONAPIResultListMetaSchema,
 )
 from fastapi_jsonapi.views.view_base import ViewBase
@@ -41,10 +41,10 @@ class ListViewBase(ViewBase):
             **extras,
         )
 
-    async def post_resource_list_result(self, data_create: BaseJSONAPIItemInSchema):
+    async def post_resource_list_result(self, data_create: BaseJSONAPIDataInSchema):
         dl = self._get_data_layer_for_list()
         created_object = await dl.create_object(
-            data_create=data_create,
+            data_create=data_create.data,
             view_kwargs={},
         )
         created_object_id = getattr(created_object, dl.get_object_id_field_name())
