@@ -6,7 +6,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 
 from fastapi_jsonapi.views.view_base import ViewBase
-from tests.conftest import fake
+from tests.misc.utils import fake
 from tests.models import (
     Computer,
     Post,
