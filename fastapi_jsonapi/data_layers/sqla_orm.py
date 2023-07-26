@@ -258,7 +258,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return objects_count, list(collection)
 
-    async def update_object(self, obj: Any, data: dict, view_kwargs: dict) -> bool:
+    async def update_object(self, obj: Any, data_update: BaseJSONAPIItemInSchema, view_kwargs: dict) -> bool:
         """
         Update an object through sqlalchemy.
 

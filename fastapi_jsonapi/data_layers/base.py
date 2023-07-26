@@ -112,7 +112,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def update_object(self, obj, data, view_kwargs):
+    async def update_object(self, obj, data_update: BaseJSONAPIItemInSchema, view_kwargs: dict):
         """
         Update an object
 
@@ -121,6 +121,7 @@ class BaseDataLayer:
         :param dict view_kwargs: kwargs from the resource view
         :return boolean: True if object have changed else False
         """
+        # TODO: update doc
         raise NotImplementedError
 
     async def delete_object(self, obj, view_kwargs):
