@@ -29,6 +29,7 @@ from fastapi_jsonapi.methods import (
     patch_detail_jsonapi,
 )
 from fastapi_jsonapi.schema import (
+    BaseJSONAPIDataInSchema,
     BaseJSONAPIItemInSchema,
     BaseJSONAPIRelationshipDataToManySchema,
     BaseJSONAPIRelationshipDataToOneSchema,
@@ -157,13 +158,13 @@ class RoutersJSONAPI:
     def _create_schemas_objects_list(self):
         object_jsonapi_list_schema, list_jsonapi_schema = self.build_list_schemas(self.schema_list)
         # TODO: do we need this `object_jsonapi_list_schema` field? it's not used anywhere 🤔
-        self.object_jsonapi_list_schema: Type[JSONAPIObjectSchema] = object_jsonapi_list_schema
+        # self.object_jsonapi_list_schema: Type[JSONAPIObjectSchema] = object_jsonapi_list_schema
         self.list_response_schema: Type[JSONAPIResultListSchema] = list_jsonapi_schema
 
     def _create_schemas_object_detail(self):
         object_jsonapi_detail_schema, detail_jsonapi_schema = self.build_detail_schemas(self.schema_detail)
         # TODO: do we need this `object_jsonapi_detail_schema` field? it's not used anywhere 🤔
-        self.object_jsonapi_detail_schema: Type[JSONAPIObjectSchema] = object_jsonapi_detail_schema
+        # self.object_jsonapi_detail_schema: Type[JSONAPIObjectSchema] = object_jsonapi_detail_schema
         self.detail_response_schema: Type[JSONAPIResultDetailSchema] = detail_jsonapi_schema
 
     def _create_schemas(
@@ -173,34 +174,24 @@ class RoutersJSONAPI:
         schema_in_patch: Optional[Type[BaseModel]] = None,
     ):
         # TODO: generic?
-        schema_in_post = schema_in_post
-        schema_name_suffix = ""
-        if schema_in_post is None:
-            schema_in_post = schema
-            schema_name_suffix = "InPost"
+        schema_name_in_post_suffix = "InPost"
+        schema_in_post = schema_in_post or schema
 
-        schema_in_patch = schema_in_patch
-        if schema_in_patch is None:
-            schema_in_patch = schema
-            schema_in_patch_base_name = f"{schema.__name__}InPatch"
-        else:
-            schema_in_patch_base_name = schema_in_patch.__name__
-
-        patch_jsonapi_schema = pydantic.create_model(
-            "{base_name}JSONAPI".format(base_name=schema_in_patch_base_name),
-            attributes=(schema_in_patch, ...),
-            type=(str, Field(default=self._type, description="Resource type")),
-            __base__=BaseJSONAPIItemInSchema,
-        )
-        self._schema_in_patch_base: Type[BaseModel] = schema_in_patch
-        self._schema_in_patch: Type[BaseModel] = patch_jsonapi_schema
+        schema_name_in_patch_suffix = "InPatch"
+        schema_in_patch = schema_in_patch or schema
 
         # TODO: reuse for PATCH / create something similar
         schemas_in_post = self.build_schema_in(
             schema_in=schema_in_post,
-            schema_name_suffix=schema_name_suffix,
+            schema_name_suffix=schema_name_in_post_suffix,
         )
         self._schema_in_post = schemas_in_post
+
+        schemas_in_patch = self.build_schema_in(
+            schema_in=schema_in_patch,
+            schema_name_suffix=schema_name_in_patch_suffix,
+        )
+        self._schema_in_patch = schemas_in_patch
 
         self._create_schemas_objects_list()
         self._create_schemas_object_detail()
@@ -216,7 +207,7 @@ class RoutersJSONAPI:
         self,
         schema_in: Type[BaseModel],
         schema_name_suffix: str = "",
-    ) -> Type[BaseJSONAPIItemInSchema]:
+    ) -> Type[BaseJSONAPIDataInSchema]:
         base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
         (
@@ -243,7 +234,7 @@ class RoutersJSONAPI:
         wrapped_object_jsonapi_schema = pydantic.create_model(
             f"{base_schema_name}ObjectDataJSONAPI",
             data=(object_jsonapi_schema, ...),
-            __base__=BaseModel,
+            __base__=BaseJSONAPIDataInSchema,
         )
 
         return wrapped_object_jsonapi_schema
@@ -252,7 +243,7 @@ class RoutersJSONAPI:
         self,
         base_name: str,
         schema: Type[BaseModel],
-        builder: Any,
+        builder: Callable,
         includes: Iterable[str] = not_passed,
     ):
         object_schemas = self.create_jsonapi_object_schemas(
@@ -333,6 +324,21 @@ class RoutersJSONAPI:
             methods=["GET"],
             summary=f"Get object `{self._type}` by id",
             endpoint=self._create_get_resource_detail_view(),
+        )
+
+    def _register_patch_resource_detail(self, path: str):
+        detail_response_example = {
+            status.HTTP_200_OK: {"model": self.detail_response_schema},
+        }
+        self._router.add_api_route(
+            # TODO: variable path param name (set default name on DetailView class)
+            # TODO: trailing slash (optional)
+            path=path + "/{obj_id}",
+            tags=self._tags,
+            responses=detail_response_example | self.default_error_responses,
+            methods=["PATCH"],
+            summary=f"PATCH object `{self._type}` by id",
+            endpoint=self._create_patch_resource_detail_view(),
         )
 
     def _create_pagination_query_params(self) -> List[Parameter]:
@@ -505,6 +511,36 @@ class RoutersJSONAPI:
         wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
         return wrapper
 
+    def _create_patch_resource_detail_view(self):
+        """
+        Create wrapper for PATCH detail (patch object by id)
+
+        :return:
+        """
+        schema_in = self._schema_in_patch
+
+        async def wrapper(
+            request: Request,
+            data_update: schema_in,
+            obj_id: str = Path(...),
+            **kwargs,
+        ):
+            resource = self.detail_view_resource(
+                request=request,
+                jsonapi=self,
+            )
+            await DependencyHelper(request=request).run(resource.init_dependencies)
+
+            # TODO: pass obj_id as kwarg (get name from DetailView class)
+            response = await resource.update_resource_result(
+                obj_id=obj_id,
+                data_update=data_update,
+            )
+            return response
+
+        wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
+        return wrapper
+
     def _register_views(self, path: str):
         """
         Register wrapper views
@@ -520,6 +556,7 @@ class RoutersJSONAPI:
         self._register_get_resource_list(path)
         self._register_post_resource_list(path)
         self._register_get_resource_detail(path)
+        self._register_patch_resource_detail(path)
 
         if hasattr(self.list_views, "delete"):
             self._router.delete(path, tags=self._tags, summary=f"Delete list objects of type `{self._type}`")(
