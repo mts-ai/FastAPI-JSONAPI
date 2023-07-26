@@ -217,11 +217,7 @@ class RoutersJSONAPI:
         schema_in: Type[BaseModel],
         schema_name_suffix: str = "",
     ) -> Type[BaseJSONAPIItemInSchema]:
-        base_schema_name = schema_in.__name__
-        if base_schema_name.endswith("Schema"):
-            base_schema_name = base_schema_name[: -len("Schema")]
-
-        base_schema_name += schema_name_suffix
+        base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
         (
             # pre-built attributed
@@ -242,10 +238,15 @@ class RoutersJSONAPI:
             relationships_schema=relationships_schema,
             includes=not_passed,
             model_base=BaseJSONAPIItemInSchema,
-            wrapp_schema_to_data=True,
         )
 
-        return object_jsonapi_schema
+        wrapped_object_jsonapi_schema = pydantic.create_model(
+            f"{base_schema_name}ObjectDataJSONAPI",
+            data=(object_jsonapi_schema, ...),
+            __base__=BaseModel,
+        )
+
+        return wrapped_object_jsonapi_schema
 
     def _build_schema(
         self,
@@ -588,8 +589,7 @@ class RoutersJSONAPI:
         if cache_key in self.relationship_schema_cache:
             return self.relationship_schema_cache[cache_key]
 
-        if base_name.endswith("Schema"):
-            base_name = base_name[: -len("Schema")]
+        base_name = base_name.removesuffix("Schema")
         schema_name = f"{base_name}{field_name.title()}"
         relationship_schema = self.create_relationship_schema(
             name=schema_name,
@@ -614,7 +614,7 @@ class RoutersJSONAPI:
         base_name: str,
         schema: Type[BaseModel],
         includes: Iterable[str] = not_passed,
-    ):
+    ) -> Tuple[Type[BaseModel], Type[BaseModel], List[Tuple[str, BaseModel, str]]]:
         attributes_schema_fields = {}
         relationships_schema_fields = {}
         included_schemas: List[Tuple[str, BaseModel, str]] = []
@@ -666,7 +666,6 @@ class RoutersJSONAPI:
         relationships_schema: Type[TypeSchema],
         includes,
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
-        wrapp_schema_to_data: bool = False,
     ) -> Type[JSONAPIObjectSchemaType]:
         if base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
@@ -686,17 +685,7 @@ class RoutersJSONAPI:
         )
         self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
 
-        # TODO: refactor and check cache keys non unique intersection
-        if wrapp_schema_to_data:
-            wrapped_object_jsonapi_schema = pydantic.create_model(
-                f"{base_name}ObjectDataJSONAPI",
-                data=(object_jsonapi_schema, ...),
-                __base__=BaseModel,
-            )
-            self.base_jsonapi_object_schemas_cache[base_name] = wrapped_object_jsonapi_schema
-            return wrapped_object_jsonapi_schema
-        else:
-            return object_jsonapi_schema
+        return object_jsonapi_schema
 
     def find_all_included_schemas(
         self,
