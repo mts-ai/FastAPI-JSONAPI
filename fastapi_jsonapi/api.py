@@ -337,7 +337,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["PATCH"],
-            summary=f"PATCH object `{self._type}` by id",
+            summary=f"Patch object `{self._type}` by id",
             endpoint=self._create_patch_resource_detail_view(),
         )
 
