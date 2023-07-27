@@ -464,6 +464,37 @@ class TestCreateObjects:
         assert response_data["data"]["id"] == user_id
 
 
+class TestPatchObjects:
+    async def test_patch_object(self, client: AsyncClient, user_1: User):
+        new_attrs = UserBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        ).dict()
+
+        patch_user_body = {
+            "data": {
+                "id": user_1.id,
+                "attributes": new_attrs,
+            },
+        }
+        # TODO: add related fixtures and check includes
+        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        assert res.status_code == status.HTTP_200_OK, res.text
+
+        assert res.json() == {
+            "data": {
+                "attributes": new_attrs,
+                "id": str(user_1.id),
+                "relationships": {"computers": {"data": []}},
+                "type": "user",
+            },
+            "included": [],
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
+
 class TestOpenApi:
     def test_openapi_method_ok(self, app: FastAPI):
         data = app.openapi()

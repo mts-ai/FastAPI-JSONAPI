@@ -9,6 +9,7 @@ from .base import (
 from .json_api import (
     BadRequest,
     HTTPException,
+    InternalServerError,
     InvalidField,
     InvalidFilters,
     InvalidInclude,
@@ -28,6 +29,7 @@ __all__ = [
     "InvalidFilters",
     "InvalidInclude",
     "InvalidType",
+    "InternalServerError",
     "RelationNotFound",
     "InvalidSort",
     "QueryError",

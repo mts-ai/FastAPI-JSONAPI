@@ -534,7 +534,7 @@ class RoutersJSONAPI:
             # TODO: pass obj_id as kwarg (get name from DetailView class)
             response = await resource.update_resource_result(
                 obj_id=obj_id,
-                data_update=data_update,
+                data_update=data_update.data,
             )
             return response
 
