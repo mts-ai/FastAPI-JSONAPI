@@ -17,13 +17,17 @@ from tests.models import (
 )
 
 
-@async_fixture()
-async def user_1(async_session: AsyncSession):
-    user = User(
+def build_user() -> User:
+    return User(
         name=fake.name(),
         email=fake.email(),
         age=fake.pyint(),
     )
+
+
+@async_fixture()
+async def user_1(async_session: AsyncSession):
+    user = build_user()
     async_session.add(user)
     await async_session.commit()
     await async_session.refresh(user)
@@ -34,7 +38,18 @@ async def user_1(async_session: AsyncSession):
 
 @async_fixture()
 async def user_2(async_session: AsyncSession):
-    user = User(name="sam_user_2")
+    user = build_user()
+    async_session.add(user)
+    await async_session.commit()
+    await async_session.refresh(user)
+    yield user
+    await async_session.delete(user)
+    await async_session.commit()
+
+
+@async_fixture()
+async def user_3(async_session: AsyncSession):
+    user = build_user()
     async_session.add(user)
     await async_session.commit()
     await async_session.refresh(user)

@@ -337,6 +337,10 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
+    def delete_objects(self, objects, view_kwargs):
+        # TODO: doc
+        raise NotImplementedError
+
     def before_create_relationship(
         self,
         json_data,

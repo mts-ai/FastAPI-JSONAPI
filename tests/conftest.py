@@ -39,6 +39,7 @@ from tests.fixtures.entities import (  # noqa
     user_2,
     user_2_comment_for_one_u1_post,
     user_2_posts,
+    user_3,
 )
 from tests.fixtures.views import (  # noqa
     DetailViewBaseGeneric,
