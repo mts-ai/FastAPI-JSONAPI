@@ -341,6 +341,21 @@ class RoutersJSONAPI:
             endpoint=self._create_patch_resource_detail_view(),
         )
 
+    def _register_delete_resource_detail(self, path: str):
+        detail_response_example = {
+            status.HTTP_200_OK: {"model": self.detail_response_schema},
+        }
+        self._router.add_api_route(
+            # TODO: variable path param name (set default name on DetailView class)
+            # TODO: trailing slash (optional)
+            path=path + "/{obj_id}",
+            tags=self._tags,
+            responses=detail_response_example | self.default_error_responses,
+            methods=["DELETE"],
+            summary=f"Delete object `{self._type}` by id",
+            endpoint=self._create_delete_resource_detail_view(),
+        )
+
     def _create_pagination_query_params(self) -> List[Parameter]:
         size = Query(self.pagination_default_size, alias="page[size]", title="pagination_page_size")
         number = Query(self.pagination_default_number, alias="page[number]", title="pagination_page_number")
@@ -541,6 +556,33 @@ class RoutersJSONAPI:
         wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
         return wrapper
 
+    def _create_delete_resource_detail_view(self):
+        """
+        Create wrapper for DELETE detail (delete object by id)
+
+        :return:
+        """
+
+        async def wrapper(
+            request: Request,
+            obj_id: str = Path(...),
+            **kwargs,
+        ):
+            resource = self.detail_view_resource(
+                request=request,
+                jsonapi=self,
+            )
+            await DependencyHelper(request=request).run(resource.init_dependencies)
+
+            # TODO: pass obj_id as kwarg (get name from DetailView class)
+            response = await resource.delete_resource_result(
+                obj_id=obj_id,
+            )
+            return response
+
+        wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
+        return wrapper
+
     def _register_views(self, path: str):
         """
         Register wrapper views
@@ -557,6 +599,7 @@ class RoutersJSONAPI:
         self._register_post_resource_list(path)
         self._register_get_resource_detail(path)
         self._register_patch_resource_detail(path)
+        self._register_delete_resource_detail(path)
 
         if hasattr(self.list_views, "delete"):
             self._router.delete(path, tags=self._tags, summary=f"Delete list objects of type `{self._type}`")(

@@ -4,6 +4,7 @@ from pytest import fixture  # noqa
 from pytest_asyncio import fixture as async_fixture
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.misc.utils import fake
 from tests.models import (
     Child,
     Computer,
@@ -18,7 +19,11 @@ from tests.models import (
 
 @async_fixture()
 async def user_1(async_session: AsyncSession):
-    user = User(name="john_user_1")
+    user = User(
+        name=fake.name(),
+        email=fake.email(),
+        age=fake.pyint(),
+    )
     async_session.add(user)
     await async_session.commit()
     await async_session.refresh(user)
