@@ -63,7 +63,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params schema:
         :params model:
         :params disable_collection_count: Resource's attribute `disable_collection_count`
-                                          has to be bool or list/tuple with exactly 2 values!\n
+                                          has to be bool or list/tuple with exactly 2 values!
         :params default_collection_count: For example `disable_collection_count = (True, 999)`
         :params id_name_field: Первичный ключ модели
         :params url_field: название переменной из FastAPI, в которой придёт значение первичного ключа.
