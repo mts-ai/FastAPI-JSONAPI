@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pytest import fixture  # noqa PT013
 from pytest_asyncio import fixture as async_fixture
 from sqlalchemy.engine import make_url
@@ -8,7 +10,8 @@ from tests.models import Base
 
 
 def sqla_uri():
-    return "sqlite+aiosqlite:///tests/db.sqlite3"
+    db_dir = Path(__file__).resolve().parent.parent
+    return f"sqlite+aiosqlite:///{db_dir}/db.sqlite3"
 
 
 def get_async_sessionmaker() -> sessionmaker:

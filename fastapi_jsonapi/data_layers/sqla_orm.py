@@ -17,6 +17,7 @@ from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
 from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
 from fastapi_jsonapi.exceptions import (
     HTTPException,
+    InternalServerError,
     InvalidInclude,
     ObjectNotFound,
     RelatedObjectNotFound,
@@ -258,7 +259,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return objects_count, list(collection)
 
-    async def update_object(self, obj: Any, data_update: BaseJSONAPIItemInSchema, view_kwargs: dict) -> bool:
+    async def update_object(
+        self,
+        obj: TypeModel,
+        data_update: BaseJSONAPIItemInSchema,
+        view_kwargs: dict,
+    ) -> bool:
         """
         Update an object through sqlalchemy.
 
@@ -267,7 +273,26 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
-        pass
+        new_data = data_update.attributes.dict()
+        has_updated = False
+
+        for field_name, new_value in new_data.items():
+            # TODO: handle attr not found
+            old_value = getattr(obj, field_name)
+
+            if old_value != new_value:
+                setattr(obj, field_name, new_value)
+                has_updated = True
+
+        try:
+            await self.session.commit()
+            await self.session.refresh(obj)
+        except Exception:  # TODO: handle and specify exc
+            raise InternalServerError(
+                detail="Failed attempt to update data in DB",
+            )
+
+        return has_updated
 
     async def delete_object(self, obj: Any, view_kwargs: dict):
         """
