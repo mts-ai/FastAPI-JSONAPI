@@ -294,14 +294,20 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return has_updated
 
-    async def delete_object(self, obj: Any, view_kwargs: dict):
+    async def delete_object(self, obj: TypeModel, view_kwargs: dict):
         """
         Delete an object through sqlalchemy.
 
         :params obj: an item from sqlalchemy.
         :params view_kwargs: kwargs from the resource view.
         """
-        pass
+        try:
+            await self.session.delete(obj)
+            await self.session.commit()
+        except Exception:  # TODO: handle and specify exc
+            raise InternalServerError(
+                detail="Failed attempt to delete data in DB",
+            )
 
     async def create_relationship(
         self,

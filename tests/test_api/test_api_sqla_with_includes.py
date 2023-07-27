@@ -495,6 +495,28 @@ class TestPatchObjects:
         }
 
 
+class TestDeleteObjects:
+    async def test_delete_object_and_fetch_404(self, client: AsyncClient, user_1: User):
+        res = await client.delete(f"/users/{user_1.id}")
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": {
+                "attributes": UserBaseSchema.from_orm(user_1),
+                "id": str(user_1.id),
+                "type": "user",
+            },
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
+        res = await client.get(f"/users/{user_1.id}")
+        assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
+
+        res = await client.get("/users")
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {"data": [], "jsonapi": {"version": "1.0"}, "meta": {"count": 0, "totalPages": 1}}
+
+
 class TestOpenApi:
     def test_openapi_method_ok(self, app: FastAPI):
         data = app.openapi()
