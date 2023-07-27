@@ -1,6 +1,6 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import DatabaseError, NoResultFound
@@ -9,7 +9,7 @@ from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
-from sqlalchemy.sql import Select
+from sqlalchemy.sql import Delete, Select
 
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
@@ -288,6 +288,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             await self.session.commit()
             await self.session.refresh(obj)
         except Exception:  # TODO: handle and specify exc
+            await self.session.rollback()
             raise InternalServerError(
                 detail="Failed attempt to update data in DB",
             )
@@ -305,6 +306,19 @@ class SqlalchemyDataLayer(BaseDataLayer):
             await self.session.delete(obj)
             await self.session.commit()
         except Exception:  # TODO: handle and specify exc
+            await self.session.rollback()
+            raise InternalServerError(
+                detail="Failed attempt to delete data in DB",
+            )
+
+    async def delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        query = Delete(self.model).filter(self.model.id.in_((obj.id for obj in objects)))
+
+        try:
+            await self.session.execute(query)
+            await self.session.commit()
+        except Exception:  # TODO: handle and specify exc
+            await self.session.rollback()
             raise InternalServerError(
                 detail="Failed attempt to delete data in DB",
             )

@@ -1,4 +1,5 @@
 from itertools import chain
+from json import dumps
 from typing import Dict, List
 
 import pytest
@@ -515,6 +516,61 @@ class TestDeleteObjects:
         res = await client.get("/users")
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {"data": [], "jsonapi": {"version": "1.0"}, "meta": {"count": 0, "totalPages": 1}}
+
+    async def test_delete_objects_many(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        user_3: User,
+    ):
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "id",
+                        "op": "in",
+                        "val": [
+                            user_1.id,
+                            user_3.id,
+                        ],
+                    },
+                ],
+            ),
+        }
+
+        res = await client.delete("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserBaseSchema.from_orm(user_1),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+                {
+                    "attributes": UserBaseSchema.from_orm(user_3),
+                    "id": str(user_3.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "totalPages": 1},
+        }
+
+        res = await client.get("/users")
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserBaseSchema.from_orm(user_2),
+                    "id": str(user_2.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 1, "totalPages": 1},
+        }
 
 
 class TestOpenApi:
