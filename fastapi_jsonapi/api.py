@@ -311,6 +311,19 @@ class RoutersJSONAPI:
             endpoint=self._create_post_resource_list_view(),
         )
 
+    def _register_delete_resource_list(self, path: str):
+        detail_response_example = {
+            status.HTTP_200_OK: {"model": self.detail_response_schema},
+        }
+        self._router.add_api_route(
+            path=path,
+            tags=self._tags,
+            responses=detail_response_example | self.default_error_responses,
+            methods=["DELETE"],
+            summary=f"Delete objects `{self._type}` by filters",
+            endpoint=self._create_delete_resource_list_view(),
+        )
+
     def _register_get_resource_detail(self, path: str):
         detail_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
@@ -502,6 +515,26 @@ class RoutersJSONAPI:
         wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
         return wrapper
 
+    def _create_delete_resource_list_view(self):
+        """
+        Create wrapper for DELETE list (delete objects)
+
+        :return:
+        """
+
+        async def wrapper(request: Request, **kwargs):
+            resource = self.list_view_resource(
+                request=request,
+                jsonapi=self,
+            )
+            await DependencyHelper(request=request).run(resource.init_dependencies)
+
+            response = await resource.delete_resource_list_result()
+            return response
+
+        wrapper.__signature__ = self._update_signature_for_resource_list_view(wrapper)
+        return wrapper
+
     def _create_get_resource_detail_view(self):
         """
         Create wrapper for GET detail (get object by id)
@@ -597,6 +630,8 @@ class RoutersJSONAPI:
         }
         self._register_get_resource_list(path)
         self._register_post_resource_list(path)
+        self._register_delete_resource_list(path)
+
         self._register_get_resource_detail(path)
         self._register_patch_resource_detail(path)
         self._register_delete_resource_detail(path)
