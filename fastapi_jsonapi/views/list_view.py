@@ -49,3 +49,6 @@ class ListViewBase(ViewBase):
         )
         created_object_id = getattr(created_object, dl.get_object_id_field_name())
         return await self.get_resource_detail_result(object_id=created_object_id)
+
+    async def delete_resource_list_result(self):
+        pass
