@@ -23,11 +23,6 @@ from pydantic.fields import ModelField
 
 from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import ExceptionResponseSchema
-from fastapi_jsonapi.methods import (
-    delete_detail_jsonapi,
-    delete_list_jsonapi,
-    patch_detail_jsonapi,
-)
 from fastapi_jsonapi.schema import (
     BaseJSONAPIDataInSchema,
     BaseJSONAPIItemInSchema,
@@ -623,11 +618,6 @@ class RoutersJSONAPI:
         :param path:
         :return:
         """
-        error_responses = self.default_error_responses
-
-        detail_response_example = {
-            status.HTTP_200_OK: {"model": self.detail_response_schema},
-        }
         self._register_get_resource_list(path)
         self._register_post_resource_list(path)
         self._register_delete_resource_list(path)
@@ -635,43 +625,6 @@ class RoutersJSONAPI:
         self._register_get_resource_detail(path)
         self._register_patch_resource_detail(path)
         self._register_delete_resource_detail(path)
-
-        if hasattr(self.list_views, "delete"):
-            self._router.delete(path, tags=self._tags, summary=f"Delete list objects of type `{self._type}`")(
-                delete_list_jsonapi(
-                    schema=self._schema,
-                    model=self.model,
-                )(self.list_views.delete),
-            )
-
-        if hasattr(self.detail_views, "patch"):
-            self._router.patch(
-                path + "/{obj_id}",
-                tags=self._tags,
-                responses=detail_response_example | error_responses,
-                summary=f"Update object `{self._type}` by id",
-            )(
-                patch_detail_jsonapi(
-                    schema=self._schema,
-                    schema_in=self._schema_in_patch,
-                    type_=self._type,
-                    schema_resp=self.detail_response_schema,
-                    model=self.model,
-                )(self.detail_views.patch),
-            )
-
-        if hasattr(self.detail_views, "delete"):
-            self._router.delete(
-                path + "/{obj_id}",
-                tags=self._tags,
-                summary=f"Delete object of type `{self._type}`",
-                status_code=status.HTTP_204_NO_CONTENT,
-            )(
-                delete_detail_jsonapi(
-                    schema=self._schema,
-                    model=self.model,
-                )(self.detail_views.delete),
-            )
 
     def create_relationship_schema(
         self,
