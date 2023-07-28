@@ -314,11 +314,11 @@ class TestCreateObjects:
     async def test_create_object(self, client: AsyncClient):
         create_user_body = {
             "data": {
-                "attributes": {
-                    "name": fake.name(),
-                    "age": fake.pyint(),
-                    "email": fake.email(),
-                },
+                "attributes": UserBaseSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
             },
         }
         res = await client.post("/users", json=create_user_body)
@@ -360,11 +360,11 @@ class TestCreateObjects:
     ):
         create_user_body = {
             "data": {
-                "attributes": {
-                    "name": fake.name(),
-                    "age": fake.pyint(),
-                    "email": fake.email(),
-                },
+                "attributes": UserBaseSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
                 "relationships": {
                     "computers": {
                         "data": [
@@ -427,11 +427,11 @@ class TestCreateObjects:
     async def test_create_user(self, client: AsyncClient):
         create_user_body = {
             "data": {
-                "attributes": {
-                    "name": fake.name(),
-                    "age": fake.pyint(),
-                    "email": fake.email(),
-                },
+                "attributes": UserBaseSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
             },
         }
         res = await client.post("/users", json=create_user_body)
@@ -443,11 +443,11 @@ class TestCreateObjects:
     async def test_create_user_and_fetch_data(self, client: AsyncClient):
         create_user_body = {
             "data": {
-                "attributes": {
-                    "name": fake.name(),
-                    "age": fake.pyint(),
-                    "email": fake.email(),
-                },
+                "attributes": UserBaseSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
             },
         }
         res = await client.post("/users", json=create_user_body)
@@ -857,3 +857,4 @@ class TestSorts:
 
 
 # todo: test object not found
+# todo: test errors
