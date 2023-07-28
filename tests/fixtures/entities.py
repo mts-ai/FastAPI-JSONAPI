@@ -17,12 +17,21 @@ from tests.models import (
 )
 
 
-def build_user() -> User:
-    return User(
-        name=fake.name(),
-        email=fake.email(),
-        age=fake.pyint(),
-    )
+def build_user(**fields) -> User:
+    fake_fields = {
+        "name": fake.name(),
+        "email": fake.email(),
+        "age": fake.pyint(),
+    }
+    return User(**(fake_fields | fields))
+
+
+async def create_user(async_session: AsyncSession, **fields):
+    user = build_user(**fields)
+    async_session.add(user)
+    await async_session.commit()
+
+    return user
 
 
 @async_fixture()

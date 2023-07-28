@@ -2,11 +2,12 @@ from itertools import chain
 from json import dumps
 from typing import Dict, List
 
-import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
+from pytest import mark, param  # noqa PT013
 
 from fastapi_jsonapi.views.view_base import ViewBase
+from tests.fixtures.entities import create_user
 from tests.misc.utils import fake
 from tests.models import (
     Computer,
@@ -20,7 +21,7 @@ from tests.schemas import (
     UserBioBaseSchema,
 )
 
-pytestmark = pytest.mark.asyncio
+pytestmark = mark.asyncio
 
 
 def association_key(data: dict):
@@ -515,7 +516,11 @@ class TestDeleteObjects:
 
         res = await client.get("/users")
         assert res.status_code == status.HTTP_200_OK, res.text
-        assert res.json() == {"data": [], "jsonapi": {"version": "1.0"}, "meta": {"count": 0, "totalPages": 1}}
+        assert res.json() == {
+            "data": [],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 0, "totalPages": 1},
+        }
 
     async def test_delete_objects_many(
         self,
@@ -585,6 +590,270 @@ class TestOpenApi:
         assert isinstance(resp, dict)
 
 
-# todo: test filters
-# todo: test sorts
+class TestFilters:
+    async def test_filters_really_works(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+    ):
+        params = {"filter[name]": fake.name()}
+        res = await client.get("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 0, "totalPages": 1},
+        }
+
+    @mark.parametrize("field_name", [param(name, id=name) for name in ["id", "name", "age", "email"]])
+    async def test_field_filters(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        field_name: str,
+    ):
+        params = {f"filter[{field_name}]": getattr(user_1, field_name)}
+        res = await client.get("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserBaseSchema.from_orm(user_1).dict(),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 1, "totalPages": 1},
+        }
+
+    async def test_several_field_filters_at_the_same_time(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+    ):
+        params = {
+            f"filter[{field_name}]": getattr(user_1, field_name)
+            for field_name in [
+                "id",
+                "name",
+                "age",
+                "email",
+            ]
+        }
+        res = await client.get("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserBaseSchema.from_orm(user_1).dict(),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 1, "totalPages": 1},
+        }
+
+    async def test_field_filters_with_values_from_different_models(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+    ):
+        params_user_1 = {"filter[name]": user_1.name}
+
+        assert user_1.age != user_2.age
+        params_user_2 = {"filter[age]": user_2.age}
+
+        res = await client.get("/users", params=params_user_2 | params_user_1)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 0, "totalPages": 1},
+        }
+
+    async def test_composite_filter_by_one_field(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        user_3: User,
+    ):
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "id",
+                        "op": "in",
+                        "val": [
+                            user_1.id,
+                            user_3.id,
+                        ],
+                    },
+                ],
+            ),
+        }
+
+        res = await client.get("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserBaseSchema.from_orm(user_1),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+                {
+                    "attributes": UserBaseSchema.from_orm(user_3),
+                    "id": str(user_3.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "totalPages": 1},
+        }
+
+    async def test_composite_filter_by_several_fields(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        user_3: User,
+    ):
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "id",
+                        "op": "in",
+                        "val": [
+                            user_1.id,
+                            user_3.id,
+                        ],
+                    },
+                    {
+                        "name": "name",
+                        "op": "eq",
+                        "val": user_1.name,
+                    },
+                ],
+            ),
+        }
+
+        res = await client.get("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserBaseSchema.from_orm(user_1),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 1, "totalPages": 1},
+        }
+
+    async def test_composite_filter_with_mutually_exclusive_conditions(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        user_3: User,
+    ):
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "id",
+                        "op": "in",
+                        "val": [
+                            user_1.id,
+                            user_3.id,
+                        ],
+                    },
+                    {
+                        "name": "name",
+                        "op": "eq",
+                        "val": user_2.id,
+                    },
+                ],
+            ),
+        }
+
+        res = await client.get("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 0, "totalPages": 1},
+        }
+
+
+ASCENDING = ""
+DESCENDING = "-"
+
+
+class TestSorts:
+    def get_reverse(self, order: str) -> bool:
+        return order is DESCENDING
+
+    @mark.parametrize(
+        "order",
+        [
+            param(ASCENDING, id="ascending"),
+            param(DESCENDING, id="descending"),
+        ],
+    )
+    async def test_sort(self, client: AsyncClient, async_session, order: str):
+        user_1, _, user_3 = (
+            await create_user(async_session, age=10),
+            await create_user(async_session),
+            await create_user(async_session, age=15),
+        )
+
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "id",
+                        "op": "in",
+                        "val": [
+                            user_1.id,
+                            user_3.id,
+                        ],
+                    },
+                ],
+            ),
+            "sort": f"{order}age",
+        }
+        res = await client.get("/users", params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": sorted(
+                [
+                    {
+                        "attributes": UserBaseSchema.from_orm(user_1).dict(),
+                        "id": str(user_1.id),
+                        "type": "user",
+                    },
+                    {
+                        "attributes": UserBaseSchema.from_orm(user_3).dict(),
+                        "id": str(user_3.id),
+                        "type": "user",
+                    },
+                ],
+                key=lambda x: x["attributes"]["age"],
+                reverse=self.get_reverse(order),
+            ),
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "totalPages": 1},
+        }
+
+
 # todo: test object not found

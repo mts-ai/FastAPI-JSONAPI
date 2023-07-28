@@ -137,12 +137,12 @@ def add_routers(app_plain: FastAPI):
     return app_plain
 
 
-@fixture()
+@fixture(scope="session")
 def app_plain() -> FastAPI:
     return build_app_plain()
 
 
-@fixture()
+@fixture(scope="session")
 def app(app_plain: FastAPI):
     add_routers(app_plain)
 
