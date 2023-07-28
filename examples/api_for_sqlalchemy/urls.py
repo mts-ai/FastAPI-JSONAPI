@@ -21,7 +21,6 @@ from examples.api_for_sqlalchemy.models import (
 )
 from fastapi_jsonapi import RoutersJSONAPI
 
-from .api.user_bio import UserBioDetail, UserBioList
 from .api.views_base import DetailViewBase, ListViewBase
 from .models.schemas import (
     ChildInSchema,
@@ -88,8 +87,8 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         router=router,
         path="/user-bio",
         tags=["Bio"],
-        class_detail=UserBioDetail,
-        class_list=UserBioList,
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
         model=UserBio,
         schema=UserBioSchema,
         resource_type="user_bio",
