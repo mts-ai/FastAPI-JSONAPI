@@ -3,7 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy import func, select
-from sqlalchemy.exc import DatabaseError, NoResultFound
+from sqlalchemy.exc import DatabaseError, DBAPIError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
@@ -273,11 +273,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
-        new_data = data_update.attributes.dict()
+        new_data = data_update.attributes.dict(exclude_unset=True)
         has_updated = False
 
         for field_name, new_value in new_data.items():
-            # TODO: handle attr not found
+            # TODO: get field alias (if present) and get attribute by alias (rarely used, but required)
             old_value = getattr(obj, field_name)
 
             if old_value != new_value:
@@ -286,12 +286,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         try:
             await self.session.commit()
-            await self.session.refresh(obj)
-        except Exception:  # TODO: handle and specify exc
+        except DBAPIError as e:
             await self.session.rollback()
-            raise InternalServerError(
-                detail="Failed attempt to update data in DB",
-            )
+            raise InternalServerError(detail=f"Got an error {e.__class__.__name__} during update data in DB: {e!s}")
 
         return has_updated
 
@@ -305,10 +302,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         try:
             await self.session.delete(obj)
             await self.session.commit()
-        except Exception:  # TODO: handle and specify exc
+        except DBAPIError as e:
             await self.session.rollback()
             raise InternalServerError(
-                detail="Failed attempt to delete data in DB",
+                detail=f"Got an error {e.__class__.__name__} during delete data from DB: {e!s}",
             )
 
     async def delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
@@ -317,10 +314,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         try:
             await self.session.execute(query)
             await self.session.commit()
-        except Exception:  # TODO: handle and specify exc
+        except DBAPIError as e:
             await self.session.rollback()
             raise InternalServerError(
-                detail="Failed attempt to delete data in DB",
+                detail=f"Got an error {e.__class__.__name__} during delete data from DB: {e!s}",
             )
 
     async def create_relationship(
