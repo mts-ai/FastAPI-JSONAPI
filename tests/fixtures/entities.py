@@ -14,6 +14,7 @@ from tests.models import (
     PostComment,
     User,
     UserBio,
+    Workplace,
 )
 
 
@@ -410,3 +411,26 @@ async def p2_c3_association(
 
     await async_session.delete(assoc)
     await async_session.commit()
+
+
+async def build_workplace(async_session: AsyncSession, **fields):
+    workplace = Workplace(**fields)
+    async_session.add(workplace)
+
+    await async_session.commit()
+
+    return workplace
+
+
+@async_fixture()
+async def workplace_1(
+    async_session: AsyncSession,
+):
+    yield await build_workplace(async_session, name="workplace_1")
+
+
+@async_fixture()
+async def workplace_2(
+    async_session: AsyncSession,
+):
+    yield await build_workplace(async_session, name="workplace_2")

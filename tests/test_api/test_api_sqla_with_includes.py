@@ -15,6 +15,7 @@ from tests.models import (
     PostComment,
     User,
     UserBio,
+    Workplace,
 )
 from tests.schemas import (
     UserBaseSchema,
@@ -492,6 +493,98 @@ class TestPatchObjects:
                 "type": "user",
             },
             "included": [],
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
+
+class TestPatchObjectRelationshipsToOne:
+    async def test_ok_when_foreign_key_of_related_object_is_nullable(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        workplace_1: Workplace,
+        workplace_2: Workplace,
+    ):
+        new_attrs = UserBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        ).dict()
+
+        patch_user_body = {
+            "data": {
+                "id": user_1.id,
+                "attributes": new_attrs,
+                "relationships": {
+                    "workplace": {
+                        "data": {
+                            "type": "workplace",
+                            "id": workplace_1.id,
+                        },
+                    },
+                },
+            },
+        }
+
+        # create relationship with patch endpoint
+        res = await client.patch(f"/users/{user_1.id}?include=workplace", json=patch_user_body)
+        assert res.status_code == status.HTTP_200_OK, res.text
+
+        assert res.json() == {
+            "data": {
+                "attributes": new_attrs,
+                "id": str(user_1.id),
+                "relationships": {
+                    "workplace": {
+                        "data": {
+                            "type": "workplace",
+                            "id": str(workplace_1.id),
+                        },
+                    },
+                },
+                "type": "user",
+            },
+            "included": [
+                {
+                    "attributes": {"name": workplace_1.name},
+                    "id": str(workplace_1.id),
+                    "relationships": None,
+                    "type": "workplace",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
+        patch_user_body["data"]["relationships"]["workplace"]["data"]["id"] = workplace_2.id
+
+        # update relationship with patch endpoint
+        res = await client.patch(f"/users/{user_1.id}?include=workplace", json=patch_user_body)
+        assert res.status_code == status.HTTP_200_OK, res.text
+
+        assert res.json() == {
+            "data": {
+                "attributes": new_attrs,
+                "id": str(user_1.id),
+                "relationships": {
+                    "workplace": {
+                        "data": {
+                            "type": "workplace",
+                            "id": str(workplace_2.id),
+                        },
+                    },
+                },
+                "type": "user",
+            },
+            "included": [
+                {
+                    "attributes": {"name": workplace_2.name},
+                    "id": str(workplace_2.id),
+                    "relationships": None,
+                    "type": "workplace",
+                },
+            ],
             "jsonapi": {"version": "1.0"},
             "meta": None,
         }

@@ -19,6 +19,18 @@ class UserBaseSchema(BaseModel):
 class UserPatchSchema(UserBaseSchema):
     """User PATCH schema."""
 
+    computers: Optional["ComputerSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="computer",
+            many=True,
+        ),
+    )
+    workplace: Optional["WorkplaceSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="workplace",
+        ),
+    )
+
 
 class UserInSchema(UserBaseSchema):
     """User input schema."""
@@ -40,6 +52,11 @@ class UserInSchema(UserBaseSchema):
         relationship=RelationshipInfo(
             resource_type="computer",
             many=True,
+        ),
+    )
+    workplace: Optional["WorkplaceSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="workplace",
         ),
     )
 
@@ -71,6 +88,11 @@ class UserSchema(UserInSchema):
         relationship=RelationshipInfo(
             resource_type="computer",
             many=True,
+        ),
+    )
+    workplace: Optional["WorkplaceSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="workplace",
         ),
     )
 
@@ -290,6 +312,41 @@ class ComputerInSchema(ComputerBaseSchema):
 
 class ComputerSchema(ComputerInSchema):
     """Computer item schema."""
+
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
+
+    id: int
+
+
+class WorkplaceBaseSchema(BaseModel):
+    """Workplace base schema."""
+
+    class Config:
+        """Pydantic schema config."""
+
+        orm_mode = True
+
+    name: str
+    user: Optional["UserSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
+
+
+class WorkplacePatchSchema(ComputerBaseSchema):
+    """Workplace PATCH schema."""
+
+
+class WorkplaceInSchema(ComputerBaseSchema):
+    """Workplace input schema."""
+
+
+class WorkplaceSchema(ComputerInSchema):
+    """Workplace item schema."""
 
     class Config:
         """Pydantic model config."""
