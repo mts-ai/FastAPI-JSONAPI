@@ -68,20 +68,33 @@ async def user_3(async_session: AsyncSession):
     await async_session.commit()
 
 
+async def build_user_bio(async_session: AsyncSession, user: User, **fields):
+    bio = UserBio(user=user, **fields)
+    async_session.add(bio)
+    await async_session.commit()
+    return bio
+
+
 @async_fixture()
-async def user_1_bio(async_session: AsyncSession, user_1):
-    bio = UserBio(
+async def user_1_bio(async_session: AsyncSession, user_1: User) -> UserBio:
+    return await build_user_bio(
+        async_session,
+        user_1,
         birth_city="Moscow",
         favourite_movies="Django, Alien",
         keys_to_ids_list={"key": [1, 2, 3]},
-        user=user_1,
     )
-    async_session.add(bio)
-    await async_session.commit()
-    await async_session.refresh(bio)
-    yield bio
-    await async_session.delete(bio)
-    await async_session.commit()
+
+
+@async_fixture()
+async def user_2_bio(async_session: AsyncSession, user_2: User) -> UserBio:
+    return await build_user_bio(
+        async_session,
+        user_2,
+        birth_city="Snezhnogorsk",
+        favourite_movies="A Beautiful Mind, Rocky",
+        keys_to_ids_list={"key": [0, 1, 2]},
+    )
 
 
 @async_fixture()
