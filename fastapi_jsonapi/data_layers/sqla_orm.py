@@ -274,8 +274,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return: True if object have changed else False.
         """
         new_data = data_update.attributes.dict(exclude_unset=True)
-        has_updated = False
 
+        await self.apply_relationships(obj, data_update)
+
+        await self.before_update_object(obj, model_kwargs=new_data, view_kwargs=view_kwargs)
+
+        has_updated = False
         for field_name, new_value in new_data.items():
             # TODO: get field alias (if present) and get attribute by alias (rarely used, but required)
             old_value = getattr(obj, field_name)
@@ -289,6 +293,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         except DBAPIError as e:
             await self.session.rollback()
             raise InternalServerError(detail=f"Got an error {e.__class__.__name__} during update data in DB: {e!s}")
+
+        await self.after_update_object(obj=obj, model_kwargs=new_data, view_kwargs=view_kwargs)
 
         return has_updated
 
@@ -639,7 +645,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         return collection
 
-    async def before_update_object(self, obj: Any, data: dict, view_kwargs: dict):
+    async def before_update_object(self, obj: Any, model_kwargs: dict, view_kwargs: dict):
         """
         Make checks or provide additional data before update object.
 
@@ -649,7 +655,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def after_update_object(self, obj: Any, data: dict, view_kwargs: dict):
+    async def after_update_object(self, obj: Any, model_kwargs: dict, view_kwargs: dict):
         """
         Make work after update object.
 
