@@ -36,15 +36,17 @@ class TortoiseORMEngine(BaseDataLayer):
         :params url_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
         :params kwargs: initialization parameters of an SqlalchemyDataLayer instance
         """
-        super().__init__(kwargs)
+        super().__init__(
+            schema,
+            model,
+            disable_collection_count,
+            default_collection_count,
+            id_name_field,
+            url_field,
+            kwargs
+        )
 
-        self.disable_collection_count: bool = disable_collection_count
-        self.default_collection_count: int = default_collection_count
-        self.schema = schema
-        self.model = model
         self.query_: QuerySet = query or model.filter()
-        self.id_name_field = id_name_field
-        self.url_field = url_field
 
     async def create_object(self, data: dict, view_kwargs: dict):
         """

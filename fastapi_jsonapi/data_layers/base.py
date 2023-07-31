@@ -5,7 +5,8 @@ you must inherit from this base class
 """
 
 import types
-
+from typing import Type
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 
 class BaseDataLayer:
     """Base class of a data layer"""
@@ -33,14 +34,36 @@ class BaseDataLayer:
         "retrieve_object_query",
     )
 
-    def __init__(self, kwargs):
+    def __init__(
+            self,
+            schema: Type[TypeSchema],
+            model: Type[TypeModel],
+            disable_collection_count,
+            default_collection_count,
+            id_name_field,
+            url_field,
+            kwargs
+    ):
         """
         Intialize an data layer instance with kwargs.
 
+        :params schema:
+        :params model:
+        :params disable_collection_count: Resource's attribute `disable_collection_count`
+                                          has to be bool or list/tuple with exactly 2 values!\n
+        :params default_collection_count: For example `disable_collection_count = (True, 999)`
+        :params id_name_field: Первичный ключ модели
+        :params url_field: название переменной из FastAPI, в которой придёт значение первичного ключа.
         :param dict kwargs: information about data layer instance
         """
         # initing this attribute here in the first place
         # because it can be easily overridden by kwargs below
+        self.schema = schema
+        self.model = model
+        self.disable_collection_count: bool = disable_collection_count
+        self.default_collection_count: int = default_collection_count
+        self.id_name_field = id_name_field
+        self.url_field = url_field
 
         for key, value in kwargs.items():
             setattr(self, key, value)

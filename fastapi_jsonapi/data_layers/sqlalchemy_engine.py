@@ -59,15 +59,17 @@ class SqlalchemyEngine(BaseDataLayer):
         :params query: подготовленный заранее запрос.
         :params kwargs: initialization parameters of an SqlalchemyDataLayer instance
         """
-        super().__init__(kwargs)
+        super().__init__(
+            schema,
+            model,
+            disable_collection_count,
+            default_collection_count,
+            id_name_field,
+            url_field,
+            kwargs
+        )
 
-        self.disable_collection_count: bool = disable_collection_count
-        self.default_collection_count: int = default_collection_count
-        self.schema = schema
-        self.model = model
         self.session = session
-        self.id_name_field = id_name_field
-        self.url_field = url_field
         self.eagerload_includes_ = eagerload_includes
         self._query = query
 
