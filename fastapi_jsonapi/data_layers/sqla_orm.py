@@ -2,14 +2,13 @@
 import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import DatabaseError, DBAPIError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
-from sqlalchemy.sql import Delete, Select
 
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
@@ -35,8 +34,7 @@ from fastapi_jsonapi.schema_base import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
 
 if TYPE_CHECKING:
-    pass
-
+    from sqlalchemy.sql import Select
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +52,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         id_name_field: Optional[str] = None,
         url_id_field: str = "id",
         eagerload_includes: bool = True,
-        query: Optional[Select] = None,
+        query: Optional["Select"] = None,
         **kwargs: Any,
     ):
         """
@@ -214,7 +212,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return obj
 
-    async def get_collection_count(self, query: Select, qs: QueryStringManager, view_kwargs: dict) -> int:
+    async def get_collection_count(self, query: "Select", qs: QueryStringManager, view_kwargs: dict) -> int:
         """
         :params query: SQLAlchemy query
         :params qs: QueryString
@@ -315,7 +313,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             )
 
     async def delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
-        query = Delete(self.model).filter(self.model.id.in_((obj.id for obj in objects)))
+        query = delete(self.model).filter(self.model.id.in_((obj.id for obj in objects)))
 
         try:
             await self.session.execute(query)
@@ -473,7 +471,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return list(related_objects)
 
-    def filter_query(self, query: Select, filter_info: Optional[list]) -> Select:
+    def filter_query(self, query: "Select", filter_info: Optional[list]) -> "Select":
         """
         Filter query according to jsonapi 1.0.
 
@@ -490,7 +488,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return query
 
-    def sort_query(self, query: Select, sort_info: list) -> Select:
+    def sort_query(self, query: "Select", sort_info: list) -> "Select":
         """
         Sort query according to jsonapi 1.0.
 
@@ -506,7 +504,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 query = query.order_by(i_sort)
         return query
 
-    def paginate_query(self, query: Select, paginate_info: PaginationQueryStringManager) -> Select:
+    def paginate_query(self, query: "Select", paginate_info: PaginationQueryStringManager) -> "Select":
         """
         Paginate query according to jsonapi 1.0.
 
@@ -523,7 +521,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return query
 
-    def eagerload_includes(self, query: Select, qs: QueryStringManager) -> Select:
+    def eagerload_includes(self, query: "Select", qs: QueryStringManager) -> "Select":
         """
         Use eagerload feature of sqlalchemy to optimize data retrieval for include querystring parameter.
 
@@ -566,7 +564,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         view_kwargs: dict,
         filter_field: InstrumentedAttribute,
         filter_value: Any,
-    ) -> Select:
+    ) -> "Select":
         """
         Build query to retrieve object.
 
@@ -575,12 +573,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :params filter_value: the value to filter with
         :return sqlalchemy query: a query from sqlalchemy
         """
-        query: Select = self.query(view_kwargs)
+        query: "Select" = self.query(view_kwargs)
         # noinspection PyNoneFunctionAssignment,PyTypeChecker
-        query: Select = query.where(filter_field == filter_value)
+        query: "Select" = query.where(filter_field == filter_value)
         return query
 
-    def query(self, view_kwargs: dict) -> Select:
+    def query(self, view_kwargs: dict) -> "Select":
         """
         Construct the base query to retrieve wanted data.
 
