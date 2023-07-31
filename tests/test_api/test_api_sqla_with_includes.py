@@ -589,6 +589,92 @@ class TestPatchObjectRelationshipsToOne:
             "meta": None,
         }
 
+    async def test_fail_to_rebind_without_atomic_operations(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        user_1_bio: UserBio,
+        user_2_bio: UserBio,
+    ):
+        patch_user_bio_body = {
+            "data": {
+                "id": user_1_bio.id,
+                "attributes": UserBioBaseSchema.from_orm(user_1_bio).dict(),
+                "relationships": {
+                    "user": {
+                        "data": {
+                            "type": "user",
+                            "id": user_2.id,
+                        },
+                    },
+                },
+            },
+        }
+
+        res = await client.patch(f"/user-bio/{user_1.id}?include=user", json=patch_user_bio_body)
+        assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
+        assert res.json() == {
+            "detail": {
+                "errors": [
+                    {
+                        "detail": "Got an error IntegrityError during update "
+                        "data in DB: (sqlite3.IntegrityError) UNIQUE constraint failed: userbios.user_id\n"
+                        "[SQL: UPDATE userbios SET user_id=? WHERE userbios.id = ?]\n"
+                        f"[parameters: ({user_2.id}, {user_1_bio.id})]\n"
+                        "(Background on this error at: https://sqlalche.me/e/14/gkpj)",
+                        "source": {"pointer": ""},
+                        "status_code": 500,
+                        "title": "Internal Server Error",
+                    },
+                ],
+            },
+        }
+
+    async def test_relationship_not_found(
+        self,
+        client: AsyncClient,
+        user_1: User,
+    ):
+        new_attrs = UserBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        ).dict()
+
+        fake_relationship_id = "1"
+        patch_user_body = {
+            "data": {
+                "id": user_1.id,
+                "attributes": new_attrs,
+                "relationships": {
+                    "workplace": {
+                        "data": {
+                            "type": "workplace",
+                            "id": fake_relationship_id,
+                        },
+                    },
+                },
+            },
+        }
+
+        # create relationship with patch endpoint
+        res = await client.patch(f"/users/{user_1.id}?include=workplace", json=patch_user_body)
+        assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
+
+        assert res.json() == {
+            "detail": {
+                "errors": [
+                    {
+                        "detail": f"Workplace.id: {fake_relationship_id} not found",
+                        "source": {"pointer": ""},
+                        "status_code": 404,
+                        "title": "Related object not found.",
+                    },
+                ],
+            },
+        }
+
 
 class TestDeleteObjects:
     async def test_delete_object_and_fetch_404(self, client: AsyncClient, user_1: User):
