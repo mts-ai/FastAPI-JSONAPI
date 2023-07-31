@@ -55,18 +55,6 @@ class BaseDataLayer:
         self.url_id_field = url_id_field
         self.id_name_field = id_name_field
 
-    def post_init(self):
-        """
-        Post init stage.
-
-        At this moment self.resource is already defined
-        and the layer can do any post init stuff here
-
-        NOTE that the data layer is inited for each request
-        :return:
-        """
-        pass
-
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object
@@ -97,7 +85,7 @@ class BaseDataLayer:
         """
         Retrieve an object
 
-        :params dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object
         """
         raise NotImplementedError
@@ -106,8 +94,8 @@ class BaseDataLayer:
         """
         Retrieve a collection of objects
 
-        :param QueryStringManager qs: a querystring manager to retrieve information from url
-        :param dict view_kwargs: kwargs from the resource view
+        :param qs: a querystring manager to retrieve information from url
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the number of object and the list of objects
         """
         raise NotImplementedError
@@ -116,9 +104,9 @@ class BaseDataLayer:
         """
         Update an object
 
-        :param DeclarativeMeta obj: an object
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param obj: an object
+        :param data_update: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if object have changed else False
         """
         # TODO: update doc
@@ -129,7 +117,7 @@ class BaseDataLayer:
         Delete an item through the data layer
 
         :param DeclarativeMeta obj: an object
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -143,10 +131,10 @@ class BaseDataLayer:
         """
         Create a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -164,7 +152,7 @@ class BaseDataLayer:
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the object and related object(s)
         """
         raise NotImplementedError
@@ -179,10 +167,10 @@ class BaseDataLayer:
         """
         Update a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -197,10 +185,10 @@ class BaseDataLayer:
         """
         Delete a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -213,9 +201,9 @@ class BaseDataLayer:
         """
         Get related object.
 
-        :params related_model: Related ORM model class (not instance)
-        :params related_id_field: id field of the related model (usually it's `id`)
-        :params id_value: related object id value
+        :param related_model: Related ORM model class (not instance)
+        :param related_id_field: id field of the related model (usually it's `id`)
+        :param id_value: related object id value
         :return: an ORM object
         """
         raise NotImplementedError
@@ -229,9 +217,9 @@ class BaseDataLayer:
         """
         Get related objects list.
 
-        :params related_model: Related ORM model class (not instance)
-        :params related_id_field: id field of the related model (usually it's `id`)
-        :params ids: related object id values list
+        :param related_model: Related ORM model class (not instance)
+        :param related_id_field: id field of the related model (usually it's `id`)
+        :param ids: related object id values list
         :return: a list of ORM objects
         """
         raise NotImplementedError
@@ -240,7 +228,7 @@ class BaseDataLayer:
         """
         Construct the base query to retrieve wanted data
 
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -248,8 +236,8 @@ class BaseDataLayer:
         """
         Provide additional data before object creation
 
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -258,8 +246,8 @@ class BaseDataLayer:
         Provide additional data after object creation
 
         :param obj: an object from data layer
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -267,7 +255,7 @@ class BaseDataLayer:
         """
         Make work before to retrieve an object
 
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -276,7 +264,7 @@ class BaseDataLayer:
         Make work after to retrieve an object
 
         :param obj: an object from data layer
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -284,8 +272,8 @@ class BaseDataLayer:
         """
         Make work before to retrieve a collection of objects
 
-        :param QueryStringManager qs: a querystring manager to retrieve information from url
-        :param dict view_kwargs: kwargs from the resource view
+        :param qs: a querystring manager to retrieve information from url
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -294,8 +282,8 @@ class BaseDataLayer:
         Make work after to retrieve a collection of objects
 
         :param iterable collection: the collection of objects
-        :param QueryStringManager qs: a querystring manager to retrieve information from url
-        :param dict view_kwargs: kwargs from the resource view
+        :param qs: a querystring manager to retrieve information from url
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -304,8 +292,8 @@ class BaseDataLayer:
         Make checks or provide additional data before update object
 
         :param obj: an object from data layer
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -314,8 +302,8 @@ class BaseDataLayer:
         Make work after update object
 
         :param obj: an object from data layer
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -324,7 +312,7 @@ class BaseDataLayer:
         Make checks before delete object
 
         :param obj: an object from data layer
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -333,7 +321,7 @@ class BaseDataLayer:
         Make work after delete object
 
         :param obj: an object from data layer
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -351,10 +339,10 @@ class BaseDataLayer:
         """
         Make work before to create a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -373,10 +361,10 @@ class BaseDataLayer:
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -394,7 +382,7 @@ class BaseDataLayer:
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the object and related object(s)
         """
         raise NotImplementedError
@@ -416,7 +404,7 @@ class BaseDataLayer:
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the object and related object(s)
         """
         raise NotImplementedError
@@ -431,10 +419,10 @@ class BaseDataLayer:
         """
         Make work before to update a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -453,10 +441,10 @@ class BaseDataLayer:
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -471,10 +459,10 @@ class BaseDataLayer:
         """
         Make work before to delete a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -492,10 +480,10 @@ class BaseDataLayer:
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 

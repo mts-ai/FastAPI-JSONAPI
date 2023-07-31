@@ -34,7 +34,9 @@ from fastapi_jsonapi.schema_base import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
 
 if TYPE_CHECKING:
+    from pydantic import BaseModel as PydanticBaseModel
     from sqlalchemy.sql import Select
+
 
 log = logging.getLogger(__name__)
 
@@ -58,17 +60,17 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Initialize an instance of SqlalchemyDataLayer.
 
-        :params schema:
-        :params model:
-        :params disable_collection_count: Resource's attribute `disable_collection_count`
+        :param schema:
+        :param model:
+        :param disable_collection_count: Resource's attribute `disable_collection_count`
                                           has to be bool or list/tuple with exactly 2 values!
-        :params default_collection_count: For example `disable_collection_count = (True, 999)`
-        :params id_name_field: Первичный ключ модели
-        :params url_field: название переменной из FastAPI, в которой придёт значение первичного ключа.
-        :params eagerload_includes: Use eagerload feature of sqlalchemy to optimize data retrieval
+        :param default_collection_count: For example `disable_collection_count = (True, 999)`
+        :param id_name_field: Первичный ключ модели
+        :param url_field: название переменной из FastAPI, в которой придёт значение первичного ключа.
+        :param eagerload_includes: Use eagerload feature of sqlalchemy to optimize data retrieval
                                     for include querystring parameter.
-        :params query: подготовленный заранее запрос.
-        :params kwargs: initialization parameters of an SqlalchemyDataLayer instance
+        :param query: подготовленный заранее запрос.
+        :param kwargs: initialization parameters of an SqlalchemyDataLayer instance
         """
         super().__init__(
             model=model,
@@ -92,12 +94,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param data_create:
         :return:
         """
-        relationships = data_create.relationships  # type: PydanticBaseModel
+        relationships: "PydanticBaseModel" = data_create.relationships
         if relationships is None:
             return
 
         schema_fields = self.schema.__fields__ or {}
-        for relation_name, relationship_in in relationships:  # type: str, RelationshipInfoSchema
+        for relation_name, relationship_in in relationships:
             if relationship_in is None:
                 continue
 
@@ -145,8 +147,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Create an object through sqlalchemy.
 
-        :params model_kwargs: the data validated by pydantic.
-        :params view_kwargs: kwargs from the resource view.
+        :param data_create: the data validated by pydantic.
+        :param view_kwargs: kwargs from the resource view.
         :return:
         """
         # todo: pydantic v2 model_dump()
@@ -185,8 +187,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Retrieve an object through sqlalchemy.
 
-        :params view_kwargs: kwargs from the resource view
-        :params qs:
+        :param view_kwargs: kwargs from the resource view
+        :param qs:
         :return DeclarativeMeta: an object from sqlalchemy
         """
         await self.before_get_object(view_kwargs)
@@ -214,9 +216,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
     async def get_collection_count(self, query: "Select", qs: QueryStringManager, view_kwargs: dict) -> int:
         """
-        :params query: SQLAlchemy query
-        :params qs: QueryString
-        :params view_kwargs: view kwargs
+        :param query: SQLAlchemy query
+        :param qs: QueryString
+        :param view_kwargs: view kwargs
         :return:
         """
         if self.disable_collection_count is True:
@@ -228,8 +230,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Retrieve a collection of objects through sqlalchemy.
 
-        :params qs: a querystring manager to retrieve information from url.
-        :params view_kwargs: kwargs from the resource view.
+        :param qs: a querystring manager to retrieve information from url.
+        :param view_kwargs: kwargs from the resource view.
         :return: the number of object and the list of objects.
         """
         view_kwargs = view_kwargs or {}
@@ -266,9 +268,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Update an object through sqlalchemy.
 
-        :params obj: an object from sqlalchemy.
-        :params data: the data validated by pydantic.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from sqlalchemy.
+        :param data_update: the data validated by pydantic.
+        :param view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
         new_data = data_update.attributes.dict(exclude_unset=True)
@@ -300,8 +302,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Delete an object through sqlalchemy.
 
-        :params obj: an item from sqlalchemy.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an item from sqlalchemy.
+        :param view_kwargs: kwargs from the resource view.
         """
         try:
             await self.session.delete(obj)
@@ -334,10 +336,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Create a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return: True if relationship have changed else False.
         """
         pass
@@ -352,10 +354,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Get a relationship.
 
-        :params relationship_field: the model attribute used for relationship.
-        :params related_type_: the related resource type.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_type_: the related resource type.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return: the object and related object(s).
         """
         await self.before_get_relationship(relationship_field, related_type_, related_id_field, view_kwargs)
@@ -401,15 +403,15 @@ class SqlalchemyDataLayer(BaseDataLayer):
         view_kwargs: dict,
     ) -> bool:
         """
+
         Update a relationship
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
         :param view_kwargs: kwargs from the resource view.
         :return: True if relationship have changed else False.
         """
-        pass
 
     async def delete_relationship(
         self,
@@ -421,12 +423,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Delete a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def get_related_object(
         self,
@@ -437,9 +438,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Get related object.
 
-        :params related_model: SQLA ORM model class
-        :params related_id_field: id field of the related model (usually it's `id`)
-        :params id_value: related object id value
+        :param related_model: SQLA ORM model class
+        :param related_id_field: id field of the related model (usually it's `id`)
+        :param id_value: related object id value
         :return: a related SQLA ORM object
         """
         stmt = select(related_model).where(getattr(related_model, related_id_field) == id_value)
@@ -475,9 +476,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Filter query according to jsonapi 1.0.
 
-        :params query: sqlalchemy query to sort.
-        :params filter_info: filter information.
-        :params model: an sqlalchemy model.
+        :param query: sqlalchemy query to sort.
+        :param filter_info: filter information.
         :return: the sorted query.
         """
         if filter_info:
@@ -492,8 +492,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Sort query according to jsonapi 1.0.
 
-        :params query: sqlalchemy query to sort.
-        :params sort_info: sort information.
+        :param query: sqlalchemy query to sort.
+        :param sort_info: sort information.
         :return: the sorted query.
         """
         if sort_info:
@@ -508,8 +508,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Paginate query according to jsonapi 1.0.
 
-        :params query: sqlalchemy queryset.
-        :params paginate_info: pagination information.
+        :param query: sqlalchemy queryset.
+        :param paginate_info: pagination information.
         :return: the paginated query
         """
         if paginate_info.size == 0 or paginate_info.size is None:
@@ -525,8 +525,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Use eagerload feature of sqlalchemy to optimize data retrieval for include querystring parameter.
 
-        :params query: sqlalchemy queryset.
-        :params qs: a querystring manager to retrieve information from url.
+        :param query: sqlalchemy queryset.
+        :param qs: a querystring manager to retrieve information from url.
         :return: the query with includes eagerloaded.
         """
         for include in qs.include:
@@ -568,9 +568,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Build query to retrieve object.
 
-        :params view_kwargs: kwargs from the resource view
-        :params filter_field: the field to filter on
-        :params filter_value: the value to filter with
+        :param view_kwargs: kwargs from the resource view
+        :param filter_field: the field to filter on
+        :param filter_value: the value to filter with
         :return sqlalchemy query: a query from sqlalchemy
         """
         query: "Select" = self.query(view_kwargs)
@@ -582,7 +582,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Construct the base query to retrieve wanted data.
 
-        :params view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         if self._query is not None:
             return self._query
@@ -592,8 +592,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Provide additional data before object creation.
 
-        :params model_kwargs: the data validated by pydantic.
-        :params view_kwargs: kwargs from the resource view.
+        :param model_kwargs: the data validated by pydantic.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -601,9 +601,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Provide additional data after object creation.
 
-        :params obj: an object from data layer.
-        :params model_kwargs: the data validated by pydantic.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param model_kwargs: the data validated by pydantic.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -611,7 +611,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work before to retrieve an object.
 
-        :params view_kwargs: kwargs from the resource view.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -619,8 +619,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after to retrieve an object.
 
-        :params obj: an object from data layer.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -628,8 +628,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work before to retrieve a collection of objects.
 
-        :params qs: a querystring manager to retrieve information from url.
-        :params view_kwargs: kwargs from the resource view.
+        :param qs: a querystring manager to retrieve information from url.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -637,9 +637,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after to retrieve a collection of objects.
 
-        :params collection: the collection of objects.
-        :params qs: a querystring manager to retrieve information from url.
-        :params view_kwargs: kwargs from the resource view.
+        :param collection: the collection of objects.
+        :param qs: a querystring manager to retrieve information from url.
+        :param view_kwargs: kwargs from the resource view.
         """
         return collection
 
@@ -647,9 +647,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make checks or provide additional data before update object.
 
-        :params obj: an object from data layer.
-        :params data: the data validated by schemas.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param model_kwargs: the data validated by schemas.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -657,9 +657,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after update object.
 
-        :params obj: an object from data layer.
-        :params data: the data validated by schemas.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param model_kwargs: the data validated by schemas.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -667,8 +667,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make checks before delete object.
 
-        :params obj: an object from data layer.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -676,8 +676,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after delete object.
 
-        :params obj: an object from data layer.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -691,10 +691,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work before to create a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
         pass
@@ -711,12 +711,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after to create a relationship.
 
-        :params obj: an object from data layer.
-        :params updated: True if object was updated else False.
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param updated: True if object was updated else False.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
         pass
@@ -731,10 +731,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work before to get information about a relationship.
 
-        :params str relationship_field: the model attribute used for relationship.
-        :params str related_type_: the related resource type.
-        :params str related_id_field: the identifier field of the related model.
-        :params dict view_kwargs: kwargs from the resource view.
+        :param str relationship_field: the model attribute used for relationship.
+        :param str related_type_: the related resource type.
+        :param str related_id_field: the identifier field of the related model.
+        :param dict view_kwargs: kwargs from the resource view.
         :return tuple: the object and related object(s).
         """
         pass
@@ -751,12 +751,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after to get information about a relationship.
 
-        :params obj: an object from data layer.
-        :params related_objects: related objects of the object.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_type_: the related resource type.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param related_objects: related objects of the object.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_type_: the related resource type.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return tuple: the object and related object(s).
         """
         pass
@@ -771,10 +771,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work before to update a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
         pass
@@ -791,12 +791,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after to update a relationship.
 
-        :params obj: an object from data layer.
-        :params updated: True if object was updated else False.
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param updated: True if object was updated else False.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
         pass
@@ -811,10 +811,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work before to delete a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass
 
@@ -830,11 +830,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         Make work after to delete a relationship.
 
-        :params obj: an object from data layer.
-        :params updated: True if object was updated else False.
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param updated: True if object was updated else False.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         """
         pass

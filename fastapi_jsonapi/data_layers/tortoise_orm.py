@@ -27,14 +27,14 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Initialize an instance of TortoiseDataLayer.
 
-        :params schema:
-        :params model: Tortoise
-        :params disable_collection_count: Resource's attribute `disable_collection_count`
+        :param schema:
+        :param model: Tortoise
+        :param disable_collection_count: Resource's attribute `disable_collection_count`
                                           has to be bool or list/tuple with exactly 2 values!
-        :params default_collection_count: For example `disable_collection_count = (True, 999)`
-        :params id_name_field: Первичный ключ модели
-        :params url_id_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
-        :params kwargs: initialization parameters of an TortoiseDataLayer instance
+        :param default_collection_count: For example `disable_collection_count = (True, 999)`
+        :param id_name_field: Первичный ключ модели
+        :param url_id_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
+        :param kwargs: initialization parameters of an TortoiseDataLayer instance
         """
         super().__init__(
             model=model,
@@ -52,27 +52,25 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Create an object through Tortoise.
 
-        :params model_kwargs: the data validated by pydantic.
-        :params view_kwargs: kwargs from the resource view.
+        :param model_kwargs: the data validated by pydantic.
+        :param view_kwargs: kwargs from the resource view.
         :return DeclarativeMeta: an object from Tortoise.
         """
-        pass
 
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
         Retrieve an object through Tortoise.
 
-        :params view_kwargs: kwargs from the resource view
-        :params qs:
+        :param view_kwargs: kwargs from the resource view
+        :param qs:
         :return DeclarativeMeta: an object from Tortoise
         """
-        pass
 
     async def get_collection_count(self, query: QuerySet) -> int:
         """
-        :params query: Tortoise query
-        :params qs: QueryString
-        :params view_kwargs: view kwargs
+        :param query: Tortoise query
+        :param qs: QueryString
+        :param view_kwargs: view kwargs
         :return:
         """
         if self.disable_collection_count is True:
@@ -84,8 +82,8 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Retrieve a collection of objects through Tortoise.
 
-        :params qs: a querystring manager to retrieve information from url.
-        :params view_kwargs: kwargs from the resource view.
+        :param qs: a querystring manager to retrieve information from url.
+        :param view_kwargs: kwargs from the resource view.
         :return: the number of object and the list of objects.
         """
         view_kwargs = view_kwargs or {}
@@ -115,21 +113,19 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Update an object through Tortoise.
 
-        :params obj: an object from Tortoise.
-        :params data: the data validated by schemas.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from Tortoise.
+        :param data: the data validated by schemas.
+        :param view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
-        pass
 
     async def delete_object(self, obj: Any, view_kwargs: dict):
         """
         Delete an object through Tortoise.
 
-        :params obj: an item from Tortoise.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an item from Tortoise.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def create_relationship(
         self,
@@ -141,13 +137,12 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Create a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return: True if relationship have changed else False.
         """
-        pass
 
     async def get_relationship(
         self,
@@ -159,13 +154,12 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Get a relationship.
 
-        :params relationship_field: the model attribute used for relationship.
-        :params related_type_: the related resource type.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_type_: the related resource type.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return: the object and related object(s).
         """
-        pass
 
     async def update_relationship(
         self,
@@ -177,13 +171,12 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Update a relationship
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
         :param view_kwargs: kwargs from the resource view.
         :return: True if relationship have changed else False.
         """
-        pass
 
     async def delete_relationship(
         self,
@@ -195,12 +188,11 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Delete a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def get_related_object(
         self,
@@ -211,19 +203,18 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Get related object.
 
-        :params related_model: Tortoise model
-        :params related_id_field: the identifier field of the related model
-        :params id_value: related object id value
+        :param related_model: Tortoise model
+        :param related_id_field: the identifier field of the related model
+        :param id_value: related object id value
         :return: a related object
         """
-        pass
 
     def paginate_query(self, query: QuerySet, paginate_info: PaginationQueryStringManager) -> QuerySet:
         """
         Paginate query according to jsonapi 1.0.
 
-        :params query: Tortoise queryset.
-        :params paginate_info: pagination information.
+        :param query: Tortoise queryset.
+        :param paginate_info: pagination information.
         :return: the paginated query
         """
         if paginate_info.size == 0:
@@ -239,11 +230,10 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Use eagerload feature of Tortoise to optimize data retrieval for include querystring parameter.
 
-        :params query: Tortoise queryset.
-        :params qs: a querystring manager to retrieve information from url.
+        :param query: Tortoise queryset.
+        :param qs: a querystring manager to retrieve information from url.
         :return: the query with includes eagerloaded.
         """
-        pass
 
     def retrieve_object_query(
         self,
@@ -254,18 +244,17 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Build query to retrieve object.
 
-        :params view_kwargs: kwargs from the resource view
-        :params filter_field: the field to filter on
-        :params filter_value: the value to filter with
+        :param view_kwargs: kwargs from the resource view
+        :param filter_field: the field to filter on
+        :param filter_value: the value to filter with
         :return Tortoise query: a query from Tortoise
         """
-        pass
 
     def query(self, view_kwargs: dict) -> QuerySet:
         """
         Construct the base query to retrieve wanted data.
 
-        :params view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         return self.query_
 
@@ -273,54 +262,49 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Provide additional data before object creation.
 
-        :params data: the data validated by pydantic.
-        :params view_kwargs: kwargs from the resource view.
+        :param data: the data validated by pydantic.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     def after_create_object(self, obj: Any, data: dict, view_kwargs: dict):
         """
         Provide additional data after object creation.
 
-        :params obj: an object from data layer.
-        :params data: the data validated by pydantic.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param data: the data validated by pydantic.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_get_object(self, view_kwargs: dict):
         """
         Make work before to retrieve an object.
 
-        :params view_kwargs: kwargs from the resource view.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def after_get_object(self, obj: Any, view_kwargs: dict):
         """
         Make work after to retrieve an object.
 
-        :params obj: an object from data layer.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_get_collection(self, qs: QueryStringManager, view_kwargs: dict):
         """
         Make work before to retrieve a collection of objects.
 
-        :params qs: a querystring manager to retrieve information from url.
-        :params view_kwargs: kwargs from the resource view.
+        :param qs: a querystring manager to retrieve information from url.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def after_get_collection(self, collection: Iterable, qs: QueryStringManager, view_kwargs: dict) -> Iterable:
         """
         Make work after to retrieve a collection of objects.
 
-        :params collection: the collection of objects.
-        :params qs: a querystring manager to retrieve information from url.
-        :params view_kwargs: kwargs from the resource view.
+        :param collection: the collection of objects.
+        :param qs: a querystring manager to retrieve information from url.
+        :param view_kwargs: kwargs from the resource view.
         """
         return collection
 
@@ -328,39 +312,35 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make checks or provide additional data before update object.
 
-        :params obj: an object from data layer.
-        :params data: the data validated by schemas.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param data: the data validated by schemas.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     def after_update_object(self, obj: Any, data: dict, view_kwargs: dict):
         """
         Make work after update object.
 
-        :params obj: an object from data layer.
-        :params data: the data validated by schemas.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param data: the data validated by schemas.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     def before_delete_object(self, obj: Any, view_kwargs: dict):
         """
         Make checks before delete object.
 
-        :params obj: an object from data layer.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     def after_delete_object(self, obj: Any, view_kwargs: dict):
         """
         Make work after delete object.
 
-        :params obj: an object from data layer.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     def before_create_relationship(
         self,
@@ -372,13 +352,12 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work before to create a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     def after_create_relationship(
         self,
@@ -392,15 +371,14 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work after to create a relationship.
 
-        :params obj: an object from data layer.
-        :params updated: True if object was updated else False.
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param updated: True if object was updated else False.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     async def before_get_relationship(
         self,
@@ -412,13 +390,12 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work before to get information about a relationship.
 
-        :params str relationship_field: the model attribute used for relationship.
-        :params str related_type_: the related resource type.
-        :params str related_id_field: the identifier field of the related model.
-        :params dict view_kwargs: kwargs from the resource view.
+        :param str relationship_field: the model attribute used for relationship.
+        :param str related_type_: the related resource type.
+        :param str related_id_field: the identifier field of the related model.
+        :param dict view_kwargs: kwargs from the resource view.
         :return tuple: the object and related object(s).
         """
-        pass
 
     async def after_get_relationship(
         self,
@@ -432,15 +409,14 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work after to get information about a relationship.
 
-        :params obj: an object from data layer.
-        :params related_objects: related objects of the object.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_type_: the related resource type.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param related_objects: related objects of the object.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_type_: the related resource type.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return tuple: the object and related object(s).
         """
-        pass
 
     def before_update_relationship(
         self,
@@ -452,13 +428,12 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work before to update a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     def after_update_relationship(
         self,
@@ -472,15 +447,14 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work after to update a relationship.
 
-        :params obj: an object from data layer.
-        :params updated: True if object was updated else False.
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param updated: True if object was updated else False.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     def before_delete_relationship(
         self,
@@ -492,12 +466,11 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work before to delete a relationship.
 
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     def after_delete_relationship(
         self,
@@ -511,11 +484,10 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         Make work after to delete a relationship.
 
-        :params obj: an object from data layer.
-        :params updated: True if object was updated else False.
-        :params json_data: the request params.
-        :params relationship_field: the model attribute used for relationship.
-        :params related_id_field: the identifier field of the related model.
-        :params view_kwargs: kwargs from the resource view.
+        :param obj: an object from data layer.
+        :param updated: True if object was updated else False.
+        :param json_data: the request params.
+        :param relationship_field: the model attribute used for relationship.
+        :param related_id_field: the identifier field of the related model.
+        :param view_kwargs: kwargs from the resource view.
         """
-        pass
