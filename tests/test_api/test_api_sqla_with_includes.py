@@ -589,7 +589,7 @@ class TestPatchObjectRelationshipsToOne:
             "meta": None,
         }
 
-    async def test_fail_to_rebind_without_atomic_operations(
+    async def test_fail_to_bind_relationship_with_constraint(
         self,
         client: AsyncClient,
         user_1: User,
