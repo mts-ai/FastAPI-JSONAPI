@@ -63,9 +63,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         :param schema:
         :param model:
-        :param disable_collection_count: Resource's attribute `disable_collection_count`
-                                          has to be bool or list/tuple with exactly 2 values!
-        :param default_collection_count: For example `disable_collection_count = (True, 999)`
+        :param disable_collection_count:
+        :param default_collection_count:
         :param id_name_field: Первичный ключ модели
         :param url_field: название переменной из FastAPI, в которой придёт значение первичного ключа.
         :param eagerload_includes: Use eagerload feature of sqlalchemy to optimize data retrieval
@@ -74,15 +73,15 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param kwargs: initialization parameters of an SqlalchemyDataLayer instance
         """
         super().__init__(
+            schema=schema,
             model=model,
             url_id_field=url_id_field,
             id_name_field=id_name_field,
+            disable_collection_count=disable_collection_count,
+            default_collection_count=default_collection_count,
             **kwargs,
         )
 
-        self.disable_collection_count: bool = disable_collection_count
-        self.default_collection_count: int = default_collection_count
-        self.schema = schema
         self.session = session
         self.eagerload_includes_ = eagerload_includes
         self._query = query

@@ -29,23 +29,21 @@ class TortoiseDataLayer(BaseDataLayer):
 
         :param schema:
         :param model: Tortoise
-        :param disable_collection_count: Resource's attribute `disable_collection_count`
-                                          has to be bool or list/tuple with exactly 2 values!
-        :param default_collection_count: For example `disable_collection_count = (True, 999)`
+        :param disable_collection_count:
+        :param default_collection_count:
         :param id_name_field: Первичный ключ модели
         :param url_id_field: название переменной из FastAPI, в которой придёт значение первичного ключа..
         :param kwargs: initialization parameters of an TortoiseDataLayer instance
         """
         super().__init__(
+            schema=schema,
             model=model,
             url_id_field=url_id_field,
             id_name_field=id_name_field,
+            disable_collection_count=disable_collection_count,
+            default_collection_count=default_collection_count,
             **kwargs,
         )
-
-        self.disable_collection_count: bool = disable_collection_count
-        self.default_collection_count: int = default_collection_count
-        self.schema = schema
         self.query_: QuerySet = query or self.model.filter()
 
     async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
