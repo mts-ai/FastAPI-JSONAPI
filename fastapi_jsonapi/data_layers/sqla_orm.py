@@ -32,6 +32,7 @@ from fastapi_jsonapi.schema import (
 )
 from fastapi_jsonapi.schema_base import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
 if TYPE_CHECKING:
     from pydantic import BaseModel as PydanticBaseModel
@@ -119,12 +120,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 continue
 
             relationship_info: RelationshipInfo = field.field_info.extra["relationship"]
-            # todo: use alias (custom names)!!
-            # field.field_info.alias
-            # field.field_info.title
 
             # ...
-            related_model = getattr(obj.__class__, relation_name).property.mapper.class_
+            related_model = get_related_model_cls(obj, relation_name)
 
             if relationship_info.many:
                 assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToManySchema)

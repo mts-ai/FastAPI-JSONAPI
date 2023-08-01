@@ -124,6 +124,15 @@ def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
     """
     Get the model field of a schema field.
 
+    # todo: use alias (custom names)?
+       For example:
+
+    class Computer(sqla_base):
+        user = relationship(User)
+
+    class ComputerSchema(pydantic_base):
+        owner = Field(alias="user", relationship=...)
+
     :param schema: a pydantic schema
     :param field: the name of the schema field
     :return: the name of the field in the model
