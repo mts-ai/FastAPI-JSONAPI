@@ -676,6 +676,192 @@ class TestPatchObjectRelationshipsToOne:
         }
 
 
+class TestPatchRelationshipsToMany:
+    async def test_ok(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        computer_1: Computer,
+        computer_2: Computer,
+    ):
+        new_attrs = UserBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        ).dict()
+
+        patch_user_body = {
+            "data": {
+                "id": user_1.id,
+                "attributes": new_attrs,
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "type": "computer",
+                                "id": computer_1.id,
+                            },
+                            {
+                                "type": "computer",
+                                "id": computer_2.id,
+                            },
+                        ],
+                    },
+                },
+            },
+        }
+
+        # create relationships with patch endpoint
+        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        assert res.status_code == status.HTTP_200_OK, res.text
+
+        assert res.json() == {
+            "data": {
+                "attributes": new_attrs,
+                "id": str(user_1.id),
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "type": "computer",
+                                "id": str(computer_1.id),
+                            },
+                            {
+                                "type": "computer",
+                                "id": str(computer_2.id),
+                            },
+                        ],
+                    },
+                },
+                "type": "user",
+            },
+            "included": [
+                {
+                    "attributes": {"name": computer_1.name},
+                    "id": str(computer_1.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+                {
+                    "attributes": {"name": computer_2.name},
+                    "id": str(computer_2.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
+        patch_user_body["data"]["relationships"]["computers"] = {
+            "data": [
+                {
+                    "type": "computer",
+                    "id": str(computer_1.id),
+                },
+            ],
+        }
+
+        # update relationships with patch endpoint
+        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        assert res.status_code == status.HTTP_200_OK, res.text
+
+        assert res.json() == {
+            "data": {
+                "attributes": new_attrs,
+                "id": str(user_1.id),
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "type": "computer",
+                                "id": str(computer_1.id),
+                            },
+                        ],
+                    },
+                },
+                "type": "user",
+            },
+            "included": [
+                {
+                    "attributes": {"name": computer_1.name},
+                    "id": str(computer_1.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
+    async def test_ok_do_nothing_for_not_found(
+        self,
+        client: AsyncClient,
+        user_1: User,
+        computer_1: Computer,
+        computer_2: Computer,
+    ):
+        new_attrs = UserBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        ).dict()
+
+        fake_computer_id = 12345
+        patch_user_body = {
+            "data": {
+                "id": user_1.id,
+                "attributes": new_attrs,
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "type": "computer",
+                                "id": str(computer_1.id),
+                            },
+                            {
+                                "type": "computer",
+                                "id": fake_computer_id,
+                            },
+                        ],
+                    },
+                },
+            },
+        }
+
+        # update relationships with patch endpoint
+        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        assert res.status_code == status.HTTP_200_OK, res.text
+
+        assert res.json() == {
+            "meta": None,
+            "jsonapi": {"version": "1.0"},
+            "data": {
+                "type": "user",
+                "attributes": new_attrs,
+                "id": str(user_1.id),
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "type": "computer",
+                                "id": str(computer_1.id),
+                            },
+                        ],
+                    },
+                },
+            },
+            "included": [
+                {
+                    "attributes": {"name": computer_1.name},
+                    "id": str(computer_1.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+            ],
+        }
+
+
 class TestDeleteObjects:
     async def test_delete_object_and_fetch_404(self, client: AsyncClient, user_1: User):
         res = await client.delete(f"/users/{user_1.id}")
