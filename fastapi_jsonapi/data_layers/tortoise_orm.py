@@ -38,14 +38,13 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         super().__init__(
             model=model,
+            schema=schema,
             url_id_field=url_id_field,
             id_name_field=id_name_field,
+            default_collection_count=default_collection_count,
+            disable_collection_count=disable_collection_count,
             **kwargs,
         )
-
-        self.disable_collection_count: bool = disable_collection_count
-        self.default_collection_count: int = default_collection_count
-        self.schema = schema
         self.query_: QuerySet = query or self.model.filter()
 
     async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:

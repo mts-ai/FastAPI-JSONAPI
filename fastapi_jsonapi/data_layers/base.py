@@ -7,7 +7,7 @@ you must inherit from this base class
 import types
 from typing import Optional, Tuple, Type
 
-from fastapi_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
 
@@ -41,19 +41,29 @@ class BaseDataLayer:
     def __init__(
         self,
         model: Type[TypeModel],
+        schema: Type[TypeSchema],
         url_id_field: str,
         id_name_field: Optional[str] = None,
+        disable_collection_count: bool = False,
+        default_collection_count: int = -1,
         **kwargs,
     ):
         """
         :param model:
+        :param schema:
         :param url_id_field:
         :param id_name_field:
+        :param disable_collection_count: Resource's attribute `disable_collection_count`
+                                          has to be bool or list/tuple with exactly 2 values!
+        :param default_collection_count: For example `disable_collection_count = (True, 999)`
         :param kwargs:
         """
         self.model = model
         self.url_id_field = url_id_field
         self.id_name_field = id_name_field
+        self.disable_collection_count: bool = disable_collection_count
+        self.default_collection_count: int = default_collection_count
+        self.schema = schema
 
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
