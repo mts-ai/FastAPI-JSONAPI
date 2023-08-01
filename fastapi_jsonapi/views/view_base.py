@@ -15,7 +15,6 @@ from fastapi import Request
 from pydantic.fields import ModelField
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
-from fastapi_jsonapi.api import JSONAPIObjectSchemas
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.data_typing import (
     TypeModel,
@@ -26,6 +25,7 @@ from fastapi_jsonapi.schema import (
     get_related_schema,
 )
 from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
+from fastapi_jsonapi.schema_builder import JSONAPIObjectSchemas
 from fastapi_jsonapi.splitter import SPLIT_REL
 
 logger = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ class ViewBase:
 
         # we need to build a new schema here
         # because we'd like to exclude/set some fields (relationships, includes, etc)
-        detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
+        detail_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_detail_result(
             name=f"Result{self.__class__.__name__}",
             object_jsonapi_schema=object_schemas.object_jsonapi_schema,
             includes_schemas=object_schemas.included_schemas_list,
@@ -294,7 +294,7 @@ class ViewBase:
         previous_resource_type = item_as_schema.type
 
         for related_field_name in include.split(SPLIT_REL):
-            object_schemas = self.jsonapi.create_jsonapi_object_schemas(
+            object_schemas = self.jsonapi.schema_builder.create_jsonapi_object_schemas(
                 schema=current_relation_schema,
                 includes=[related_field_name],
                 compute_included_schemas=bool([related_field_name]),
@@ -361,7 +361,7 @@ class ViewBase:
         items_from_db: List[TypeModel],
         item_schema: Type[TypeSchema],
     ):
-        object_schemas = self.jsonapi.create_jsonapi_object_schemas(
+        object_schemas = self.jsonapi.schema_builder.create_jsonapi_object_schemas(
             schema=item_schema,
             includes=includes,
             compute_included_schemas=bool(includes),

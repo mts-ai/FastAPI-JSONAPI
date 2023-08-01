@@ -6,6 +6,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Optional,
     Tuple,
     Type,
     TypeVar,
@@ -55,6 +56,14 @@ class JSONAPIObjectSchemas:
         return list(self.can_be_included_schemas.values())
 
 
+@dataclass(frozen=True)
+class BuiltSchemasDTO:
+    schema_in_post: Type[BaseJSONAPIDataInSchema]
+    schema_in_patch: Type[BaseJSONAPIDataInSchema]
+    detail_response_schema: Type[JSONAPIResultDetailSchema]
+    list_response_schema: Type[JSONAPIResultListSchema]
+
+
 class SchemaBuilder:
     # IDK if there's a better way than global caches
     # shared between ALL RoutersJSONAPI instances
@@ -81,15 +90,42 @@ class SchemaBuilder:
 
         return detail_jsonapi_schema
 
+    def create_schemas(
+        self,
+        schema: Type[BaseModel],
+        schema_in_post: Optional[Type[BaseModel]] = None,
+        schema_in_patch: Optional[Type[BaseModel]] = None,
+    ) -> BuiltSchemasDTO:
+        # TODO: generic?
+        schema_name_in_post_suffix = "InPost"
+        schema_in_post = schema_in_post or schema
+
+        schema_name_in_patch_suffix = "InPatch"
+        schema_in_patch = schema_in_patch or schema
+
+        schemas_in_post = self.build_schema_in(
+            schema_in=schema_in_post,
+            schema_name_suffix=schema_name_in_post_suffix,
+        )
+
+        schemas_in_patch = self.build_schema_in(
+            schema_in=schema_in_patch,
+            schema_name_suffix=schema_name_in_patch_suffix,
+        )
+
+        return BuiltSchemasDTO(
+            schema_in_post=schemas_in_post,
+            schema_in_patch=schemas_in_patch,
+            list_response_schema=self._create_schemas_objects_list(schema),
+            detail_response_schema=self._create_schemas_object_detail(schema),
+        )
+
     def build_schema_in(
         self,
         schema_in: Type[BaseModel],
         schema_name_suffix: str = "",
     ) -> Type[BaseJSONAPIDataInSchema]:
-        base_schema_name = schema_in.__name__
-        if base_schema_name.endswith("Schema"):
-            base_schema_name = base_schema_name[: -len("Schema")]
-        base_schema_name += schema_name_suffix
+        base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
         (
             # pre-built attributed

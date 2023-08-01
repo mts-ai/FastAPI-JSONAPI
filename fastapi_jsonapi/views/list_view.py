@@ -30,7 +30,7 @@ class ListViewBase(ViewBase):
 
         # we need to build a new schema here
         # because we'd like to exclude some fields (relationships, includes, etc)
-        list_jsonapi_schema = self.jsonapi.build_schema_for_list_result(
+        list_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_list_result(
             name=f"Result{self.__class__.__name__}",
             object_jsonapi_schema=object_schemas.object_jsonapi_schema,
             includes_schemas=object_schemas.included_schemas_list,
@@ -74,7 +74,7 @@ class ListViewBase(ViewBase):
 
         # we need to build a new schema here
         # because we'd like to exclude some fields (relationships, includes, etc)
-        list_jsonapi_schema = self.jsonapi.build_schema_for_list_result(
+        list_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_list_result(
             name=f"Result{self.__class__.__name__}",
             object_jsonapi_schema=object_schemas.object_jsonapi_schema,
             includes_schemas=object_schemas.included_schemas_list,

@@ -36,7 +36,7 @@ class DetailViewBase(ViewBase):
         # is it ok to do through list?
         result_object = result_objects[0]
 
-        detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
+        detail_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_detail_result(
             name=f"Result{self.__class__.__name__}",
             object_jsonapi_schema=object_schemas.object_jsonapi_schema,
             includes_schemas=object_schemas.included_schemas_list,
@@ -67,7 +67,7 @@ class DetailViewBase(ViewBase):
 
         # we need to build a new schema here
         # because we'd like to exclude/set some fields (relationships, includes, etc)
-        detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
+        detail_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_detail_result(
             name=f"Result{self.__class__.__name__}",
             object_jsonapi_schema=object_schemas.object_jsonapi_schema,
             includes_schemas=object_schemas.included_schemas_list,
