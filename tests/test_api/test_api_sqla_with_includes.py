@@ -425,6 +425,97 @@ class TestCreateObjects:
             "meta": None,
         }
 
+    async def test_create_to_one_and_to_many_relationship_at_the_same_time(
+        self,
+        client: AsyncClient,
+        computer_1: Computer,
+        computer_2: Computer,
+        workplace_1: Workplace,
+    ):
+        create_user_body = {
+            "data": {
+                "attributes": UserBaseSchema(
+                    name=fake.name(),
+                    age=fake.pyint(),
+                    email=fake.email(),
+                ).dict(),
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "id": computer_1.id,
+                                "type": "computer",
+                            },
+                            {
+                                "id": computer_2.id,
+                                "type": "computer",
+                            },
+                        ],
+                    },
+                    "workplace": {
+                        "data": {
+                            "id": str(workplace_1.id),
+                            "type": "workplace",
+                        },
+                    },
+                },
+            },
+        }
+        res = await client.post("/users?include=computers,workplace", json=create_user_body)
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+
+        response_data = res.json()
+        assert "data" in response_data
+        assert response_data["data"].pop("id")
+        assert response_data == {
+            "data": {
+                "attributes": create_user_body["data"]["attributes"],
+                "relationships": {
+                    "computers": {
+                        "data": [
+                            {
+                                "id": str(computer_1.id),
+                                "type": "computer",
+                            },
+                            {
+                                "id": str(computer_2.id),
+                                "type": "computer",
+                            },
+                        ],
+                    },
+                    "workplace": {
+                        "data": {
+                            "id": str(workplace_1.id),
+                            "type": "workplace",
+                        },
+                    },
+                },
+                "type": "user",
+            },
+            "included": [
+                {
+                    "attributes": {"name": computer_1.name},
+                    "id": str(computer_1.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+                {
+                    "attributes": {"name": computer_2.name},
+                    "id": str(computer_2.id),
+                    "relationships": None,
+                    "type": "computer",
+                },
+                {
+                    "attributes": {"name": workplace_1.name},
+                    "id": str(workplace_1.id),
+                    "relationships": None,
+                    "type": "workplace",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
     async def test_create_user(self, client: AsyncClient):
         create_user_body = {
             "data": {
@@ -481,18 +572,15 @@ class TestPatchObjects:
                 "attributes": new_attrs,
             },
         }
-        # TODO: add related fixtures and check includes
-        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        res = await client.patch(f"/users/{user_1.id}", json=patch_user_body)
         assert res.status_code == status.HTTP_200_OK, res.text
 
         assert res.json() == {
             "data": {
                 "attributes": new_attrs,
                 "id": str(user_1.id),
-                "relationships": {"computers": {"data": []}},
                 "type": "user",
             },
-            "included": [],
             "jsonapi": {"version": "1.0"},
             "meta": None,
         }
