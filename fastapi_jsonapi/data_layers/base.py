@@ -64,7 +64,6 @@ class BaseDataLayer:
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
 
-
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object
@@ -96,6 +95,7 @@ class BaseDataLayer:
         Retrieve an object
 
         :param view_kwargs: kwargs from the resource view
+        :param qs:
         :return DeclarativeMeta: an object
         """
         raise NotImplementedError
