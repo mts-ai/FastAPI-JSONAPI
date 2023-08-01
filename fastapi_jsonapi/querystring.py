@@ -37,7 +37,7 @@ from fastapi_jsonapi.schema import (
 from fastapi_jsonapi.splitter import SPLIT_REL
 
 if TYPE_CHECKING:
-    from fastapi_jsonapi.data_layers.data_typing import TypeSchema
+    from fastapi_jsonapi.data_typing import TypeSchema
 
 
 class PaginationQueryStringManager(BaseModel):

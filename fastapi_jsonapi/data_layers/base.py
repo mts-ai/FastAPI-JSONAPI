@@ -7,7 +7,7 @@ you must inherit from this base class
 import types
 from typing import Optional, Tuple, Type
 
-from fastapi_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_jsonapi.data_typing import TypeModel
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
 

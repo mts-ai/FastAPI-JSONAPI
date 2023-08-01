@@ -21,7 +21,7 @@ from pydantic import (
 )
 
 if TYPE_CHECKING:
-    from fastapi_jsonapi.data_layers.data_typing import TypeSchema
+    from fastapi_jsonapi.data_typing import TypeSchema
 
 
 class BaseJSONAPIRelationshipSchema(BaseModel):

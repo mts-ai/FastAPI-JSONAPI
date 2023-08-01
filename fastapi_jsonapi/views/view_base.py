@@ -16,7 +16,7 @@ from pydantic.fields import ModelField
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_jsonapi.data_layers.data_typing import (
+from fastapi_jsonapi.data_typing import (
     TypeModel,
     TypeSchema,
 )

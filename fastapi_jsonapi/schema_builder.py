@@ -18,7 +18,7 @@ from pydantic import BaseConfig
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import ModelField
 
-from fastapi_jsonapi.data_layers.data_typing import TypeSchema
+from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
     BaseJSONAPIDataInSchema,
     BaseJSONAPIItemInSchema,
