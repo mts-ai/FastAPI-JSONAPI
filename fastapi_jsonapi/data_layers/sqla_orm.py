@@ -11,9 +11,9 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
 from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import (
     HTTPException,
     InternalServerError,

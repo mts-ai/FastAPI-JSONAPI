@@ -65,10 +65,10 @@ fastapi_jsonapi.data_layers.base module
     :undoc-members:
     :show-inheritance:
 
-fastapi_jsonapi.data_layers.data_typing module
+fastapi_jsonapi.data_typing module
 -------------------------------------------------------
 
-.. automodule:: fastapi_jsonapi.data_layers.data_typing
+.. automodule:: fastapi_jsonapi.data_typing
     :members:
     :undoc-members:
     :show-inheritance:

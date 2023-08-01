@@ -16,7 +16,7 @@ from typing import (
 from fastapi import APIRouter, Path, Query, Request, status
 from pydantic import BaseModel as PydanticBaseModel
 
-from fastapi_jsonapi.data_layers.data_typing import TypeModel
+from fastapi_jsonapi.data_typing import TypeModel
 from fastapi_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_jsonapi.schema_base import BaseModel
 from fastapi_jsonapi.schema_builder import SchemaBuilder
