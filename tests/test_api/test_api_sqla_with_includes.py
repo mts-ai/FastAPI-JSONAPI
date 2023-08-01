@@ -304,7 +304,7 @@ async def test_get_user_not_found(client: AsyncClient):
             {
                 "detail": f"Resource User `{fake_id}` not found",
                 "title": "Resource not found.",
-                "status_code": 404,
+                "status_code": status.HTTP_404_NOT_FOUND,
                 "meta": {"parameter": "id"},
             },
         ],
@@ -685,6 +685,8 @@ class TestPatchObjectRelationshipsToOne:
         user_1_bio: UserBio,
         user_2_bio: UserBio,
     ):
+        assert user_2_bio.user_id == user_2.id, "we need user_2 to be bound to user_bio_2"
+
         patch_user_bio_body = {
             "data": {
                 "id": user_1_bio.id,
@@ -756,7 +758,7 @@ class TestPatchObjectRelationshipsToOne:
                     {
                         "detail": f"Workplace.id: {fake_relationship_id} not found",
                         "source": {"pointer": ""},
-                        "status_code": 404,
+                        "status_code": status.HTTP_404_NOT_FOUND,
                         "title": "Related object not found.",
                     },
                 ],
@@ -787,11 +789,13 @@ class TestPatchRelationshipsToMany:
                         "data": [
                             {
                                 "type": "computer",
+                                # test id as int
                                 "id": computer_1.id,
                             },
                             {
                                 "type": "computer",
-                                "id": computer_2.id,
+                                # test id as str
+                                "id": str(computer_2.id),
                             },
                         ],
                     },
@@ -895,7 +899,9 @@ class TestPatchRelationshipsToMany:
             email=fake.email(),
         ).dict()
 
-        fake_computer_id = 12345
+        fake_computer_id = fake.pyint(min_value=1000, max_value=9999)
+        assert fake_computer_id != computer_2.id
+
         patch_user_body = {
             "data": {
                 "id": user_1.id,
@@ -1050,7 +1056,10 @@ class TestFilters:
         user_1: User,
         user_2: User,
     ):
-        params = {"filter[name]": fake.name()}
+        fake_name = fake.name()
+        params = {"filter[name]": fake_name}
+        assert user_1.name != fake_name
+        assert user_2.name != fake_name
         res = await client.get("/users", params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
@@ -1067,7 +1076,10 @@ class TestFilters:
         user_2: User,
         field_name: str,
     ):
-        params = {f"filter[{field_name}]": getattr(user_1, field_name)}
+        filter_value = getattr(user_1, field_name)
+        assert getattr(user_2, field_name) != filter_value
+
+        params = {f"filter[{field_name}]": filter_value}
         res = await client.get("/users", params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
@@ -1097,6 +1109,7 @@ class TestFilters:
                 "email",
             ]
         }
+        assert user_2.id != user_1.id
         res = await client.get("/users", params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
@@ -1309,5 +1322,4 @@ class TestSorts:
         }
 
 
-# todo: test object not found
 # todo: test errors
