@@ -1,7 +1,13 @@
 name: Python testing
 
 on:
-  - push
+  push:
+  pull_request:
+
+# is there a way to fix doubled pipelines?
+# only XXX
+# https://github.com/orgs/community/discussions/25654
+# https://github.com/orgs/community/discussions/26276
 
 jobs:
   check:
