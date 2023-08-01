@@ -97,11 +97,17 @@ class SchemaBuilder:
         schema_in_patch: Optional[Type[BaseModel]] = None,
     ) -> BuiltSchemasDTO:
         # TODO: generic?
-        schema_name_in_post_suffix = "InPost"
         schema_in_post = schema_in_post or schema
+        schema_name_in_post_suffix = ""
 
-        schema_name_in_patch_suffix = "InPatch"
+        if any(schema_in_post is cmp_schema for cmp_schema in [schema, schema_in_patch]):
+            schema_name_in_post_suffix = "InPost"
+
         schema_in_patch = schema_in_patch or schema
+        schema_name_in_patch_suffix = ""
+
+        if any(schema_in_patch is cmp_schema for cmp_schema in [schema, schema_in_post]):
+            schema_name_in_patch_suffix = "InPatch"
 
         schemas_in_post = self.build_schema_in(
             schema_in=schema_in_post,
