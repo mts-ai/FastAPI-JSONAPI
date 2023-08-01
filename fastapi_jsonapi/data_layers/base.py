@@ -7,7 +7,7 @@ you must inherit from this base class
 import types
 from typing import Optional, Tuple, Type
 
-from fastapi_jsonapi.data_typing import TypeModel
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
 
@@ -40,20 +40,30 @@ class BaseDataLayer:
 
     def __init__(
         self,
+        schema: Type[TypeSchema],
         model: Type[TypeModel],
         url_id_field: str,
         id_name_field: Optional[str] = None,
+        disable_collection_count: bool = False,
+        default_collection_count: int = -1,
         **kwargs,
     ):
         """
+        :param schema:
         :param model:
         :param url_id_field:
         :param id_name_field:
+        :param disable_collection_count:
+        :param default_collection_count:
         :param kwargs:
         """
         self.model = model
+        self.schema = schema
         self.url_id_field = url_id_field
         self.id_name_field = id_name_field
+        self.disable_collection_count: bool = disable_collection_count
+        self.default_collection_count: int = default_collection_count
+
 
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
