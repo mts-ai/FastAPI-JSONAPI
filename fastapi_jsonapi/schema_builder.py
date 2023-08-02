@@ -315,9 +315,11 @@ class SchemaBuilder:
         relationships_schema: Type[TypeSchema],
         includes,
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
+        use_schema_cache: bool = True,
     ) -> Type[JSONAPIObjectSchemaType]:
-        if base_name in self.base_jsonapi_object_schemas_cache:
+        if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
+
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
         }
@@ -332,7 +334,8 @@ class SchemaBuilder:
             type=(str, Field(default=resource_type or self._resource_type, description="Resource type")),
             __base__=model_base,
         )
-        self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
+        if use_schema_cache:
+            self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
 
         return object_jsonapi_schema
 
@@ -368,6 +371,8 @@ class SchemaBuilder:
                     resource_type=resource_type,
                     # higher and lower
                     includes=nested_schema_includes,
+                    # rebuild schemas for each response
+                    use_schema_cache=False,
                 ).object_jsonapi_schema
                 # cache it
                 can_be_included_schemas[include_part] = related_jsonapi_object_schema
@@ -383,8 +388,9 @@ class SchemaBuilder:
         resource_type: str = None,
         base_name: str = "",
         compute_included_schemas: bool = False,
+        use_schema_cache: bool = True,
     ) -> JSONAPIObjectSchemas:
-        if schema in self.object_schemas_cache and includes is not_passed:
+        if use_schema_cache and schema in self.object_schemas_cache and includes is not_passed:
             return self.object_schemas_cache[schema]
 
         schema.update_forward_refs(**registry.schemas)
@@ -412,6 +418,7 @@ class SchemaBuilder:
             attributes_schema=attributes_schema,
             relationships_schema=relationships_schema,
             includes=includes,
+            use_schema_cache=use_schema_cache,
         )
 
         can_be_included_schemas = {}
@@ -429,7 +436,7 @@ class SchemaBuilder:
             object_jsonapi_schema=object_jsonapi_schema,
             can_be_included_schemas=can_be_included_schemas,
         )
-        if includes is not_passed:
+        if use_schema_cache and includes is not_passed:
             self.object_schemas_cache[schema] = result
         return result
 

@@ -3,37 +3,19 @@ from typing import Dict, List, Optional
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 
-class UserBaseSchema(BaseModel):
-    """User base schema."""
+class UserAttributesBaseSchema(BaseModel):
+    name: str
+    age: Optional[int] = None
+    email: Optional[str] = None
 
     class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
-    name: str
-    age: Optional[int] = None
-    email: Optional[str] = None
 
-
-class UserPatchSchema(UserBaseSchema):
-    """User PATCH schema."""
-
-    computers: Optional["ComputerSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="computer",
-            many=True,
-        ),
-    )
-    workplace: Optional["WorkplaceSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="workplace",
-        ),
-    )
-
-
-class UserInSchema(UserBaseSchema):
-    """User input schema."""
+class UserBaseSchema(UserAttributesBaseSchema):
+    """User base schema."""
 
     posts: List["PostSchema"] = Field(
         relationship=RelationshipInfo(
@@ -48,7 +30,7 @@ class UserInSchema(UserBaseSchema):
         ),
     )
 
-    computers: Optional["ComputerSchema"] = Field(
+    computers: List["ComputerSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="computer",
             many=True,
@@ -59,6 +41,14 @@ class UserInSchema(UserBaseSchema):
             resource_type="workplace",
         ),
     )
+
+
+class UserPatchSchema(UserBaseSchema):
+    """User PATCH schema."""
+
+
+class UserInSchema(UserBaseSchema):
+    """User input schema."""
 
 
 class UserSchema(UserInSchema):
@@ -70,31 +60,6 @@ class UserSchema(UserInSchema):
         orm_mode = True
 
     id: int
-
-    posts: List["PostSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-            many=True,
-        ),
-    )
-
-    bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user_bio",
-        ),
-    )
-
-    computers: Optional["ComputerSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="computer",
-            many=True,
-        ),
-    )
-    workplace: Optional["WorkplaceSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="workplace",
-        ),
-    )
 
 
 # User Bio Schemas ⬇️
@@ -127,16 +92,30 @@ class UserBioSchema(UserBioBaseSchema):
 # Post Schemas ⬇️
 
 
-class PostBaseSchema(BaseModel):
-    """Post base schema."""
+class PostAttributesBaseSchema(BaseModel):
+    title: str
+    body: str
 
     class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
-    title: str
-    body: str
+
+class PostBaseSchema(PostAttributesBaseSchema):
+    """Post base schema."""
+
+    user: "UserSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
+    comments: List["PostCommentSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post_comment",
+            many=True,
+        ),
+    )
 
 
 class PostPatchSchema(PostBaseSchema):
@@ -151,45 +130,23 @@ class PostSchema(PostInSchema):
     """Post item schema."""
 
     id: int
-    user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
-    )
-    comments: List["PostCommentSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post_comment",
-            many=True,
-        ),
-    )
 
 
 # Post Comment Schemas ⬇️
 
 
-class PostCommentBaseSchema(BaseModel):
-    """PostComment base schema."""
+class PostCommentAttributesBaseSchema(BaseModel):
+    text: str
 
     class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
-    text: str
 
+class PostCommentBaseSchema(PostCommentAttributesBaseSchema):
+    """PostComment base schema."""
 
-class PostCommentPatchSchema(PostCommentBaseSchema):
-    """PostComment PATCH schema."""
-
-
-class PostCommentInSchema(PostCommentBaseSchema):
-    """PostComment input schema."""
-
-
-class PostCommentSchema(PostCommentInSchema):
-    """PostComment item schema."""
-
-    id: int
     post: "PostSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="post",
@@ -200,6 +157,12 @@ class PostCommentSchema(PostCommentInSchema):
             resource_type="user",
         ),
     )
+
+
+class PostCommentSchema(PostCommentBaseSchema):
+    """PostComment item schema."""
+
+    id: int
 
 
 # Parents and Children associations ⬇️⬇️
@@ -237,6 +200,13 @@ class ParentBaseSchema(BaseModel):
 
     name: str
 
+    children: List["ParentToChildAssociationSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="parent_child_association",
+            many=True,
+        ),
+    )
+
 
 class ParentPatchSchema(ParentBaseSchema):
     """Parent PATCH schema."""
@@ -250,12 +220,6 @@ class ParentSchema(ParentInSchema):
     """Parent item schema."""
 
     id: int
-    children: List["ParentToChildAssociationSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="parent_child_association",
-            many=True,
-        ),
-    )
 
 
 # Child Schemas ⬇️
@@ -270,6 +234,13 @@ class ChildBaseSchema(BaseModel):
         orm_mode = True
 
     name: str
+
+    parents: List["ParentToChildAssociationSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="parent_child_association",
+            many=True,
+        ),
+    )
 
 
 class ChildPatchSchema(ChildBaseSchema):

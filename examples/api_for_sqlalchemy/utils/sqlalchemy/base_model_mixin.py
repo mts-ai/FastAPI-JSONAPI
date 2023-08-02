@@ -5,6 +5,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     delete,
+    func,
     inspect,
     select,
 )
@@ -24,12 +25,23 @@ class BaseModelMixin(Generic[Model]):
     @declared_attr
     def created_at(cls) -> Column:
         """Дата создания записи"""
-        return Column("created_at", DateTime, default=datetime.utcnow)
+        return Column(
+            "created_at",
+            DateTime,
+            default=datetime.utcnow,
+            server_default=func.now(),
+        )
 
     @declared_attr
     def modified_at(cls) -> Column:
         """Дата изменения записи"""
-        return Column("modified_at", DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        return Column(
+            "modified_at",
+            DateTime,
+            default=datetime.utcnow,
+            onupdate=datetime.utcnow,
+            server_onupdate=func.now(),
+        )
 
     def __repr__(self) -> str:
         return "<{}, pk: {}>".format(

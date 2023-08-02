@@ -34,6 +34,7 @@ from tests.fixtures.entities import (  # noqa
     user_1,
     user_1_bio,
     user_1_comments_for_u2_posts,
+    user_1_post,
     user_1_post_for_comments,
     user_1_posts,
     user_2,

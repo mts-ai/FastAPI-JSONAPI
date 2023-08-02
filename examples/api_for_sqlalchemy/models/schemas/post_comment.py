@@ -21,6 +21,17 @@ class PostCommentBaseSchema(BaseModel):
     created_at: datetime = Field(description="Create datetime")
     modified_at: datetime = Field(description="Update datetime")
 
+    post: "PostSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="post",
+        ),
+    )
+    author: "UserSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
+
 
 class PostCommentPatchSchema(PostCommentBaseSchema):
     """PostComment PATCH schema."""
@@ -39,14 +50,3 @@ class PostCommentSchema(PostCommentInSchema):
         orm_mode = True
 
     id: int
-
-    post: "PostSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-        ),
-    )
-    author: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
-    )

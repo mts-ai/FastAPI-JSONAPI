@@ -21,6 +21,19 @@ class PostBaseSchema(BaseModel):
     title: str
     body: str
 
+    user: "UserSchema" = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
+
+    comments: List["PostCommentSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post_comment",
+            many=True,
+        ),
+    )
+
 
 class PostPatchSchema(PostBaseSchema):
     """Post PATCH schema."""
@@ -41,16 +54,3 @@ class PostSchema(PostInSchema):
     id: int
     created_at: datetime = Field(description="Create datetime")
     modified_at: datetime = Field(description="Update datetime")
-
-    user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
-    )
-
-    comments: List["PostCommentSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post_comment",
-            many=True,
-        ),
-    )

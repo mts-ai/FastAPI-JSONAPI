@@ -29,7 +29,12 @@ class User(AutoIdMixin, Base):
     age: int = Column(Integer, nullable=True)
     email: Optional[str] = Column(String, nullable=True)
 
-    posts = relationship("Post", back_populates="user", uselist=True)
+    posts = relationship(
+        "Post",
+        back_populates="user",
+        uselist=True,
+        cascade="all,delete",
+    )
     bio = relationship(
         "UserBio",
         back_populates="user",

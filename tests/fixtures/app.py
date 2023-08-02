@@ -15,6 +15,7 @@ from tests.models import (
     Computer,
     Parent,
     Post,
+    PostComment,
     User,
     UserBio,
 )
@@ -27,6 +28,7 @@ from tests.schemas import (
     ComputerSchema,
     ParentPatchSchema,
     ParentSchema,
+    PostCommentSchema,
     PostInSchema,
     PostPatchSchema,
     PostSchema,
@@ -56,6 +58,7 @@ def build_app_plain() -> FastAPI:
 
 def add_routers(app_plain: FastAPI):
     router: APIRouter = APIRouter()
+
     RoutersJSONAPI(
         router=router,
         path="/users",
@@ -80,6 +83,17 @@ def add_routers(app_plain: FastAPI):
         schema_in_patch=PostPatchSchema,
         schema_in_post=PostInSchema,
         model=Post,
+    )
+
+    RoutersJSONAPI(
+        router=router,
+        path="/comments",
+        tags=["Comment"],
+        class_detail=DetailViewBaseGeneric,
+        class_list=ListViewBaseGeneric,
+        schema=PostCommentSchema,
+        resource_type="comment",
+        model=PostComment,
     )
 
     RoutersJSONAPI(

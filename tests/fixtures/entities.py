@@ -114,6 +114,20 @@ async def user_1_posts(async_session: AsyncSession, user_1: User):
 
 
 @async_fixture()
+async def user_1_post(async_session: AsyncSession, user_1: User):
+    post = Post(title="post_for_u1", user=user_1)
+    async_session.add(post)
+    await async_session.commit()
+
+    await async_session.refresh(post)
+
+    yield post
+
+    await async_session.delete(post)
+    await async_session.commit()
+
+
+@async_fixture()
 async def user_2_posts(async_session: AsyncSession, user_2: User):
     posts = [Post(title=f"post_u2_{i}", user=user_2) for i in range(1, 5)]
     async_session.add_all(posts)
