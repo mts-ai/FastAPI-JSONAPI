@@ -31,7 +31,7 @@ class UserBaseSchema(BaseModel):
     status: UserStatusEnum = Field(default=UserStatusEnum.active)
     email: str | None = None
 
-    posts: List["PostSchema"] = Field(
+    posts: Optional[List["PostSchema"]] = Field(
         relationship=RelationshipInfo(
             resource_type="post",
             many=True,

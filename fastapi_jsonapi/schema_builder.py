@@ -112,6 +112,7 @@ class SchemaBuilder:
         schemas_in_post = self.build_schema_in(
             schema_in=schema_in_post,
             schema_name_suffix=schema_name_in_post_suffix,
+            non_optional_relationships=True,
         )
 
         schemas_in_patch = self.build_schema_in(
@@ -130,6 +131,7 @@ class SchemaBuilder:
         self,
         schema_in: Type[BaseModel],
         schema_name_suffix: str = "",
+        non_optional_relationships: bool = False,
     ) -> Type[BaseJSONAPIDataInSchema]:
         base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
@@ -138,11 +140,14 @@ class SchemaBuilder:
             attributes_schema,
             # relationships
             relationships_schema,
+            # has any required relationship
+            has_required_relationship,
             # anything that can be included
             included_schemas,
         ) = self._get_info_from_schema_for_building(
             base_name=base_schema_name,
             schema=schema_in,
+            non_optional_relationships=non_optional_relationships,
         )
 
         object_jsonapi_schema = self._build_jsonapi_object(
@@ -152,6 +157,7 @@ class SchemaBuilder:
             relationships_schema=relationships_schema,
             includes=not_passed,
             model_base=BaseJSONAPIItemInSchema,
+            relationships_required=has_required_relationship,
         )
 
         wrapped_object_jsonapi_schema = pydantic.create_model(
@@ -212,10 +218,12 @@ class SchemaBuilder:
         base_name: str,
         schema: Type[BaseModel],
         includes: Iterable[str] = not_passed,
-    ) -> Tuple[Type[BaseModel], Type[BaseModel], List[Tuple[str, BaseModel, str]]]:
+        non_optional_relationships: bool = False,
+    ) -> Tuple[Type[BaseModel], Type[BaseModel], bool, List[Tuple[str, BaseModel, str]]]:
         attributes_schema_fields = {}
         relationships_schema_fields = {}
         included_schemas: List[Tuple[str, BaseModel, str]] = []
+        has_required_relationship = False
         for name, field in (schema.__fields__ or {}).items():
             if isinstance(field.field_info.extra.get("relationship"), RelationshipInfo):
                 if includes is not_passed:
@@ -230,7 +238,10 @@ class SchemaBuilder:
                     field=field,
                     relationship_info=relationship,
                 )
-                relationships_schema_fields[name] = (relationship_schema, None)  # allow to not pass relationships
+                relationship_field = ... if (non_optional_relationships and field.required) else None
+                if relationship_field is not None:
+                    has_required_relationship = True
+                relationships_schema_fields[name] = (relationship_schema, relationship_field)
                 # works both for to-one and to-many
                 included_schemas.append((name, field.type_, relationship.resource_type))
             elif name == "id":
@@ -254,7 +265,7 @@ class SchemaBuilder:
             __config__=ConfigOrmMode,
         )
 
-        return attributes_schema, relationships_schema, included_schemas
+        return attributes_schema, relationships_schema, has_required_relationship, included_schemas
 
     def create_relationship_schema(
         self,
@@ -316,6 +327,7 @@ class SchemaBuilder:
         includes,
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
         use_schema_cache: bool = True,
+        relationships_required: bool = False,
     ) -> Type[JSONAPIObjectSchemaType]:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
@@ -325,7 +337,7 @@ class SchemaBuilder:
         }
         if includes:
             object_jsonapi_schema_fields.update(
-                relationships=(relationships_schema, None),  # allow None
+                relationships=(relationships_schema, (... if relationships_required else None)),
             )
 
         object_jsonapi_schema = pydantic.create_model(
@@ -404,6 +416,8 @@ class SchemaBuilder:
             attributes_schema,
             # relationships
             relationships_schema,
+            # has any required relationship
+            has_required_relationship,
             # anything that can be included
             included_schemas,
         ) = self._get_info_from_schema_for_building(
@@ -419,6 +433,7 @@ class SchemaBuilder:
             relationships_schema=relationships_schema,
             includes=includes,
             use_schema_cache=use_schema_cache,
+            # pass has_required_relationship ?
         )
 
         can_be_included_schemas = {}

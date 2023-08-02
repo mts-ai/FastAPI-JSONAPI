@@ -17,7 +17,7 @@ class UserAttributesBaseSchema(BaseModel):
 class UserBaseSchema(UserAttributesBaseSchema):
     """User base schema."""
 
-    posts: List["PostSchema"] = Field(
+    posts: Optional[List["PostSchema"]] = Field(
         relationship=RelationshipInfo(
             resource_type="post",
             many=True,
@@ -30,7 +30,7 @@ class UserBaseSchema(UserAttributesBaseSchema):
         ),
     )
 
-    computers: List["ComputerSchema"] = Field(
+    computers: Optional[List["ComputerSchema"]] = Field(
         relationship=RelationshipInfo(
             resource_type="computer",
             many=True,
@@ -110,7 +110,7 @@ class PostBaseSchema(PostAttributesBaseSchema):
             resource_type="user",
         ),
     )
-    comments: List["PostCommentSchema"] = Field(
+    comments: Optional[List["PostCommentSchema"]] = Field(
         relationship=RelationshipInfo(
             resource_type="post_comment",
             many=True,

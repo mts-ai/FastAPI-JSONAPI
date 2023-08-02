@@ -277,6 +277,130 @@ class TestCreatePostAndComments:
             },
         ]
 
+    async def test_create_comment_error_no_relationship(
+        self,
+        client: AsyncClient,
+        user_1_post: Post,
+    ):
+        """
+        Check schema is built properly
+
+        :param client:
+        :param user_1_post:
+        :return:
+        """
+        url = "/comments"
+        comment_attributes = PostCommentAttributesBaseSchema(
+            text=fake.sentence(),
+        ).dict()
+        comment_create = {
+            "data": {
+                "attributes": comment_attributes,
+                "relationships": {
+                    "post": {
+                        "data": {
+                            "type": "post",
+                            "id": user_1_post.id,
+                        },
+                    },
+                    # don't pass "author"
+                },
+            },
+        }
+        response = await client.post(url, json=comment_create)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        response_data = response.json()
+        assert response_data == {
+            "detail": [
+                {
+                    "loc": [
+                        "body",
+                        "data",
+                        "relationships",
+                        "author",
+                    ],
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                },
+            ],
+        }
+
+    async def test_create_comment_error_no_relationships_content(
+        self,
+        client: AsyncClient,
+    ):
+        url = "/comments"
+        comment_attributes = PostCommentAttributesBaseSchema(
+            text=fake.sentence(),
+        ).dict()
+        comment_create = {
+            "data": {
+                "attributes": comment_attributes,
+                "relationships": {
+                    # don't pass "post"
+                    # don't pass "author"
+                },
+            },
+        }
+        response = await client.post(url, json=comment_create)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        response_data = response.json()
+        assert response_data == {
+            "detail": [
+                {
+                    "loc": [
+                        "body",
+                        "data",
+                        "relationships",
+                        "post",
+                    ],
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                },
+                {
+                    "loc": [
+                        "body",
+                        "data",
+                        "relationships",
+                        "author",
+                    ],
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                },
+            ],
+        }
+
+    async def test_create_comment_error_no_relationships_field(
+        self,
+        client: AsyncClient,
+    ):
+        url = "/comments"
+        comment_attributes = PostCommentAttributesBaseSchema(
+            text=fake.sentence(),
+        ).dict()
+        comment_create = {
+            "data": {
+                "attributes": comment_attributes,
+                # don't pass "relationships" at all
+            },
+        }
+        response = await client.post(url, json=comment_create)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        response_data = response.json()
+        assert response_data == {
+            "detail": [
+                {
+                    "loc": [
+                        "body",
+                        "data",
+                        "relationships",
+                    ],
+                    "msg": "field required",
+                    "type": "value_error.missing",
+                },
+            ],
+        }
+
 
 async def test_get_users_with_all_inner_relations(
     client: AsyncClient,
