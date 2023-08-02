@@ -1,5 +1,6 @@
 # .coveragerc to control coverage.py
 [run]
+concurrency = greenlet
 branch = True
 omit =
     tests/*
