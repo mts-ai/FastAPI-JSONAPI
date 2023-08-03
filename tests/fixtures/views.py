@@ -1,4 +1,7 @@
+from typing import Dict
+
 from fastapi import Depends
+from pydantic import BaseModel
 from pytest import fixture  # noqa
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,14 +11,38 @@ from fastapi_jsonapi.misc.sqla.generics.base import (
 from fastapi_jsonapi.misc.sqla.generics.base import (
     ListViewBaseGeneric as ListViewBaseGenericHelper,
 )
+from fastapi_jsonapi.views.utils import (
+    ALL_METHODS,
+    HTTPMethodConfig,
+)
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
 
 
+class SessionDependency(BaseModel):
+    session: AsyncSession = Depends(async_session_dependency)
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+def common_handler(view: ViewBase, dto: BaseModel) -> Dict:
+    return {"session": dto.session}
+
+
 class DetailViewBaseGeneric(DetailViewBaseGenericHelper):
-    async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
-        self.session = session
+    method_dependencies = {
+        ALL_METHODS: HTTPMethodConfig(
+            dependencies=SessionDependency,
+            handler=common_handler,
+        ),
+    }
 
 
 class ListViewBaseGeneric(ListViewBaseGenericHelper):
-    async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
-        self.session = session
+    method_dependencies = {
+        ALL_METHODS: HTTPMethodConfig(
+            dependencies=SessionDependency,
+            handler=common_handler,
+        ),
+    }

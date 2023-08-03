@@ -5,6 +5,7 @@ from fastapi_jsonapi.schema import (
     BaseJSONAPIItemInSchema,
     JSONAPIResultDetailSchema,
 )
+from fastapi_jsonapi.views.utils import HTTPDetailMethods
 from fastapi_jsonapi.views.view_base import ViewBase
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,10 @@ class DetailViewBase(ViewBase):
         self,
         obj_id: str,
         data_update: BaseJSONAPIItemInSchema,
+        **extra_view_deps,
     ) -> JSONAPIResultDetailSchema:
-        dl = self._get_data_layer_for_detail()
+        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.PATCH, extra_view_deps)
+        dl = self._get_data_layer_for_detail(**dl_kwargs)
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
 
@@ -49,8 +52,10 @@ class DetailViewBase(ViewBase):
     async def delete_resource_result(
         self,
         obj_id: str,
+        **extra_view_deps,
     ):
-        dl = self._get_data_layer_for_detail()
+        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.DELETE, extra_view_deps)
+        dl = self._get_data_layer_for_detail(**dl_kwargs)
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
 

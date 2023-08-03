@@ -1,8 +1,10 @@
+import inspect
 import logging
-from collections import defaultdict
 from contextvars import ContextVar
+from functools import partial
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -29,7 +31,12 @@ from fastapi_jsonapi.schema import (
 from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
 from fastapi_jsonapi.schema_builder import JSONAPIObjectSchemas
 from fastapi_jsonapi.splitter import SPLIT_REL
-from fastapi_jsonapi.views.utils import HTTPDetailMethods, HTTPMethodConfig, HTTPMethods
+from fastapi_jsonapi.views.utils import (
+    ALL_METHODS,
+    HTTPDetailMethods,
+    HTTPMethodConfig,
+    HTTPMethods,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +54,7 @@ class ViewBase:
     """
 
     data_layer_cls = BaseDataLayer
-    method_dependencies: Dict[HTTPMethods, HTTPMethodConfig] = defaultdict(lambda: HTTPMethodConfig())
+    method_dependencies: Dict[HTTPMethods, HTTPMethodConfig] = {}
 
     def __init__(self, *, request: Request, jsonapi: RoutersJSONAPI, **options):
         self.request: Request = request
@@ -55,41 +62,54 @@ class ViewBase:
         self.options: dict = options
         self.query_params: QueryStringManager = QueryStringManager(request=request)
 
-    async def _handle_endpoint_dependencies(self, method: HTTPMethods, **kwargs) -> Optional[Dict]:
-        """
-        :return dict: this is **kwargs for DataLayer.__init___
-        """
-        if self.method_dependencies[method].handler:
-            if self.method_dependencies[method].dependencies:
-                dto_class: Type[PydanticBaseModel] = self.method_dependencies[method].dependencies
-                dto = dto_class(**kwargs)
-                dl_kwargs = await self.method_dependencies[method].handler(self, dto)
+    async def _run_handler(self, handler: Callable, dto: Optional[BaseModel] = None):
+        handler = partial(handler, self, dto) if dto is not None else partial(handler, self)
+
+        if inspect.iscoroutinefunction(handler):
+            return await handler()
+
+        return handler()
+
+    async def _handle_config(self, method_config: HTTPMethodConfig, extra_view_deps: Dict) -> Dict:
+        if method_config.handler:
+            if method_config.dependencies:
+                dto_class: Type[PydanticBaseModel] = method_config.dependencies
+                dto = dto_class(**extra_view_deps)
+                dl_kwargs = await self._run_handler(method_config.handler, dto)
 
                 return dl_kwargs
 
-            dl_kwargs = await self.method_dependencies[method].handler(self)
+            dl_kwargs = await self._run_handler(method_config.handler)
 
             return dl_kwargs
 
-    async def init_dependencies(self):
-        """
-        :return:
-        """
-
-    # noinspection PyMethodMayBeStatic
-    def get_data_layer_kwargs(self):
-        """
-        # TODO: async?
-
-        Add any additional Data Layer kwargs (like session, etc)
-        :return:
-        """
         return {}
 
-    def _get_data_layer(self, schema: Type[BaseModel], **kwargs):
-        dl_kwargs = self.get_data_layer_kwargs()
-        dl_kwargs.update(kwargs)
+    async def _handle_endpoint_dependencies(self, method: HTTPMethods, extra_view_deps: Dict) -> Dict:
+        """
+        :return dict: this is **kwargs for DataLayer.__init___
+        """
+        dl_kwargs = {}
+        if common_method_config := self.method_dependencies.get(ALL_METHODS):
+            dl_kwargs.update(await self._handle_config(common_method_config, extra_view_deps))
 
+        method_config = self.method_dependencies.get(method) or HTTPMethodConfig()
+
+        if method_config.handler:
+            if method_config.dependencies:
+                dto_class: Type[PydanticBaseModel] = method_config.dependencies
+                dto = dto_class(**extra_view_deps)
+                dl_kwargs.update(await self._run_handler(method_config.handler, dto))
+
+                return dl_kwargs
+
+            dl_kwargs.update(await self._run_handler(method_config.handler))
+
+            return dl_kwargs
+
+        return dl_kwargs
+
+    def _get_data_layer(self, schema: Type[BaseModel], **dl_kwargs):
         return self.data_layer_cls(
             schema=schema,
             model=self.jsonapi.model,
@@ -119,10 +139,10 @@ class ViewBase:
     async def get_resource_detail_result(
         self,
         object_id: Union[int, str],
-        **kwargs,
+        **extra_view_deps,
     ):
-        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.GET, **kwargs)
-        dl = self._get_data_layer_for_detail(**(dl_kwargs or {}))
+        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.GET, extra_view_deps)
+        dl = self._get_data_layer_for_detail(**dl_kwargs)
 
         view_kwargs = {dl.url_id_field: object_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)

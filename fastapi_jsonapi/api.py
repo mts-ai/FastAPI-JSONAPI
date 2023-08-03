@@ -21,12 +21,18 @@ from fastapi_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_jsonapi.schema_base import BaseModel
 from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.signature import create_additional_query_params
-from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
-from fastapi_jsonapi.views.utils import HTTPDetailMethods
+from fastapi_jsonapi.views.utils import (
+    ALL_METHODS,
+    HTTPDetailMethods,
+    HTTPListMethods,
+    HTTPMethodConfig,
+    HTTPMethods,
+)
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.views.detail_view import DetailViewBase
     from fastapi_jsonapi.views.list_view import ListViewBase
+    from fastapi_jsonapi.views.view_base import ViewBase
 
 JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
 
@@ -293,7 +299,11 @@ class RoutersJSONAPI:
 
         return params, tail_params
 
-    def _update_signature_for_resource_list_view(self, wrapper: Callable[..., Any]) -> Signature:
+    def _update_signature_for_resource_list_view(
+        self,
+        wrapper: Callable[..., Any],
+        additional_dependency_params: List[Parameter] = [],
+    ) -> Signature:
         sig = signature(wrapper)
         params, tail_params = self._get_separated_params(sig)
 
@@ -306,7 +316,7 @@ class RoutersJSONAPI:
         extra_params.append(self._create_sort_query_dependency_param())
         extra_params.extend(include_params)
 
-        return sig.replace(parameters=params + extra_params + tail_params)
+        return sig.replace(parameters=params + extra_params + additional_dependency_params + tail_params)
 
     def _update_signature_for_resource_detail_view(
         self,
@@ -331,23 +341,66 @@ class RoutersJSONAPI:
             for field_name, field_info in model_class.__fields__.items()
         ]
 
+    def _update_method_config(self, view: Type["ViewBase"], method: HTTPMethods) -> HTTPMethodConfig:
+        target_config = view.method_dependencies.get(method) or HTTPMethodConfig()
+        common_config = view.method_dependencies.get(ALL_METHODS) or HTTPMethodConfig()
+
+        dependencies_model = target_config.dependencies or common_config.dependencies
+
+        same_type = target_config.dependencies is common_config.dependencies
+        if not same_type and all([target_config.dependencies, common_config.dependencies]):
+            dependencies_model = type(
+                f"{view.__name__}{method.name.title()}MethodDependencyModel",
+                (
+                    common_config.dependencies,
+                    target_config.dependencies,
+                ),
+                {},
+            )
+
+        new_method_config = HTTPMethodConfig(
+            dependencies=dependencies_model,
+            handler=common_config.handler or target_config.handler,
+        )
+        view.method_dependencies[method] = new_method_config
+
+        return new_method_config
+
+    def _update_method_config_and_get_dependency_params(
+        self,
+        view: Type["ViewBase"],
+        method: HTTPMethods,
+    ) -> List[Parameter]:
+        method_config = self._update_method_config(view, method)
+
+        if method_config.dependencies is None:
+            return []
+
+        return self._create_dependency_params_from_pydantic_model(method_config.dependencies)
+
     def _create_get_resource_list_view(self):
         """
         Create wrapper for GET list (get objects list)
         :return:
         """
 
-        async def wrapper(request: Request, **kwargs):
+        async def wrapper(request: Request, **extra_view_deps):
             resource = self.list_view_resource(
                 request=request,
                 jsonapi=self,
             )
-            await DependencyHelper(request=request).run(resource.init_dependencies)
 
-            response = await resource.get_resource_list_result()
+            response = await resource.get_resource_list_result(**extra_view_deps)
             return response
 
-        wrapper.__signature__ = self._update_signature_for_resource_list_view(wrapper)
+        additional_dependency_params = self._update_method_config_and_get_dependency_params(
+            self.list_view_resource,
+            HTTPListMethods.GET,
+        )
+        wrapper.__signature__ = self._update_signature_for_resource_list_view(
+            wrapper,
+            additional_dependency_params=additional_dependency_params,
+        )
         return wrapper
 
     def _create_post_resource_list_view(self):
@@ -358,18 +411,28 @@ class RoutersJSONAPI:
         """
         schema_in = self._schema_in_post
 
-        async def wrapper(request: Request, data_create: schema_in, **kwargs):
+        async def wrapper(request: Request, data_create: schema_in, **extra_view_deps):
             resource = self.list_view_resource(
                 request=request,
                 jsonapi=self,
             )
-            await DependencyHelper(request=request).run(resource.init_dependencies)
 
-            response = await resource.post_resource_list_result(data_create=data_create)
+            response = await resource.post_resource_list_result(
+                data_create=data_create,
+                **extra_view_deps,
+            )
             return response
 
+        additional_dependency_params = self._update_method_config_and_get_dependency_params(
+            self.list_view_resource,
+            HTTPListMethods.POST,
+        )
+
         # POST request returns result as for detail view
-        wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
+        wrapper.__signature__ = self._update_signature_for_resource_detail_view(
+            wrapper,
+            additional_dependency_params=additional_dependency_params,
+        )
         return wrapper
 
     def _create_delete_resource_list_view(self):
@@ -379,17 +442,24 @@ class RoutersJSONAPI:
         :return:
         """
 
-        async def wrapper(request: Request, **kwargs):
+        async def wrapper(request: Request, **extra_view_deps):
             resource = self.list_view_resource(
                 request=request,
                 jsonapi=self,
             )
-            await DependencyHelper(request=request).run(resource.init_dependencies)
 
-            response = await resource.delete_resource_list_result()
+            response = await resource.delete_resource_list_result(**extra_view_deps)
             return response
 
-        wrapper.__signature__ = self._update_signature_for_resource_list_view(wrapper)
+        additional_dependency_params = self._update_method_config_and_get_dependency_params(
+            self.list_view_resource,
+            HTTPListMethods.DELETE,
+        )
+
+        wrapper.__signature__ = self._update_signature_for_resource_list_view(
+            wrapper,
+            additional_dependency_params=additional_dependency_params,
+        )
         return wrapper
 
     def _create_get_resource_detail_view(self):
@@ -402,24 +472,20 @@ class RoutersJSONAPI:
         # TODO:
         #  - custom path param name (set default name on DetailView class)
         #  - custom type for obj id (get type from DetailView class)
-        async def wrapper(request: Request, obj_id: str = Path(...), **kwargs):
+        async def wrapper(request: Request, obj_id: str = Path(...), **extra_view_deps):
             resource = self.detail_view_resource(
                 request=request,
                 jsonapi=self,
             )
-            await DependencyHelper(request=request).run(resource.init_dependencies)
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.get_resource_detail_result(obj_id, **kwargs)
+            response = await resource.get_resource_detail_result(obj_id, **extra_view_deps)
             return response
 
-        method_dependencies = self.detail_view_resource.method_dependencies
-        additional_dependency_params = []
-
-        if method_dependencies[HTTPDetailMethods.GET].dependencies:
-            additional_dependency_params = self._create_dependency_params_from_pydantic_model(
-                method_dependencies[HTTPDetailMethods.GET].dependencies,
-            )
+        additional_dependency_params = self._update_method_config_and_get_dependency_params(
+            self.detail_view_resource,
+            HTTPDetailMethods.GET,
+        )
 
         wrapper.__signature__ = self._update_signature_for_resource_detail_view(
             wrapper,
@@ -439,22 +505,30 @@ class RoutersJSONAPI:
             request: Request,
             data_update: schema_in,
             obj_id: str = Path(...),
-            **kwargs,
+            **extra_view_deps,
         ):
             resource = self.detail_view_resource(
                 request=request,
                 jsonapi=self,
             )
-            await DependencyHelper(request=request).run(resource.init_dependencies)
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
             response = await resource.update_resource_result(
                 obj_id=obj_id,
                 data_update=data_update.data,
+                **extra_view_deps,
             )
             return response
 
-        wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
+        additional_dependency_params = self._update_method_config_and_get_dependency_params(
+            self.detail_view_resource,
+            HTTPDetailMethods.PATCH,
+        )
+
+        wrapper.__signature__ = self._update_signature_for_resource_detail_view(
+            wrapper,
+            additional_dependency_params=additional_dependency_params,
+        )
         return wrapper
 
     def _create_delete_resource_detail_view(self):
@@ -467,21 +541,27 @@ class RoutersJSONAPI:
         async def wrapper(
             request: Request,
             obj_id: str = Path(...),
-            **kwargs,
+            **extra_view_deps,
         ):
             resource = self.detail_view_resource(
                 request=request,
                 jsonapi=self,
             )
-            await DependencyHelper(request=request).run(resource.init_dependencies)
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.delete_resource_result(
-                obj_id=obj_id,
-            )
+            response = await resource.delete_resource_result(obj_id=obj_id, **extra_view_deps)
             return response
 
-        wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
+        additional_dependency_params = self._update_method_config_and_get_dependency_params(
+            self.detail_view_resource,
+            HTTPDetailMethods.DELETE,
+        )
+
+        wrapper.__signature__ = self._update_signature_for_resource_detail_view(
+            wrapper,
+            additional_dependency_params=additional_dependency_params,
+        )
+
         return wrapper
 
     def _register_views(self, path: str):

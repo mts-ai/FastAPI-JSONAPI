@@ -3,6 +3,8 @@ from typing import Callable, Optional, Type, Union
 
 from pydantic import BaseModel
 
+ALL_METHODS = "ALL_METHODS"
+
 
 class HTTPDetailMethods(Enum):
     GET = "get"
@@ -11,11 +13,12 @@ class HTTPDetailMethods(Enum):
 
 
 class HTTPListMethods(Enum):
+    POST = "post"
     GET = "get"
     DELETE = "delete"
 
 
-HTTPMethods = Union[HTTPDetailMethods, HTTPListMethods]
+HTTPMethods = Union[HTTPDetailMethods, HTTPListMethods, ALL_METHODS]
 
 
 class HTTPMethodConfig(BaseModel):

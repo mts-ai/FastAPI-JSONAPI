@@ -1,24 +1,52 @@
+from typing import Dict
+
 from fastapi import Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
+from fastapi_jsonapi.data_layers.sqla_orm import SqlalchemyDataLayer
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
+from fastapi_jsonapi.views.utils import ALL_METHODS, HTTPMethodConfig
+from fastapi_jsonapi.views.view_base import ViewBase
 
 
-class SessionDependencyMixin:
-    session: AsyncSession
+class SessionDependency(BaseModel):
+    session: AsyncSession = Depends(Connector.get_session)
 
-    async def init_dependencies(self, session: AsyncSession = Depends(Connector.get_session)):
-        self.session = session
+    class Config:
+        arbitrary_types_allowed = True
 
 
-class DetailViewBase(SessionDependencyMixin, DetailViewBaseGeneric):
+def handler(view: ViewBase, dto: SessionDependency) -> Dict:
+    return {"session": dto.session}
+
+
+class DetailViewBase(DetailViewBaseGeneric):
     """
     Generic view base (detail)
     """
 
+    data_layer_cls = SqlalchemyDataLayer
 
-class ListViewBase(SessionDependencyMixin, ListViewBaseGeneric):
+    method_dependencies = {
+        ALL_METHODS: HTTPMethodConfig(
+            dependencies=SessionDependency,
+            handler=handler,
+        ),
+    }
+
+
+class ListViewBase(ListViewBaseGeneric):
     """
     Generic view base (list)
     """
+
+    data_layer_cls = SqlalchemyDataLayer
+
+    method_dependencies = {
+        ALL_METHODS: HTTPMethodConfig(
+            dependencies=SessionDependency,
+            handler=handler,
+        ),
+    }

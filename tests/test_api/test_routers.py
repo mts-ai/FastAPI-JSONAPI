@@ -11,11 +11,21 @@ from typing_extensions import Annotated
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import Forbidden, InternalServerError
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
-from fastapi_jsonapi.views.utils import HTTPDetailMethods, HTTPMethodConfig
+from fastapi_jsonapi.views.utils import (
+    ALL_METHODS,
+    HTTPDetailMethods,
+    HTTPMethodConfig,
+)
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
+from tests.fixtures.views import SessionDependency, common_handler
 from tests.models import User
-from tests.schemas import UserAttributesBaseSchema, UserInSchema, UserPatchSchema, UserSchema
+from tests.schemas import (
+    UserAttributesBaseSchema,
+    UserInSchema,
+    UserPatchSchema,
+    UserSchema,
+)
 
 pytestmark = mark.asyncio
 
@@ -117,15 +127,16 @@ async def test_dependencies_as_permissions(user_1: User):
             raise Forbidden(detail="Only admin user have permissions to this endpoint")
 
     class AdminOnlyPermission(BaseModel):
-        is_admin: bool = Depends(check_that_user_is_admin)
+        is_admin: Optional[bool] = Depends(check_that_user_is_admin)
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
         method_dependencies: Dict[HTTPDetailMethods, HTTPMethodConfig] = {
             HTTPDetailMethods.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
+            ALL_METHODS: HTTPMethodConfig(
+                dependencies=SessionDependency,
+                handler=common_handler,
+            ),
         }
-
-        async def init_dependencies(self, session: AsyncSession = Depends(async_session_dependency)):
-            self.session = session
 
     app = build_app(DependencyInjectionDetailView)
     async with AsyncClient(app=app, base_url="http://test") as client:
@@ -166,7 +177,7 @@ async def test_manipulate_data_layer_kwargs(
         class Config:
             arbitrary_types_allowed = True
 
-    async def set_session_and_ignore_user_1(view_base: ViewBase, dto: GetDetailDependencies) -> Optional[Dict]:
+    async def set_session_and_ignore_user_1(view_base: ViewBase, dto: GetDetailDependencies) -> Dict:
         query = select(User).where(User.id != user_1.id)
 
         return {
@@ -181,13 +192,6 @@ async def test_manipulate_data_layer_kwargs(
                 handler=set_session_and_ignore_user_1,
             ),
         }
-
-        async def init_dependencies(self):
-            """skip init dependencies"""
-
-        def get_data_layer_kwargs(self):
-            """skip"""
-            return {}
 
     app = build_app(DependencyInjectionDetailView)
     async with AsyncClient(app=app, base_url="http://test") as client:
