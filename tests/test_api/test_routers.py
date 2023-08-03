@@ -97,13 +97,13 @@ async def test_dependency_handler_call():
                     {
                         "detail": {"dependency_1": 1, "dependency_2": 2},
                         "source": {"pointer": ""},
-                        "status_code": 500,
+                        "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                         "title": "Check that dependency successfully passed",
                     },
                     {
                         "detail": DependencyInjectionDetailView.__name__,
                         "source": {"pointer": ""},
-                        "status_code": 500,
+                        "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                         "title": "Check caller class",
                     },
                 ],
@@ -138,7 +138,7 @@ async def test_dependencies_as_permissions(user_1: User):
                     {
                         "detail": "Only admin user have permissions to this endpoint",
                         "source": {"pointer": ""},
-                        "status_code": 403,
+                        "status_code": status.HTTP_403_FORBIDDEN,
                         "title": "Forbidden",
                     },
                 ],
@@ -191,7 +191,7 @@ async def test_manipulate_data_layer_kwargs(
 
     app = build_app(DependencyInjectionDetailView)
     async with AsyncClient(app=app, base_url="http://test") as client:
-        res = await client.get(f"/users/{user_1.id}", headers={"X-AUTH": "not_admin"})
+        res = await client.get(f"/users/{user_1.id}")
 
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
         assert res.json() == {
@@ -200,7 +200,7 @@ async def test_manipulate_data_layer_kwargs(
                     {
                         "detail": f"Resource User `{user_1.id}` not found",
                         "meta": {"parameter": "id"},
-                        "status_code": 404,
+                        "status_code": status.HTTP_404_NOT_FOUND,
                         "title": "Resource not found.",
                     },
                 ],
