@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from contextvars import ContextVar
 from typing import (
     Any,
@@ -12,6 +13,7 @@ from typing import (
 )
 
 from fastapi import Request
+from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import ModelField
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
@@ -27,6 +29,7 @@ from fastapi_jsonapi.schema import (
 from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
 from fastapi_jsonapi.schema_builder import JSONAPIObjectSchemas
 from fastapi_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.views.utils import HTTPDetailMethods, HTTPMethodConfig, HTTPMethods
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +47,27 @@ class ViewBase:
     """
 
     data_layer_cls = BaseDataLayer
+    method_dependencies: Dict[HTTPMethods, HTTPMethodConfig] = defaultdict(lambda: HTTPMethodConfig())
 
     def __init__(self, *, request: Request, jsonapi: RoutersJSONAPI, **options):
         self.request: Request = request
         self.jsonapi: RoutersJSONAPI = jsonapi
         self.options: dict = options
         self.query_params: QueryStringManager = QueryStringManager(request=request)
+
+    async def _handle_endpoint_dependencies(self, method: HTTPMethods, **kwargs) -> Optional[Dict]:
+        """
+        :return dict: this is **kwargs for DataLayer.__init___
+        """
+        if not (endpoint_bindings := self.method_dependencies[method]):
+            return
+
+        if endpoint_bindings.handler:
+            dto_class: Type[PydanticBaseModel] = endpoint_bindings.dependencies
+            dto = dto_class(**kwargs)
+            dl_kwargs = await endpoint_bindings.handler(self, dto)
+
+            return dl_kwargs
 
     async def init_dependencies(self):
         """
@@ -68,11 +86,12 @@ class ViewBase:
 
     def _get_data_layer(self, schema: Type[BaseModel], **kwargs):
         dl_kwargs = self.get_data_layer_kwargs()
+        dl_kwargs.update(kwargs)
+
         return self.data_layer_cls(
             schema=schema,
             model=self.jsonapi.model,
             **dl_kwargs,
-            **kwargs,
         )
 
     def _get_data_layer_for_detail(self, **kwargs: Any) -> BaseDataLayer:
@@ -95,8 +114,14 @@ class ViewBase:
             **kwargs,
         )
 
-    async def get_resource_detail_result(self, object_id: Union[int, str]):
-        dl = self._get_data_layer_for_detail()
+    async def get_resource_detail_result(
+        self,
+        object_id: Union[int, str],
+        **kwargs,
+    ):
+        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.GET, **kwargs)
+        dl = self._get_data_layer_for_detail(**(dl_kwargs or {}))
+
         view_kwargs = {dl.url_id_field: object_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
 

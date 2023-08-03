@@ -8,6 +8,7 @@ from .base import (
 )
 from .json_api import (
     BadRequest,
+    Forbidden,
     HTTPException,
     InternalServerError,
     InvalidField,
@@ -36,4 +37,5 @@ __all__ = [
     "HTTPException",
     "RelatedObjectNotFound",
     "ObjectNotFound",
+    "Forbidden",
 ]

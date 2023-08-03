@@ -22,6 +22,7 @@ from fastapi_jsonapi.schema_base import BaseModel
 from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.signature import create_additional_query_params
 from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
+from fastapi_jsonapi.views.utils import HTTPDetailMethods
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.views.detail_view import DetailViewBase
@@ -307,13 +308,28 @@ class RoutersJSONAPI:
 
         return sig.replace(parameters=params + extra_params + tail_params)
 
-    def _update_signature_for_resource_detail_view(self, wrapper: Callable[..., Any]) -> Signature:
+    def _update_signature_for_resource_detail_view(
+        self,
+        wrapper: Callable[..., Any],
+        additional_dependency_params: List[Parameter] = [],
+    ) -> Signature:
         sig = signature(wrapper)
         params, tail_params = self._get_separated_params(sig)
 
         _, include_params = create_additional_query_params(schema=self.schema_detail)
 
-        return sig.replace(parameters=params + include_params + tail_params)
+        return sig.replace(parameters=params + include_params + additional_dependency_params + tail_params)
+
+    def _create_dependency_params_from_pydantic_model(self, model_class: Type[BaseModel]) -> List[Parameter]:
+        return [
+            Parameter(
+                name=field_name,
+                kind=Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=field_info.type_,
+                default=field_info.default,
+            )
+            for field_name, field_info in model_class.__fields__.items()
+        ]
 
     def _create_get_resource_list_view(self):
         """
@@ -394,10 +410,21 @@ class RoutersJSONAPI:
             await DependencyHelper(request=request).run(resource.init_dependencies)
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.get_resource_detail_result(obj_id)
+            response = await resource.get_resource_detail_result(obj_id, **kwargs)
             return response
 
-        wrapper.__signature__ = self._update_signature_for_resource_detail_view(wrapper)
+        method_dependencies = self.detail_view_resource.method_dependencies
+        additional_dependency_params = []
+
+        if method_dependencies[HTTPDetailMethods.GET].dependencies:
+            additional_dependency_params = self._create_dependency_params_from_pydantic_model(
+                method_dependencies[HTTPDetailMethods.GET].dependencies,
+            )
+
+        wrapper.__signature__ = self._update_signature_for_resource_detail_view(
+            wrapper,
+            additional_dependency_params=additional_dependency_params,
+        )
         return wrapper
 
     def _create_patch_resource_detail_view(self):

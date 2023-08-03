@@ -179,3 +179,12 @@ class ObjectNotFound(NotFound):
             "title": self.title,
             "detail": self._detail,
         }
+
+
+class Forbidden(HTTPException):
+    """
+    Error when requester have no permission to make operation
+    """
+
+    title = "Forbidden"
+    status_code = status.HTTP_403_FORBIDDEN
