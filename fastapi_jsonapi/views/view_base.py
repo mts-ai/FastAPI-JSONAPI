@@ -59,13 +59,15 @@ class ViewBase:
         """
         :return dict: this is **kwargs for DataLayer.__init___
         """
-        if not (endpoint_bindings := self.method_dependencies[method]):
-            return
+        if self.method_dependencies[method].handler:
+            if self.method_dependencies[method].dependencies:
+                dto_class: Type[PydanticBaseModel] = self.method_dependencies[method].dependencies
+                dto = dto_class(**kwargs)
+                dl_kwargs = await self.method_dependencies[method].handler(self, dto)
 
-        if endpoint_bindings.handler:
-            dto_class: Type[PydanticBaseModel] = endpoint_bindings.dependencies
-            dto = dto_class(**kwargs)
-            dl_kwargs = await endpoint_bindings.handler(self, dto)
+                return dl_kwargs
+
+            dl_kwargs = await self.method_dependencies[method].handler(self)
 
             return dl_kwargs
 
