@@ -2,6 +2,7 @@ import inspect
 from functools import partial
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Type
 
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel as PydanticBaseModel
 
 from fastapi_jsonapi.schema_base import BaseModel
@@ -24,7 +25,7 @@ async def _run_handler(
     if inspect.iscoroutinefunction(handler):
         return await handler()
 
-    return handler()
+    return await run_in_threadpool(handler)
 
 
 async def _handle_config(view: "ViewBase", method_config: HTTPMethodConfig, extra_view_deps: Dict) -> Dict:
