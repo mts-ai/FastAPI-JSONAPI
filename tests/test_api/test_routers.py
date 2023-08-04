@@ -13,7 +13,7 @@ from fastapi_jsonapi.exceptions import Forbidden, InternalServerError
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from fastapi_jsonapi.views.utils import (
     ALL_METHODS,
-    HTTPDetailMethods,
+    HTTPDetailMethod,
     HTTPMethodConfig,
 )
 from fastapi_jsonapi.views.view_base import ViewBase
@@ -86,8 +86,8 @@ async def test_dependency_handler_call():
         )
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPDetailMethods, HTTPMethodConfig] = {
-            HTTPDetailMethods.GET: HTTPMethodConfig(
+        method_dependencies: Dict[HTTPDetailMethod, HTTPMethodConfig] = {
+            HTTPDetailMethod.GET: HTTPMethodConfig(
                 dependencies=CustomDependencies,
                 handler=dependencies_handler,
             ),
@@ -130,8 +130,8 @@ async def test_dependencies_as_permissions(user_1: User):
         is_admin: Optional[bool] = Depends(check_that_user_is_admin)
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPDetailMethods, HTTPMethodConfig] = {
-            HTTPDetailMethods.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
+        method_dependencies: Dict[HTTPDetailMethod, HTTPMethodConfig] = {
+            HTTPDetailMethod.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
             ALL_METHODS: HTTPMethodConfig(
                 dependencies=SessionDependency,
                 handler=common_handler,
@@ -186,8 +186,8 @@ async def test_manipulate_data_layer_kwargs(
         }
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPDetailMethods, HTTPMethodConfig] = {
-            HTTPDetailMethods.GET: HTTPMethodConfig(
+        method_dependencies: Dict[HTTPDetailMethod, HTTPMethodConfig] = {
+            HTTPDetailMethod.GET: HTTPMethodConfig(
                 dependencies=GetDetailDependencies,
                 handler=set_session_and_ignore_user_1,
             ),

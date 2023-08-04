@@ -23,8 +23,8 @@ from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.signature import create_additional_query_params
 from fastapi_jsonapi.views.utils import (
     ALL_METHODS,
-    HTTPDetailMethods,
-    HTTPListMethods,
+    HTTPDetailMethod,
+    HTTPListMethod,
     HTTPMethodConfig,
     HTTPMethods,
 )
@@ -395,7 +395,7 @@ class RoutersJSONAPI:
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.list_view_resource,
-            HTTPListMethods.GET,
+            HTTPListMethod.GET,
         )
         wrapper.__signature__ = self._update_signature_for_resource_list_view(
             wrapper,
@@ -425,7 +425,7 @@ class RoutersJSONAPI:
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.list_view_resource,
-            HTTPListMethods.POST,
+            HTTPListMethod.POST,
         )
 
         # POST request returns result as for detail view
@@ -453,7 +453,7 @@ class RoutersJSONAPI:
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.list_view_resource,
-            HTTPListMethods.DELETE,
+            HTTPListMethod.DELETE,
         )
 
         wrapper.__signature__ = self._update_signature_for_resource_list_view(
@@ -484,7 +484,7 @@ class RoutersJSONAPI:
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.detail_view_resource,
-            HTTPDetailMethods.GET,
+            HTTPDetailMethod.GET,
         )
 
         wrapper.__signature__ = self._update_signature_for_resource_detail_view(
@@ -522,7 +522,7 @@ class RoutersJSONAPI:
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.detail_view_resource,
-            HTTPDetailMethods.PATCH,
+            HTTPDetailMethod.PATCH,
         )
 
         wrapper.__signature__ = self._update_signature_for_resource_detail_view(
@@ -554,7 +554,7 @@ class RoutersJSONAPI:
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.detail_view_resource,
-            HTTPDetailMethods.DELETE,
+            HTTPDetailMethod.DELETE,
         )
 
         wrapper.__signature__ = self._update_signature_for_resource_detail_view(

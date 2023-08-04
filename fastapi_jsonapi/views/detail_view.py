@@ -5,8 +5,9 @@ from fastapi_jsonapi.schema import (
     BaseJSONAPIItemInSchema,
     JSONAPIResultDetailSchema,
 )
-from fastapi_jsonapi.views.utils import HTTPDetailMethods
+from fastapi_jsonapi.views.utils import HTTPDetailMethod
 from fastapi_jsonapi.views.view_base import ViewBase
+from fastapi_jsonapi.views.view_handlers import handle_endpoint_dependencies
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class DetailViewBase(ViewBase):
         data_update: BaseJSONAPIItemInSchema,
         **extra_view_deps,
     ) -> JSONAPIResultDetailSchema:
-        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.PATCH, extra_view_deps)
+        dl_kwargs = await handle_endpoint_dependencies(self, HTTPDetailMethod.PATCH, extra_view_deps)
         dl = self._get_data_layer_for_detail(**dl_kwargs)
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
@@ -54,7 +55,7 @@ class DetailViewBase(ViewBase):
         obj_id: str,
         **extra_view_deps,
     ):
-        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.DELETE, extra_view_deps)
+        dl_kwargs = await handle_endpoint_dependencies(self, HTTPDetailMethod.DELETE, extra_view_deps)
         dl = self._get_data_layer_for_detail(**dl_kwargs)
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)

@@ -4,16 +4,18 @@ from fastapi_jsonapi.schema import (
     BaseJSONAPIDataInSchema,
     JSONAPIResultListMetaSchema,
 )
-from fastapi_jsonapi.views.utils import HTTPListMethods
+from fastapi_jsonapi.views.utils import HTTPListMethod
 from fastapi_jsonapi.views.view_base import ViewBase
+from fastapi_jsonapi.views.view_handlers import handle_endpoint_dependencies
 
 logger = logging.getLogger(__name__)
 
 
 class ListViewBase(ViewBase):
     async def get_resource_list_result(self, **extra_view_deps):
-        dl_kwargs = await self._handle_endpoint_dependencies(
-            HTTPListMethods.GET,
+        dl_kwargs = await handle_endpoint_dependencies(
+            self,
+            HTTPListMethod.GET,
             extra_view_deps,
         )
         dl = self._get_data_layer_for_list(**dl_kwargs)
@@ -51,7 +53,7 @@ class ListViewBase(ViewBase):
         data_create: BaseJSONAPIDataInSchema,
         **extra_view_deps,
     ):
-        dl_kwargs = await self._handle_endpoint_dependencies(HTTPListMethods.POST, extra_view_deps)
+        dl_kwargs = await handle_endpoint_dependencies(self, HTTPListMethod.POST, extra_view_deps)
         dl = self._get_data_layer_for_list(**dl_kwargs)
         created_object = await dl.create_object(
             data_create=data_create.data,
@@ -62,8 +64,9 @@ class ListViewBase(ViewBase):
 
     async def delete_resource_list_result(self, **extra_view_deps):
         # TODO: move template code
-        dl_kwargs = await self._handle_endpoint_dependencies(
-            HTTPListMethods.DELETE,
+        dl_kwargs = await handle_endpoint_dependencies(
+            self,
+            HTTPListMethod.DELETE,
             extra_view_deps,
         )
         dl = self._get_data_layer_for_list(**dl_kwargs)

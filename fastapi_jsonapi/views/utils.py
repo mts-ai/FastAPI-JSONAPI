@@ -6,19 +6,19 @@ from pydantic import BaseModel
 ALL_METHODS = "ALL_METHODS"
 
 
-class HTTPDetailMethods(Enum):
+class HTTPDetailMethod(Enum):
     GET = "get"
     PATCH = "patch"
     DELETE = "delete"
 
 
-class HTTPListMethods(Enum):
+class HTTPListMethod(Enum):
     POST = "post"
     GET = "get"
     DELETE = "delete"
 
 
-HTTPMethods = Union[HTTPDetailMethods, HTTPListMethods, ALL_METHODS]
+HTTPMethods = Union[HTTPDetailMethod, HTTPListMethod, ALL_METHODS]
 
 
 class HTTPMethodConfig(BaseModel):

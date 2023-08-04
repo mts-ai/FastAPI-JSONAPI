@@ -1,10 +1,7 @@
-import inspect
 import logging
 from contextvars import ContextVar
-from functools import partial
 from typing import (
     Any,
-    Callable,
     Dict,
     Iterable,
     List,
@@ -15,7 +12,6 @@ from typing import (
 )
 
 from fastapi import Request
-from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import ModelField
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
@@ -32,11 +28,11 @@ from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
 from fastapi_jsonapi.schema_builder import JSONAPIObjectSchemas
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.views.utils import (
-    ALL_METHODS,
-    HTTPDetailMethods,
+    HTTPDetailMethod,
     HTTPMethodConfig,
     HTTPMethods,
 )
+from fastapi_jsonapi.views.view_handlers import handle_endpoint_dependencies
 
 logger = logging.getLogger(__name__)
 
@@ -61,53 +57,6 @@ class ViewBase:
         self.jsonapi: RoutersJSONAPI = jsonapi
         self.options: dict = options
         self.query_params: QueryStringManager = QueryStringManager(request=request)
-
-    async def _run_handler(self, handler: Callable, dto: Optional[BaseModel] = None):
-        handler = partial(handler, self, dto) if dto is not None else partial(handler, self)
-
-        if inspect.iscoroutinefunction(handler):
-            return await handler()
-
-        return handler()
-
-    async def _handle_config(self, method_config: HTTPMethodConfig, extra_view_deps: Dict) -> Dict:
-        if method_config.handler:
-            if method_config.dependencies:
-                dto_class: Type[PydanticBaseModel] = method_config.dependencies
-                dto = dto_class(**extra_view_deps)
-                dl_kwargs = await self._run_handler(method_config.handler, dto)
-
-                return dl_kwargs
-
-            dl_kwargs = await self._run_handler(method_config.handler)
-
-            return dl_kwargs
-
-        return {}
-
-    async def _handle_endpoint_dependencies(self, method: HTTPMethods, extra_view_deps: Dict) -> Dict:
-        """
-        :return dict: this is **kwargs for DataLayer.__init___
-        """
-        dl_kwargs = {}
-        if common_method_config := self.method_dependencies.get(ALL_METHODS):
-            dl_kwargs.update(await self._handle_config(common_method_config, extra_view_deps))
-
-        method_config = self.method_dependencies.get(method) or HTTPMethodConfig()
-
-        if method_config.handler:
-            if method_config.dependencies:
-                dto_class: Type[PydanticBaseModel] = method_config.dependencies
-                dto = dto_class(**extra_view_deps)
-                dl_kwargs.update(await self._run_handler(method_config.handler, dto))
-
-                return dl_kwargs
-
-            dl_kwargs.update(await self._run_handler(method_config.handler))
-
-            return dl_kwargs
-
-        return dl_kwargs
 
     def _get_data_layer(self, schema: Type[BaseModel], **dl_kwargs):
         return self.data_layer_cls(
@@ -141,7 +90,7 @@ class ViewBase:
         object_id: Union[int, str],
         **extra_view_deps,
     ):
-        dl_kwargs = await self._handle_endpoint_dependencies(HTTPDetailMethods.GET, extra_view_deps)
+        dl_kwargs = await handle_endpoint_dependencies(self, HTTPDetailMethod.GET, extra_view_deps)
         dl = self._get_data_layer_for_detail(**dl_kwargs)
 
         view_kwargs = {dl.url_id_field: object_id}
