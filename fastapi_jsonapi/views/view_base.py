@@ -22,17 +22,16 @@ from fastapi_jsonapi.data_typing import (
 )
 from fastapi_jsonapi.schema import (
     JSONAPIObjectSchema,
+    JSONAPIResultListMetaSchema,
     get_related_schema,
 )
 from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
 from fastapi_jsonapi.schema_builder import JSONAPIObjectSchemas
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.views.utils import (
-    HTTPDetailMethod,
+    HTTPMethod,
     HTTPMethodConfig,
-    HTTPMethods,
 )
-from fastapi_jsonapi.views.view_handlers import handle_endpoint_dependencies
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ class ViewBase:
     """
 
     data_layer_cls = BaseDataLayer
-    method_dependencies: Dict[HTTPMethods, HTTPMethodConfig] = {}
+    method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {}
 
     def __init__(self, *, request: Request, jsonapi: RoutersJSONAPI, **options):
         self.request: Request = request
@@ -85,35 +84,40 @@ class ViewBase:
             **kwargs,
         )
 
-    async def get_resource_detail_result(
-        self,
-        object_id: Union[int, str],
-        **extra_view_deps,
-    ):
-        dl_kwargs = await handle_endpoint_dependencies(self, HTTPDetailMethod.GET, extra_view_deps)
-        dl = self._get_data_layer_for_detail(**dl_kwargs)
-
-        view_kwargs = {dl.url_id_field: object_id}
-        db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
-
-        result_objects, object_schemas, extras = self.process_includes_for_db_items(
+    def _build_response(self, db_objects: List, item_schema):
+        return self.process_includes_for_db_items(
             includes=self.query_params.include,
             # as list to reuse helper
-            items_from_db=[db_object],
-            item_schema=self.jsonapi.schema_detail,
+            items_from_db=db_objects,
+            item_schema=item_schema,
         )
+
+    def _build_detail_response(self, db_object):
+        result_objects, object_schemas, extras = self._build_response([db_object], self.jsonapi.schema_detail)
         # is it ok to do through list?
         result_object = result_objects[0]
 
-        # we need to build a new schema here
-        # because we'd like to exclude/set some fields (relationships, includes, etc)
         detail_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_detail_result(
             name=f"Result{self.__class__.__name__}",
             object_jsonapi_schema=object_schemas.object_jsonapi_schema,
             includes_schemas=object_schemas.included_schemas_list,
         )
-        return detail_jsonapi_schema(
-            data=result_object,
+
+        return detail_jsonapi_schema(data=result_object, **extras)
+
+    def _build_list_response(self, items_from_db, count: int, total_pages):
+        result_objects, object_schemas, extras = self._build_response(items_from_db, self.jsonapi.schema_list)
+
+        # we need to build a new schema here
+        # because we'd like to exclude some fields (relationships, includes, etc)
+        list_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_list_result(
+            name=f"Result{self.__class__.__name__}",
+            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
+            includes_schemas=object_schemas.included_schemas_list,
+        )
+        return list_jsonapi_schema(
+            meta=JSONAPIResultListMetaSchema(count=count, total_pages=total_pages),
+            data=result_objects,
             **extras,
         )
 

@@ -6,9 +6,8 @@ from pydantic import BaseModel as PydanticBaseModel
 
 from fastapi_jsonapi.schema_base import BaseModel
 from fastapi_jsonapi.views.utils import (
-    ALL_METHODS,
+    HTTPMethod,
     HTTPMethodConfig,
-    HTTPMethods,
 )
 
 if TYPE_CHECKING:
@@ -46,17 +45,19 @@ async def _handle_config(view: "ViewBase", method_config: HTTPMethodConfig, extr
 
 async def handle_endpoint_dependencies(
     view: "ViewBase",
-    method: HTTPMethods,
     extra_view_deps: Dict,
 ) -> Dict:
     """
     :return dict: this is **kwargs for DataLayer.__init___
     """
     dl_kwargs = {}
-    if common_method_config := view.method_dependencies.get(ALL_METHODS):
+    if common_method_config := view.method_dependencies.get(HTTPMethod.ALL):
         dl_kwargs.update(await _handle_config(view, common_method_config, extra_view_deps))
 
-    if method_config := view.method_dependencies.get(method):
+    if view.request.method not in HTTPMethod.names():
+        return dl_kwargs
+
+    if method_config := view.method_dependencies.get(HTTPMethod[view.request.method]):
         dl_kwargs.update(await _handle_config(view, method_config, extra_view_deps))
 
     return dl_kwargs

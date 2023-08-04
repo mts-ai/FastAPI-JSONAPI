@@ -1,24 +1,20 @@
 from enum import Enum
-from typing import Callable, Optional, Type, Union
+from functools import cache
+from typing import Callable, Optional, Set, Type
 
 from pydantic import BaseModel
 
-ALL_METHODS = "ALL_METHODS"
 
-
-class HTTPDetailMethod(Enum):
+class HTTPMethod(Enum):
+    ALL = "all"
     GET = "get"
+    POST = "post"
     PATCH = "patch"
     DELETE = "delete"
 
-
-class HTTPListMethod(Enum):
-    POST = "post"
-    GET = "get"
-    DELETE = "delete"
-
-
-HTTPMethods = Union[HTTPDetailMethod, HTTPListMethod, ALL_METHODS]
+    @cache
+    def names() -> Set[str]:
+        return {item.name for item in HTTPMethod}
 
 
 class HTTPMethodConfig(BaseModel):

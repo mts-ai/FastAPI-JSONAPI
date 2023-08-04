@@ -11,10 +11,7 @@ from fastapi_jsonapi.misc.sqla.generics.base import (
 from fastapi_jsonapi.misc.sqla.generics.base import (
     ListViewBaseGeneric as ListViewBaseGenericHelper,
 )
-from fastapi_jsonapi.views.utils import (
-    ALL_METHODS,
-    HTTPMethodConfig,
-)
+from fastapi_jsonapi.views.utils import HTTPMethod, HTTPMethodConfig
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
 
@@ -32,7 +29,7 @@ def common_handler(view: ViewBase, dto: BaseModel) -> Dict:
 
 class DetailViewBaseGeneric(DetailViewBaseGenericHelper):
     method_dependencies = {
-        ALL_METHODS: HTTPMethodConfig(
+        HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             handler=common_handler,
         ),
@@ -41,7 +38,7 @@ class DetailViewBaseGeneric(DetailViewBaseGenericHelper):
 
 class ListViewBaseGeneric(ListViewBaseGenericHelper):
     method_dependencies = {
-        ALL_METHODS: HTTPMethodConfig(
+        HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             handler=common_handler,
         ),
