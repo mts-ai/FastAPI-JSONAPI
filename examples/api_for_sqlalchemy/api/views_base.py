@@ -32,7 +32,7 @@ class DetailViewBase(DetailViewBaseGeneric):
     method_dependencies = {
         ALL_METHODS: HTTPMethodConfig(
             dependencies=SessionDependency,
-            handler=handler,
+            prepare_data_layer_kwargs=handler,
         ),
     }
 
@@ -47,6 +47,6 @@ class ListViewBase(ListViewBaseGeneric):
     method_dependencies = {
         ALL_METHODS: HTTPMethodConfig(
             dependencies=SessionDependency,
-            handler=handler,
+            prepare_data_layer_kwargs=handler,
         ),
     }

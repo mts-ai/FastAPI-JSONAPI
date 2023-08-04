@@ -84,16 +84,16 @@ class ViewBase:
             **kwargs,
         )
 
-    def _build_response(self, db_objects: List, item_schema):
+    def _build_response(self, items_from_db: List[TypeModel], item_schema: Type[BaseModel]):
         return self.process_includes_for_db_items(
             includes=self.query_params.include,
             # as list to reuse helper
-            items_from_db=db_objects,
+            items_from_db=items_from_db,
             item_schema=item_schema,
         )
 
-    def _build_detail_response(self, db_object):
-        result_objects, object_schemas, extras = self._build_response([db_object], self.jsonapi.schema_detail)
+    def _build_detail_response(self, db_item: TypeModel):
+        result_objects, object_schemas, extras = self._build_response([db_item], self.jsonapi.schema_detail)
         # is it ok to do through list?
         result_object = result_objects[0]
 
@@ -105,7 +105,7 @@ class ViewBase:
 
         return detail_jsonapi_schema(data=result_object, **extras)
 
-    def _build_list_response(self, items_from_db, count: int, total_pages):
+    def _build_list_response(self, items_from_db: List[TypeModel], count: int, total_pages: int):
         result_objects, object_schemas, extras = self._build_response(items_from_db, self.jsonapi.schema_list)
 
         # we need to build a new schema here

@@ -88,7 +88,7 @@ async def test_dependency_handler_call():
         method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=CustomDependencies,
-                handler=dependencies_handler,
+                prepare_data_layer_kwargs=dependencies_handler,
             ),
         }
 
@@ -130,7 +130,7 @@ async def test_dependencies_as_permissions(user_1: User):
             HTTPMethod.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
             HTTPMethod.ALL: HTTPMethodConfig(
                 dependencies=SessionDependency,
-                handler=common_handler,
+                prepare_data_layer_kwargs=common_handler,
             ),
         }
 
@@ -185,7 +185,7 @@ async def test_manipulate_data_layer_kwargs(
         method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=GetDetailDependencies,
-                handler=set_session_and_ignore_user_1,
+                prepare_data_layer_kwargs=set_session_and_ignore_user_1,
             ),
         }
 

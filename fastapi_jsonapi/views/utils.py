@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import cache
-from typing import Callable, Optional, Set, Type
+from typing import Callable, Coroutine, Optional, Set, Type, Union
 
 from pydantic import BaseModel
 
@@ -19,4 +19,11 @@ class HTTPMethod(Enum):
 
 class HTTPMethodConfig(BaseModel):
     dependencies: Optional[Type[BaseModel]] = None
-    handler: Optional[Callable] = None
+    prepare_data_layer_kwargs: Optional[Union[Callable, Coroutine]] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @property
+    def handler(self) -> Optional[Union[Callable, Coroutine]]:
+        return self.prepare_data_layer_kwargs

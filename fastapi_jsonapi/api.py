@@ -299,7 +299,7 @@ class RoutersJSONAPI:
     def _update_signature_for_resource_list_view(
         self,
         wrapper: Callable[..., Any],
-        additional_dependency_params: List[Parameter] = [],
+        additional_dependency_params: Iterable[Parameter] = (),
     ) -> Signature:
         sig = signature(wrapper)
         params, tail_params = self._get_separated_params(sig)
@@ -318,7 +318,7 @@ class RoutersJSONAPI:
     def _update_signature_for_resource_detail_view(
         self,
         wrapper: Callable[..., Any],
-        additional_dependency_params: List[Parameter] = [],
+        additional_dependency_params: Iterable[Parameter] = (),
     ) -> Signature:
         sig = signature(wrapper)
         params, tail_params = self._get_separated_params(sig)
@@ -332,7 +332,7 @@ class RoutersJSONAPI:
             Parameter(
                 name=field_name,
                 kind=Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=field_info.type_,
+                annotation=field_info.outer_type_,
                 default=field_info.default,
             )
             for field_name, field_info in model_class.__fields__.items()
@@ -357,7 +357,7 @@ class RoutersJSONAPI:
 
         new_method_config = HTTPMethodConfig(
             dependencies=dependencies_model,
-            handler=common_config.handler or target_config.handler,
+            prepare_data_layer_kwargs=common_config.handler or target_config.handler,
         )
         view.method_dependencies[method] = new_method_config
 
