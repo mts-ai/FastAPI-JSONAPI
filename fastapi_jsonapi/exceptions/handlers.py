@@ -3,10 +3,11 @@ from typing import Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from fastapi_jsonapi.exceptions import HTTPException
 from fastapi_jsonapi.exceptions.json_api import ObjectNotFound
 
 
-async def object_not_found_exception_handler(request: Request, exc: ObjectNotFound):
+async def base_exception_handler(request: Request, exc: ObjectNotFound):
     return JSONResponse(
         status_code=exc.status_code,
         content={"errors": [exc._dict]},
@@ -21,13 +22,13 @@ def register_exception_handlers(app: FastAPI, exclude_exception_handlers: Option
 
     Example:
     -------
-    >>> from fastapi_jsonapi.exceptions.handlers import object_not_found_exception_handler
+    >>> from fastapi_jsonapi.exceptions.handlers import base_exception_handler
     >>> app: FastAPI
-    >>> register_exception_handlers(app, exclude_exception_handlers=[object_not_found_exception_handler])
+    >>> register_exception_handlers(app, exclude_exception_handlers=[base_exception_handler])
         ↑
     The "object_not_found_exception_handler" disabled in this point.
     """
     exclude_exception_handlers = exclude_exception_handlers or []
 
-    if object_not_found_exception_handler not in exclude_exception_handlers:
-        app.add_exception_handler(ObjectNotFound, object_not_found_exception_handler)
+    if base_exception_handler not in exclude_exception_handlers:
+        app.add_exception_handler(HTTPException, base_exception_handler)

@@ -313,7 +313,7 @@ class RoutersJSONAPI:
         extra_params.append(self._create_sort_query_dependency_param())
         extra_params.extend(include_params)
 
-        return sig.replace(parameters=params + extra_params + additional_dependency_params + tail_params)
+        return sig.replace(parameters=params + extra_params + list(additional_dependency_params) + tail_params)
 
     def _update_signature_for_resource_detail_view(
         self,
@@ -325,7 +325,7 @@ class RoutersJSONAPI:
 
         _, include_params = create_additional_query_params(schema=self.schema_detail)
 
-        return sig.replace(parameters=params + include_params + additional_dependency_params + tail_params)
+        return sig.replace(parameters=params + include_params + list(additional_dependency_params) + tail_params)
 
     def _create_dependency_params_from_pydantic_model(self, model_class: Type[BaseModel]) -> List[Parameter]:
         return [

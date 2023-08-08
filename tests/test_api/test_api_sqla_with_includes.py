@@ -959,20 +959,18 @@ class TestPatchObjectRelationshipsToOne:
         res = await client.patch(f"/user-bio/{user_1.id}?include=user", json=patch_user_bio_body)
         assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
         assert res.json() == {
-            "detail": {
-                "errors": [
-                    {
-                        "detail": "Got an error IntegrityError during update "
-                        "data in DB: (sqlite3.IntegrityError) UNIQUE constraint failed: userbios.user_id\n"
-                        "[SQL: UPDATE userbios SET user_id=? WHERE userbios.id = ?]\n"
-                        f"[parameters: ({user_2.id}, {user_1_bio.id})]\n"
-                        "(Background on this error at: https://sqlalche.me/e/14/gkpj)",
-                        "source": {"pointer": ""},
-                        "status_code": 500,
-                        "title": "Internal Server Error",
-                    },
-                ],
-            },
+            "errors": [
+                {
+                    "detail": "Got an error IntegrityError during update "
+                    "data in DB: (sqlite3.IntegrityError) UNIQUE constraint failed: userbios.user_id\n"
+                    "[SQL: UPDATE userbios SET user_id=? WHERE userbios.id = ?]\n"
+                    f"[parameters: ({user_2.id}, {user_1_bio.id})]\n"
+                    "(Background on this error at: https://sqlalche.me/e/14/gkpj)",
+                    "source": {"pointer": ""},
+                    "status_code": 500,
+                    "title": "Internal Server Error",
+                },
+            ],
         }
 
     async def test_relationship_not_found(
@@ -1007,16 +1005,14 @@ class TestPatchObjectRelationshipsToOne:
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
 
         assert res.json() == {
-            "detail": {
-                "errors": [
-                    {
-                        "detail": f"Workplace.id: {fake_relationship_id} not found",
-                        "source": {"pointer": ""},
-                        "status_code": status.HTTP_404_NOT_FOUND,
-                        "title": "Related object not found.",
-                    },
-                ],
-            },
+            "errors": [
+                {
+                    "detail": f"Workplace.id: {fake_relationship_id} not found",
+                    "source": {"pointer": ""},
+                    "status_code": status.HTTP_404_NOT_FOUND,
+                    "title": "Related object not found.",
+                },
+            ],
         }
 
 
