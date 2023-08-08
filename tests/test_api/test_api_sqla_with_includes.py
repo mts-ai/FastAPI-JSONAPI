@@ -961,12 +961,8 @@ class TestPatchObjectRelationshipsToOne:
         assert res.json() == {
             "errors": [
                 {
-                    "detail": "Got an error IntegrityError during update "
-                    "data in DB: (sqlite3.IntegrityError) UNIQUE constraint failed: userbios.user_id\n"
-                    "[SQL: UPDATE userbios SET user_id=? WHERE userbios.id = ?]\n"
-                    f"[parameters: ({user_2.id}, {user_1_bio.id})]\n"
-                    "(Background on this error at: https://sqlalche.me/e/14/gkpj)",
-                    "source": {"pointer": ""},
+                    "detail": "Got an error IntegrityError during update data in DB",
+                    "source": {"pointer": "/data"},
                     "status_code": 500,
                     "title": "Internal Server Error",
                 },

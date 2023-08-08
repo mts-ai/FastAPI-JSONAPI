@@ -289,7 +289,14 @@ class SqlalchemyDataLayer(BaseDataLayer):
             await self.session.commit()
         except DBAPIError as e:
             await self.session.rollback()
-            raise InternalServerError(detail=f"Got an error {e.__class__.__name__} during update data in DB: {e!s}")
+
+            err_message = f"Got an error {e.__class__.__name__} during update data in DB"
+            log.error(err_message, exc_info=e)
+
+            raise InternalServerError(
+                detail=err_message,
+                pointer="/data",
+            )
 
         await self.after_update_object(obj=obj, model_kwargs=new_data, view_kwargs=view_kwargs)
 
@@ -307,8 +314,13 @@ class SqlalchemyDataLayer(BaseDataLayer):
             await self.session.commit()
         except DBAPIError as e:
             await self.session.rollback()
+
+            err_message = f"Got an error {e.__class__.__name__} during update data in DB"
+            log.error(err_message, exc_info=e)
+
             raise InternalServerError(
-                detail=f"Got an error {e.__class__.__name__} during delete data from DB: {e!s}",
+                detail=err_message,
+                pointer="/data",
             )
 
     async def delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
