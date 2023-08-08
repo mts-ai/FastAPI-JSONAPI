@@ -58,6 +58,7 @@ class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
 
     attributes: "TypeSchema" = Field(description="Resource object attributes")
     relationships: Optional["TypeSchema"] = Field(None, description="Resource object relationships")
+    id: Optional[str] = Field(description="Resource object ID")
 
 
 class BaseJSONAPIDataInSchema(BaseModel):

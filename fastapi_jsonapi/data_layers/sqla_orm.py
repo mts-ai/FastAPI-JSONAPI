@@ -140,6 +140,24 @@ class SqlalchemyDataLayer(BaseDataLayer):
             # todo: relation name may be different?
             setattr(obj, relation_name, related_data)
 
+    def _apply_client_generated_id(
+        self,
+        data_create: BaseJSONAPIItemInSchema,
+        model_kwargs: dict,
+    ):
+        """
+        :param data_create: the data validated by pydantic.
+        :param model_kwargs: the data validated by pydantic.
+        """
+        if data_create.id is None:
+            return model_kwargs
+
+        extra = data_create.__fields__["id"].field_info.extra
+        if extra.get("client_can_set_id"):
+            model_kwargs["id"] = extra["db_type"](data_create.id)
+
+        return model_kwargs
+
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object through sqlalchemy.
@@ -150,10 +168,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         # todo: pydantic v2 model_dump()
         model_kwargs = data_create.attributes.dict()
+        model_kwargs = self._apply_client_generated_id(data_create, model_kwargs=model_kwargs)
         await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
 
-        # TODO: accept custom `id` ( Client-Generated IDs )
-        #  https://jsonapi.org/format/#crud-creating-client-ids
         obj = self.model(**model_kwargs)
         await self.apply_relationships(obj, data_create)
 

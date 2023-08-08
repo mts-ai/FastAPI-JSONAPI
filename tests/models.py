@@ -1,8 +1,10 @@
 from typing import Dict, List, Optional
+from uuid import UUID
 
 from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship
+from sqlalchemy.types import CHAR, TypeDecorator
 
 
 class Base:
@@ -210,3 +212,24 @@ class Workplace(AutoIdMixin, Base):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r}, user_id={self.user_id})"
+
+
+class UUIDType(TypeDecorator):
+    impl = CHAR
+
+    def load_dialect_impl(self, dialect):
+        return CHAR(32)
+
+    def process_bind_param(self, value, dialect):
+        if not isinstance(value, UUID):
+            msg = f"Incorrect type got {type(value).__name__}, expected {UUID.__name__}"
+            raise Exception(msg)
+
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        return UUID(value)
+
+
+class MiscCases(Base):
+    id = Column(UUIDType, primary_key=True)

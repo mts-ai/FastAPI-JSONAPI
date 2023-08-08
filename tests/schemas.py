@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional
+from uuid import UUID
 
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -49,6 +50,10 @@ class UserPatchSchema(UserBaseSchema):
 
 class UserInSchema(UserBaseSchema):
     """User input schema."""
+
+
+class UserInSchemaAllowIdOnPost(UserBaseSchema):
+    id: str = Field(client_can_set_id=True)
 
 
 class UserSchema(UserInSchema):
@@ -325,3 +330,11 @@ class WorkplaceSchema(ComputerInSchema):
         orm_mode = True
 
     id: int
+
+
+class MiscCasesAttributesSchema(BaseModel):
+    pass
+
+
+class MiscCasesSchema(MiscCasesAttributesSchema):
+    id: UUID = Field(client_can_set_id=True)

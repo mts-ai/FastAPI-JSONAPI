@@ -2,16 +2,21 @@ import logging
 from itertools import chain
 from json import dumps
 from typing import Dict, List
+from uuid import uuid4
 
-from fastapi import FastAPI, status
+from fastapi import APIRouter, FastAPI, status
 from httpx import AsyncClient
 from pytest import mark, param  # noqa PT013
 
+from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.views.view_base import ViewBase
+from tests.fixtures.app import build_app_plain
 from tests.fixtures.entities import create_user
+from tests.fixtures.views import DetailViewBaseGeneric, ListViewBaseGeneric
 from tests.misc.utils import fake
 from tests.models import (
     Computer,
+    MiscCases,
     Post,
     PostComment,
     User,
@@ -19,10 +24,14 @@ from tests.models import (
     Workplace,
 )
 from tests.schemas import (
+    MiscCasesSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
     UserAttributesBaseSchema,
     UserBioBaseSchema,
+    UserInSchemaAllowIdOnPost,
+    UserPatchSchema,
+    UserSchema,
 )
 
 pytestmark = mark.asyncio
@@ -812,6 +821,80 @@ class TestCreateObjects:
         assert "data" in response_data, response_data
         assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
         assert response_data["data"]["id"] == user_id
+
+    def _build_app_custom(self, schema, schema_in_post, model=None) -> FastAPI:
+        router: APIRouter = APIRouter()
+
+        RoutersJSONAPI(
+            router=router,
+            path="/users",
+            tags=["User"],
+            class_detail=DetailViewBaseGeneric,
+            class_list=ListViewBaseGeneric,
+            schema=schema,
+            resource_type="user",
+            schema_in_patch=UserPatchSchema,
+            schema_in_post=schema_in_post,
+            model=model or User,
+        )
+
+        app = build_app_plain()
+        app.include_router(router, prefix="")
+
+        return app
+
+    async def test_create_id_by_client(self):
+        app = self._build_app_custom(UserSchema, UserInSchemaAllowIdOnPost)
+
+        new_id = str(fake.pyint(100, 999))
+        attrs = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        )
+        create_user_body = {
+            "data": {
+                "attributes": attrs.dict(),
+                "id": new_id,
+            },
+        }
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            res = await client.post("/users", json=create_user_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+            assert res.json() == {
+                "data": {
+                    "attributes": attrs.dict(),
+                    "id": new_id,
+                    "type": "user",
+                },
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
+
+    async def test_create_id_by_client_uuid_type(self):
+        app = self._build_app_custom(MiscCasesSchema, MiscCasesSchema, MiscCases)
+
+        new_id = str(uuid4())
+        create_user_body = {
+            "data": {
+                "attributes": {},
+                "id": new_id,
+            },
+        }
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            res = await client.post("/users", json=create_user_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+            assert res.json() == {
+                "data": {
+                    "attributes": {},
+                    "id": new_id,
+                    "type": "user",
+                },
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
 
 
 class TestPatchObjects:

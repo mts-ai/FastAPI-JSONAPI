@@ -14,7 +14,7 @@ from typing import (
 )
 
 import pydantic
-from pydantic import BaseConfig, validator
+from pydantic import BaseConfig
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import FieldInfo, ModelField
 
@@ -70,7 +70,7 @@ FieldValidator = Optional[Any]
 @dataclass(frozen=True)
 class SchemasInfoDTO:
     # id field
-    resource_id_field: Tuple[Type, FieldInfo, FieldValidator]
+    resource_id_field: Tuple[Type, FieldInfo]
     # pre-built attributes
     attributes_schema: Type[BaseModel]
     # relationships
@@ -233,7 +233,7 @@ class SchemaBuilder:
         relationships_schema_fields = {}
         included_schemas: List[Tuple[str, BaseModel, str]] = []
         has_required_relationship = False
-        resource_id_field = (str, Field(...), None)
+        resource_id_field = (str, Field(...))
 
         for name, field in (schema.__fields__ or {}).items():
             if isinstance(field.field_info.extra.get("relationship"), RelationshipInfo):
@@ -256,11 +256,10 @@ class SchemaBuilder:
                 # works both for to-one and to-many
                 included_schemas.append((name, field.type_, relationship.resource_type))
             elif name == "id":
-                resource_id_validator = None
-                if type_cast_func := field.field_info.extra.get("type_cast_func"):
-                    resource_id_validator = validator("id")(type_cast_func)
+                if not field.field_info.extra.get("client_can_set_id"):
+                    continue
 
-                resource_id_field = (str, field.field_info, resource_id_validator)
+                resource_id_field = (str, Field(db_type=field.outer_type_, **field.field_info.extra))
             else:
                 attributes_schema_fields[name] = (field.outer_type_, field.field_info)
 
@@ -345,7 +344,7 @@ class SchemaBuilder:
         attributes_schema: Type[TypeSchema],
         relationships_schema: Type[TypeSchema],
         includes,
-        resource_id_field: Tuple[Type, FieldInfo, FieldValidator],
+        resource_id_field: Tuple[Type, FieldInfo],
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
         use_schema_cache: bool = True,
         relationships_required: bool = False,
@@ -353,27 +352,22 @@ class SchemaBuilder:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
 
-        field_type, field_info, id_validator = resource_id_field
+        field_type, field_info = resource_id_field
 
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
-            "id": (str, Field(None, extra=field_info.extra)),
+            "id": (str, Field(None, **field_info.extra)),
         }
         if includes:
             object_jsonapi_schema_fields.update(
                 relationships=(relationships_schema, (... if relationships_required else None)),
             )
 
-        validators = {}
-        if id_validator:
-            validators["id_validator"] = id_validator
-
         object_jsonapi_schema = pydantic.create_model(
             f"{base_name}ObjectJSONAPI",
             **object_jsonapi_schema_fields,
             type=(str, Field(default=resource_type or self._resource_type, description="Resource type")),
             __base__=model_base,
-            __validators__=validators,
         )
         if use_schema_cache:
             self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
