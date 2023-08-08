@@ -14,7 +14,7 @@ from typing import (
 )
 
 import pydantic
-from pydantic import BaseConfig
+from pydantic import BaseConfig, validator
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import FieldInfo, ModelField
 
@@ -256,8 +256,11 @@ class SchemaBuilder:
                 # works both for to-one and to-many
                 included_schemas.append((name, field.type_, relationship.resource_type))
             elif name == "id":
-                resource_id_validator = schema.__dict__["__validators__"].get("id")
-                resource_id_field = (field.outer_type_, field.field_info, resource_id_validator)
+                resource_id_validator = None
+                if type_cast_func := field.field_info.extra.get("type_cast_func"):
+                    resource_id_validator = validator("id")(type_cast_func)
+
+                resource_id_field = (str, field.field_info, resource_id_validator)
             else:
                 attributes_schema_fields[name] = (field.outer_type_, field.field_info)
 
@@ -350,20 +353,20 @@ class SchemaBuilder:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
 
+        field_type, field_info, id_validator = resource_id_field
+
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
+            "id": (str, Field(None, extra=field_info.extra)),
         }
         if includes:
             object_jsonapi_schema_fields.update(
                 relationships=(relationships_schema, (... if relationships_required else None)),
             )
 
-        field_type, field_info, id_validator = resource_id_field
-        object_jsonapi_schema_fields.update(id=(field_type, field_info))
-
-        validators = []
+        validators = {}
         if id_validator:
-            validators.append(id_validator)
+            validators["id_validator"] = id_validator
 
         object_jsonapi_schema = pydantic.create_model(
             f"{base_name}ObjectJSONAPI",
