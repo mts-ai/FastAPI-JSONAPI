@@ -2,6 +2,17 @@ Changelog
 #########
 
 
+**1.1.0**
+*********
+
+Generic views
+=============
+
+* Create generic view classes `#28 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/28>`_
+
+`@CosmoV`_
+
+
 **1.0.0**
 *********
 
@@ -48,3 +59,4 @@ Enhancements and bug fixes
 
 .. _`@znbiz`: https://github.com/znbiz
 .. _`@mahenzon`: https://github.com/mahenzon
+.. _`@CosmoV`: https://github.com/CosmoV
