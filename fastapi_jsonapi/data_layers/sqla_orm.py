@@ -154,7 +154,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         extra = data_create.__fields__["id"].field_info.extra
         if extra.get("client_can_set_id"):
-            model_kwargs["id"] = extra["db_type"](data_create.id)
+            model_kwargs["id"] = extra["cast"](data_create.id)
 
         return model_kwargs
 

@@ -233,7 +233,7 @@ class SchemaBuilder:
         relationships_schema_fields = {}
         included_schemas: List[Tuple[str, BaseModel, str]] = []
         has_required_relationship = False
-        resource_id_field = (str, Field(...))
+        resource_id_field = (str, Field(None))
 
         for name, field in (schema.__fields__ or {}).items():
             if isinstance(field.field_info.extra.get("relationship"), RelationshipInfo):
@@ -259,7 +259,7 @@ class SchemaBuilder:
                 if not field.field_info.extra.get("client_can_set_id"):
                     continue
 
-                resource_id_field = (str, Field(db_type=field.outer_type_, **field.field_info.extra))
+                resource_id_field = (str, Field(cast=field.outer_type_, **field.field_info.extra))
             else:
                 attributes_schema_fields[name] = (field.outer_type_, field.field_info)
 

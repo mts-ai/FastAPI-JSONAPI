@@ -4,10 +4,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from fastapi_jsonapi.exceptions import HTTPException
-from fastapi_jsonapi.exceptions.json_api import ObjectNotFound
 
 
-async def base_exception_handler(request: Request, exc: ObjectNotFound):
+async def base_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"errors": [exc._dict]},
