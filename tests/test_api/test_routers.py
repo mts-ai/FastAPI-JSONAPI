@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import Annotated
 
-from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.exceptions import Forbidden, InternalServerError
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from fastapi_jsonapi.views.utils import (
@@ -52,6 +52,7 @@ def build_app(detail_view) -> FastAPI:
     )
 
     app.include_router(router, prefix="")
+    init(app)
 
     return app
 
@@ -98,22 +99,26 @@ async def test_dependency_handler_call():
 
         assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
         assert res.json() == {
-            "detail": {
-                "errors": [
-                    {
-                        "detail": {"dependency_1": 1, "dependency_2": 2},
-                        "source": {"pointer": ""},
-                        "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        "title": "Check that dependency successfully passed",
-                    },
-                    {
-                        "detail": DependencyInjectionDetailView.__name__,
-                        "source": {"pointer": ""},
-                        "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        "title": "Check caller class",
-                    },
-                ],
-            },
+            "errors": [
+                {
+                    "detail": "hi",
+                    "meta": [
+                        {
+                            "detail": {"dependency_1": 1, "dependency_2": 2},
+                            "source": {"pointer": ""},
+                            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            "title": "Check that dependency successfully passed",
+                        },
+                        {
+                            "detail": DependencyInjectionDetailView.__name__,
+                            "source": {"pointer": ""},
+                            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            "title": "Check caller class",
+                        },
+                    ],
+                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                },
+            ],
         }
 
 
@@ -140,16 +145,14 @@ async def test_dependencies_as_permissions(user_1: User):
 
         assert res.status_code == status.HTTP_403_FORBIDDEN, res.text
         assert res.json() == {
-            "detail": {
-                "errors": [
-                    {
-                        "detail": "Only admin user have permissions to this endpoint",
-                        "source": {"pointer": ""},
-                        "status_code": status.HTTP_403_FORBIDDEN,
-                        "title": "Forbidden",
-                    },
-                ],
-            },
+            "errors": [
+                {
+                    "detail": "Only admin user have permissions to this endpoint",
+                    "source": {"pointer": ""},
+                    "status_code": status.HTTP_403_FORBIDDEN,
+                    "title": "Forbidden",
+                },
+            ],
         }
 
         res = await client.get(f"/users/{user_1.id}", headers={"X-AUTH": "admin"})
@@ -195,14 +198,12 @@ async def test_manipulate_data_layer_kwargs(
 
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
         assert res.json() == {
-            "detail": {
-                "errors": [
-                    {
-                        "detail": f"Resource User `{user_1.id}` not found",
-                        "meta": {"parameter": "id"},
-                        "status_code": status.HTTP_404_NOT_FOUND,
-                        "title": "Resource not found.",
-                    },
-                ],
-            },
+            "errors": [
+                {
+                    "detail": f"Resource User `{user_1.id}` not found",
+                    "meta": {"parameter": "id"},
+                    "status_code": status.HTTP_404_NOT_FOUND,
+                    "title": "Resource not found.",
+                },
+            ],
         }

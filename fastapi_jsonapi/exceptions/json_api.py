@@ -6,11 +6,11 @@ from typing import (
     Optional,
 )
 
-from fastapi import HTTPException as FastApiHttpException
+# from fastapi import HTTPException as FastApiHttpException
 from fastapi import status
 
 
-class HTTPException(FastApiHttpException):
+class HTTPException(Exception):
     """Base HTTP Exception class customized for json_api exceptions."""
 
     title: str = ""
@@ -42,6 +42,10 @@ class HTTPException(FastApiHttpException):
         if title is not None:
             self.title = title
 
+        self.source = None
+        self.meta = None
+        self._detail = detail
+
         parameter = parameter or self.parameter
         if not errors:
             if pointer:
@@ -58,16 +62,21 @@ class HTTPException(FastApiHttpException):
 
             errors = [self]
 
+        else:
+            self.meta = [error._dict for error in errors or []]
+
         super().__init__(errors[0].status_code, {"errors": [error._dict for error in errors]})
 
     @property
     def _dict(self):
-        return {
+        data = {
             "status_code": self.status_code,
             "source": self.source,
             "title": self.title,
             "detail": self._detail,
+            "meta": self.meta,
         }
+        return {key: value for key, value in data.items() if value}
 
 
 class InternalServerError(HTTPException):
