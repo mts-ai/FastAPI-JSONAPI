@@ -4,8 +4,7 @@ import uvicorn
 from fastapi import APIRouter, FastAPI
 from pytest import fixture  # noqa PT013
 
-from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi.exceptions.handlers import register_exception_handlers
+from fastapi_jsonapi import RoutersJSONAPI, init
 from tests.fixtures.views import (
     DetailViewBaseGeneric,
     ListViewBaseGeneric,
@@ -146,7 +145,7 @@ def add_routers(app_plain: FastAPI):
     )
 
     app_plain.include_router(router, prefix="")
-    register_exception_handlers(app_plain)
+    init(app_plain)
 
     return app_plain
 
