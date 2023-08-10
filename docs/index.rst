@@ -54,6 +54,7 @@ FastAPI-JSONAPI with FastAPI.
    api_filtering_example
    quickstart
    routing
+   view_dependencies
    filtering
    include_related_objects
    include_many_to_many

@@ -1,0 +1,12 @@
+HTTP/1.1 403 Forbidden
+Content-Type: application/vnd.api+json
+
+{
+   "errors": [
+      {
+         "detail": "Only admin user have permissions to this endpoint",
+         "status_code": 403,
+         "title": "Forbidden"
+      }
+   ]
+}
