@@ -1212,7 +1212,7 @@ class TestPatchRelationshipsToMany:
             "meta": None,
         }
 
-    async def test_ok_do_nothing_for_not_found(
+    async def test_relationship_not_found(
         self,
         client: AsyncClient,
         user_1: User,
@@ -1251,31 +1251,15 @@ class TestPatchRelationshipsToMany:
 
         # update relationships with patch endpoint
         res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
-        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
 
         assert res.json() == {
-            "meta": None,
-            "jsonapi": {"version": "1.0"},
-            "data": {
-                "type": "user",
-                "attributes": new_attrs,
-                "id": str(user_1.id),
-                "relationships": {
-                    "computers": {
-                        "data": [
-                            {
-                                "type": "computer",
-                                "id": str(computer_1.id),
-                            },
-                        ],
-                    },
-                },
-            },
-            "included": [
+            "errors": [
                 {
-                    "attributes": {"name": computer_1.name},
-                    "id": str(computer_1.id),
-                    "type": "computer",
+                    "detail": "Objects for Computer with ids: {" + str(fake_computer_id) + "} not found",
+                    "source": {"pointer": "/data"},
+                    "status_code": 404,
+                    "title": "Related object not found.",
                 },
             ],
         }

@@ -491,10 +491,20 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param ids:
         :return:
         """
-        # TODO: check ids / count and raise if some objects not found
         stmt = select(related_model).where(getattr(related_model, related_id_field).in_(ids))
 
         related_objects = (await self.session.execute(stmt)).scalars().all()
+        object_ids = [getattr(obj, related_id_field) for obj in related_objects]
+
+        not_found_ids = ids
+        if object_ids:
+            obj_type = type(object_ids[0])
+            ids = {obj_type(_id) for _id in ids}
+            not_found_ids = ids.difference(object_ids)
+
+        if not_found_ids:
+            msg = f"Objects for {related_model.__name__} with ids: {not_found_ids} not found"
+            raise RelatedObjectNotFound(detail=msg, pointer="/data")
 
         return list(related_objects)
 
