@@ -17,4 +17,4 @@ To configure the data layer you have to set its required parameters in the resou
 
 Example:
 
-# TODO
+.. literalinclude:: ./python_snippets/data_layer/custom_data_layer.py
