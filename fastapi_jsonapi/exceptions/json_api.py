@@ -6,11 +6,11 @@ from typing import (
     Optional,
 )
 
-# from fastapi import HTTPException as FastApiHttpException
+from fastapi import HTTPException as FastApiHttpException
 from fastapi import status
 
 
-class HTTPException(Exception):
+class HTTPException(FastApiHttpException):
     """Base HTTP Exception class customized for json_api exceptions."""
 
     title: str = ""
