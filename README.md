@@ -22,145 +22,118 @@ pip install FastAPI-JSONAPI
 Create a test.py file and copy the following code into it
 
 ```python
-# TODO: upgrade with example from sqla examples
-
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
-from pydantic import BaseModel
-from sqlalchemy import Column, Text, Integer, select
+from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import Select
 
 from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi import SqlalchemyDataLayer
-from fastapi_jsonapi.querystring import QueryStringManager
-from fastapi_jsonapi.schema import JSONAPIResultListSchema
+from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
+from fastapi_jsonapi.schema_base import BaseModel
+from fastapi_jsonapi.views.utils import HTTPMethod, HTTPMethodConfig
+from fastapi_jsonapi.views.view_base import ViewBase
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 PROJECT_DIR = CURRENT_DIR.parent.parent
-
+DB_URL = f"sqlite+aiosqlite:///{CURRENT_DIR.absolute()}/db.sqlite3"
 sys.path.append(str(PROJECT_DIR))
 
 Base = declarative_base()
 
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name: str = Column(Text, nullable=True)
+
+
+class UserAttributesBaseSchema(BaseModel):
+    name: str
+
+    class Config:
+        """Pydantic schema config."""
+
+        orm_mode = True
+
+
+class UserSchema(UserAttributesBaseSchema):
+    """User base schema."""
+
+
+class UserPatchSchema(UserAttributesBaseSchema):
+    """User PATCH schema."""
+
+
+class UserInSchema(UserAttributesBaseSchema):
+    """User input schema."""
+
+
 def async_session() -> sessionmaker:
-    uri = "sqlite+aiosqlite:///db.sqlite3"
-    engine = create_async_engine(url=make_url(uri))
+    engine = create_async_engine(url=make_url(DB_URL))
     _async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     return _async_session
 
 
 class Connector:
-
     @classmethod
     async def get_session(cls):
         """
-        Getting a session to the database.
+        Get session as dependency
 
         :return:
         """
-        async_session_ = async_session()
-        async with async_session_() as db_session:
-            async with db_session.begin():
-                yield db_session
+        sess = async_session()
+        async with sess() as db_session:  # type: AsyncSession
+            yield db_session
+            await db_session.rollback()
 
 
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    first_name: str = Column(Text, nullable=True)
+async def sqlalchemy_init() -> None:
+    engine = create_async_engine(url=make_url(DB_URL))
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
-class UserBaseSchema(BaseModel):
-    """User base schema."""
-
-    class Config:
-        """Pydantic schema config."""
-        orm_mode = True
-
-    first_name: Optional[str] = None
-
-
-class UserPatchSchema(UserBaseSchema):
-    """User PATCH schema."""
-
-
-class UserInSchema(UserBaseSchema):
-    """User input schema."""
-
-
-class UserSchema(UserInSchema):
-    """User item schema."""
+class SessionDependency(BaseModel):
+    session: AsyncSession = Depends(Connector.get_session)
 
     class Config:
-        """Pydantic model config."""
-        orm_mode = True
-        model = "users"
-
-    id: int
+        arbitrary_types_allowed = True
 
 
-class UserDetail:
-
-    @classmethod
-    async def get(cls, obj_id: int, session: AsyncSession = Depends(Connector.get_session)) -> UserSchema:
-        user: User = (await session.execute(select(User).where(User.id == obj_id))).scalar_one()
-        return UserSchema.from_orm(user)
-
-    @classmethod
-    async def patch(
-        cls,
-        obj_id: int,
-        data: UserPatchSchema,
-        session: AsyncSession = Depends(Connector.get_session),
-    ) -> UserSchema:
-        user: User = (await session.execute(select(User).where(User.id == obj_id))).scalar_one()
-        user.first_name = data.first_name
-        await session.commit()
-        return UserSchema.from_orm(user)
-
-    @classmethod
-    async def delete(cls, obj_id: int, session: AsyncSession = Depends(Connector.get_session)) -> None:
-        user: User = (await session.execute(select(User).where(User.id == obj_id))).scalar_one()
-        await session.delete(user)
-        await session.commit()
+def session_dependency_handler(view: ViewBase, dto: BaseModel) -> Dict[str, Any]:
+    return {
+        "session": dto.session,
+    }
 
 
-class UserList:
-    @classmethod
-    async def get(
-        cls,
-        query_params: QueryStringManager,
-        session: AsyncSession = Depends(Connector.get_session),
-    ) -> Union[Select, JSONAPIResultListSchema]:
-        user_query = select(User)
-        dl = SqlalchemyDataLayer(query=user_query, schema=UserSchema, model=User, session=session)
-        count, users_db = await dl.get_collection(qs=query_params)
-        total_pages = count // query_params.pagination.size + (count % query_params.pagination.size and 1)
-        users: List[UserSchema] = [UserSchema.from_orm(i_user) for i_user in users_db]
-        return JSONAPIResultListSchema(
-            meta={"count": count, "totalPages": total_pages},
-            data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": "user"} for i_obj in users],
+class UserDetailView(DetailViewBaseGeneric):
+    method_dependencies = {
+        HTTPMethod.ALL: HTTPMethodConfig(
+            dependencies=SessionDependency,
+            prepare_data_layer_kwargs=session_dependency_handler,
         )
-
-    @classmethod
-    async def post(cls, data: UserInSchema, session: AsyncSession = Depends(Connector.get_session)) -> UserSchema:
-        user = User(first_name=data.first_name)
-        session.add(user)
-        await session.commit()
-        return UserSchema.from_orm(user)
+    }
 
 
-def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
+class UserListView(ListViewBaseGeneric):
+    method_dependencies = {
+        HTTPMethod.ALL: HTTPMethodConfig(
+            dependencies=SessionDependency,
+            prepare_data_layer_kwargs=session_dependency_handler,
+        )
+    }
+
+
+def add_routes(app: FastAPI):
     tags = [
         {
             "name": "User",
@@ -173,8 +146,8 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         router=routers,
         path="/user",
         tags=["User"],
-        class_detail=UserDetail,
-        class_list=UserList,
+        class_detail=UserDetailView,
+        class_list=UserListView,
         schema=UserSchema,
         resource_type="user",
         schema_in_patch=UserPatchSchema,
@@ -184,14 +157,6 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
 
     app.include_router(routers, prefix="")
     return tags
-
-
-async def sqlalchemy_init() -> None:
-    uri = "sqlite+aiosqlite:///db.sqlite3"
-    engine = create_async_engine(url=make_url(uri))
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
 
 
 def create_app() -> FastAPI:
