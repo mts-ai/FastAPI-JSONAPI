@@ -1,0 +1,13 @@
+HTTP/1.1 400 Bad Request
+Content-Type: application/vnd.api+json
+
+{
+   "errors":[
+      {
+         "detail":"My custom err",
+         "source":{"pointer":""},
+         "status_code":400,
+         "title":"Bad Request"
+      }
+   ]
+}
