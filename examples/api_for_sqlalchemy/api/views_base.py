@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
 from fastapi_jsonapi.data_layers.sqla_orm import SqlalchemyDataLayer
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
-from fastapi_jsonapi.views.utils import ALL_METHODS, HTTPMethodConfig
+from fastapi_jsonapi.views.utils import HTTPMethod, HTTPMethodConfig
 from fastapi_jsonapi.views.view_base import ViewBase
 
 
@@ -30,7 +30,7 @@ class DetailViewBase(DetailViewBaseGeneric):
     data_layer_cls = SqlalchemyDataLayer
 
     method_dependencies = {
-        ALL_METHODS: HTTPMethodConfig(
+        HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=handler,
         ),
@@ -45,7 +45,7 @@ class ListViewBase(ListViewBaseGeneric):
     data_layer_cls = SqlalchemyDataLayer
 
     method_dependencies = {
-        ALL_METHODS: HTTPMethodConfig(
+        HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=handler,
         ),
