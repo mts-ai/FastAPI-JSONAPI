@@ -1,0 +1,12 @@
+POST /persons HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "data": {
+    "type": "person",
+    "attributes": {
+        "name": "John"
+    },
+    "id": "867ab602-d9f7-44d0-8d3a-d2ae6d96b3a7"
+  }
+}

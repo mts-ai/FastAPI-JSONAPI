@@ -1,7 +1,7 @@
 .. _view_dependencies:
 
 View Dependencies
-================
+=================
 
 .. currentmodule:: fastapi_jsonapi
 

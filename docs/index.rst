@@ -59,6 +59,7 @@ FastAPI-JSONAPI with FastAPI.
    include_related_objects
    include_many_to_many
    custom_sql_filtering
+   client_generated_id
    logical_data_abstraction
    resource_manager
    data_layer
