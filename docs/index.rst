@@ -63,6 +63,7 @@ FastAPI-JSONAPI with FastAPI.
    logical_data_abstraction
    resource_manager
    data_layer
+   relationships
    sparse_fieldsets
    pagination
    sorting

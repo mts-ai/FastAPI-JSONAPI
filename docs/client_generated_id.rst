@@ -3,6 +3,8 @@
 Client generated id
 ===================
 
+.. currentmodule:: fastapi_jsonapi
+
 According to the specification `JSON:API doc <https://jsonapi.org/format/#crud-creating-client-ids>`_
 it is possible to create an ``id`` on the client and pass
 it to the server. Let's define the id type as a UUID.
