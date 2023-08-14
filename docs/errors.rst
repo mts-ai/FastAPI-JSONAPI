@@ -86,8 +86,6 @@ Example:
             except Exception:
                 raise BadRequest(detail="My custom err")
 
-
-
 Request:
 
 .. literalinclude:: ./http_snippets/snippets/errors__create_person
