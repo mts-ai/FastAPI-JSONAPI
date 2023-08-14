@@ -137,11 +137,17 @@ class AtomicOperation(BaseModel):
 
 
 class AtomicOperationRequest(BaseModel):
-    operations: List[AtomicOperation] = Field(alias="atomic:operations")
+    operations: List[AtomicOperation] = Field(
+        alias="atomic:operations",
+        min_length=1,
+    )
 
 
 class AtomicResult(BaseModel):
-    data: Optional[dict] = Field(default=None, description="the “primary data” resulting from the operation.")
+    data: Optional[dict] = Field(
+        default=None,
+        description="the “primary data” resulting from the operation.",
+    )
     meta: Optional[dict] = Field(
         default=None,
         description="a meta object that contains non-standard meta-information about the result.",
@@ -153,4 +159,7 @@ class AtomicResultResponse(BaseModel):
     https://jsonapi.org/ext/atomic/#auto-id-responses-4
     """
 
-    results: List[AtomicResult] = Field(alias="atomic:results")
+    results: List[AtomicResult] = Field(
+        alias="atomic:results",
+        min_length=1,
+    )
