@@ -22,7 +22,8 @@ Response:
 
 In order to do this you need to define an ``id`` with the Field keyword **client_can_set_id** in the
 ``schema`` or ``schema_in_post``.
-Schematically it looks like this:
+
+Example:
 
 .. literalinclude:: ./python_snippets/client_generated_id/schematic_example.py
   :language: python
