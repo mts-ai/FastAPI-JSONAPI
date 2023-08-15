@@ -154,7 +154,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         extra = data_create.__fields__["id"].field_info.extra
         if extra.get("client_can_set_id"):
-            model_kwargs["id"] = extra["cast"](data_create.id)
+            # TODO: remove crutch, there is no possibility
+            #       to pass cast_func through the field_info.extra
+            #       because all extra kwargs placing in openapi schema and this
+            #       break down /docs endpoint
+            model_kwargs["id"] = data_create._id_cast_func(data_create.id)
 
         return model_kwargs
 

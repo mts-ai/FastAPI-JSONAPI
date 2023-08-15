@@ -70,7 +70,7 @@ FieldValidator = Optional[Any]
 @dataclass(frozen=True)
 class SchemasInfoDTO:
     # id field
-    resource_id_field: Tuple[Type, FieldInfo]
+    resource_id_field: Tuple[Type, FieldInfo, Callable]
     # pre-built attributes
     attributes_schema: Type[BaseModel]
     # relationships
@@ -233,7 +233,7 @@ class SchemaBuilder:
         relationships_schema_fields = {}
         included_schemas: List[Tuple[str, BaseModel, str]] = []
         has_required_relationship = False
-        resource_id_field = (str, Field(None))
+        resource_id_field = (str, Field(None), None)
 
         for name, field in (schema.__fields__ or {}).items():
             if isinstance(field.field_info.extra.get("relationship"), RelationshipInfo):
@@ -259,7 +259,7 @@ class SchemaBuilder:
                 if not field.field_info.extra.get("client_can_set_id"):
                     continue
 
-                resource_id_field = (str, Field(cast=field.outer_type_, **field.field_info.extra))
+                resource_id_field = (str, Field(**field.field_info.extra), field.outer_type_)
             else:
                 attributes_schema_fields[name] = (field.outer_type_, field.field_info)
 
@@ -344,7 +344,7 @@ class SchemaBuilder:
         attributes_schema: Type[TypeSchema],
         relationships_schema: Type[TypeSchema],
         includes,
-        resource_id_field: Tuple[Type, FieldInfo],
+        resource_id_field: Tuple[Type, FieldInfo, Callable],
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
         use_schema_cache: bool = True,
         relationships_required: bool = False,
@@ -352,7 +352,7 @@ class SchemaBuilder:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
 
-        field_type, field_info = resource_id_field
+        field_type, field_info, id_cast_func = resource_id_field
 
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
@@ -369,6 +369,9 @@ class SchemaBuilder:
             type=(str, Field(default=resource_type or self._resource_type, description="Resource type")),
             __base__=model_base,
         )
+        if id_cast_func:
+            object_jsonapi_schema._id_cast_func = id_cast_func
+
         if use_schema_cache:
             self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
 
