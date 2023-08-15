@@ -1,8 +1,16 @@
 FastAPI-JSONAPI
 ==================
-.. image:: https://img.shields.io/pypi/v/fastapi-jsonapi.svg
+.. image:: https://img.shields.io/pypi/v/fastapi-jsonapi?style=for-the-badge
    :alt: PyPI
    :target: http://pypi.org/p/fastapi-jsonapi
+
+.. image:: https://img.shields.io/pypi/pyversions/fastapi-jsonapi?style=for-the-badge
+   :alt: Python Version
+   :target: http://pypi.org/p/fastapi-jsonapi
+
+.. image:: https://img.shields.io/github/license/mts-ai/FastAPI-JSONAPI?style=for-the-badge
+   :alt: GitHub
+   :target: https://github.com/mts-ai/FastAPI-JSONAPI
 
 
 **FastAPI-JSONAPI** is an extension for FastAPI that adds support for quickly building REST APIs
