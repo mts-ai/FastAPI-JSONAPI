@@ -1,6 +1,7 @@
 import logging
 from typing import TypeVar, Union
 
+from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.schema import (
     BaseJSONAPIItemInSchema,
     JSONAPIResultDetailSchema,
@@ -34,6 +35,11 @@ class DetailViewBase(ViewBase):
         data_update: BaseJSONAPIItemInSchema,
         **extra_view_deps,
     ) -> JSONAPIResultDetailSchema:
+        if obj_id != data_update.id:
+            raise BadRequest(
+                detail="obj_id and data.id should be same",
+                pointer="/data/id",
+            )
         dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
         dl = self._get_data_layer_for_detail(**dl_kwargs)
 

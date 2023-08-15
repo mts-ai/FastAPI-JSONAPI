@@ -1,34 +1,4 @@
-[![Last Commit](https://img.shields.io/github/last-commit/mts-ai/FastAPI-JSONAPI?style=for-the-badge)](https://github.com/mts-ai/FastAPI-JSONAPI)
-[![PyPI](https://img.shields.io/pypi/v/fastapi-jsonapi?label=PyPI&style=for-the-badge)](https://pypi.org/project/FastAPI-JSONAPI/)
-[![](https://img.shields.io/pypi/pyversions/FastAPI-JSONAPI?style=for-the-badge)](https://pypi.org/project/FastAPI-JSONAPI/)
-[![](https://img.shields.io/github/license/ycd/manage-fastapi?style=for-the-badge)](https://pypi.org/project/FastAPI-JSONAPI/)
-[![GitHub Actions](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fmts-ai%2FFastAPI-JSONAPI%2Fbadge%3Fref%3Dmain&style=for-the-badge)](https://github.com/mts-ai/FastAPI-JSONAPI/actions)
-[![Read the Docs](https://img.shields.io/readthedocs/fastapi-jsonapi?style=for-the-badge)](https://fastapi-jsonapi.readthedocs.io/en/latest/)
-
-[![📖 Docs (gh-pages)](https://github.com/mts-ai/FastAPI-JSONAPI/actions/workflows/documentation.yaml/badge.svg)](https://mts-ai.github.io/FastAPI-JSONAPI/)
-
-# FastAPI-JSONAPI
-
-FastAPI-JSONAPI is a FastAPI extension for building REST APIs.
-Implementation of a strong specification [JSONAPI 1.0](http://jsonapi.org/).
-This framework is designed to quickly build REST APIs and fit the complexity
-of real life projects with legacy data and multiple data storages.
-
-## Architecture
-
-![docs/img/schema.png](docs/img/schema.png)
-
-## Install
-
-```bash
-pip install FastAPI-JSONAPI
-```
-
-## A minimal API
-
-Create a test.py file and copy the following code into it
-
-```python
+import sys
 from pathlib import Path
 from typing import Any, Dict
 
@@ -48,7 +18,9 @@ from fastapi_jsonapi.views.view_base import ViewBase
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
+PROJECT_DIR = CURRENT_DIR.parent.parent
 DB_URL = f"sqlite+aiosqlite:///{CURRENT_DIR}/db.sqlite3"
+sys.path.append(str(PROJECT_DIR))
 
 Base = declarative_base()
 
@@ -124,7 +96,7 @@ class UserDetailView(DetailViewBaseGeneric):
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=session_dependency_handler,
-        )
+        ),
     }
 
 
@@ -133,7 +105,7 @@ class UserListView(ListViewBaseGeneric):
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=session_dependency_handler,
-        )
+        ),
     }
 
 
@@ -191,15 +163,3 @@ if __name__ == "__main__":
         reload=True,
         app_dir=str(CURRENT_DIR),
     )
-```
-
-This example provides the following API structure:
-
-| URL              | method | endpoint      | Usage                     |
-|------------------|--------|---------------|---------------------------|
-| `/user`          | GET    | user_list     | Get a collection of users |
-| `/user`          | POST   | user_list     | Create a user             |
-| `/user`          | DELETE | user_list     | Delete users              |
-| `/user/{obj_id}` | GET    | user_detail   | Get user details          |
-| `/user/{obj_id}` | PATCH  | person_detail | Update a user             |
-| `/user/{obj_id}` | DELETE | person_detail | Delete a user             |
