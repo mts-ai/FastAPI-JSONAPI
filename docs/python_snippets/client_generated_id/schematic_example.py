@@ -145,8 +145,9 @@ def create_app() -> FastAPI:
 app = create_app()
 
 if __name__ == "__main__":
+    current_file_name = CURRENT_FILE.name.replace(CURRENT_FILE.suffix, "")
     uvicorn.run(
-        "test:app",
+        f"{current_file_name}:app",
         host="0.0.0.0",
         port=8084,
         reload=True,
