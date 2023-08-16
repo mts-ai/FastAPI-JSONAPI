@@ -357,7 +357,7 @@ class RoutersJSONAPI:
 
         new_method_config = HTTPMethodConfig(
             dependencies=dependencies_model,
-            prepare_data_layer_kwargs=common_config.handler or target_config.handler,
+            prepare_data_layer_kwargs=target_config.handler or common_config.handler,
         )
         view.method_dependencies[method] = new_method_config
 
