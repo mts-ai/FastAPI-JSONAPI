@@ -16,17 +16,19 @@ from tests.fixtures.views import DetailViewBaseGeneric, ListViewBaseGeneric
 from tests.misc.utils import fake
 from tests.models import (
     Computer,
-    MiscCases,
+    IdCast,
     Post,
     PostComment,
+    SelfRelationship,
     User,
     UserBio,
     Workplace,
 )
 from tests.schemas import (
-    MiscCasesSchema,
+    IdCastSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
+    SelfRelationshipSchema,
     UserAttributesBaseSchema,
     UserBioBaseSchema,
     UserInSchemaAllowIdOnPost,
@@ -822,20 +824,20 @@ class TestCreateObjects:
         assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
         assert response_data["data"]["id"] == user_id
 
-    def _build_app_custom(self, schema, schema_in_post, model=None) -> FastAPI:
+    def _build_app_custom(self, schema, schema_in_post, model, resource_type: str = "misc") -> FastAPI:
         router: APIRouter = APIRouter()
 
         RoutersJSONAPI(
             router=router,
-            path="/users",
-            tags=["User"],
+            path="/misc",
+            tags=["Misc"],
             class_detail=DetailViewBaseGeneric,
             class_list=ListViewBaseGeneric,
             schema=schema,
-            resource_type="user",
+            resource_type="misc",
             schema_in_patch=UserPatchSchema,
             schema_in_post=schema_in_post,
-            model=model or User,
+            model=model,
         )
 
         app = build_app_plain()
@@ -844,7 +846,12 @@ class TestCreateObjects:
         return app
 
     async def test_create_id_by_client(self):
-        app = self._build_app_custom(UserSchema, UserInSchemaAllowIdOnPost)
+        app = self._build_app_custom(
+            UserSchema,
+            UserInSchemaAllowIdOnPost,
+            User,
+            "user",
+        )
 
         new_id = str(fake.pyint(100, 999))
         attrs = UserAttributesBaseSchema(
@@ -860,7 +867,7 @@ class TestCreateObjects:
         }
 
         async with AsyncClient(app=app, base_url="http://test") as client:
-            res = await client.post("/users", json=create_user_body)
+            res = await client.post("/misc", json=create_user_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
             assert res.json() == {
                 "data": {
@@ -873,10 +880,10 @@ class TestCreateObjects:
             }
 
     async def test_create_id_by_client_uuid_type(self):
-        app = self._build_app_custom(MiscCasesSchema, MiscCasesSchema, MiscCases)
+        app = self._build_app_custom(IdCastSchema, IdCastSchema, IdCast)
 
         new_id = str(uuid4())
-        create_user_body = {
+        create_body = {
             "data": {
                 "attributes": {},
                 "id": new_id,
@@ -884,14 +891,95 @@ class TestCreateObjects:
         }
 
         async with AsyncClient(app=app, base_url="http://test") as client:
-            res = await client.post("/users", json=create_user_body)
+            res = await client.post("/misc", json=create_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
             assert res.json() == {
                 "data": {
                     "attributes": {},
                     "id": new_id,
-                    "type": "user",
+                    "type": "misc",
                 },
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
+
+    async def test_create_with_relationship_to_the_same_table(self):
+        app = self._build_app_custom(
+            SelfRelationshipSchema,
+            SelfRelationshipSchema,
+            SelfRelationship,
+        )
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            create_body = {
+                "data": {
+                    "attributes": {
+                        "name": "parent",
+                    },
+                },
+            }
+
+            res = await client.post("/misc", json=create_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+
+            response_json = res.json()
+            assert response_json["data"]
+            assert (parent_object_id := response_json["data"].get("id"))
+            assert response_json == {
+                "data": {
+                    "attributes": {
+                        "name": "parent",
+                    },
+                    "id": parent_object_id,
+                    "relationships": None,
+                    "type": "self_relationship",
+                },
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
+
+            create_with_relationship_body = {
+                "data": {
+                    "attributes": {
+                        "name": "child",
+                    },
+                    "relationships": {
+                        "self_relationship": {
+                            "data": {
+                                "type": "self_relationship",
+                                "id": parent_object_id,
+                            },
+                        },
+                    },
+                },
+            }
+            res = await client.post("/misc?include=self_relationship", json=create_with_relationship_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+
+            response_json = res.json()
+            assert response_json["data"]
+            assert (child_object_id := response_json["data"].get("id"))
+            assert res.json() == {
+                "data": {
+                    "attributes": {"name": "child"},
+                    "id": child_object_id,
+                    "relationships": {
+                        "self_relationship": {
+                            "data": {
+                                "id": parent_object_id,
+                                "type": "self_relationship",
+                            },
+                        },
+                    },
+                    "type": "self_relationship",
+                },
+                "included": [
+                    {
+                        "attributes": {"name": "parent"},
+                        "id": parent_object_id,
+                        "type": "self_relationship",
+                    },
+                ],
                 "jsonapi": {"version": "1.0"},
                 "meta": None,
             }

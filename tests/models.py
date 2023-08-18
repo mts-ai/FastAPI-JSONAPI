@@ -231,5 +231,22 @@ class UUIDType(TypeDecorator):
         return UUID(value)
 
 
-class MiscCases(Base):
+class IdCast(Base):
     id = Column(UUIDType, primary_key=True)
+
+
+class SelfRelationship(Base):
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    self_relationship_id = Column(
+        Integer,
+        ForeignKey(
+            "selfrelationships.id",
+            name="fk_self_relationship_id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+        ),
+        nullable=True,
+    )
+    # parent = relationship("SelfRelationship", back_populates="s")
+    self_relationship = relationship("SelfRelationship", remote_side=[id])

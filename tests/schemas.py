@@ -332,9 +332,14 @@ class WorkplaceSchema(ComputerInSchema):
     id: int
 
 
-class MiscCasesAttributesSchema(BaseModel):
-    pass
-
-
-class MiscCasesSchema(MiscCasesAttributesSchema):
+class IdCastSchema(BaseModel):
     id: UUID = Field(client_can_set_id=True)
+
+
+class SelfRelationshipSchema(BaseModel):
+    name: str
+    self_relationship: Optional["SelfRelationshipSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="self_relationship",
+        ),
+    )
