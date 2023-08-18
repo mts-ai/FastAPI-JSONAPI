@@ -300,12 +300,15 @@ class SqlalchemyDataLayer(BaseDataLayer):
         has_updated = False
         for field_name, new_value in new_data.items():
             # TODO: get field alias (if present) and get attribute by alias (rarely used, but required)
-            old_value = getattr(obj, field_name)
+            try:
+                old_value = getattr(obj, field_name)
 
-            if old_value != new_value:
-                setattr(obj, field_name, new_value)
-                has_updated = True
-
+                if old_value != new_value:
+                    setattr(obj, field_name, new_value)
+                    has_updated = True
+            except AttributeError:
+                err_message = f'Can\'t find an attribute "{field_name}" in model {self.model.__name__}'
+                logging.warning(err_message)
         try:
             await self.session.commit()
         except DBAPIError as e:
