@@ -19,20 +19,20 @@ Example:
 
 .. sourcecode:: http
 
-    GET /persons?fields[person]=display_name HTTP/1.1
+    GET /users?fields[user]=display_name HTTP/1.1
     Accept: application/vnd.api+json
 
-In this example person's display_name is the only field returned by the API. No relationship links are returned so the response is very fast because the API doesn't have to do any expensive computation of relationship links.
+In this example user's display_name is the only field returned by the API. No relationship links are returned so the response is very fast because the API doesn't have to do any expensive computation of relationship links.
 
 You can manage returned fields for the entire response even for included objects
 
 Example:
 
-If you don't want to compute relationship links for included computers of a person you can do something like this
+If you don't want to compute relationship links for included computers of a user you can do something like this
 
 .. sourcecode:: http
 
-    GET /persons/1?include=computers&fields[computer]=serial HTTP/1.1
+    GET /users/1?include=computers&fields[computer]=serial HTTP/1.1
     Accept: application/vnd.api+json
 
 And of course you can combine both like this:
@@ -41,7 +41,7 @@ Example:
 
 .. sourcecode:: http
 
-    GET /persons/1?include=computers&fields[computer]=serial&fields[person]=name,computers HTTP/1.1
+    GET /users/1?include=computers&fields[computer]=serial&fields[user]=name,computers HTTP/1.1
     Accept: application/vnd.api+json
 
 .. warning::

@@ -10,11 +10,11 @@ class MyCustomDataLayer(BaseDataLayer):
     """Overload abstract methods here"""
 
 
-class PersonDetailView(DetailViewBase):
+class UserDetailView(DetailViewBase):
     data_layer_cls = MyCustomDataLayer
 
 
-class PersonListView(ListViewBase):
+class UserListView(ListViewBase):
     data_layer_cls = MyCustomDataLayer
 
 
@@ -22,7 +22,7 @@ app = FastAPI()
 RoutersJSONAPI(
     app,
     # ...
-    class_detail=PersonDetailView,
-    class_list=PersonListView,
+    class_detail=UserDetailView,
+    class_list=UserListView,
     # ...
 )

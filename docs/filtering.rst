@@ -27,7 +27,7 @@ So this is a first example:
     GET /user?filter=[{"name":"first_name","op":"eq","val":"John"}] HTTP/1.1
     Accept: application/vnd.api+json
 
-In this example we want to retrieve person records for people named John. So we can see that the filtering interface completely fits that of SQLAlchemy: a list a filter information.
+In this example we want to retrieve user records for people named John. So we can see that the filtering interface completely fits that of SQLAlchemy: a list a filter information.
 
     :name: the name of the field you want to filter on
     :op: the operation you want to use (all SQLAlchemy operations are available)

@@ -5,16 +5,16 @@ Filtering API example
     :language: python
 
 
-Check existing persons
+Check existing users
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users_result
   :language: HTTP
 
 
@@ -33,12 +33,12 @@ Filter by word
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_in_array
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_in_array
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_in_array_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_in_array_result
   :language: HTTP
 
 
@@ -56,12 +56,12 @@ Filter by words
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_words_in_array
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_words_in_array
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_words_in_array_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_words_in_array_result
   :language: HTTP
 
 
@@ -79,10 +79,10 @@ Filter by any word containing value
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_contains_in_array
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_contains_in_array_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array_result
   :language: HTTP

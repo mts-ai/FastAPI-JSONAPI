@@ -1,5 +1,6 @@
 """This module is a CRUD interface between resource managers and the Tortoise ORM"""
-from typing import Any, Iterable, Optional, Tuple, Type
+
+from typing import Any, Iterable, List, Optional, Tuple, Type
 
 from tortoise.queryset import QuerySet
 
@@ -8,6 +9,7 @@ from fastapi_jsonapi.data_layers.filtering.tortoise_orm import FilterTortoiseORM
 from fastapi_jsonapi.data_layers.sorting.tortoise_orm import SortTortoiseORM
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
+from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
 
 
 class TortoiseDataLayer(BaseDataLayer):
@@ -46,22 +48,22 @@ class TortoiseDataLayer(BaseDataLayer):
         )
         self.query_: QuerySet = query or self.model.filter()
 
-    async def create_object(self, model_kwargs: dict, view_kwargs: dict) -> TypeModel:
+    async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
-        Create an object through Tortoise.
+        Create an object
 
-        :param model_kwargs: the data validated by pydantic.
-        :param view_kwargs: kwargs from the resource view.
-        :return DeclarativeMeta: an object from Tortoise.
+        :param data_create: validated data
+        :param view_kwargs: kwargs from the resource view
+        :return DeclarativeMeta: an object
         """
 
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
-        Retrieve an object through Tortoise.
+        Retrieve an object
 
         :param view_kwargs: kwargs from the resource view
         :param qs:
-        :return DeclarativeMeta: an object from Tortoise
+        :return DeclarativeMeta: an object
         """
 
     async def get_collection_count(self, query: QuerySet) -> int:
@@ -107,7 +109,12 @@ class TortoiseDataLayer(BaseDataLayer):
 
         return objects_count, list(collection)
 
-    async def update_object(self, obj: Any, data: dict, view_kwargs: dict) -> bool:
+    async def update_object(
+        self,
+        obj: TypeModel,
+        data_update: BaseJSONAPIItemInSchema,
+        view_kwargs: dict,
+    ) -> bool:
         """
         Update an object through Tortoise.
 
@@ -117,7 +124,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :return: True if object have changed else False.
         """
 
-    async def delete_object(self, obj: Any, view_kwargs: dict):
+    async def delete_object(self, objects: List[TypeModel], view_kwargs: dict):
         """
         Delete an object through Tortoise.
 

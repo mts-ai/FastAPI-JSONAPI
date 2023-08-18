@@ -1,6 +1,6 @@
 {
-  "method": "DELETE",
-  "url": "http://localhost:5000/users/1/relationships/computers",
+  "method": "PATCH",
+  "url": "http://localhost:5000/users/1",
   "httpVersion": "HTTP/1.1",
   "queryString": [
   ],
@@ -12,6 +12,6 @@
   ],
   "postData": {
     "mimeType": "application/json",
-    "text": "{\n  \"data\": [\n    {\n      \"type\": \"computer\",\n      \"id\": \"3\"\n    }\n  ]\n}"
+    "text": "{\n  \"data\": {\n    \"id\": 1,\n    \"type\": \"user\",\n    \"attributes\": {\n        \"name\": \"Sam\"\n    }\n  }\n}"
   }
 }

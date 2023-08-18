@@ -1134,7 +1134,7 @@ class TestPatchObjectRelationshipsToOne:
                 {
                     "detail": "Got an error IntegrityError during update data in DB",
                     "source": {"pointer": "/data"},
-                    "status_code": 500,
+                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                     "title": "Internal Server Error",
                 },
             ],
@@ -1346,7 +1346,7 @@ class TestPatchRelationshipsToMany:
                 {
                     "detail": "Objects for Computer with ids: {" + str(fake_computer_id) + "} not found",
                     "source": {"pointer": "/data"},
-                    "status_code": 404,
+                    "status_code": status.HTTP_404_NOT_FOUND,
                     "title": "Related object not found.",
                 },
             ],

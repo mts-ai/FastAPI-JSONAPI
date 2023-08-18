@@ -12,7 +12,7 @@ If not, then follow the steps in the :ref:`installation` section.
 
 In this section you will learn basic usage of FastAPI-JSONAPI
 around a small tutorial that uses the SQLAlchemy data layer.
-This tutorial shows you an example of a person and their computers.
+This tutorial shows you an example of a user and their computers.
 
 Advanced example
 ----------------
@@ -27,15 +27,15 @@ This example provides the following API:
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
 | url                                       | method | endpoint         | action                                                |
 +===========================================+========+==================+=======================================================+
-| /user                                     | GET    | person_list      | Retrieve a collection of persons                      |
+| /user                                     | GET    | user_list      | Retrieve a collection of users                      |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user                                     | POST   | person_list      | Create a person                                       |
+| /user                                     | POST   | user_list      | Create a user                                       |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>                            | GET    | person_detail    | Retrieve details of a person                          |
+| /user/<int:id>                            | GET    | user_detail    | Retrieve details of a user                          |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>                            | PATCH  | person_detail    | Update a person                                       |
+| /user/<int:id>                            | PATCH  | user_detail    | Update a user                                       |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>                            | DELETE | person_detail    | Delete a person                                       |
+| /user/<int:id>                            | DELETE | user_detail    | Delete a user                                       |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
 
 in developing
@@ -43,17 +43,17 @@ in developing
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
 | url                                       | method | endpoint         | action                                                |
 +===========================================+========+==================+=======================================================+
-| /user/<int:id>/group                      | GET    | computer_list    | Retrieve a collection computers related to a person   |
+| /user/<int:id>/group                      | GET    | computer_list    | Retrieve a collection computers related to a user   |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>/group                      | POST   | computer_list    | Create a computer related to a person                 |
+| /user/<int:id>/group                      | POST   | computer_list    | Create a computer related to a user                 |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>/relationships/group        | GET    | person_computers | Retrieve relationships between a person and computers |
+| /user/<int:id>/relationships/group        | GET    | user_computers | Retrieve relationships between a user and computers |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /persons/<int:id>/relationships/computers | POST   | person_computers | Create relationships between a person and computers   |
+| /users/<int:id>/relationships/computers | POST   | user_computers | Create relationships between a user and computers   |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /persons/<int:id>/relationships/computers | PATCH  | person_computers | Update relationships between a person and computers   |
+| /users/<int:id>/relationships/computers | PATCH  | user_computers | Update relationships between a user and computers   |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /persons/<int:id>/relationships/computers | DELETE | person_computers | Delete relationships between a person and computers   |
+| /users/<int:id>/relationships/computers | DELETE | user_computers | Delete relationships between a user and computers   |
 +--------------------------------------------+--------+------------------+-------------------------------------------------------+
 | /computers                                | GET    | computer_list    | Retrieve a collection of computers                    |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
@@ -65,19 +65,19 @@ in developing
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
 | /computers/<int:id>                       | DELETE | computer_detail  | Delete a computer                                     |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/owner                 | GET    | person_detail    | Retrieve details of the owner of a computer           |
+| /computers/<int:id>/owner                 | GET    | user_detail    | Retrieve details of the owner of a computer           |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/owner                 | PATCH  | person_detail    | Update the owner of a computer                        |
+| /computers/<int:id>/owner                 | PATCH  | user_detail    | Update the owner of a computer                        |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/owner                 | DELETE | person_detail    | Delete the owner of a computer                        |
+| /computers/<int:id>/owner                 | DELETE | user_detail    | Delete the owner of a computer                        |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | GET    | person_computers | Retrieve relationships between a person and computers |
+| /computers/<int:id>/relationships/owner   | GET    | user_computers | Retrieve relationships between a user and computers |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | POST   | person_computers | Create relationships between a person and computers   |
+| /computers/<int:id>/relationships/owner   | POST   | user_computers | Create relationships between a user and computers   |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | PATCH  | person_computers | Update relationships between a person and computers   |
+| /computers/<int:id>/relationships/owner   | PATCH  | user_computers | Update relationships between a user and computers   |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | DELETE | person_computers | Delete relationships between a person and computers   |
+| /computers/<int:id>/relationships/owner   | DELETE | user_computers | Delete relationships between a user and computers   |
 +-------------------------------------------+--------+------------------+-------------------------------------------------------+
 
 
@@ -167,12 +167,12 @@ Create object with related object(s)
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__create_person_with_computer_relationship
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_user_with_computer_relationship
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__create_person_with_computer_relationship_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_user_with_computer_relationship_result
   :language: HTTP
 
 
@@ -180,7 +180,7 @@ You can see that we have added the query string parameter "include" to the URL
 
 .. sourcecode:: http
 
-    POST /persons?include=computers HTTP/1.1
+    POST /users?include=computers HTTP/1.1
 
 Thanks to this parameter, the related computers' details are included in the result. If you want to learn more: :ref:`include_related_objects`
 
@@ -193,12 +193,12 @@ John have also made a mistake in his email so let's update these 2 things in the
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__update_person_with_computer_relationship
+.. literalinclude:: ./http_snippets/snippets/relationship_api__update_user_with_computer_relationship
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__update_person_with_computer_relationship_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__update_user_with_computer_relationship_result
   :language: HTTP
 
 
@@ -209,40 +209,40 @@ Now John buys a new computer named Commodore (id=4) so let's link it to John.
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer_relationship_for_person
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer_relationship_for_user
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer_relationship_for_person_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__create_computer_relationship_for_user_result
   :language: HTTP
 
 
-Load person with all the related computers
+Load user with all the related computers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_with_computers
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_user_with_computers
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_with_computers_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_user_with_computers_result
   :language: HTTP
 
 
-Check person's computers without loading actual person
+Check user's computers without loading actual user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_related_computers
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_user_related_computers
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/relationship_api__get_person_related_computers_result
+.. literalinclude:: ./http_snippets/snippets/relationship_api__get_user_related_computers_result
   :language: HTTP
 
 

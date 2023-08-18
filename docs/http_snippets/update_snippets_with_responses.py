@@ -114,12 +114,12 @@ def add_help_lines(lines: list, module_name: str) -> None:
 
     Request:
 
-    .. literalinclude:: ./http_snippets/snippets/minimal_api__create_person
+    .. literalinclude:: ./http_snippets/snippets/minimal_api__create_user
       :language: HTTP
 
     Response:
 
-    .. literalinclude:: ./http_snippets/snippets/minimal_api__create_person_result
+    .. literalinclude:: ./http_snippets/snippets/minimal_api__create_user_result
       :language: HTTP
 
     '''

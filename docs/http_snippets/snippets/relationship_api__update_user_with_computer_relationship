@@ -1,0 +1,22 @@
+PATCH /users/1?include=computers HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "data": {
+    "type": "user",
+    "id": "1",
+    "attributes": {
+      "email": "john@example.com"
+    },
+    "relationships": {
+      "computers": {
+        "data": [
+          {
+            "type": "computer",
+            "id": "3"
+          }
+        ]
+      }
+    }
+  }
+}

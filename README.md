@@ -195,11 +195,11 @@ if __name__ == "__main__":
 
 This example provides the following API structure:
 
-| URL              | method | endpoint      | Usage                     |
-|------------------|--------|---------------|---------------------------|
-| `/user`          | GET    | user_list     | Get a collection of users |
-| `/user`          | POST   | user_list     | Create a user             |
-| `/user`          | DELETE | user_list     | Delete users              |
-| `/user/{obj_id}` | GET    | user_detail   | Get user details          |
-| `/user/{obj_id}` | PATCH  | person_detail | Update a user             |
-| `/user/{obj_id}` | DELETE | person_detail | Delete a user             |
+| URL              | method | endpoint    | Usage                     |
+|------------------|--------|-------------|---------------------------|
+| `/user`          | GET    | user_list   | Get a collection of users |
+| `/user`          | POST   | user_list   | Create a user             |
+| `/user`          | DELETE | user_list   | Delete users              |
+| `/user/{obj_id}` | GET    | user_detail | Get user details          |
+| `/user/{obj_id}` | PATCH  | user_detail | Update a user             |
+| `/user/{obj_id}` | DELETE | user_detail | Delete a user             |

@@ -88,10 +88,10 @@ Example:
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/errors__create_person
+.. literalinclude:: ./http_snippets/snippets/errors__create_user
   :language: http
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/errors__create_person_result
+.. literalinclude:: ./http_snippets/snippets/errors__create_user_result
   :language: http

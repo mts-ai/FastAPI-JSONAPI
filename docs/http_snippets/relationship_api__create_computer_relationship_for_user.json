@@ -1,5 +1,5 @@
 {
-  "method": "DELETE",
+  "method": "POST",
   "url": "http://localhost:5000/users/1/relationships/computers",
   "httpVersion": "HTTP/1.1",
   "queryString": [
@@ -12,6 +12,6 @@
   ],
   "postData": {
     "mimeType": "application/json",
-    "text": "{\n  \"data\": [\n    {\n      \"type\": \"computer\",\n      \"id\": \"3\"\n    }\n  ]\n}"
+    "text": "{\n  \"data\": [\n    {\n      \"type\": \"computer\",\n      \"id\": \"4\"\n    }\n  ]\n}"
   }
 }

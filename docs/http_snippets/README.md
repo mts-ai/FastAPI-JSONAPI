@@ -48,18 +48,18 @@ httpsnippet example.json --target node --client unirest --output ./snippets
 
 ```shell
 # minimal api to python3
-httpsnippet minimal_api__create_person.json --target python --client python3 --output ./snippets
+httpsnippet minimal_api__create_user.json --target python --client python3 --output ./snippets
 ```
 
 ```shell
 # minimal api to http
-httpsnippet minimal_api__create_person.json --target http --output ./snippets
+httpsnippet minimal_api__create_user.json --target http --output ./snippets
 ```
 
 
 ```shell
 # minimal api to http. don't write Host, Content-Length
-httpsnippet minimal_api__create_person.json --target http --output ./snippets -x '{"autoHost": false, "autoContentLength": false}'
+httpsnippet minimal_api__create_user.json --target http --output ./snippets -x '{"autoHost": false, "autoContentLength": false}'
 ```
 
 
