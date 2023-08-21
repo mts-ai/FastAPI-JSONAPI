@@ -100,6 +100,9 @@ httpx = "^0.24.1"
 pytest-asyncio = "^0.21.0"
 coverage = "^7.2.6"
 pytest-cov = "^4.1.0"
+aiosqlite = "0.17.0"
+asyncpg = "0.28.0"
+
 
 [tool.poetry.group.lint.dependencies]
 black = "^23.3.0"
@@ -110,10 +113,6 @@ pre-commit = "^3.3.3"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.0.1"
-
-
-[tool.poetry.group.examples.dependencies]
-aiosqlite = "0.17.0"
 
 
 [tool.poetry.group.dev.dependencies]
