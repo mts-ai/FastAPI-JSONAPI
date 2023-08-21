@@ -354,9 +354,15 @@ class SchemaBuilder:
 
         field_type, field_info, id_cast_func = resource_id_field
 
+        id_field_kw = {
+            **field_info.extra,
+        }
+        if id_cast_func:
+            id_field_kw.update(id_cast_func=id_cast_func)
+
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
-            "id": (str, Field(None, **field_info.extra)),
+            "id": (str, Field(None, **id_field_kw)),
         }
         if includes:
             object_jsonapi_schema_fields.update(
@@ -369,8 +375,6 @@ class SchemaBuilder:
             type=(str, Field(default=resource_type or self._resource_type, description="Resource type")),
             __base__=model_base,
         )
-        if id_cast_func:
-            object_jsonapi_schema._id_cast_func = id_cast_func
 
         if use_schema_cache:
             self.base_jsonapi_object_schemas_cache[base_name] = object_jsonapi_schema
