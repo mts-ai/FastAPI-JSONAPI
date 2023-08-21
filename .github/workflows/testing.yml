@@ -44,7 +44,7 @@ jobs:
           - "3.11"
         db-url:
           - "sqlite+aiosqlite:///./db.sqlite3"
-          - "postgresql+asyncpg://postgres:postgres@postgres:5432/postgres"
+          - "postgresql+asyncpg://user:passwd@localhost:5432/postgres"
 
     # Service containers to run with `container-job`
     services:
@@ -54,7 +54,9 @@ jobs:
         image: postgres
         # Provide the password for postgres
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: passwd
+          POSTGRES_DB: postgres
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
