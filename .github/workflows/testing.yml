@@ -2,7 +2,7 @@ name: Python testing
 
 on:
   push:
-  pull_request:
+#  pull_request:
 
 # is there a way to fix doubled pipelines?
 # only XXX
