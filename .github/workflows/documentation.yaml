@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   docs:
+    if: ${{ !github.event.act }} # skip during local actions testing
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
