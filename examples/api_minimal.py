@@ -20,6 +20,7 @@ CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 PROJECT_DIR = CURRENT_DIR.parent.parent
 DB_URL = f"sqlite+aiosqlite:///{CURRENT_DIR}/db.sqlite3"
+# DB_URL = f"sqlite+:///{CURRENT_DIR}/db.sqlite3"
 sys.path.append(str(PROJECT_DIR))
 
 Base = declarative_base()
@@ -27,16 +28,14 @@ Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name: str = Column(Text, nullable=True)
+    id = Column(Integer, primary_key=True)
+    name = Column(Text, nullable=True)
 
 
 class UserAttributesBaseSchema(BaseModel):
     name: str
 
     class Config:
-        """Pydantic schema config."""
-
         orm_mode = True
 
 
@@ -117,21 +116,19 @@ def add_routes(app: FastAPI):
         },
     ]
 
-    routers: APIRouter = APIRouter()
+    router: APIRouter = APIRouter()
     RoutersJSONAPI(
-        router=routers,
+        router=router,
         path="/user",
         tags=["User"],
         class_detail=UserDetailView,
         class_list=UserListView,
         schema=UserSchema,
-        resource_type="user",
-        schema_in_patch=UserPatchSchema,
-        schema_in_post=UserInSchema,
         model=User,
+        resource_type="user",
     )
 
-    app.include_router(routers, prefix="")
+    app.include_router(router, prefix="")
     return tags
 
 

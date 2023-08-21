@@ -56,7 +56,7 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name: str = Column(Text, nullable=True)
+    name = Column(Text, nullable=True)
 
 
 class UserAttributesBaseSchema(BaseModel):
@@ -145,9 +145,9 @@ def add_routes(app: FastAPI):
         },
     ]
 
-    routers: APIRouter = APIRouter()
+    router: APIRouter = APIRouter()
     RoutersJSONAPI(
-        router=routers,
+        router=router,
         path="/user",
         tags=["User"],
         class_detail=UserDetailView,
@@ -159,7 +159,7 @@ def add_routes(app: FastAPI):
         model=User,
     )
 
-    app.include_router(routers, prefix="")
+    app.include_router(router, prefix="")
     return tags
 
 

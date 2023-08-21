@@ -3,14 +3,14 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
-from pydantic import Field, BaseModel as PydanticBaseModel
+from fastapi_jsonapi.schema_base import Field, BaseModel as PydanticBaseModel
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from fastapi_jsonapi.views.utils import HTTPMethod, HTTPMethodConfig
 from fastapi_jsonapi.views.view_base import ViewBase
@@ -27,7 +27,7 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=False)
-    name: str = Column(Text, nullable=True)
+    name = Column(Text, nullable=True)
 
 
 class BaseModel(PydanticBaseModel):
@@ -77,7 +77,7 @@ class SessionDependency(BaseModel):
         arbitrary_types_allowed = True
 
 
-def session_dependency_handler(view: ViewBase, dto: BaseModel) -> dict:
+def session_dependency_handler(view: ViewBase, dto: SessionDependency) -> dict:
     return {"session": dto.session}
 
 
@@ -107,9 +107,9 @@ def add_routes(app: FastAPI):
         },
     ]
 
-    routers: APIRouter = APIRouter()
+    router: APIRouter = APIRouter()
     RoutersJSONAPI(
-        router=routers,
+        router=router,
         path="/user",
         tags=["User"],
         class_detail=UserDetailView,
@@ -121,7 +121,7 @@ def add_routes(app: FastAPI):
         model=User,
     )
 
-    app.include_router(routers, prefix="")
+    app.include_router(router, prefix="")
     return tags
 
 
@@ -139,6 +139,7 @@ def create_app() -> FastAPI:
     )
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
+    init(app)
     return app
 
 

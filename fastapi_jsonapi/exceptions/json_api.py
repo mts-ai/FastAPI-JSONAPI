@@ -4,6 +4,7 @@ from http import HTTPStatus
 from typing import (
     List,
     Optional,
+    Union,
 )
 
 from fastapi import HTTPException as FastApiHttpException
@@ -19,7 +20,7 @@ class HTTPException(FastApiHttpException):
 
     def __init__(
         self,
-        detail: str = "",
+        detail: Union[str, dict] = "",
         pointer: str = "",
         parameter: str = "",
         title: Optional[str] = None,
