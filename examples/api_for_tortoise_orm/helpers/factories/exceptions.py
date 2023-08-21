@@ -32,9 +32,3 @@ class ExceptionAfterCommit(Exception):
     """The exception thrown after the object was created by the factory."""
 
     pass
-
-
-class ExceptionBeforeCommit(Exception):
-    """The exception thrown before the object was created by the factory."""
-
-    pass
