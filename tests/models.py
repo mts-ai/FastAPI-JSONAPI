@@ -6,6 +6,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
+from tests.common import sqla_uri
+
 
 class Base:
     @declared_attr
@@ -214,8 +216,20 @@ class Workplace(AutoIdMixin, Base):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r}, user_id={self.user_id})"
 
 
-class UUIDType(TypeDecorator):
+class CustomUUIDType(TypeDecorator):
     impl = CHAR
+
+    def __init__(self, *args, as_uuid=True, **kwargs):
+        """
+        Construct a UUID type.
+
+        # TODO: support as_uuid=False (and set by default!)
+        :param as_uuid=True: if True, values will be interpreted
+         as Python uuid objects, converting to/from string via theDBAPI.
+
+        """
+        super().__init__(*args, **kwargs)
+        self.as_uuid = as_uuid
 
     def load_dialect_impl(self, dialect):
         return CHAR(32)
@@ -229,6 +243,21 @@ class UUIDType(TypeDecorator):
 
     def process_result_value(self, value, dialect):
         return UUID(value)
+
+    @property
+    def python_type(self):
+        return UUID if self.as_uuid else str
+
+
+db_uri = sqla_uri()
+if "postgres" in db_uri:
+    # noinspection PyPep8Naming
+    from sqlalchemy.dialects.postgresql import UUID as UUIDType
+elif "sqlite" in db_uri:
+    UUIDType = CustomUUIDType
+else:
+    msg = "unsupported dialect (custom uuid?)"
+    raise ValueError(msg)
 
 
 class IdCast(Base):
