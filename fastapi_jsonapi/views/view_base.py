@@ -365,6 +365,7 @@ class ViewBase:
             schema=item_schema,
             includes=includes,
             compute_included_schemas=bool(includes),
+            use_schema_cache=False,
         )
 
         result_objects = []
