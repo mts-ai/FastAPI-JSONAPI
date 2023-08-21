@@ -834,7 +834,7 @@ class TestCreateObjects:
             class_detail=DetailViewBaseGeneric,
             class_list=ListViewBaseGeneric,
             schema=schema,
-            resource_type="misc",
+            resource_type=resource_type,
             schema_in_patch=UserPatchSchema,
             schema_in_post=schema_in_post,
             model=model,
@@ -908,6 +908,7 @@ class TestCreateObjects:
             SelfRelationshipSchema,
             SelfRelationshipSchema,
             SelfRelationship,
+            resource_type="self_relationship",
         )
 
         async with AsyncClient(app=app, base_url="http://test") as client:
@@ -931,7 +932,6 @@ class TestCreateObjects:
                         "name": "parent",
                     },
                     "id": parent_object_id,
-                    "relationships": None,
                     "type": "self_relationship",
                 },
                 "jsonapi": {"version": "1.0"},
@@ -1127,7 +1127,7 @@ class TestPatchObjectRelationshipsToOne:
             },
         }
 
-        res = await client.patch(f"/user-bio/{user_1.id}?include=user", json=patch_user_bio_body)
+        res = await client.patch(f"/user-bio/{user_1_bio.id}?include=user", json=patch_user_bio_body)
         assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
         assert res.json() == {
             "errors": [
