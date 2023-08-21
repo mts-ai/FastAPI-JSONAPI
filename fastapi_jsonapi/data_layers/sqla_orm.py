@@ -3,7 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.exc import DatabaseError, DBAPIError, NoResultFound
+from sqlalchemy.exc import DBAPIError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
@@ -38,7 +38,6 @@ if TYPE_CHECKING:
     from pydantic import BaseModel as PydanticBaseModel
     from sqlalchemy.sql import Select
 
-
 log = logging.getLogger(__name__)
 
 
@@ -56,6 +55,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         url_id_field: str = "id",
         eagerload_includes: bool = True,
         query: Optional["Select"] = None,
+        auto_convert_id_to_column_type: bool = True,
         **kwargs: Any,
     ):
         """
@@ -85,6 +85,25 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.session = session
         self.eagerload_includes_ = eagerload_includes
         self._query = query
+        self.auto_convert_id_to_column_type = auto_convert_id_to_column_type
+
+    def prepare_id_value(self, col: InstrumentedAttribute, value: Any) -> Any:
+        """
+        Convert value to the required python type.
+        Type is declared on the SQLA column.
+
+        :param col:
+        :param value:
+        :return:
+        """
+        if not self.auto_convert_id_to_column_type:
+            return value
+
+        py_type = col.type.python_type
+        if not isinstance(value, py_type):
+            value = py_type(value)
+
+        return value
 
     async def apply_relationships(self, obj: TypeModel, data_create: BaseJSONAPIItemInSchema) -> None:
         """
@@ -180,11 +199,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.session.add(obj)
         try:
             await self.session.commit()
-        except DatabaseError:
+        except DBAPIError:
             log.exception("Could not create object with data create %s", data_create)
             msg = "Object creation error"
             raise HTTPException(msg, pointer="/data")
         except Exception as e:
+            log.exception("Error creating object with data create %s", data_create)
             await self.session.rollback()
             msg = f"Object creation error: {e}"
             raise HTTPException(msg, pointer="/data")
@@ -475,7 +495,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param id_value: related object id value
         :return: a related SQLA ORM object
         """
-        stmt = select(related_model).where(getattr(related_model, related_id_field) == id_value)
+        id_field = getattr(related_model, related_id_field)
+        id_value = self.prepare_id_value(id_field, id_value)
+        stmt = select(related_model).where(id_field == id_value)
         try:
             related_object = (await self.session.execute(stmt)).scalar_one()
         except NoResultFound:
@@ -497,16 +519,16 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param ids:
         :return:
         """
-        stmt = select(related_model).where(getattr(related_model, related_id_field).in_(ids))
+        id_field = getattr(related_model, related_id_field)
+        ids = [self.prepare_id_value(id_field, _id) for _id in ids]
+        stmt = select(related_model).where(id_field.in_(ids))
 
         related_objects = (await self.session.execute(stmt)).scalars().all()
         object_ids = [getattr(obj, related_id_field) for obj in related_objects]
 
         not_found_ids = ids
         if object_ids:
-            obj_type = type(object_ids[0])
-            ids = {obj_type(_id) for _id in ids}
-            not_found_ids = ids.difference(object_ids)
+            not_found_ids = set(ids).difference(object_ids)
 
         if not_found_ids:
             msg = f"Objects for {related_model.__name__} with ids: {not_found_ids} not found"
@@ -615,9 +637,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param filter_value: the value to filter with
         :return sqlalchemy query: a query from sqlalchemy
         """
-        query: "Select" = self.query(view_kwargs)
-        # noinspection PyNoneFunctionAssignment,PyTypeChecker
-        query: "Select" = query.where(filter_field == filter_value)
+        value = self.prepare_id_value(filter_field, filter_value)
+        query: "Select" = self.query(view_kwargs).where(filter_field == value)
         return query
 
     def query(self, view_kwargs: dict) -> "Select":
@@ -637,7 +658,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param model_kwargs: the data validated by pydantic.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
+        if (id_value := model_kwargs.get("id")) and self.auto_convert_id_to_column_type:
+            model_field = self.get_object_id_field()
+            model_kwargs.update(id=self.prepare_id_value(model_field, id_value))
 
     async def after_create_object(self, obj: TypeModel, model_kwargs: dict, view_kwargs: dict):
         """
