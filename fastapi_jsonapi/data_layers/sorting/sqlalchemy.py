@@ -157,7 +157,7 @@ class Node(object):
         return get_related_model_cls(self.model, get_model_field(self.schema, relationship_field))
 
     @property
-    def related_schema(self) -> TypeSchema:
+    def related_schema(self) -> Type[TypeSchema]:
         """
         Get the related schema of a relationship field.
 

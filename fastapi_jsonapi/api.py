@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Type,
     TypeVar,
@@ -129,6 +130,18 @@ class RoutersJSONAPI:
         else:
             self._register_views(self._path)
 
+    def get_endpoint_name(
+        self,
+        action: Literal["get", "create", "update", "delete"],
+        kind: Literal["list", "detail"],
+    ):
+        """
+        :param action
+        :param kind: list / detail
+        :return:
+        """
+        return f"{action}_{self._type}_{kind}"
+
     def _register_get_resource_list(self, path: str):
         list_response_example = {
             status.HTTP_200_OK: {"model": self.list_response_schema},
@@ -140,6 +153,7 @@ class RoutersJSONAPI:
             methods=["GET"],
             summary=f"Get list of `{self._type}` objects",
             endpoint=self._create_get_resource_list_view(),
+            name=self.get_endpoint_name("get", "list"),
         )
 
     def _register_post_resource_list(self, path: str):
@@ -154,6 +168,7 @@ class RoutersJSONAPI:
             summary=f"Create object `{self._type}`",
             status_code=status.HTTP_201_CREATED,
             endpoint=self._create_post_resource_list_view(),
+            name=self.get_endpoint_name("create", "list"),
         )
 
     def _register_delete_resource_list(self, path: str):
@@ -167,6 +182,7 @@ class RoutersJSONAPI:
             methods=["DELETE"],
             summary=f"Delete objects `{self._type}` by filters",
             endpoint=self._create_delete_resource_list_view(),
+            name=self.get_endpoint_name("delete", "list"),
         )
 
     def _register_get_resource_detail(self, path: str):
@@ -182,6 +198,7 @@ class RoutersJSONAPI:
             methods=["GET"],
             summary=f"Get object `{self._type}` by id",
             endpoint=self._create_get_resource_detail_view(),
+            name=self.get_endpoint_name("get", "detail"),
         )
 
     def _register_patch_resource_detail(self, path: str):
@@ -197,6 +214,7 @@ class RoutersJSONAPI:
             methods=["PATCH"],
             summary=f"Patch object `{self._type}` by id",
             endpoint=self._create_patch_resource_detail_view(),
+            name=self.get_endpoint_name("update", "detail"),
         )
 
     def _register_delete_resource_detail(self, path: str):
@@ -212,6 +230,7 @@ class RoutersJSONAPI:
             methods=["DELETE"],
             summary=f"Delete object `{self._type}` by id",
             endpoint=self._create_delete_resource_detail_view(),
+            name=self.get_endpoint_name("delete", "detail"),
         )
 
     def _create_pagination_query_params(self) -> List[Parameter]:
@@ -387,7 +406,7 @@ class RoutersJSONAPI:
                 jsonapi=self,
             )
 
-            response = await resource.get_resource_list_result(**extra_view_deps)
+            response = await resource.handle_get_resource_list(**extra_view_deps)
             return response
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
@@ -414,7 +433,7 @@ class RoutersJSONAPI:
                 jsonapi=self,
             )
 
-            response = await resource.post_resource_list_result(
+            response = await resource.handle_post_resource_list(
                 data_create=data_create,
                 **extra_view_deps,
             )
@@ -445,7 +464,7 @@ class RoutersJSONAPI:
                 jsonapi=self,
             )
 
-            response = await resource.delete_resource_list_result(**extra_view_deps)
+            response = await resource.handle_delete_resource_list(**extra_view_deps)
             return response
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
@@ -476,7 +495,7 @@ class RoutersJSONAPI:
             )
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.get_resource_detail_result(obj_id, **extra_view_deps)
+            response = await resource.handle_get_resource_detail(obj_id, **extra_view_deps)
             return response
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
@@ -510,7 +529,7 @@ class RoutersJSONAPI:
             )
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.update_resource_result(
+            response = await resource.handle_update_resource(
                 obj_id=obj_id,
                 data_update=data_update.data,
                 **extra_view_deps,
@@ -546,7 +565,7 @@ class RoutersJSONAPI:
             )
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.delete_resource_result(obj_id=obj_id, **extra_view_deps)
+            response = await resource.handle_delete_resource(obj_id=obj_id, **extra_view_deps)
             return response
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(

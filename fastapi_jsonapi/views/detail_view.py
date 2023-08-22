@@ -16,7 +16,7 @@ TypeModel = TypeVar("TypeModel")
 
 
 class DetailViewBase(ViewBase):
-    async def get_resource_detail_result(
+    async def handle_get_resource_detail(
         self,
         object_id: Union[int, str],
         **extra_view_deps,
@@ -29,7 +29,7 @@ class DetailViewBase(ViewBase):
 
         return self._build_detail_response(db_object)
 
-    async def update_resource_result(
+    async def handle_update_resource(
         self,
         obj_id: str,
         data_update: BaseJSONAPIItemInSchema,
@@ -50,7 +50,7 @@ class DetailViewBase(ViewBase):
 
         return self._build_detail_response(db_object)
 
-    async def delete_resource_result(
+    async def handle_delete_resource(
         self,
         obj_id: str,
         **extra_view_deps,

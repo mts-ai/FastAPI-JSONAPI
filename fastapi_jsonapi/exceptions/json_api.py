@@ -64,12 +64,12 @@ class HTTPException(FastApiHttpException):
             errors = [self]
 
         else:
-            self.meta = [error._dict for error in errors or []]
+            self.meta = [error.as_dict for error in errors or []]
 
-        super().__init__(errors[0].status_code, {"errors": [error._dict for error in errors]})
+        super().__init__(errors[0].status_code, {"errors": [error.as_dict for error in errors]})
 
     @property
-    def _dict(self):
+    def as_dict(self):
         data = {
             "status_code": self.status_code,
             "source": self.source,
@@ -182,7 +182,7 @@ class ObjectNotFound(NotFound):
     title = "Resource not found."
 
     @property
-    def _dict(self):
+    def as_dict(self):
         return {
             "status_code": self.status_code,
             "meta": self.source,

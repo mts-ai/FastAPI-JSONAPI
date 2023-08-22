@@ -25,7 +25,7 @@ class ListViewBase(ViewBase):
 
         return total_pages
 
-    async def get_resource_list_result(self, **extra_view_deps) -> JSONAPIResultListSchema:
+    async def handle_get_resource_list(self, **extra_view_deps) -> JSONAPIResultListSchema:
         dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
         dl = self._get_data_layer_for_list(**dl_kwargs)
         query_params = self.query_params
@@ -34,7 +34,7 @@ class ListViewBase(ViewBase):
 
         return self._build_list_response(items_from_db, count, total_pages)
 
-    async def post_resource_list_result(
+    async def handle_post_resource_list(
         self,
         data_create: BaseJSONAPIDataInSchema,
         **extra_view_deps,
@@ -49,7 +49,7 @@ class ListViewBase(ViewBase):
 
         return self._build_detail_response(db_object)
 
-    async def delete_resource_list_result(self, **extra_view_deps) -> JSONAPIResultListSchema:
+    async def handle_delete_resource_list(self, **extra_view_deps) -> JSONAPIResultListSchema:
         dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
         dl = self._get_data_layer_for_list(**dl_kwargs)
         query_params = self.query_params

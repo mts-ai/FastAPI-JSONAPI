@@ -50,8 +50,9 @@ async def test_root(client: AsyncClient):
     assert response.status_code == status.HTTP_200_OK
 
 
-async def test_get_users(client: AsyncClient, user_1: User, user_2: User):
-    response = await client.get("/users")
+async def test_get_users(app: FastAPI, client: AsyncClient, user_1: User, user_2: User):
+    url = app.url_path_for("get_user_list")
+    response = await client.get(url)
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
     assert "data" in response_data, response_data
@@ -64,11 +65,13 @@ async def test_get_users(client: AsyncClient, user_1: User, user_2: User):
 
 
 async def test_get_user_with_bio_relation(
+    app: FastAPI,
     client: AsyncClient,
     user_1: User,
     user_1_bio: UserBio,
 ):
-    url = f"/users/{user_1.id}?include=bio"
+    url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+    url = f"{url}?include=bio"
     response = await client.get(url)
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
@@ -82,12 +85,14 @@ async def test_get_user_with_bio_relation(
 
 
 async def test_get_users_with_bio_relation(
+    app: FastAPI,
     client: AsyncClient,
     user_1: User,
     user_2: User,
     user_1_bio: UserBio,
 ):
-    url = "/users?include=bio"
+    url = app.url_path_for("get_user_list")
+    url = f"{url}?include=bio"
     response = await client.get(url)
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
@@ -105,16 +110,46 @@ async def test_get_users_with_bio_relation(
     assert included_bio["type"] == "user_bio"
 
 
+class TestGetUsersList:
+    async def test_get_users_paginated(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+    ):
+        url = app.url_path_for("get_user_list")
+        url = f"{url}?page[size]=1&sort=id"
+        response = await client.get(url)
+        user = user_1 if user_1.id < user_2.id else user_2
+
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+        assert response_data == {
+            "data": [
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user),
+                    "id": str(user.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "totalPages": 2},
+        }
+
+
 class TestCreatePostAndComments:
     async def test_get_posts_with_users(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
         user_1_posts: List[Post],
         user_2_posts: List[Post],
     ):
-        url = "/posts?include=user"
+        url = app.url_path_for("get_post_list")
+        url = f"{url}?include=user"
         response = await client.get(url)
         assert response.status_code == status.HTTP_200_OK
         response_data = response.json()
@@ -160,10 +195,12 @@ class TestCreatePostAndComments:
 
     async def test_create_post_for_user(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
     ):
-        url = "/posts?include=user"
+        url = app.url_path_for("get_post_list")
+        url = f"{url}?include=user"
         post_attributes = PostAttributesBaseSchema(
             title=fake.name(),
             body=fake.sentence(),
@@ -209,12 +246,14 @@ class TestCreatePostAndComments:
 
     async def test_create_comments_for_post(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
         user_1_post: Post,
     ):
-        url = "/comments?include=author,post,post.user"
+        url = app.url_path_for("get_comment_list")
+        url = f"{url}?include=author,post,post.user"
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).dict()
@@ -290,17 +329,19 @@ class TestCreatePostAndComments:
 
     async def test_create_comment_error_no_relationship(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1_post: Post,
     ):
         """
         Check schema is built properly
 
+        :param app
         :param client:
         :param user_1_post:
         :return:
         """
-        url = "/comments"
+        url = app.url_path_for("get_comment_list")
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).dict()
@@ -338,9 +379,10 @@ class TestCreatePostAndComments:
 
     async def test_create_comment_error_no_relationships_content(
         self,
+        app: FastAPI,
         client: AsyncClient,
     ):
-        url = "/comments"
+        url = app.url_path_for("get_comment_list")
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).dict()
@@ -383,9 +425,10 @@ class TestCreatePostAndComments:
 
     async def test_create_comment_error_no_relationships_field(
         self,
+        app: FastAPI,
         client: AsyncClient,
     ):
-        url = "/comments"
+        url = app.url_path_for("get_comment_list")
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).dict()
@@ -414,6 +457,7 @@ class TestCreatePostAndComments:
 
 
 async def test_get_users_with_all_inner_relations(
+    app: FastAPI,
     client: AsyncClient,
     user_1: User,
     user_2: User,
@@ -431,7 +475,8 @@ async def test_get_users_with_all_inner_relations(
     - posts.comments
     - posts.comments.author
     """
-    url = "/users?include=bio,posts,posts.comments,posts.comments.author"
+    url = app.url_path_for("get_user_list")
+    url = f"{url}?include=bio,posts,posts.comments,posts.comments.author"
     response = await client.get(url)
     assert response.status_code == status.HTTP_200_OK
     response_data = response.json()
@@ -496,6 +541,7 @@ async def test_get_users_with_all_inner_relations(
 
 
 async def test_many_to_many_load_inner_includes_to_parents(
+    app: FastAPI,
     client: AsyncClient,
     parent_1,
     parent_2,
@@ -510,7 +556,8 @@ async def test_many_to_many_load_inner_includes_to_parents(
     p2_c2_association,
     p2_c3_association,
 ):
-    url = "/parents?include=children,children.child"
+    url = app.url_path_for("get_parent_list")
+    url = f"{url}?include=children,children.child"
     response = await client.get(url)
     assert response.status_code == status.HTTP_200_OK, response
     response_data = response.json()
@@ -550,13 +597,15 @@ async def test_many_to_many_load_inner_includes_to_parents(
     assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data
 
 
-async def test_method_not_allowed(client: AsyncClient):
-    res = await client.put("/users", json={})
+async def test_method_not_allowed(app: FastAPI, client: AsyncClient):
+    url = app.url_path_for("get_user_list")
+    res = await client.put(url, json={})
     assert res.status_code == status.HTTP_405_METHOD_NOT_ALLOWED, res.status_code
 
 
-async def test_get_list_view_generic(client: AsyncClient, user_1: User):
-    res = await client.get("/users")
+async def test_get_list_view_generic(app: FastAPI, client: AsyncClient, user_1: User):
+    url = app.url_path_for("get_user_list")
+    res = await client.get(url)
     assert res
     assert res.status_code == status.HTTP_200_OK
     response_json = res.json()
@@ -567,9 +616,10 @@ async def test_get_list_view_generic(client: AsyncClient, user_1: User):
     assert user_data["attributes"] == UserAttributesBaseSchema.from_orm(user_1)
 
 
-async def test_get_user_not_found(client: AsyncClient):
+async def test_get_user_not_found(app: FastAPI, client: AsyncClient):
     fake_id = fake.pyint()
-    res = await client.get(f"/users/{fake_id}")
+    url = app.url_path_for("get_user_detail", obj_id=fake_id)
+    res = await client.get(url)
 
     assert res.json() == {
         "errors": [
@@ -584,7 +634,7 @@ async def test_get_user_not_found(client: AsyncClient):
 
 
 class TestCreateObjects:
-    async def test_create_object(self, client: AsyncClient):
+    async def test_create_object(self, app: FastAPI, client: AsyncClient):
         create_user_body = {
             "data": {
                 "attributes": UserAttributesBaseSchema(
@@ -594,13 +644,19 @@ class TestCreateObjects:
                 ).dict(),
             },
         }
-        res = await client.post("/users", json=create_user_body)
+        url = app.url_path_for("get_user_list")
+        res = await client.post(url, json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data = res.json()
         assert "data" in response_data, response_data
         assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
 
-    async def test_create_object_with_relationship_and_fetch_include(self, client: AsyncClient, user_1: User):
+    async def test_create_object_with_relationship_and_fetch_include(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+    ):
         create_user_bio_body = {
             "data": {
                 "attributes": UserBioBaseSchema(
@@ -611,7 +667,9 @@ class TestCreateObjects:
                 "relationships": {"user": {"data": {"type": "user", "id": user_1.id}}},
             },
         }
-        res = await client.post("/user-bio?include=user", json=create_user_bio_body)
+        url = app.url_path_for("get_user_bio_list")
+        url = f"{url}?include=user"
+        res = await client.post(url, json=create_user_bio_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data = res.json()
         assert "data" in response_data, response_data
@@ -627,6 +685,7 @@ class TestCreateObjects:
 
     async def test_create_object_with_to_many_relationship_and_fetch_include(
         self,
+        app: FastAPI,
         client: AsyncClient,
         computer_1: Computer,
         computer_2: Computer,
@@ -654,7 +713,9 @@ class TestCreateObjects:
                 },
             },
         }
-        res = await client.post("/users?include=computers", json=create_user_body)
+        url = app.url_path_for("get_user_list")
+        url = f"{url}?include=computers"
+        res = await client.post(url, json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
 
         response_data = res.json()
@@ -697,6 +758,7 @@ class TestCreateObjects:
 
     async def test_create_to_one_and_to_many_relationship_at_the_same_time(
         self,
+        app: FastAPI,
         client: AsyncClient,
         computer_1: Computer,
         computer_2: Computer,
@@ -731,7 +793,9 @@ class TestCreateObjects:
                 },
             },
         }
-        res = await client.post("/users?include=computers,workplace", json=create_user_body)
+        url = app.url_path_for("get_user_list")
+        url = f"{url}?include=computers,workplace"
+        res = await client.post(url, json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
 
         response_data = res.json()
@@ -783,7 +847,7 @@ class TestCreateObjects:
             "meta": None,
         }
 
-    async def test_create_user(self, client: AsyncClient):
+    async def test_create_user(self, app: FastAPI, client: AsyncClient):
         create_user_body = {
             "data": {
                 "attributes": UserAttributesBaseSchema(
@@ -793,13 +857,14 @@ class TestCreateObjects:
                 ).dict(),
             },
         }
-        res = await client.post("/users", json=create_user_body)
+        url = app.url_path_for("get_user_list")
+        res = await client.post(url, json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data: dict = res.json()
         assert "data" in response_data, response_data
         assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
 
-    async def test_create_user_and_fetch_data(self, client: AsyncClient):
+    async def test_create_user_and_fetch_data(self, app: FastAPI, client: AsyncClient):
         create_user_body = {
             "data": {
                 "attributes": UserAttributesBaseSchema(
@@ -809,6 +874,7 @@ class TestCreateObjects:
                 ).dict(),
             },
         }
+        app.url_path_for("get_user_list")
         res = await client.post("/users", json=create_user_body)
         assert res.status_code == status.HTTP_201_CREATED, res.text
         response_data = res.json()
@@ -846,11 +912,12 @@ class TestCreateObjects:
         return app
 
     async def test_create_id_by_client(self):
+        resource_type = "user"
         app = self._build_app_custom(
             UserSchema,
             UserInSchemaAllowIdOnPost,
             User,
-            "user",
+            resource_type=resource_type,
         )
 
         new_id = str(fake.pyint(100, 999))
@@ -867,13 +934,14 @@ class TestCreateObjects:
         }
 
         async with AsyncClient(app=app, base_url="http://test") as client:
-            res = await client.post("/misc", json=create_user_body)
+            url = app.url_path_for(f"get_{resource_type}_list")
+            res = await client.post(url, json=create_user_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
             assert res.json() == {
                 "data": {
                     "attributes": attrs.dict(),
                     "id": new_id,
-                    "type": "user",
+                    "type": resource_type,
                 },
                 "jsonapi": {"version": "1.0"},
                 "meta": None,
@@ -891,7 +959,8 @@ class TestCreateObjects:
         }
 
         async with AsyncClient(app=app, base_url="http://test") as client:
-            res = await client.post("/misc", json=create_body)
+            url = app.url_path_for("get_misc_list")
+            res = await client.post(url, json=create_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
             assert res.json() == {
                 "data": {
@@ -904,11 +973,12 @@ class TestCreateObjects:
             }
 
     async def test_create_with_relationship_to_the_same_table(self):
+        resource_type = "self_relationship"
         app = self._build_app_custom(
             SelfRelationshipSchema,
             SelfRelationshipSchema,
             SelfRelationship,
-            resource_type="self_relationship",
+            resource_type=resource_type,
         )
 
         async with AsyncClient(app=app, base_url="http://test") as client:
@@ -919,8 +989,8 @@ class TestCreateObjects:
                     },
                 },
             }
-
-            res = await client.post("/misc", json=create_body)
+            url = app.url_path_for(f"get_{resource_type}_list")
+            res = await client.post(url, json=create_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
 
             response_json = res.json()
@@ -932,7 +1002,7 @@ class TestCreateObjects:
                         "name": "parent",
                     },
                     "id": parent_object_id,
-                    "type": "self_relationship",
+                    "type": resource_type,
                 },
                 "jsonapi": {"version": "1.0"},
                 "meta": None,
@@ -946,14 +1016,15 @@ class TestCreateObjects:
                     "relationships": {
                         "self_relationship": {
                             "data": {
-                                "type": "self_relationship",
+                                "type": resource_type,
                                 "id": parent_object_id,
                             },
                         },
                     },
                 },
             }
-            res = await client.post("/misc?include=self_relationship", json=create_with_relationship_body)
+            url = f"{url}?include=self_relationship"
+            res = await client.post(url, json=create_with_relationship_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
 
             response_json = res.json()
@@ -986,7 +1057,12 @@ class TestCreateObjects:
 
 
 class TestPatchObjects:
-    async def test_patch_object(self, client: AsyncClient, user_1: User):
+    async def test_patch_object(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+    ):
         new_attrs = UserAttributesBaseSchema(
             name=fake.name(),
             age=fake.pyint(),
@@ -999,7 +1075,8 @@ class TestPatchObjects:
                 "attributes": new_attrs,
             },
         }
-        res = await client.patch(f"/users/{user_1.id}", json=patch_user_body)
+        url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+        res = await client.patch(url, json=patch_user_body)
         assert res.status_code == status.HTTP_200_OK, res.text
 
         assert res.json() == {
@@ -1016,6 +1093,7 @@ class TestPatchObjects:
 class TestPatchObjectRelationshipsToOne:
     async def test_ok_when_foreign_key_of_related_object_is_nullable(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         workplace_1: Workplace,
@@ -1042,8 +1120,10 @@ class TestPatchObjectRelationshipsToOne:
             },
         }
 
+        url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+        url = f"{url}?include=workplace"
         # create relationship with patch endpoint
-        res = await client.patch(f"/users/{user_1.id}?include=workplace", json=patch_user_body)
+        res = await client.patch(url, json=patch_user_body)
         assert res.status_code == status.HTTP_200_OK, res.text
 
         assert res.json() == {
@@ -1074,7 +1154,7 @@ class TestPatchObjectRelationshipsToOne:
         patch_user_body["data"]["relationships"]["workplace"]["data"]["id"] = workplace_2.id
 
         # update relationship with patch endpoint
-        res = await client.patch(f"/users/{user_1.id}?include=workplace", json=patch_user_body)
+        res = await client.patch(url, json=patch_user_body)
         assert res.status_code == status.HTTP_200_OK, res.text
 
         assert res.json() == {
@@ -1104,12 +1184,14 @@ class TestPatchObjectRelationshipsToOne:
 
     async def test_fail_to_bind_relationship_with_constraint(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
         user_1_bio: UserBio,
         user_2_bio: UserBio,
     ):
+        assert user_1_bio.user_id == user_1.id, "use user bio 1 for user 1"
         assert user_2_bio.user_id == user_2.id, "we need user_2 to be bound to user_bio_2"
 
         patch_user_bio_body = {
@@ -1127,7 +1209,9 @@ class TestPatchObjectRelationshipsToOne:
             },
         }
 
-        res = await client.patch(f"/user-bio/{user_1_bio.id}?include=user", json=patch_user_bio_body)
+        url = app.url_path_for("get_user_bio_detail", obj_id=user_1_bio.id)
+        url = f"{url}?include=user"
+        res = await client.patch(url, json=patch_user_bio_body)
         assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
         assert res.json() == {
             "errors": [
@@ -1142,6 +1226,7 @@ class TestPatchObjectRelationshipsToOne:
 
     async def test_relationship_not_found(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
     ):
@@ -1167,8 +1252,10 @@ class TestPatchObjectRelationshipsToOne:
             },
         }
 
+        url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+        url = f"{url}?include=workplace"
         # create relationship with patch endpoint
-        res = await client.patch(f"/users/{user_1.id}?include=workplace", json=patch_user_body)
+        res = await client.patch(url, json=patch_user_body)
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
 
         assert res.json() == {
@@ -1182,10 +1269,40 @@ class TestPatchObjectRelationshipsToOne:
             ],
         }
 
+    async def test_update_resource_error_same_id(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+    ):
+        user_id = user_1.id
+        another_id = 0
+        patch_user_body = {
+            "data": {
+                "id": user_id,
+                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
+            },
+        }
+
+        url = app.url_path_for("get_user_detail", obj_id=another_id)
+        res = await client.patch(url, json=patch_user_body)
+        assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
+        assert res.json() == {
+            "errors": [
+                {
+                    "detail": "obj_id and data.id should be same",
+                    "source": {"pointer": "/data/id"},
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "title": "Bad Request",
+                },
+            ],
+        }
+
 
 class TestPatchRelationshipsToMany:
     async def test_ok(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         computer_1: Computer,
@@ -1220,8 +1337,9 @@ class TestPatchRelationshipsToMany:
             },
         }
 
-        # create relationships with patch endpoint
-        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+        url = f"{url}?include=computers"
+        res = await client.patch(url, json=patch_user_body)
         assert res.status_code == status.HTTP_200_OK, res.text
 
         assert res.json() == {
@@ -1270,7 +1388,7 @@ class TestPatchRelationshipsToMany:
         }
 
         # update relationships with patch endpoint
-        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        res = await client.patch(url, json=patch_user_body)
         assert res.status_code == status.HTTP_200_OK, res.text
 
         assert res.json() == {
@@ -1302,6 +1420,7 @@ class TestPatchRelationshipsToMany:
 
     async def test_relationship_not_found(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         computer_1: Computer,
@@ -1337,8 +1456,10 @@ class TestPatchRelationshipsToMany:
             },
         }
 
+        url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+        url = f"{url}?include=computers"
         # update relationships with patch endpoint
-        res = await client.patch(f"/users/{user_1.id}?include=computers", json=patch_user_body)
+        res = await client.patch(url, json=patch_user_body)
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
 
         assert res.json() == {
@@ -1354,8 +1475,14 @@ class TestPatchRelationshipsToMany:
 
 
 class TestDeleteObjects:
-    async def test_delete_object_and_fetch_404(self, client: AsyncClient, user_1: User):
-        res = await client.delete(f"/users/{user_1.id}")
+    async def test_delete_object_and_fetch_404(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+    ):
+        url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+        res = await client.delete(url)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": {
@@ -1367,10 +1494,11 @@ class TestDeleteObjects:
             "meta": None,
         }
 
-        res = await client.get(f"/users/{user_1.id}")
+        res = await client.get(url)
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
 
-        res = await client.get("/users")
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [],
@@ -1380,6 +1508,7 @@ class TestDeleteObjects:
 
     async def test_delete_objects_many(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
@@ -1400,7 +1529,8 @@ class TestDeleteObjects:
             ),
         }
 
-        res = await client.delete("/users", params=params)
+        url = app.url_path_for("get_user_list")
+        res = await client.delete(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [
@@ -1419,7 +1549,7 @@ class TestDeleteObjects:
             "meta": {"count": 2, "totalPages": 1},
         }
 
-        res = await client.get("/users")
+        res = await client.get(url)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [
@@ -1468,6 +1598,7 @@ class TestFilters:
     @mark.parametrize("field_name", [param(name, id=name) for name in ["id", "name", "age", "email"]])
     async def test_field_filters(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
@@ -1477,7 +1608,8 @@ class TestFilters:
         assert getattr(user_2, field_name) != filter_value
 
         params = {f"filter[{field_name}]": filter_value}
-        res = await client.get("/users", params=params)
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [
@@ -1493,6 +1625,7 @@ class TestFilters:
 
     async def test_several_field_filters_at_the_same_time(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
@@ -1507,7 +1640,8 @@ class TestFilters:
             ]
         }
         assert user_2.id != user_1.id
-        res = await client.get("/users", params=params)
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [
@@ -1523,6 +1657,7 @@ class TestFilters:
 
     async def test_field_filters_with_values_from_different_models(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
@@ -1532,7 +1667,8 @@ class TestFilters:
         assert user_1.age != user_2.age
         params_user_2 = {"filter[age]": user_2.age}
 
-        res = await client.get("/users", params=params_user_2 | params_user_1)
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params_user_2 | params_user_1)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [],
@@ -1542,6 +1678,7 @@ class TestFilters:
 
     async def test_composite_filter_by_one_field(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
@@ -1562,7 +1699,8 @@ class TestFilters:
             ),
         }
 
-        res = await client.get("/users", params=params)
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [
@@ -1583,6 +1721,7 @@ class TestFilters:
 
     async def test_composite_filter_by_several_fields(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
@@ -1608,7 +1747,8 @@ class TestFilters:
             ),
         }
 
-        res = await client.get("/users", params=params)
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [
@@ -1624,6 +1764,7 @@ class TestFilters:
 
     async def test_composite_filter_with_mutually_exclusive_conditions(
         self,
+        app: FastAPI,
         client: AsyncClient,
         user_1: User,
         user_2: User,
@@ -1649,7 +1790,8 @@ class TestFilters:
             ),
         }
 
-        res = await client.get("/users", params=params)
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [],
@@ -1673,7 +1815,13 @@ class TestSorts:
             param(DESCENDING, id="descending"),
         ],
     )
-    async def test_sort(self, client: AsyncClient, async_session, order: str):
+    async def test_sort(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        async_session,
+        order: str,
+    ):
         user_1, _, user_3 = (
             await create_user(async_session, age=10),
             await create_user(async_session),
@@ -1695,7 +1843,8 @@ class TestSorts:
             ),
             "sort": f"{order}age",
         }
-        res = await client.get("/users", params=params)
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": sorted(

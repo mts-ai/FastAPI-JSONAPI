@@ -156,24 +156,14 @@ class ViewBase:
         related_db_item: Union[List[TypeModel], TypeModel],
     ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema]]:
         included_objects = []
-        if isinstance(related_db_item, Iterable):
-            data_for_relationship = []
-            for included_item in related_db_item:
-                relation_data, processed_object = cls.prepare_related_object_data(
-                    item_from_db=included_item,
-                )
-                data_for_relationship.append(relation_data)
-                if processed_object:
-                    included_objects.append(processed_object)
-        else:
-            if related_db_item is None:
-                return None, included_objects
+        if related_db_item is None:
+            return None, included_objects
 
-            data_for_relationship, processed_object = cls.prepare_related_object_data(
-                item_from_db=related_db_item,
-            )
-            if processed_object:
-                included_objects.append(processed_object)
+        data_for_relationship, processed_object = cls.prepare_related_object_data(
+            item_from_db=related_db_item,
+        )
+        if processed_object:
+            included_objects.append(processed_object)
         return data_for_relationship, included_objects
 
     @classmethod
