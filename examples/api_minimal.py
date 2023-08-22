@@ -20,7 +20,6 @@ CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 PROJECT_DIR = CURRENT_DIR.parent.parent
 DB_URL = f"sqlite+aiosqlite:///{CURRENT_DIR}/db.sqlite3"
-# DB_URL = f"sqlite+:///{CURRENT_DIR}/db.sqlite3"
 sys.path.append(str(PROJECT_DIR))
 
 Base = declarative_base()
