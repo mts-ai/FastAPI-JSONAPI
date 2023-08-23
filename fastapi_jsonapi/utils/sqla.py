@@ -1,9 +1,9 @@
 from typing import Type
 
-from fastapi_jsonapi.data_typing import TypeModel
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 
 
-def get_related_model_cls(obj: TypeModel, relation_name: str) -> Type[TypeModel]:
+def get_related_model_cls(cls: TypeSchema, relation_name: str) -> Type[TypeModel]:
     """
 
     SQLA Get related model class
@@ -18,8 +18,8 @@ def get_related_model_cls(obj: TypeModel, relation_name: str) -> Type[TypeModel]
     class ComputerSchema(pydantic_base):
         owner = Field(alias="user", relationship=...)
 
-    :param obj:
+    :param cls:
     :param relation_name:
     :return:
     """
-    return getattr(obj.__class__, relation_name).property.mapper.class_
+    return getattr(cls, relation_name).property.mapper.class_

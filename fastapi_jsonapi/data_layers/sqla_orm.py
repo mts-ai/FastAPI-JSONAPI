@@ -140,7 +140,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             relationship_info: RelationshipInfo = field.field_info.extra["relationship"]
 
             # ...
-            related_model = get_related_model_cls(obj, relation_name)
+            related_model = get_related_model_cls(type(obj), relation_name)
 
             if relationship_info.many:
                 assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToManySchema)

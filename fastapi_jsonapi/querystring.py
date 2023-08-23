@@ -149,6 +149,15 @@ class QueryStringManager:
         filters = self.qs.get("filter")
         if filters is not None:
             try:
+                loaded_filters = json.loads(filters)
+
+                if not isinstance(loaded_filters, list):
+                    msg = (
+                        "Incorrect filters format, expected list of "
+                        f"conditions but got {type(loaded_filters).__name__}"
+                    )
+                    raise InvalidFilters(msg)
+
                 results.extend(json.loads(filters))
             except (ValueError, TypeError):
                 msg = "Parse error"

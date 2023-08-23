@@ -7,11 +7,12 @@ from uuid import uuid4
 from fastapi import APIRouter, FastAPI, status
 from httpx import AsyncClient
 from pytest import mark, param  # noqa PT013
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.app import build_app_plain
-from tests.fixtures.entities import create_user
+from tests.fixtures.entities import build_workplace, create_user
 from tests.fixtures.views import DetailViewBaseGeneric, ListViewBaseGeneric
 from tests.misc.utils import fake
 from tests.models import (
@@ -1799,6 +1800,90 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
+    async def test_filter_with_nested_conditions(
+        self,
+        app: FastAPI,
+        async_session: AsyncSession,
+        client: AsyncClient,
+    ):
+        workplace_name = "Common workplace name"
+
+        workplace_1, workplace_2, workplace_3, workplace_4 = (
+            await build_workplace(async_session, name=workplace_name),
+            await build_workplace(async_session, name=workplace_name),
+            await build_workplace(async_session, name=workplace_name),
+            await build_workplace(async_session, name=workplace_name),
+        )
+
+        user_1, user_2, _, user_4 = (
+            await create_user(async_session, name="John Doe", age=20, workplace=workplace_1),
+            await create_user(async_session, name="Jane Doe", age=25, workplace=workplace_2),
+            await create_user(async_session, name="Jonny Doe", age=30, workplace=workplace_3),
+            await create_user(async_session, name="Mary Jane", age=21, workplace=workplace_4),
+        )
+
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "workplace.name",
+                        "op": "eq",
+                        "val": workplace_name,
+                    },
+                    {
+                        "or": [
+                            {
+                                "not": {
+                                    "name": "name",
+                                    "op": "ne",
+                                    "val": "Mary Jane",
+                                },
+                            },
+                            {
+                                "and": [
+                                    {
+                                        "name": "name",
+                                        "op": "like",
+                                        "val": "%Doe%",
+                                    },
+                                    {
+                                        "name": "age",
+                                        "op": "lt",
+                                        "val": 30,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            ),
+        }
+
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_2),
+                    "id": str(user_2.id),
+                    "type": "user",
+                },
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_4),
+                    "id": str(user_4.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 3, "totalPages": 1},
+        }
+
 
 ASCENDING = ""
 DESCENDING = "-"
@@ -1819,7 +1904,7 @@ class TestSorts:
         self,
         app: FastAPI,
         client: AsyncClient,
-        async_session,
+        async_session: AsyncSession,
         order: str,
     ):
         user_1, _, user_3 = (
