@@ -150,18 +150,15 @@ class QueryStringManager:
         if filters is not None:
             try:
                 loaded_filters = json.loads(filters)
-
-                if not isinstance(loaded_filters, list):
-                    msg = (
-                        "Incorrect filters format, expected list of "
-                        f"conditions but got {type(loaded_filters).__name__}"
-                    )
-                    raise InvalidFilters(msg)
-
-                results.extend(json.loads(filters))
             except (ValueError, TypeError):
                 msg = "Parse error"
                 raise InvalidFilters(msg)
+
+            if not isinstance(loaded_filters, list):
+                msg = f"Incorrect filters format, expected list of conditions but got {type(loaded_filters).__name__}"
+                raise InvalidFilters(msg)
+
+            results.extend(loaded_filters)
         if self._get_key_values("filter["):
             results.extend(self._simple_filters(self._get_key_values("filter[")))
         return results

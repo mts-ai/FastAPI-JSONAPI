@@ -46,6 +46,34 @@ def association_key(data: dict):
     return data["type"], data["id"]
 
 
+def build_app_custom(
+    schema,
+    schema_in_patch,
+    schema_in_post,
+    model,
+    resource_type: str = "misc",
+) -> FastAPI:
+    router: APIRouter = APIRouter()
+
+    RoutersJSONAPI(
+        router=router,
+        path="/misc",
+        tags=["Misc"],
+        class_detail=DetailViewBaseGeneric,
+        class_list=ListViewBaseGeneric,
+        schema=schema,
+        resource_type=resource_type,
+        schema_in_patch=schema_in_patch,
+        schema_in_post=schema_in_post,
+        model=model,
+    )
+
+    app = build_app_plain()
+    app.include_router(router, prefix="")
+
+    return app
+
+
 async def test_root(client: AsyncClient):
     response = await client.get("/docs")
     assert response.status_code == status.HTTP_200_OK
@@ -891,31 +919,11 @@ class TestCreateObjects:
         assert response_data["data"]["attributes"] == create_user_body["data"]["attributes"]
         assert response_data["data"]["id"] == user_id
 
-    def _build_app_custom(self, schema, schema_in_post, model, resource_type: str = "misc") -> FastAPI:
-        router: APIRouter = APIRouter()
-
-        RoutersJSONAPI(
-            router=router,
-            path="/misc",
-            tags=["Misc"],
-            class_detail=DetailViewBaseGeneric,
-            class_list=ListViewBaseGeneric,
-            schema=schema,
-            resource_type=resource_type,
-            schema_in_patch=UserPatchSchema,
-            schema_in_post=schema_in_post,
-            model=model,
-        )
-
-        app = build_app_plain()
-        app.include_router(router, prefix="")
-
-        return app
-
     async def test_create_id_by_client(self):
         resource_type = "user"
-        app = self._build_app_custom(
+        app = build_app_custom(
             UserSchema,
+            UserPatchSchema,
             UserInSchemaAllowIdOnPost,
             User,
             resource_type=resource_type,
@@ -949,7 +957,7 @@ class TestCreateObjects:
             }
 
     async def test_create_id_by_client_uuid_type(self):
-        app = self._build_app_custom(IdCastSchema, IdCastSchema, IdCast)
+        app = build_app_custom(IdCastSchema, IdCastSchema, IdCastSchema, IdCast)
 
         new_id = str(uuid4())
         create_body = {
@@ -975,7 +983,8 @@ class TestCreateObjects:
 
     async def test_create_with_relationship_to_the_same_table(self):
         resource_type = "self_relationship"
-        app = self._build_app_custom(
+        app = build_app_custom(
+            SelfRelationshipSchema,
             SelfRelationshipSchema,
             SelfRelationshipSchema,
             SelfRelationship,
@@ -1089,6 +1098,39 @@ class TestPatchObjects:
             "jsonapi": {"version": "1.0"},
             "meta": None,
         }
+
+    async def test_do_nothing_with_field_not_presented_in_model(
+        self,
+        user_1: User,
+    ):
+        class UserPatchSchemaWithExtraAttribute(UserPatchSchema):
+            attr_which_is_not_presented_in_model: str
+
+        resource_type = "user"
+        app = build_app_custom(
+            UserSchema,
+            UserPatchSchemaWithExtraAttribute,
+            UserPatchSchemaWithExtraAttribute,
+            User,
+            resource_type=resource_type,
+        )
+        new_attrs = UserPatchSchemaWithExtraAttribute(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+            attr_which_is_not_presented_in_model=fake.name(),
+        ).dict()
+
+        patch_user_body = {
+            "data": {
+                "id": user_1.id,
+                "attributes": new_attrs,
+            },
+        }
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"update_{resource_type}_detail", obj_id=user_1.id)
+            res = await client.patch(url, json=patch_user_body)
+            assert res.status_code == status.HTTP_200_OK, res.text
 
 
 class TestPatchObjectRelationshipsToOne:

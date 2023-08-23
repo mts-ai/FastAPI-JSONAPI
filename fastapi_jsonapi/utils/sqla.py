@@ -1,9 +1,9 @@
 from typing import Type
 
-from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
+from fastapi_jsonapi.data_typing import TypeModel
 
 
-def get_related_model_cls(cls: TypeSchema, relation_name: str) -> Type[TypeModel]:
+def get_related_model_cls(cls: Type[TypeModel], relation_name: str) -> Type[TypeModel]:
     """
 
     SQLA Get related model class
