@@ -316,12 +316,14 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         await self.before_update_object(obj, model_kwargs=new_data, view_kwargs=view_kwargs)
 
+        missing = object()
+
         has_updated = False
         for field_name, new_value in new_data.items():
             # TODO: get field alias (if present) and get attribute by alias (rarely used, but required)
-            missing = object()
 
             if (old_value := getattr(obj, field_name, missing)) is missing:
+                log.warning("No field %r on %s. Make sure schema conforms model.", field_name, type(obj))
                 continue
 
             if old_value != new_value:

@@ -343,3 +343,8 @@ class SelfRelationshipSchema(BaseModel):
             resource_type="self_relationship",
         ),
     )
+
+
+class CustomUserAttributesSchema(UserBaseSchema):
+    spam: str
+    eggs: str

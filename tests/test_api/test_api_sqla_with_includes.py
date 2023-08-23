@@ -1,5 +1,5 @@
 import logging
-from itertools import chain
+from itertools import chain, zip_longest
 from json import dumps
 from typing import Dict, List
 from uuid import uuid4
@@ -26,6 +26,7 @@ from tests.models import (
     Workplace,
 )
 from tests.schemas import (
+    CustomUserAttributesSchema,
     IdCastSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
@@ -47,10 +48,10 @@ def association_key(data: dict):
 
 
 def build_app_custom(
-    schema,
-    schema_in_patch,
-    schema_in_post,
     model,
+    schema,
+    schema_in_patch=None,
+    schema_in_post=None,
     resource_type: str = "misc",
 ) -> FastAPI:
     router: APIRouter = APIRouter()
@@ -922,10 +923,10 @@ class TestCreateObjects:
     async def test_create_id_by_client(self):
         resource_type = "user"
         app = build_app_custom(
-            UserSchema,
-            UserPatchSchema,
-            UserInSchemaAllowIdOnPost,
-            User,
+            model=User,
+            schema=UserSchema,
+            schema_in_post=UserInSchemaAllowIdOnPost,
+            schema_in_patch=UserPatchSchema,
             resource_type=resource_type,
         )
 
@@ -957,7 +958,12 @@ class TestCreateObjects:
             }
 
     async def test_create_id_by_client_uuid_type(self):
-        app = build_app_custom(IdCastSchema, IdCastSchema, IdCastSchema, IdCast)
+        resource_type = fake.word()
+        app = build_app_custom(
+            model=IdCast,
+            schema=IdCastSchema,
+            resource_type=resource_type,
+        )
 
         new_id = str(uuid4())
         create_body = {
@@ -968,14 +974,14 @@ class TestCreateObjects:
         }
 
         async with AsyncClient(app=app, base_url="http://test") as client:
-            url = app.url_path_for("get_misc_list")
+            url = app.url_path_for(f"get_{resource_type}_list")
             res = await client.post(url, json=create_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
             assert res.json() == {
                 "data": {
                     "attributes": {},
                     "id": new_id,
-                    "type": "misc",
+                    "type": resource_type,
                 },
                 "jsonapi": {"version": "1.0"},
                 "meta": None,
@@ -984,10 +990,8 @@ class TestCreateObjects:
     async def test_create_with_relationship_to_the_same_table(self):
         resource_type = "self_relationship"
         app = build_app_custom(
-            SelfRelationshipSchema,
-            SelfRelationshipSchema,
-            SelfRelationshipSchema,
-            SelfRelationship,
+            model=SelfRelationship,
+            schema=SelfRelationshipSchema,
             resource_type=resource_type,
         )
 
@@ -1108,10 +1112,10 @@ class TestPatchObjects:
 
         resource_type = "user"
         app = build_app_custom(
-            UserSchema,
-            UserPatchSchemaWithExtraAttribute,
-            UserPatchSchemaWithExtraAttribute,
-            User,
+            model=User,
+            schema=UserSchema,
+            schema_in_post=UserPatchSchemaWithExtraAttribute,
+            schema_in_patch=UserPatchSchemaWithExtraAttribute,
             resource_type=resource_type,
         )
         new_attrs = UserPatchSchemaWithExtraAttribute(
@@ -1131,6 +1135,51 @@ class TestPatchObjects:
             url = app.url_path_for(f"update_{resource_type}_detail", obj_id=user_1.id)
             res = await client.patch(url, json=patch_user_body)
             assert res.status_code == status.HTTP_200_OK, res.text
+
+    async def test_update_schema_has_extra_fields(self, user_1: User, caplog):
+        resource_type = "user_extra_fields"
+        app = build_app_custom(
+            model=User,
+            schema=UserAttributesBaseSchema,
+            schema_in_patch=CustomUserAttributesSchema,
+            resource_type=resource_type,
+        )
+
+        new_attributes = CustomUserAttributesSchema(
+            age=fake.pyint(),
+            name=fake.user_name(),
+            spam=fake.word(),
+            eggs=fake.word(),
+        )
+        create_body = {
+            "data": {
+                "attributes": new_attributes.dict(),
+                "id": user_1.id,
+            },
+        }
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"update_{resource_type}_detail", obj_id=user_1.id)
+            res = await client.patch(url, json=create_body)
+
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": {
+                "attributes": UserAttributesBaseSchema(**new_attributes.dict()).dict(),
+                "id": str(user_1.id),
+                "type": resource_type,
+            },
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
+        messages = [x.message for x in caplog.get_records("call") if x.levelno == logging.WARNING]
+        messages.sort()
+        for log_message, expected in zip_longest(
+            messages,
+            sorted([f"No field {name!r}" for name in ("spam", "eggs")]),
+        ):
+            assert expected in log_message
 
 
 class TestPatchObjectRelationshipsToOne:
