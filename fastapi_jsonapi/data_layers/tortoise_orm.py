@@ -1,6 +1,6 @@
 """This module is a CRUD interface between resource managers and the Tortoise ORM"""
 
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, Iterable, Optional, Tuple, Type
 
 from tortoise.queryset import QuerySet
 
@@ -124,7 +124,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :return: True if object have changed else False.
         """
 
-    async def delete_object(self, objects: List[TypeModel], view_kwargs: dict):
+    async def delete_object(self, obj: TypeModel, view_kwargs: dict):
         """
         Delete an object through Tortoise.
 
@@ -263,7 +263,7 @@ class TortoiseDataLayer(BaseDataLayer):
         """
         return self.query_
 
-    def before_create_object(self, data: dict, view_kwargs: dict):
+    async def before_create_object(self, data: dict, view_kwargs: dict):
         """
         Provide additional data before object creation.
 
@@ -271,7 +271,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
 
-    def after_create_object(self, obj: Any, data: dict, view_kwargs: dict):
+    async def after_create_object(self, obj: Any, data: dict, view_kwargs: dict):
         """
         Provide additional data after object creation.
 
@@ -322,7 +322,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
 
-    def after_update_object(self, obj: Any, data: dict, view_kwargs: dict):
+    async def after_update_object(self, obj: Any, data: dict, view_kwargs: dict):
         """
         Make work after update object.
 
@@ -331,7 +331,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
 
-    def before_delete_object(self, obj: Any, view_kwargs: dict):
+    async def before_delete_object(self, obj: Any, view_kwargs: dict):
         """
         Make checks before delete object.
 
@@ -339,7 +339,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
 
-    def after_delete_object(self, obj: Any, view_kwargs: dict):
+    async def after_delete_object(self, obj: Any, view_kwargs: dict):
         """
         Make work after delete object.
 
@@ -347,7 +347,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
 
-    def before_create_relationship(
+    async def before_create_relationship(
         self,
         json_data: dict,
         relationship_field: str,
@@ -364,7 +364,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :return boolean: True if relationship have changed else False.
         """
 
-    def after_create_relationship(
+    async def after_create_relationship(
         self,
         obj: Any,
         updated: bool,
@@ -423,7 +423,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :return tuple: the object and related object(s).
         """
 
-    def before_update_relationship(
+    async def before_update_relationship(
         self,
         json_data: dict,
         relationship_field: str,
@@ -440,7 +440,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :return boolean: True if relationship have changed else False.
         """
 
-    def after_update_relationship(
+    async def after_update_relationship(
         self,
         obj: Any,
         updated: bool,
@@ -461,7 +461,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :return boolean: True if relationship have changed else False.
         """
 
-    def before_delete_relationship(
+    async def before_delete_relationship(
         self,
         json_data: dict,
         relationship_field: str,
@@ -477,7 +477,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
 
-    def after_delete_relationship(
+    async def after_delete_relationship(
         self,
         obj: Any,
         updated: bool,

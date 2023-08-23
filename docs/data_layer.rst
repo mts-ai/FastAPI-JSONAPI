@@ -9,10 +9,6 @@ Data layer
 |
 | FastAPI-JSONAPI has a full-featured data layer that uses the popular ORM `SQLAlchemy <https://www.sqlalchemy.org/>`_.
 
-.. note::
-
-    The default data layer used by a resource manager is the SQLAlchemy one. So if that's what you want to use, you don't have to specify the class of the data layer in the resource manager
-
 To configure the data layer you have to set its required parameters in the resource manager.
 
 Example:

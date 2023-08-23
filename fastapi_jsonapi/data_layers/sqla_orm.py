@@ -353,6 +353,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param obj: an item from sqlalchemy.
         :param view_kwargs: kwargs from the resource view.
         """
+        await self.before_delete_object(obj, view_kwargs)
         try:
             await self.session.delete(obj)
             await self.session.commit()
@@ -367,7 +368,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 pointer="/data",
             )
 
+        await self.after_delete_object(obj, view_kwargs)
+
     async def delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        await self.before_delete_objects(objects, view_kwargs)
         query = delete(self.model).filter(self.model.id.in_((obj.id for obj in objects)))
 
         try:
@@ -378,6 +382,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
             raise InternalServerError(
                 detail=f"Got an error {e.__class__.__name__} during delete data from DB: {e!s}",
             )
+
+        await self.after_delete_objects(objects, view_kwargs)
 
     async def create_relationship(
         self,
@@ -729,7 +735,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def before_delete_object(self, obj: Any, view_kwargs: dict):
+    async def before_delete_object(self, obj: TypeModel, view_kwargs: dict):
         """
         Make checks before delete object.
 
@@ -738,7 +744,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def after_delete_object(self, obj: Any, view_kwargs: dict):
+    async def after_delete_object(self, obj: TypeModel, view_kwargs: dict):
         """
         Make work after delete object.
 
@@ -747,7 +753,25 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def before_create_relationship(
+    async def before_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        """
+        Make checks before deleting objects.
+
+        :param objects: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
+        """
+        pass
+
+    async def after_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        """
+        Any actions after deleting objects.
+
+        :param objects: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
+        """
+        pass
+
+    async def before_create_relationship(
         self,
         json_data: dict,
         relationship_field: str,
@@ -765,7 +789,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def after_create_relationship(
+    async def after_create_relationship(
         self,
         obj: Any,
         updated: bool,
@@ -827,7 +851,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def before_update_relationship(
+    async def before_update_relationship(
         self,
         json_data: dict,
         relationship_field: str,
@@ -845,7 +869,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def after_update_relationship(
+    async def after_update_relationship(
         self,
         obj: Any,
         updated: bool,
@@ -867,7 +891,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def before_delete_relationship(
+    async def before_delete_relationship(
         self,
         json_data: dict,
         relationship_field: str,
@@ -884,7 +908,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         pass
 
-    def after_delete_relationship(
+    async def after_delete_relationship(
         self,
         obj: Any,
         updated: bool,

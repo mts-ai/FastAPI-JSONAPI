@@ -5,7 +5,7 @@ you must inherit from this base class
 """
 
 import types
-from typing import Optional, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
@@ -242,7 +242,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def before_create_object(self, data, view_kwargs):
+    async def before_create_object(self, data, view_kwargs):
         """
         Provide additional data before object creation
 
@@ -251,7 +251,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_create_object(self, obj, data, view_kwargs):
+    async def after_create_object(self, obj, data, view_kwargs):
         """
         Provide additional data after object creation
 
@@ -307,7 +307,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_update_object(self, obj, data, view_kwargs):
+    async def after_update_object(self, obj: TypeModel, data, view_kwargs):
         """
         Make work after update object
 
@@ -317,7 +317,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def before_delete_object(self, obj, view_kwargs):
+    async def before_delete_object(self, obj: TypeModel, view_kwargs):
         """
         Make checks before delete object
 
@@ -326,7 +326,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_delete_object(self, obj, view_kwargs):
+    async def after_delete_object(self, obj: TypeModel, view_kwargs):
         """
         Make work after delete object
 
@@ -335,11 +335,29 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def delete_objects(self, objects, view_kwargs):
+    async def delete_objects(self, objects: List[TypeModel], view_kwargs):
         # TODO: doc
         raise NotImplementedError
 
-    def before_create_relationship(
+    async def before_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        """
+        Make checks before deleting objects.
+
+        :param objects: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
+        """
+        pass
+
+    async def after_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        """
+        Any action after deleting objects.
+
+        :param objects: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
+        """
+        pass
+
+    async def before_create_relationship(
         self,
         json_data,
         relationship_field,
@@ -357,7 +375,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_create_relationship(
+    async def after_create_relationship(
         self,
         obj,
         updated,
@@ -419,7 +437,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def before_update_relationship(
+    async def before_update_relationship(
         self,
         json_data,
         relationship_field,
@@ -437,7 +455,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_update_relationship(
+    async def after_update_relationship(
         self,
         obj,
         updated,
@@ -459,7 +477,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def before_delete_relationship(
+    async def before_delete_relationship(
         self,
         json_data,
         relationship_field,
@@ -476,7 +494,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    def after_delete_relationship(
+    async def after_delete_relationship(
         self,
         obj,
         updated,
