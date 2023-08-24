@@ -32,6 +32,15 @@ Response:
 Other examples
 --------------
 
+.. code-block:: python
+
+    # pseudo-code
+
+    class User:
+        name: str = ...
+        words: list[str] = ...
+
+
 Filter by word
 
 .. code-block:: json
