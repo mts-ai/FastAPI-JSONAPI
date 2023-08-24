@@ -40,7 +40,7 @@ class AtomicOperationRef(BaseModel):
     relationship: Optional[str] = Field(default=None)
 
     @root_validator
-    def validate_op_ref(cls, values: dict):
+    def validate_atomic_operation_ref(cls, values: dict):
         """
         type is required on schema
         so id or lid has to be present
@@ -139,7 +139,7 @@ class AtomicOperation(BaseModel):
 class AtomicOperationRequest(BaseModel):
     operations: List[AtomicOperation] = Field(
         alias="atomic:operations",
-        min_length=1,
+        min_items=1,
     )
 
 
@@ -161,5 +161,5 @@ class AtomicResultResponse(BaseModel):
 
     results: List[AtomicResult] = Field(
         alias="atomic:results",
-        min_length=1,
+        min_items=1,
     )
