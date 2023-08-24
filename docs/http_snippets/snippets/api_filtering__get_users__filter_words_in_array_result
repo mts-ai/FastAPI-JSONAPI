@@ -1,0 +1,46 @@
+HTTP/1.1 200 OK
+Content-Type: application/vnd.api+json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "name": "John",
+        "words": [
+          "foo",
+          "bar",
+          "green-grass"
+        ]
+      },
+      "id": "1",
+      "links": {
+        "self": "/users/1"
+      },
+      "type": "user"
+    },
+    {
+      "attributes": {
+        "name": "Sam",
+        "words": [
+          "spam",
+          "eggs",
+          "green-apple"
+        ]
+      },
+      "id": "2",
+      "links": {
+        "self": "/users/2"
+      },
+      "type": "user"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "self": "http://localhost:5000/users?filter=%5B%7B%22name%22%3A%22words%22%2C%22op%22%3A%22in%22%2C%22val%22%3A%5B%22bar%22%2C%22eggs%22%5D%7D%5D"
+  },
+  "meta": {
+    "count": 2
+  }
+}

@@ -1,0 +1,21 @@
+HTTP/1.1 201 Created
+Content-Type: application/vnd.api+json
+
+{
+  "data": {
+    "type": "user",
+    "id": "867ab602-d9f7-44d0-8d3a-d2ae6d96b3a7",
+    "attributes": {
+      "name": "John"
+    },
+    "links": {
+      "self": "/users/867ab602-d9f7-44d0-8d3a-d2ae6d96b3a7"
+    },
+  },
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "self": "/users/867ab602-d9f7-44d0-8d3a-d2ae6d96b3a7"
+  }
+}

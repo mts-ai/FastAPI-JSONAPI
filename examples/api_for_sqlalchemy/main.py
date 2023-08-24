@@ -6,23 +6,21 @@ In module placed db initialization functions, app factory.
 import sys
 from pathlib import Path
 
+import uvicorn
+from fastapi import FastAPI
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from examples.api_for_sqlalchemy import config
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
+from examples.api_for_sqlalchemy.urls import add_routes
+from fastapi_jsonapi import init
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
 PROJECT_DIR = CURRENT_DIR.parent.parent
 
 sys.path.append(str(PROJECT_DIR))
-
-import uvicorn
-from fastapi import FastAPI
-
-from examples.api_for_sqlalchemy import config
-from examples.api_for_sqlalchemy.urls import add_routes
-from fastapi_jsonapi.schema import collect_app_orm_schemas
 
 
 async def sqlalchemy_init() -> None:
@@ -48,7 +46,7 @@ def create_app() -> FastAPI:
     app.config = {"MAX_INCLUDE_DEPTH": 5}
     add_routes(app)
     app.on_event("startup")(sqlalchemy_init)
-    collect_app_orm_schemas(app)
+    init(app)
     return app
 
 

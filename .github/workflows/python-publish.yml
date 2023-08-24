@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   pypi-publish:
+    if: ${{ !github.event.act }} # skip during local actions testing
 
     runs-on: ubuntu-latest
 

@@ -47,4 +47,9 @@ class RelationshipInfo(BaseModel):
     many: bool = False
     related_view: str = None
     related_view_kwargs: Dict[str, str] = {}
-    resource_id_example: int = 1
+    resource_id_example: str = "1"
+    id_field_name: str = "id"
+
+    # TODO: Pydantic V2 use model_config
+    class Config:
+        frozen = True

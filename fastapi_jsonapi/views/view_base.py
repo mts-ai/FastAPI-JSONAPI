@@ -1,6 +1,7 @@
 import logging
 from contextvars import ContextVar
 from typing import (
+    Any,
     Dict,
     Iterable,
     List,
@@ -10,24 +11,29 @@ from typing import (
     Union,
 )
 
+from fastapi import Request
 from pydantic.fields import ModelField
 
-from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI, SqlalchemyEngine
-from fastapi_jsonapi.api import JSONAPIObjectSchemas
-from fastapi_jsonapi.data_layers.data_typing import (
+from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
+from fastapi_jsonapi.data_layers.base import BaseDataLayer
+from fastapi_jsonapi.data_typing import (
     TypeModel,
     TypeSchema,
 )
 from fastapi_jsonapi.schema import (
     JSONAPIObjectSchema,
-    JSONAPIResultDetailSchema,
+    JSONAPIResultListMetaSchema,
     get_related_schema,
 )
 from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
+from fastapi_jsonapi.schema_builder import JSONAPIObjectSchemas
 from fastapi_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.views.utils import (
+    HTTPMethod,
+    HTTPMethodConfig,
+)
 
 logger = logging.getLogger(__name__)
-
 
 previous_resource_type_ctx_var: ContextVar[str] = ContextVar("previous_resource_type_ctx_var")
 related_field_name_ctx_var: ContextVar[str] = ContextVar("related_field_name_ctx_var")
@@ -38,9 +44,84 @@ relationship_info_ctx_var: ContextVar[RelationshipInfo] = ContextVar("relationsh
 
 
 class ViewBase:
-    def __init__(self, jsonapi: RoutersJSONAPI, **options):
-        self.jsonapi = jsonapi
-        self.options = options
+    """
+    Views are inited for each request
+    """
+
+    data_layer_cls = BaseDataLayer
+    method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {}
+
+    def __init__(self, *, request: Request, jsonapi: RoutersJSONAPI, **options):
+        self.request: Request = request
+        self.jsonapi: RoutersJSONAPI = jsonapi
+        self.options: dict = options
+        self.query_params: QueryStringManager = QueryStringManager(request=request)
+
+    def _get_data_layer(self, schema: Type[BaseModel], **dl_kwargs):
+        return self.data_layer_cls(
+            schema=schema,
+            model=self.jsonapi.model,
+            **dl_kwargs,
+        )
+
+    def _get_data_layer_for_detail(self, **kwargs: Any) -> BaseDataLayer:
+        """
+        :param kwargs: Any extra kwargs for the data layer
+        :return:
+        """
+        return self._get_data_layer(
+            schema=self.jsonapi.schema_detail,
+            **kwargs,
+        )
+
+    def _get_data_layer_for_list(self, **kwargs: Any) -> BaseDataLayer:
+        """
+        :param kwargs: Any extra kwargs for the data layer
+        :return:
+        """
+        return self._get_data_layer(
+            schema=self.jsonapi.schema_list,
+            **kwargs,
+        )
+
+    def _build_response(self, items_from_db: List[TypeModel], item_schema: Type[BaseModel]):
+        return self.process_includes_for_db_items(
+            includes=self.query_params.include,
+            # as list to reuse helper
+            items_from_db=items_from_db,
+            item_schema=item_schema,
+        )
+
+    def _build_detail_response(self, db_item: TypeModel):
+        result_objects, object_schemas, extras = self._build_response([db_item], self.jsonapi.schema_detail)
+        # is it ok to do through list?
+        result_object = result_objects[0]
+
+        detail_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_detail_result(
+            name=f"Result{self.__class__.__name__}",
+            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
+            includes_schemas=object_schemas.included_schemas_list,
+        )
+
+        return detail_jsonapi_schema(data=result_object, **extras)
+
+    def _build_list_response(self, items_from_db: List[TypeModel], count: int, total_pages: int):
+        result_objects, object_schemas, extras = self._build_response(items_from_db, self.jsonapi.schema_list)
+
+        # we need to build a new schema here
+        # because we'd like to exclude some fields (relationships, includes, etc)
+        list_jsonapi_schema = self.jsonapi.schema_builder.build_schema_for_list_result(
+            name=f"Result{self.__class__.__name__}",
+            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
+            includes_schemas=object_schemas.included_schemas_list,
+        )
+        return list_jsonapi_schema(
+            meta=JSONAPIResultListMetaSchema(count=count, total_pages=total_pages),
+            data=result_objects,
+            **extras,
+        )
+
+    # data preparing below:
 
     @classmethod
     def get_db_item_id(cls, item_from_db: TypeModel):
@@ -75,24 +156,14 @@ class ViewBase:
         related_db_item: Union[List[TypeModel], TypeModel],
     ) -> Tuple[Optional[Dict[str, Union[str, int]]], List[TypeSchema]]:
         included_objects = []
-        if isinstance(related_db_item, Iterable):
-            data_for_relationship = []
-            for included_item in related_db_item:
-                relation_data, processed_object = cls.prepare_related_object_data(
-                    item_from_db=included_item,
-                )
-                data_for_relationship.append(relation_data)
-                if processed_object:
-                    included_objects.append(processed_object)
-        else:
-            if related_db_item is None:
-                return None, included_objects
+        if related_db_item is None:
+            return None, included_objects
 
-            data_for_relationship, processed_object = cls.prepare_related_object_data(
-                item_from_db=related_db_item,
-            )
-            if processed_object:
-                included_objects.append(processed_object)
+        data_for_relationship, processed_object = cls.prepare_related_object_data(
+            item_from_db=related_db_item,
+        )
+        if processed_object:
+            included_objects.append(processed_object)
         return data_for_relationship, included_objects
 
     @classmethod
@@ -213,7 +284,7 @@ class ViewBase:
         previous_resource_type = item_as_schema.type
 
         for related_field_name in include.split(SPLIT_REL):
-            object_schemas = self.jsonapi.create_jsonapi_object_schemas(
+            object_schemas = self.jsonapi.schema_builder.create_jsonapi_object_schemas(
                 schema=current_relation_schema,
                 includes=[related_field_name],
                 compute_included_schemas=bool([related_field_name]),
@@ -280,10 +351,11 @@ class ViewBase:
         items_from_db: List[TypeModel],
         item_schema: Type[TypeSchema],
     ):
-        object_schemas = self.jsonapi.create_jsonapi_object_schemas(
+        object_schemas = self.jsonapi.schema_builder.create_jsonapi_object_schemas(
             schema=item_schema,
             includes=includes,
             compute_included_schemas=bool(includes),
+            use_schema_cache=False,
         )
 
         result_objects = []
@@ -317,33 +389,3 @@ class ViewBase:
             )
 
         return result_objects, object_schemas, extras
-
-    async def get_detailed_result(
-        self,
-        dl: SqlalchemyEngine,
-        view_kwargs: Dict[str, Union[str, int]],
-        query_params: QueryStringManager = None,
-        schema: Type[TypeSchema] = None,
-    ) -> JSONAPIResultDetailSchema:
-        # todo: generate dl?
-        db_object = await dl.get_object(view_kwargs=view_kwargs, qs=query_params)
-
-        result_objects, object_schemas, extras = self.process_includes_for_db_items(
-            includes=query_params.include,
-            items_from_db=[db_object],
-            item_schema=schema or self.jsonapi.schema_detail,
-        )
-        # todo: is it ok to do through list?
-        result_object = result_objects[0]
-
-        # we need to build a new schema here
-        # because we'd like to exclude some fields (relationships, includes, etc)
-        detail_jsonapi_schema = self.jsonapi.build_schema_for_detail_result(
-            name=f"Result{self.__class__.__name__}",
-            object_jsonapi_schema=object_schemas.object_jsonapi_schema,
-            includes_schemas=object_schemas.included_schemas_list,
-        )
-        return detail_jsonapi_schema(
-            data=result_object,
-            **extras,
-        )

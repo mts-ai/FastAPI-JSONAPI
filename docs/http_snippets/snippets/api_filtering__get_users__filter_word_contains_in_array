@@ -1,0 +1,2 @@
+GET /photos?filter=%5B%7B%22name%22%3A%22words%22%2C%22op%22%3A%22jsonb_contains%22%2C%22val%22%3A%7B%22location%22%3A%22Moscow%22%2C%22spam%22%3A%22eggs%22%7D%7D%5D%0A HTTP/1.1
+Content-Type: application/vnd.api+json

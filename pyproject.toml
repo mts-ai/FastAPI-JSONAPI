@@ -30,8 +30,6 @@ dependencies = [
     "greenlet>=1.1.2",
     "pydantic>=1.9.1",
     "simplejson>=3.17.6",
-    "SQLAlchemy>=1.4.39,<2.0.0",
-    "tortoise-orm>=0.19.2",
     "uvicorn>=0.18.2",
 ]
 
@@ -39,14 +37,14 @@ dependencies = [
 all = [
     "pytest",
     "sphinx",
-    "SQLAlchemy>=1.4.39,<2.0.0",
+    "SQLAlchemy>=1.4.39",
     "tortoise-orm>=0.19.2",
 ]
 docs = [
     "sphinx",
 ]
 sqlalchemy = [
-    "SQLAlchemy>=1.4.39,<2.0.0",
+    "SQLAlchemy>=1.4.39",
 ]
 tests = [
     "pytest",
@@ -75,7 +73,7 @@ packages = [
 
 [tool.poetry]
 name = "fastapi-jsonapi"
-version = "1.1.0"
+version = "2.0.0"
 description = "FastAPI extension to create REST web api according to JSON:API specification"
 authors = [
     "Aleksei Nekrasov <nekrasov.aleks@mail.ru>",
@@ -92,7 +90,7 @@ pydantic = ">=1.9.1"
 simplejson = ">=3.17.6"
 uvicorn = ">=0.18.2"
 
-sqlalchemy = { version = ">=1.4.39,<2.0.0", optional = true, extras = ["asyncio"] }
+sqlalchemy = { version = ">=1.4.39", optional = true, extras = ["asyncio"] }
 tortoise-orm = { version = ">=0.19.2", optional = true }
 
 [tool.poetry.group.tests.dependencies]
@@ -102,19 +100,19 @@ httpx = "^0.24.1"
 pytest-asyncio = "^0.21.0"
 coverage = "^7.2.6"
 pytest-cov = "^4.1.0"
+aiosqlite = "0.17.0"
+asyncpg = "0.28.0"
+
 
 [tool.poetry.group.lint.dependencies]
 black = "^23.3.0"
-ruff = "^0.0.270"
-mypy = "^1.3.0"
+ruff = "^0.0.284"
+mypy = "^1.4.1"
 sqlalchemy-stubs = "^0.4"
+pre-commit = "^3.3.3"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.0.1"
-
-
-[tool.poetry.group.examples.dependencies]
-aiosqlite = "0.17.0"
 
 
 [tool.poetry.group.dev.dependencies]

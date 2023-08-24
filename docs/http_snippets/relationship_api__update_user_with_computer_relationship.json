@@ -1,0 +1,17 @@
+{
+  "method": "PATCH",
+  "url": "http://localhost:5000/users/1?include=computers",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"data\": {\n    \"type\": \"user\",\n    \"id\": \"1\",\n    \"attributes\": {\n      \"email\": \"john@example.com\"\n    },\n    \"relationships\": {\n      \"computers\": {\n        \"data\": [\n          {\n            \"type\": \"computer\",\n            \"id\": \"3\"\n          }\n        ]\n      }\n    }\n  }\n}"
+  }
+}

@@ -1,0 +1,26 @@
+HTTP/1.1 200 OK
+Content-Type: application/vnd.api+json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "name": "John"
+      },
+      "id": "1",
+      "links": {
+        "self": "/users/1"
+      },
+      "type": "user"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "self": "http://localhost:5000/users"
+  },
+  "meta": {
+    "count": 1
+  }
+}

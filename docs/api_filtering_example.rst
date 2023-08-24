@@ -1,22 +1,44 @@
 Filtering API example
 ======================
 
-.. literalinclude:: ../examples/api_complex_filtering.py
+.. literalinclude:: ../examples/custom_filter_example.py
     :language: python
 
 
-Check existing persons
+
+Filter by jsonb contains
+
+.. code-block:: json
+
+    [
+      {
+        "name": "words",
+        "op": "jsonb_contains",
+        "val": {"location": "Moscow", "spam": "eggs"}
+      }
+    ]
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array_result
   :language: HTTP
 
+
+Other examples
+--------------
+
+.. code-block:: python
+
+    # pseudo-code
+
+    class User:
+        name: str = ...
+        words: list[str] = ...
 
 
 Filter by word
@@ -33,12 +55,12 @@ Filter by word
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_in_array
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_in_array
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_in_array_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_in_array_result
   :language: HTTP
 
 
@@ -56,33 +78,10 @@ Filter by words
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_words_in_array
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_words_in_array
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_words_in_array_result
-  :language: HTTP
-
-
-Filter by any word containing value
-
-.. code-block:: json
-
-    [
-      {
-        "name": "words",
-        "op": "ilike_in_str_array",
-        "val": "green"
-      }
-    ]
-
-Request:
-
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_contains_in_array
-  :language: HTTP
-
-Response:
-
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_persons__filter_word_contains_in_array_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_words_in_array_result
   :language: HTTP

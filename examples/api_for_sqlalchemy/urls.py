@@ -11,22 +11,26 @@ from fastapi import (
     FastAPI,
 )
 
-from examples.api_for_sqlalchemy.models import Child, Parent, Post, User, UserBio
-from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi.data_layers.orm import DBORMType
-
-from .api.child import ChildDetail, ChildList
-from .api.parent import ParentDetail, ParentList
-from .api.post import PostDetail, PostList
-from .api.user import (
-    UserDetail,
-    UserList,
+from examples.api_for_sqlalchemy.models import (
+    Child,
+    Computer,
+    Parent,
+    Post,
+    User,
+    UserBio,
 )
-from .api.user_bio import UserBioDetail, UserBioList
+from fastapi_jsonapi import RoutersJSONAPI
+
+from .api.views_base import DetailViewBase, ListViewBase
 from .models.schemas import (
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
+    ComputerInSchema,
+    ComputerPatchSchema,
+    ComputerSchema,
+    ParentInSchema,
+    ParentPatchSchema,
     ParentSchema,
     PostInSchema,
     PostPatchSchema,
@@ -57,70 +61,77 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         router=router,
         path="/users",
         tags=["User"],
-        class_detail=UserDetail,
-        class_list=UserList,
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
+        model=User,
         schema=UserSchema,
-        type_resource="user",
+        resource_type="user",
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
-        model=User,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
         router=router,
         path="/posts",
         tags=["Post"],
-        class_detail=PostDetail,
-        class_list=PostList,
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
+        model=Post,
         schema=PostSchema,
-        type_resource="post",
+        resource_type="post",
         schema_in_patch=PostPatchSchema,
         schema_in_post=PostInSchema,
-        model=Post,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
         router=router,
         path="/user-bio",
         tags=["Bio"],
-        class_detail=UserBioDetail,
-        class_list=UserBioList,
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
+        model=UserBio,
         schema=UserBioSchema,
-        type_resource="user_bio",
+        resource_type="user_bio",
         schema_in_patch=UserBioPatchSchema,
         schema_in_post=UserBioInSchema,
-        model=UserBio,
-        engine=DBORMType.sqlalchemy,
     )
 
     RoutersJSONAPI(
         router=router,
         path="/parents",
         tags=["Parent"],
-        class_detail=ParentDetail,
-        class_list=ParentList,
-        schema=ParentSchema,
-        type_resource="parent",
-        schema_in_patch=PostPatchSchema,
-        schema_in_post=PostInSchema,
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
         model=Parent,
-        engine=DBORMType.sqlalchemy,
+        schema=ParentSchema,
+        resource_type="parent",
+        schema_in_patch=ParentPatchSchema,
+        schema_in_post=ParentInSchema,
     )
 
     RoutersJSONAPI(
         router=router,
         path="/children",
         tags=["Child"],
-        class_detail=ChildDetail,
-        class_list=ChildList,
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
+        model=Child,
         schema=ChildSchema,
-        type_resource="child",
+        resource_type="child",
         schema_in_patch=ChildPatchSchema,
         schema_in_post=ChildInSchema,
-        model=Child,
-        engine=DBORMType.sqlalchemy,
+    )
+    RoutersJSONAPI(
+        router=router,
+        path="/computers",
+        tags=["Computer"],
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
+        model=Computer,
+        schema=ComputerSchema,
+        resource_type="computer",
+        schema_in_patch=ComputerPatchSchema,
+        schema_in_post=ComputerInSchema,
     )
 
     app.include_router(router, prefix="")

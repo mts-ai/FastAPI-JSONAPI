@@ -5,11 +5,12 @@ from pydantic.fields import ModelField
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, aliased
 from sqlalchemy.sql.elements import BinaryExpression
 
-from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidSort
 from fastapi_jsonapi.schema import get_model_field, get_relationships
 from fastapi_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
 Sort = BinaryExpression
 Join = List[Any]
@@ -153,10 +154,10 @@ class Node(object):
             msg = "{} has no relationship attribute {}".format(self.schema.__name__, relationship_field)
             raise InvalidFilters(msg)
 
-        return getattr(self.model, get_model_field(self.schema, relationship_field)).property.mapper.class_
+        return get_related_model_cls(self.model, get_model_field(self.schema, relationship_field))
 
     @property
-    def related_schema(self) -> TypeSchema:
+    def related_schema(self) -> Type[TypeSchema]:
         """
         Get the related schema of a relationship field.
 

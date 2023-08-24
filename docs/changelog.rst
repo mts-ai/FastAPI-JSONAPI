@@ -2,6 +2,42 @@ Changelog
 #########
 
 
+**2.0.0**
+*********
+
+Generic views, process relationships
+====================================
+
+Backward-incompatible changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Automatically create all CRUD views based on schemas (see :ref:`example <minimal_api_example>`)
+* Allow to pass Client-Generated IDs (see :ref:`example <client_generated_id>`, `JSON:API doc <https://jsonapi.org/format/#crud-creating-client-ids>`_)
+* Process relationships on create / update (see :ref:`example <relationships>`, `JSON:API doc <https://jsonapi.org/format/#crud-updating-resource-relationships>`_)
+* Accept pydantic model with any dependencies on it (see :ref:`example <view_dependencies>`)
+* handle exceptions (return errors, `JSON:API doc <https://jsonapi.org/format/#errors>`_)
+* refactor data layers
+* tests coverage
+
+Authors
+"""""""
+
+* `@mahenzon`_
+* `@CosmoV`_
+* `@tpynio`_
+
+
+**1.1.0**
+*********
+
+Generic views
+=============
+
+* Create generic view classes `#28 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/28>`_
+
+`@CosmoV`_
+
+
 **1.0.0**
 *********
 
@@ -48,3 +84,5 @@ Enhancements and bug fixes
 
 .. _`@znbiz`: https://github.com/znbiz
 .. _`@mahenzon`: https://github.com/mahenzon
+.. _`@CosmoV`: https://github.com/CosmoV
+.. _`@tpynio`: https://github.com/tpynio

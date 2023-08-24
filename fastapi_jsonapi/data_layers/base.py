@@ -5,6 +5,11 @@ you must inherit from this base class
 """
 
 import types
+from typing import List, Optional, Tuple, Type
+
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
+from fastapi_jsonapi.querystring import QueryStringManager
+from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
 
 
 class BaseDataLayer:
@@ -33,68 +38,88 @@ class BaseDataLayer:
         "retrieve_object_query",
     )
 
-    def __init__(self, kwargs):
+    def __init__(
+        self,
+        schema: Type[TypeSchema],
+        model: Type[TypeModel],
+        url_id_field: str,
+        id_name_field: Optional[str] = None,
+        disable_collection_count: bool = False,
+        default_collection_count: int = -1,
+        **kwargs,
+    ):
         """
-        Intialize an data layer instance with kwargs.
-
-        :param dict kwargs: information about data layer instance
+        :param schema:
+        :param model:
+        :param url_id_field:
+        :param id_name_field:
+        :param disable_collection_count:
+        :param default_collection_count:
+        :param kwargs:
         """
-        # initing this attribute here in the first place
-        # because it can be easily overridden by kwargs below
+        self.model = model
+        self.schema = schema
+        self.url_id_field = url_id_field
+        self.id_name_field = id_name_field
+        self.disable_collection_count: bool = disable_collection_count
+        self.default_collection_count: int = default_collection_count
 
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    def post_init(self):
-        """
-        Post init stage.
-
-        At this moment self.resource is already defined
-        and the layer can do any post init stuff here
-
-        NOTE that the data layer is inited for each request
-        :return:
-        """
-        pass
-
-    async def create_object(self, data, view_kwargs):
+    async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object
 
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data_create: validated data
+        :param view_kwargs: kwargs from the resource view
         :return DeclarativeMeta: an object
         """
         raise NotImplementedError
 
-    async def get_object(self, view_kwargs):
+    def get_object_id_field_name(self):
+        """
+        compound key may cause errors
+        :return:
+        """
+        return self.id_name_field
+
+    def get_object_id_field(self):
+        id_name_field = self.get_object_id_field_name()
+        try:
+            return getattr(self.model, id_name_field)
+        except AttributeError:
+            msg = f"{self.model.__name__} has no attribute {id_name_field}"
+            # TODO: any custom exception type?
+            raise Exception(msg)
+
+    async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
         Retrieve an object
 
-        :params dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
+        :param qs:
         :return DeclarativeMeta: an object
         """
         raise NotImplementedError
 
-    async def get_collection(self, qs, view_kwargs):
+    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
         """
         Retrieve a collection of objects
 
-        :param QueryStringManager qs: a querystring manager to retrieve information from url
-        :param dict view_kwargs: kwargs from the resource view
+        :param qs: a querystring manager to retrieve information from url
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the number of object and the list of objects
         """
         raise NotImplementedError
 
-    async def update_object(self, obj, data, view_kwargs):
+    async def update_object(self, obj, data_update: BaseJSONAPIItemInSchema, view_kwargs: dict):
         """
         Update an object
 
-        :param DeclarativeMeta obj: an object
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param obj: an object
+        :param data_update: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if object have changed else False
         """
+        # TODO: update doc
         raise NotImplementedError
 
     async def delete_object(self, obj, view_kwargs):
@@ -102,7 +127,7 @@ class BaseDataLayer:
         Delete an item through the data layer
 
         :param DeclarativeMeta obj: an object
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -116,10 +141,10 @@ class BaseDataLayer:
         """
         Create a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -137,7 +162,7 @@ class BaseDataLayer:
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the object and related object(s)
         """
         raise NotImplementedError
@@ -152,10 +177,10 @@ class BaseDataLayer:
         """
         Update a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -170,10 +195,42 @@ class BaseDataLayer:
         """
         Delete a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
+        """
+        raise NotImplementedError
+
+    async def get_related_object(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        id_value: str,
+    ) -> TypeModel:
+        """
+        Get related object.
+
+        :param related_model: Related ORM model class (not instance)
+        :param related_id_field: id field of the related model (usually it's `id`)
+        :param id_value: related object id value
+        :return: an ORM object
+        """
+        raise NotImplementedError
+
+    async def get_related_objects_list(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        ids: list[str],
+    ) -> list[TypeModel]:
+        """
+        Get related objects list.
+
+        :param related_model: Related ORM model class (not instance)
+        :param related_id_field: id field of the related model (usually it's `id`)
+        :param ids: related object id values list
+        :return: a list of ORM objects
         """
         raise NotImplementedError
 
@@ -181,26 +238,26 @@ class BaseDataLayer:
         """
         Construct the base query to retrieve wanted data
 
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def before_create_object(self, data, view_kwargs):
+    async def before_create_object(self, data, view_kwargs):
         """
         Provide additional data before object creation
 
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def after_create_object(self, obj, data, view_kwargs):
+    async def after_create_object(self, obj, data, view_kwargs):
         """
         Provide additional data after object creation
 
         :param obj: an object from data layer
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -208,7 +265,7 @@ class BaseDataLayer:
         """
         Make work before to retrieve an object
 
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -217,7 +274,7 @@ class BaseDataLayer:
         Make work after to retrieve an object
 
         :param obj: an object from data layer
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -225,8 +282,8 @@ class BaseDataLayer:
         """
         Make work before to retrieve a collection of objects
 
-        :param QueryStringManager qs: a querystring manager to retrieve information from url
-        :param dict view_kwargs: kwargs from the resource view
+        :param qs: a querystring manager to retrieve information from url
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -235,8 +292,8 @@ class BaseDataLayer:
         Make work after to retrieve a collection of objects
 
         :param iterable collection: the collection of objects
-        :param QueryStringManager qs: a querystring manager to retrieve information from url
-        :param dict view_kwargs: kwargs from the resource view
+        :param qs: a querystring manager to retrieve information from url
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
@@ -245,40 +302,62 @@ class BaseDataLayer:
         Make checks or provide additional data before update object
 
         :param obj: an object from data layer
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def after_update_object(self, obj, data, view_kwargs):
+    async def after_update_object(self, obj: TypeModel, data, view_kwargs):
         """
         Make work after update object
 
         :param obj: an object from data layer
-        :param dict data: the data validated by schemas
-        :param dict view_kwargs: kwargs from the resource view
+        :param data: the data validated by schemas
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def before_delete_object(self, obj, view_kwargs):
+    async def before_delete_object(self, obj: TypeModel, view_kwargs):
         """
         Make checks before delete object
 
         :param obj: an object from data layer
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def after_delete_object(self, obj, view_kwargs):
+    async def after_delete_object(self, obj: TypeModel, view_kwargs):
         """
         Make work after delete object
 
         :param obj: an object from data layer
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def before_create_relationship(
+    async def delete_objects(self, objects: List[TypeModel], view_kwargs):
+        # TODO: doc
+        raise NotImplementedError
+
+    async def before_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        """
+        Make checks before deleting objects.
+
+        :param objects: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
+        """
+        pass
+
+    async def after_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+        """
+        Any action after deleting objects.
+
+        :param objects: an object from data layer.
+        :param view_kwargs: kwargs from the resource view.
+        """
+        pass
+
+    async def before_create_relationship(
         self,
         json_data,
         relationship_field,
@@ -288,15 +367,15 @@ class BaseDataLayer:
         """
         Make work before to create a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
 
-    def after_create_relationship(
+    async def after_create_relationship(
         self,
         obj,
         updated,
@@ -310,10 +389,10 @@ class BaseDataLayer:
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
@@ -331,7 +410,7 @@ class BaseDataLayer:
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the object and related object(s)
         """
         raise NotImplementedError
@@ -353,12 +432,12 @@ class BaseDataLayer:
         :param str relationship_field: the model attribute used for relationship
         :param str related_type_: the related resource type
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return tuple: the object and related object(s)
         """
         raise NotImplementedError
 
-    def before_update_relationship(
+    async def before_update_relationship(
         self,
         json_data,
         relationship_field,
@@ -368,15 +447,15 @@ class BaseDataLayer:
         """
         Make work before to update a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
 
-    def after_update_relationship(
+    async def after_update_relationship(
         self,
         obj,
         updated,
@@ -390,15 +469,15 @@ class BaseDataLayer:
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         :return boolean: True if relationship have changed else False
         """
         raise NotImplementedError
 
-    def before_delete_relationship(
+    async def before_delete_relationship(
         self,
         json_data,
         relationship_field,
@@ -408,14 +487,14 @@ class BaseDataLayer:
         """
         Make work before to delete a relationship
 
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 
-    def after_delete_relationship(
+    async def after_delete_relationship(
         self,
         obj,
         updated,
@@ -429,10 +508,10 @@ class BaseDataLayer:
 
         :param obj: an object from data layer
         :param bool updated: True if object was updated else False
-        :param dict json_data: the request params
+        :param json_data: the request params
         :param str relationship_field: the model attribute used for relationship
         :param str related_id_field: the identifier field of the related model
-        :param dict view_kwargs: kwargs from the resource view
+        :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
 

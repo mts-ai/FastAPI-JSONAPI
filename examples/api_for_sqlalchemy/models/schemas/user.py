@@ -7,6 +7,7 @@ from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
+    from .computer import ComputerSchema
     from .post import PostSchema
     from .user_bio import UserBioSchema
 
@@ -30,6 +31,26 @@ class UserBaseSchema(BaseModel):
     status: UserStatusEnum = Field(default=UserStatusEnum.active)
     email: str | None = None
 
+    posts: Optional[List["PostSchema"]] = Field(
+        relationship=RelationshipInfo(
+            resource_type="post",
+            many=True,
+        ),
+    )
+
+    bio: Optional["UserBioSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user_bio",
+        ),
+    )
+
+    computers: Optional["ComputerSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="computer",
+            many=True,
+        ),
+    )
+
 
 class UserPatchSchema(UserBaseSchema):
     """User PATCH schema."""
@@ -50,15 +71,3 @@ class UserSchema(UserInSchema):
     id: int
     created_at: datetime = Field(description="Create datetime")
     modified_at: datetime = Field(description="Update datetime")
-    posts: List["PostSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-            many=True,
-        ),
-    )
-
-    bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user_bio",
-        ),
-    )

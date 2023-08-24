@@ -1,0 +1,26 @@
+HTTP/1.1 200 OK
+Content-Type: application/vnd.api+json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "name": "pic-qwerty",
+        "words": {
+          "location": "Moscow",
+          "spam": "eggs",
+          "foo": "bar",
+          "qwe": "abc"
+        }
+      },
+      "id": "7",
+      "type": "photo"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "count": 1
+  }
+}

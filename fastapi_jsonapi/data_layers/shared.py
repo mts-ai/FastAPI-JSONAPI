@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Tuple, Type, Union
 
-from fastapi_jsonapi.data_layers.data_typing import TypeModel, TypeSchema
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.filtering.sqlalchemy import Node as NodeSQLAlchemy

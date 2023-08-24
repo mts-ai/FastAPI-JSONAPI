@@ -15,7 +15,7 @@ Request:
 
 .. sourcecode:: http
 
-    GET /persons/1?include=computers HTTP/1.1
+    GET /users/1?include=computers HTTP/1.1
     Accept: application/vnd.api+json
 
 Response:
@@ -27,7 +27,7 @@ Response:
 
     {
       "data": {
-        "type": "person",
+        "type": "user",
         "id": "1",
         "attributes": {
           "display_name": "JEAN <jean@gmail.com>",
@@ -42,13 +42,13 @@ Response:
               }
             ],
             "links": {
-              "related": "/persons/1/computers",
-              "self": "/persons/1/relationships/computers"
+              "related": "/users/1/computers",
+              "self": "/users/1/relationships/computers"
             }
           }
         },
         "links": {
-          "self": "/persons/1"
+          "self": "/users/1"
         }
       },
       "included": [
@@ -72,7 +72,7 @@ Response:
         }
       ],
       "links": {
-        "self": "/persons/1"
+        "self": "/users/1"
       },
       "jsonapi": {
         "version": "1.0"
@@ -87,7 +87,7 @@ Request:
 
 .. sourcecode:: http
 
-    GET /persons/1?include=computers.owner HTTP/1.1
+    GET /users/1?include=computers.owner HTTP/1.1
     Accept: application/vnd.api+json
 
 Response:
@@ -99,7 +99,7 @@ Response:
 
     {
       "data": {
-        "type": "person",
+        "type": "user",
         "id": "1",
         "attributes": {
           "display_name": "JEAN <jean@gmail.com>",
@@ -114,13 +114,13 @@ Response:
               }
             ],
             "links": {
-              "related": "/persons/1/computers",
-              "self": "/persons/1/relationships/computers"
+              "related": "/users/1/computers",
+              "self": "/users/1/relationships/computers"
             }
           }
         },
         "links": {
-          "self": "/persons/1"
+          "self": "/users/1"
         }
       },
       "included": [
@@ -133,7 +133,7 @@ Response:
           "relationships": {
             "owner": {
               "data": {
-                "type": "person",
+                "type": "user",
                 "id": "1"
               },
               "links": {
@@ -147,7 +147,7 @@ Response:
           }
         },
         {
-          "type": "person",
+          "type": "user",
           "id": "1",
           "attributes": {
             "display_name": "JEAN <jean@gmail.com>",
@@ -156,22 +156,22 @@ Response:
           "relationships": {
             "computers": {
               "links": {
-                "related": "/persons/1/computers",
-                "self": "/persons/1/relationships/computers"
+                "related": "/users/1/computers",
+                "self": "/users/1/relationships/computers"
               }
             }
           },
           "links": {
-            "self": "/persons/1"
+            "self": "/users/1"
           }
         }
       ],
       "links": {
-        "self": "/persons/1"
+        "self": "/users/1"
       },
       "jsonapi": {
         "version": "1.0"
       }
     }
 
-It's an absurd example because it will include details of the related person's computers and details of the person that is already in the response. But it is just for demonstration.
+It's an absurd example because it will include details of the related user's computers and details of the user that is already in the response. But it is just for demonstration.

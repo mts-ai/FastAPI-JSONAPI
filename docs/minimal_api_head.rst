@@ -10,9 +10,10 @@ This example provides the following API structure:
 ========================  ======  =============  ===========================
 URL                       method  endpoint       Usage
 ========================  ======  =============  ===========================
-/persons                  GET     person_list    Get a collection of persons
-/persons                  POST    person_list    Create a person
-/persons/<int:person_id>  GET     person_detail  Get person details
-/persons/<int:person_id>  PATCH   person_detail  Update a person
-/persons/<int:person_id>  DELETE  person_detail  Delete a person
+/users                    GET     user_list      Get a collection of users
+/users                    POST    user_list      Create a user
+/users                    DELETE  user_list      Delete users
+/users/{user_id}          GET     user_detail    Get user details
+/users/{user_id}          PATCH   user_detail    Update a user
+/users/{user_id}          DELETE  user_detail    Delete a user
 ========================  ======  =============  ===========================

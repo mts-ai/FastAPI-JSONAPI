@@ -58,40 +58,40 @@ FastAPI-JSONAPI provides two kinds of helpers for displaying errors:
 
 | * **the exceptions module**: you can import a lot of exceptions from this `module <https://github.com/mts-ai/FastAPI-JSONAPI/blob/main/fastapi_jsonapi/exceptions/json_api.py>`_ that helps you to raise exceptions that will be well-formatted according to the JSON:API 1.0 specification
 
-When you create custom code for your API I recommand using exceptions from the FastAPI-JSONAPI's exceptions module to raise errors because HTTPException-based exceptions are caught and rendered according to the JSON:API 1.0 specification.
+When you create custom code for your API I recommend using exceptions from the FastAPI-JSONAPI's exceptions module to raise errors because HTTPException-based exceptions are caught and rendered according to the JSON:API 1.0 specification.
+
+
+You can raise an exception in any point yor app. ResourceManager, DataLayer, etc.
+All of the exceptions defined by FastAPI-JSONAPI will handled by the root handler
+``fastapi_jsonapi.exceptions.handlers.base_exception_handler`` and we'll see pretty JSON:API spec output
 
 Example:
 
 .. code-block:: python
 
-    # all required imports are not displayed in this example
-    from fastapi import Depends
-    from sqlalchemy.ext.asyncio import AsyncSession
-
-    from examples.api_for_sqlalchemy.helpers.factories.meta_base import FactoryUseMode
-    from examples.api_for_sqlalchemy.helpers.factories.user import UserFactory, ErrorCreateUserObject
-    from examples.api_for_sqlalchemy.models.pydantic import UserSchema
-    from examples.api_for_sqlalchemy.models.pydantic.user import UserInSchema
-    from fastapi_jsonapi.exceptions import (
-        BadRequest,
-        HTTPException,
-    )
-    from fastapi_jsonapi.querystring import QueryStringManager
+    from fastapi_jsonapi.exceptions import BadRequest
+    from fastapi_jsonapi.schema import BaseJSONAPIDataInSchema, JSONAPIResultDetailSchema
+    from fastapi_jsonapi.views.list_view import ListViewBase
 
 
-    class UserList:
-
-        @classmethod
-        async def post(cls, data: UserInSchema, query_params: QueryStringManager, session: AsyncSession = Depends(Connector.get_session)) -> UserSchema:
+    class CustomErrorView(ListViewBase):
+        def post_resource_list_result(
+            self,
+            data_create: BaseJSONAPIDataInSchema,
+            **extra_view_deps,
+        ) -> JSONAPIResultDetailSchema:
             try:
-                user_obj = await UserFactory.create(
-                    data=data.dict(),
-                    mode=FactoryUseMode.production,
-                    header=query_params.headers,
-                    session=session,
-                )
-            except ErrorCreateUserObject as ex:
-                raise BadRequest(ex.description, ex.field)
+                # any logic here
+                pass
+            except Exception:
+                raise BadRequest(detail="My custom err")
 
-            user = UserSchema.from_orm(user_obj)
-            return user
+Request:
+
+.. literalinclude:: ./http_snippets/snippets/errors__create_user
+  :language: http
+
+Response:
+
+.. literalinclude:: ./http_snippets/snippets/errors__create_user_result
+  :language: http

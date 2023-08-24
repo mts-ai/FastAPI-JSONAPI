@@ -1,6 +1,6 @@
 {
   "method": "DELETE",
-  "url": "http://localhost:5000/persons/1/relationships/computers",
+  "url": "http://localhost:5000/users/1/relationships/computers",
   "httpVersion": "HTTP/1.1",
   "queryString": [
   ],
