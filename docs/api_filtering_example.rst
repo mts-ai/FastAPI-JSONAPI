@@ -1,23 +1,36 @@
 Filtering API example
 ======================
 
-.. literalinclude:: ../examples/api_complex_filtering.py
+.. literalinclude:: ../examples/custom_filter_example.py
     :language: python
 
 
-Check existing users
+
+Filter by jsonb contains
+
+.. code-block:: json
+
+    [
+      {
+        "name": "words",
+        "op": "jsonb_contains",
+        "val": {"location": "Moscow", "spam": "eggs"}
+      }
+    ]
 
 Request:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array
   :language: HTTP
 
 Response:
 
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users_result
+.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array_result
   :language: HTTP
 
 
+Other examples
+--------------
 
 Filter by word
 
@@ -62,27 +75,4 @@ Request:
 Response:
 
 .. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_words_in_array_result
-  :language: HTTP
-
-
-Filter by any word containing value
-
-.. code-block:: json
-
-    [
-      {
-        "name": "words",
-        "op": "ilike_in_str_array",
-        "val": "green"
-      }
-    ]
-
-Request:
-
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array
-  :language: HTTP
-
-Response:
-
-.. literalinclude:: ./http_snippets/snippets/api_filtering__get_users__filter_word_contains_in_array_result
   :language: HTTP
