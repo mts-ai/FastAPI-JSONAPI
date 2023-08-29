@@ -921,7 +921,7 @@ class TestCreateObjects:
         assert response_data["data"]["id"] == user_id
 
     async def test_create_id_by_client(self):
-        resource_type = "user"
+        resource_type = "user_custom_b"
         app = build_app_custom(
             model=User,
             schema=UserSchema,
@@ -1110,7 +1110,7 @@ class TestPatchObjects:
         class UserPatchSchemaWithExtraAttribute(UserPatchSchema):
             attr_which_is_not_presented_in_model: str
 
-        resource_type = "user"
+        resource_type = "user_custom_a"
         app = build_app_custom(
             model=User,
             schema=UserSchema,

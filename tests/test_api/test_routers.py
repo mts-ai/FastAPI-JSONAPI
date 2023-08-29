@@ -18,6 +18,7 @@ from fastapi_jsonapi.views.utils import (
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
 from tests.fixtures.views import SessionDependency, common_handler
+from tests.misc.utils import fake
 from tests.models import User
 from tests.schemas import (
     UserAttributesBaseSchema,
@@ -29,7 +30,7 @@ from tests.schemas import (
 pytestmark = mark.asyncio
 
 
-def build_app(detail_view) -> FastAPI:
+def build_app(detail_view, resource_type: str) -> FastAPI:
     app = FastAPI(
         title="FastAPI and SQLAlchemy",
         debug=True,
@@ -45,7 +46,7 @@ def build_app(detail_view) -> FastAPI:
         class_detail=detail_view,
         class_list=ListViewBaseGeneric,
         schema=UserSchema,
-        resource_type="user",
+        resource_type=resource_type,
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
         model=User,
@@ -93,7 +94,7 @@ async def test_dependency_handler_call():
             ),
         }
 
-    app = build_app(DependencyInjectionDetailView)
+    app = build_app(DependencyInjectionDetailView, resource_type="test_dependency_handler_call")
     async with AsyncClient(app=app, base_url="http://test") as client:
         res = await client.get("/users/1")
 
@@ -139,7 +140,8 @@ async def test_dependencies_as_permissions(user_1: User):
             ),
         }
 
-    app = build_app(DependencyInjectionDetailView)
+    resource_type = fake.word()
+    app = build_app(DependencyInjectionDetailView, resource_type=resource_type)
     async with AsyncClient(app=app, base_url="http://test") as client:
         res = await client.get(f"/users/{user_1.id}", headers={"X-AUTH": "not_admin"})
 
@@ -160,7 +162,7 @@ async def test_dependencies_as_permissions(user_1: User):
             "data": {
                 "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
                 "id": str(user_1.id),
-                "type": "user",
+                "type": resource_type,
             },
             "jsonapi": {"version": "1.0"},
             "meta": None,
@@ -192,7 +194,7 @@ async def test_manipulate_data_layer_kwargs(
             ),
         }
 
-    app = build_app(DependencyInjectionDetailView)
+    app = build_app(DependencyInjectionDetailView, resource_type="test_manipulate_data_layer_kwargs")
     async with AsyncClient(app=app, base_url="http://test") as client:
         res = await client.get(f"/users/{user_1.id}")
 
