@@ -69,7 +69,7 @@ class ViewBase:
             **dl_kwargs,
         )
 
-    async def _get_data_layer_for_detail(
+    async def get_data_layer_for_detail(
         self,
         extra_view_deps: Dict[str, Any],
     ) -> BaseDataLayer:
@@ -83,7 +83,7 @@ class ViewBase:
             **dl_kwargs,
         )
 
-    async def _get_data_layer_for_list(
+    async def get_data_layer_for_list(
         self,
         extra_view_deps: Dict[str, Any],
     ) -> BaseDataLayer:

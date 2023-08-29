@@ -23,7 +23,7 @@ class DetailViewBase(ViewBase):
         object_id: Union[int, str],
         **extra_view_deps,
     ):
-        dl: "BaseDataLayer" = await self._get_data_layer_for_detail(extra_view_deps)
+        dl: "BaseDataLayer" = await self.get_data_layer_for_detail(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: object_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
@@ -41,7 +41,7 @@ class DetailViewBase(ViewBase):
                 detail="obj_id and data.id should be same",
                 pointer="/data/id",
             )
-        dl: "BaseDataLayer" = await self._get_data_layer_for_detail(extra_view_deps)
+        dl: "BaseDataLayer" = await self.get_data_layer_for_detail(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
@@ -55,7 +55,7 @@ class DetailViewBase(ViewBase):
         obj_id: str,
         **extra_view_deps,
     ):
-        dl: "BaseDataLayer" = await self._get_data_layer_for_detail(extra_view_deps)
+        dl: "BaseDataLayer" = await self.get_data_layer_for_detail(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
