@@ -188,6 +188,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return:
         """
+        log.debug("Create object with data %s", data_create)
         # todo: pydantic v2 model_dump()
         model_kwargs = data_create.attributes.dict()
         model_kwargs = self._apply_client_generated_id(data_create, model_kwargs=model_kwargs)
