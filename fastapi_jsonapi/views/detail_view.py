@@ -1,5 +1,5 @@
 import logging
-from typing import TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar, Union
 
 from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.schema import (
@@ -7,7 +7,9 @@ from fastapi_jsonapi.schema import (
     JSONAPIResultDetailSchema,
 )
 from fastapi_jsonapi.views.view_base import ViewBase
-from fastapi_jsonapi.views.view_handlers import handle_endpoint_dependencies
+
+if TYPE_CHECKING:
+    from fastapi_jsonapi.data_layers.base import BaseDataLayer
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +23,7 @@ class DetailViewBase(ViewBase):
         object_id: Union[int, str],
         **extra_view_deps,
     ):
-        dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
-        dl = self._get_data_layer_for_detail(**dl_kwargs)
+        dl: "BaseDataLayer" = await self._get_data_layer_for_detail(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: object_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
@@ -40,8 +41,7 @@ class DetailViewBase(ViewBase):
                 detail="obj_id and data.id should be same",
                 pointer="/data/id",
             )
-        dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
-        dl = self._get_data_layer_for_detail(**dl_kwargs)
+        dl: "BaseDataLayer" = await self._get_data_layer_for_detail(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
@@ -55,8 +55,7 @@ class DetailViewBase(ViewBase):
         obj_id: str,
         **extra_view_deps,
     ):
-        dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
-        dl = self._get_data_layer_for_detail(**dl_kwargs)
+        dl: "BaseDataLayer" = await self._get_data_layer_for_detail(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)

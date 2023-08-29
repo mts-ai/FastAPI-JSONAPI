@@ -1,7 +1,10 @@
+import inspect
 import logging
 from contextvars import ContextVar
+from functools import partial
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -12,7 +15,9 @@ from typing import (
 )
 
 from fastapi import Request
+from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import ModelField
+from starlette.concurrency import run_in_threadpool
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
@@ -64,25 +69,83 @@ class ViewBase:
             **dl_kwargs,
         )
 
-    def _get_data_layer_for_detail(self, **kwargs: Any) -> BaseDataLayer:
+    async def _get_data_layer_for_detail(
+        self,
+        extra_view_deps: Dict[str, Any],
+    ) -> BaseDataLayer:
         """
-        :param kwargs: Any extra kwargs for the data layer
+        :param extra_view_deps:
         :return:
         """
+        dl_kwargs = await self.handle_endpoint_dependencies(extra_view_deps)
         return self._get_data_layer(
             schema=self.jsonapi.schema_detail,
-            **kwargs,
+            **dl_kwargs,
         )
 
-    def _get_data_layer_for_list(self, **kwargs: Any) -> BaseDataLayer:
+    async def _get_data_layer_for_list(
+        self,
+        extra_view_deps: Dict[str, Any],
+    ) -> BaseDataLayer:
         """
-        :param kwargs: Any extra kwargs for the data layer
+        :param extra_view_deps:
         :return:
         """
+        dl_kwargs = await self.handle_endpoint_dependencies(extra_view_deps)
         return self._get_data_layer(
             schema=self.jsonapi.schema_list,
-            **kwargs,
+            **dl_kwargs,
         )
+
+    async def _run_handler(
+        self,
+        handler: Callable,
+        dto: Optional[BaseModel] = None,
+    ):
+        handler = partial(handler, self, dto) if dto is not None else partial(handler, self)
+
+        if inspect.iscoroutinefunction(handler):
+            return await handler()
+
+        return await run_in_threadpool(handler)
+
+    async def _handle_config(
+        self,
+        method_config: HTTPMethodConfig,
+        extra_view_deps: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if method_config.handler is None:
+            return {}
+
+        if method_config.dependencies:
+            dto_class: Type[PydanticBaseModel] = method_config.dependencies
+            dto = dto_class(**extra_view_deps)
+            dl_kwargs = await self._run_handler(method_config.handler, dto)
+
+            return dl_kwargs
+
+        dl_kwargs = await self._run_handler(method_config.handler)
+
+        return dl_kwargs
+
+    async def handle_endpoint_dependencies(
+        self,
+        extra_view_deps: Dict[str, Any],
+    ) -> Dict:
+        """
+        :return dict: this is **kwargs for DataLayer.__init___
+        """
+        dl_kwargs = {}
+        if common_method_config := self.method_dependencies.get(HTTPMethod.ALL):
+            dl_kwargs.update(await self._handle_config(common_method_config, extra_view_deps))
+
+        if self.request.method not in HTTPMethod.names():
+            return dl_kwargs
+
+        if method_config := self.method_dependencies.get(HTTPMethod[self.request.method]):
+            dl_kwargs.update(await self._handle_config(method_config, extra_view_deps))
+
+        return dl_kwargs
 
     def _build_response(self, items_from_db: List[TypeModel], item_schema: Type[BaseModel]):
         return self.process_includes_for_db_items(

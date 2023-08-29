@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 from fastapi_jsonapi.schema import (
     BaseJSONAPIDataInSchema,
@@ -6,7 +7,9 @@ from fastapi_jsonapi.schema import (
     JSONAPIResultListSchema,
 )
 from fastapi_jsonapi.views.view_base import ViewBase
-from fastapi_jsonapi.views.view_handlers import handle_endpoint_dependencies
+
+if TYPE_CHECKING:
+    from fastapi_jsonapi.data_layers.base import BaseDataLayer
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +29,7 @@ class ListViewBase(ViewBase):
         return total_pages
 
     async def handle_get_resource_list(self, **extra_view_deps) -> JSONAPIResultListSchema:
-        dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
-        dl = self._get_data_layer_for_list(**dl_kwargs)
+        dl: "BaseDataLayer" = await self._get_data_layer_for_list(extra_view_deps)
         query_params = self.query_params
         count, items_from_db = await dl.get_collection(qs=query_params)
         total_pages = self._calculate_total_pages(count)
@@ -39,8 +41,7 @@ class ListViewBase(ViewBase):
         data_create: BaseJSONAPIDataInSchema,
         **extra_view_deps,
     ) -> JSONAPIResultDetailSchema:
-        dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
-        dl = self._get_data_layer_for_list(**dl_kwargs)
+        dl: "BaseDataLayer" = await self._get_data_layer_for_list(extra_view_deps)
         created_object = await dl.create_object(data_create=data_create.data, view_kwargs={})
         created_object_id = getattr(created_object, dl.get_object_id_field_name())
 
@@ -50,8 +51,7 @@ class ListViewBase(ViewBase):
         return self._build_detail_response(db_object)
 
     async def handle_delete_resource_list(self, **extra_view_deps) -> JSONAPIResultListSchema:
-        dl_kwargs = await handle_endpoint_dependencies(self, extra_view_deps)
-        dl = self._get_data_layer_for_list(**dl_kwargs)
+        dl: "BaseDataLayer" = await self._get_data_layer_for_list(extra_view_deps)
         query_params = self.query_params
         count, items_from_db = await dl.get_collection(qs=query_params)
         total_pages = self._calculate_total_pages(count)
