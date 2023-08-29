@@ -40,7 +40,12 @@ not_passed = object()
 
 
 class RoutersJSONAPI:
-    """API Router interface for JSON API endpoints in web-services."""
+    """
+    API Router interface for JSON API endpoints in web-services.
+    """
+
+    # xxx: store in app, not in routers!
+    all_jsonapi_routers: Dict[str, "RoutersJSONAPI"] = {}
 
     def __init__(
         self,
@@ -96,6 +101,11 @@ class RoutersJSONAPI:
         self.model: Type[TypeModel] = model
         self.schema_detail = schema
 
+        if self._type in self.all_jsonapi_routers:
+            msg = f"Resource type {self._type!r} already registered"
+            raise ValueError(msg)
+        self.all_jsonapi_routers[self._type] = self
+
         self.pagination_default_size: Optional[int] = pagination_default_size
         self.pagination_default_number: Optional[int] = pagination_default_number
         self.pagination_default_offset: Optional[int] = pagination_default_offset
@@ -107,8 +117,8 @@ class RoutersJSONAPI:
             schema_in_post=schema_in_post,
             schema_in_patch=schema_in_patch,
         )
-        self._schema_in_post = dto.schema_in_post
-        self._schema_in_patch = dto.schema_in_patch
+        self.schema_in_post = dto.schema_in_post
+        self.schema_in_patch = dto.schema_in_patch
         self.detail_response_schema = dto.detail_response_schema
         self.list_response_schema = dto.list_response_schema
 
@@ -394,6 +404,30 @@ class RoutersJSONAPI:
 
         return self._create_dependency_params_from_pydantic_model(method_config.dependencies)
 
+    def get_method_config_for_create(self):
+        method_config = self._update_method_config(
+            view=self.list_view_resource,
+            method=HTTPMethod.POST,
+        )
+        return method_config
+
+    def prepare_dependencies_handler_signature(
+        self,
+        custom_handler: Callable[..., Any],
+        method_config: HTTPMethodConfig,
+    ) -> Signature:
+        sig = signature(custom_handler)
+
+        additional_dependency_params = []
+        if method_config.dependencies is not None:
+            additional_dependency_params = self._create_dependency_params_from_pydantic_model(
+                model_class=method_config.dependencies,
+            )
+
+        params, tail_params = self._get_separated_params(sig)
+
+        return sig.replace(parameters=params + list(additional_dependency_params) + tail_params)
+
     def _create_get_resource_list_view(self):
         """
         Create wrapper for GET list (get objects list)
@@ -425,7 +459,7 @@ class RoutersJSONAPI:
 
         :return:
         """
-        schema_in = self._schema_in_post
+        schema_in = self.schema_in_post
 
         async def wrapper(request: Request, data_create: schema_in, **extra_view_deps):
             resource = self.list_view_resource(
@@ -515,7 +549,7 @@ class RoutersJSONAPI:
 
         :return:
         """
-        schema_in = self._schema_in_patch
+        schema_in = self.schema_in_patch
 
         async def wrapper(
             request: Request,

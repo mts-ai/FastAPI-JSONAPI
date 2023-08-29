@@ -20,6 +20,7 @@ from examples.api_for_sqlalchemy.models import (
     UserBio,
 )
 from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi.atomic import AtomicOperations
 
 from .api.views_base import DetailViewBase, ListViewBase
 from .models.schemas import (
@@ -134,5 +135,8 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         schema_in_post=ComputerInSchema,
     )
 
+    atomic = AtomicOperations()
+
     app.include_router(router, prefix="")
+    app.include_router(atomic.router, prefix="")
     return tags
