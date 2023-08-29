@@ -43,7 +43,7 @@ class ListViewBase(ViewBase):
     ) -> JSONAPIResultDetailSchema:
         dl: "BaseDataLayer" = await self.get_data_layer_for_list(extra_view_deps)
         created_object = await dl.create_object(data_create=data_create.data, view_kwargs={})
-        created_object_id = getattr(created_object, dl.get_object_id_field_name())
+        created_object_id = dl.get_object_id(created_object)
 
         view_kwargs = {dl.url_id_field: created_object_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)

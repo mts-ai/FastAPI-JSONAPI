@@ -90,6 +90,9 @@ class BaseDataLayer:
             # TODO: any custom exception type?
             raise Exception(msg)
 
+    def get_object_id(self, obj: TypeModel):
+        return getattr(obj, self.get_object_id_field_name())
+
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """
         Retrieve an object
