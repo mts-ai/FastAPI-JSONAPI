@@ -1,9 +1,7 @@
 from typing import List, Literal, Optional, Union
 
-from pydantic import Field, root_validator
+from pydantic import BaseModel, Field, root_validator
 from starlette.datastructures import URLPath
-
-from fastapi_jsonapi.schema_base import BaseModel
 
 
 class OperationRelationshipSchema(BaseModel):
