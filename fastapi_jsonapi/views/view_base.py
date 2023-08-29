@@ -69,6 +69,12 @@ class ViewBase:
             **dl_kwargs,
         )
 
+    async def get_data_layer(
+        self,
+        extra_view_deps: Dict[str, Any],
+    ) -> BaseDataLayer:
+        raise NotImplementedError
+
     async def get_data_layer_for_detail(
         self,
         extra_view_deps: Dict[str, Any],
