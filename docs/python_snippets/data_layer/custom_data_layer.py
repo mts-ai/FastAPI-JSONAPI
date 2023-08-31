@@ -25,7 +25,7 @@ class UserDetailView(DetailViewBase):
 
 
 class UserListView(ListViewBase):
-    data_layer_cls = MyCustomDataLayer
+    data_layer_cls = MyCustomSqlaDataLayer
 
 
 app = FastAPI()
