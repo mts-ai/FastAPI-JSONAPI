@@ -132,6 +132,7 @@ def add_routers(app_plain: FastAPI):
         schema_in_post=ChildInSchema,
         model=Child,
     )
+
     RoutersJSONAPI(
         router=router,
         path="/computers",

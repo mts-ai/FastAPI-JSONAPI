@@ -63,6 +63,13 @@ class BaseDataLayer:
         self.id_name_field = id_name_field
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
+        self.is_atomic = False
+
+    async def atomic_start(self, previous_dl: Optional["BaseDataLayer"] = None):
+        self.is_atomic = True
+
+    async def atomic_end(self, success: bool = True):
+        raise NotImplementedError
 
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """

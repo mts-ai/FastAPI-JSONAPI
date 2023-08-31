@@ -3,13 +3,14 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.exc import DBAPIError, NoResultFound
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import DBAPIError, IntegrityError, NoResultFound
+from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
+from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
 from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
@@ -86,6 +87,30 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.eagerload_includes_ = eagerload_includes
         self._query = query
         self.auto_convert_id_to_column_type = auto_convert_id_to_column_type
+        self.transaction: Optional[AsyncSessionTransaction] = None
+
+    async def atomic_start(self, previous_dl: Optional["SqlalchemyDataLayer"] = None):
+        self.is_atomic = True
+        if previous_dl:
+            self.session = previous_dl.session
+            if previous_dl.transaction:
+                self.transaction = previous_dl.transaction
+                return
+
+        self.transaction = self.session.begin()
+        await self.transaction.start()
+
+    async def atomic_end(self, success: bool = True):
+        if success:
+            await self.transaction.commit()
+        else:
+            await self.transaction.rollback()
+
+    async def save(self):
+        if self.is_atomic:
+            await self.session.flush()
+        else:
+            await self.session.commit()
 
     def prepare_id_value(self, col: InstrumentedAttribute, value: Any) -> Any:
         """
@@ -199,7 +224,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         self.session.add(obj)
         try:
-            await self.session.commit()
+            await self.save()
+        except IntegrityError:
+            log.exception("Could not create object with data create %s", data_create)
+            msg = "Object creation error"
+            raise BadRequest(msg, pointer="/data")
         except DBAPIError:
             log.exception("Could not create object with data create %s", data_create)
             msg = "Object creation error"
@@ -331,7 +360,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 setattr(obj, field_name, new_value)
                 has_updated = True
         try:
-            await self.session.commit()
+            await self.save()
         except DBAPIError as e:
             await self.session.rollback()
 
@@ -357,7 +386,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         await self.before_delete_object(obj, view_kwargs)
         try:
             await self.session.delete(obj)
-            await self.session.commit()
+            await self.save()
         except DBAPIError as e:
             await self.session.rollback()
 
@@ -377,7 +406,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         try:
             await self.session.execute(query)
-            await self.session.commit()
+            await self.save()
         except DBAPIError as e:
             await self.session.rollback()
             raise InternalServerError(

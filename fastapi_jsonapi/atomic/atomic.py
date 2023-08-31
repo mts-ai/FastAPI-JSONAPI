@@ -20,12 +20,12 @@ from fastapi_jsonapi.atomic.schemas import (
     OperationRelationshipSchema,
 )
 from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
+from fastapi_jsonapi.views.list_view import ListViewBase
 from fastapi_jsonapi.views.utils import HTTPMethodConfig
 from fastapi_jsonapi.views.view_base import ViewBase
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
-    from fastapi_jsonapi.views.list_view import ListViewBase
 
 
 @dataclass
@@ -105,15 +105,18 @@ class AtomicOperations:
 
         results = []
 
+        previous_dl: Optional["BaseDataLayer"] = None
         for operation in prepared_operations:
             dl = operation.data_layer
+            await dl.atomic_start(previous_dl=previous_dl)
+            previous_dl = dl
             if operation.action == "add":
                 data = operation.jsonapi.schema_in_post(data=operation.data)
                 created_object = await dl.create_object(
                     data_create=data.data,
                     view_kwargs={},
                 )
-                # assert isinstance(operation.view, ListViewBase)
+                assert isinstance(operation.view, ListViewBase)
                 view: "ListViewBase" = operation.view
                 response = await view.response_for_created_object(
                     dl=operation.data_layer,
@@ -128,6 +131,9 @@ class AtomicOperations:
             else:
                 msg = f"unknown action {operation.action!r}"
                 raise ValueError(msg)
+
+        if previous_dl:
+            await previous_dl.atomic_end(success=True)
 
         return {"atomic:results": results}
 
