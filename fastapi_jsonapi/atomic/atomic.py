@@ -112,16 +112,10 @@ class AtomicOperations:
             previous_dl = dl
             if operation.action == "add":
                 data = operation.jsonapi.schema_in_post(data=operation.data)
-                created_object = await dl.create_object(
-                    data_create=data.data,
-                    view_kwargs={},
-                )
                 assert isinstance(operation.view, ListViewBase)
                 view: "ListViewBase" = operation.view
-                response = await view.response_for_created_object(
-                    dl=operation.data_layer,
-                    created_object=created_object,
-                )
+                response = await view.process_create_object(dl=operation.data_layer, data_create=data)
+                # response.data.id
                 results.append({"data": response.data})
             elif operation.action == "update":
                 # TODO

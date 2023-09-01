@@ -9,8 +9,8 @@ from sqlalchemy.sql.functions import count
 from starlette import status
 
 from tests.misc.utils import fake
-from tests.models import User
-from tests.schemas import UserAttributesBaseSchema
+from tests.models import User, UserBio
+from tests.schemas import UserAttributesBaseSchema, UserBioBaseSchema
 
 pytestmark = mark.asyncio
 
@@ -198,3 +198,55 @@ class TestAtomicCreateObjects:
         )
         result: Result = await async_session.execute(stmt)
         assert result.scalar_one() == 0
+
+    async def test_create_bio_with_relationship_to_user_to_one(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+        user_1: User,
+    ):
+        user_bio = UserBioBaseSchema(
+            birth_city=fake.city(),
+            favourite_movies=fake.sentence(),
+        )
+        stmt_bio = select(UserBio).where(UserBio.user_id == user_1.id)
+        res: Result = await async_session.execute(stmt_bio)
+        assert res.scalar_one_or_none() is None, "user has to be w/o bio"
+
+        data_atomic_request = {
+            "atomic:operations": [
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user_bio",
+                        "attributes": user_bio.dict(),
+                        "relationships": {
+                            "user": {
+                                "data": {
+                                    "id": user_1.id,
+                                    "type": "user",
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        resp_data = response.json()
+        assert resp_data
+        results = resp_data["atomic:results"]
+        assert len(results) == 1, results
+        result_bio_data = results[0]
+        res: Result = await async_session.execute(stmt_bio)
+        user_bio_created: UserBio = res.scalar_one()
+        assert user_bio == UserBioBaseSchema.from_orm(user_bio_created)
+        assert result_bio_data == {
+            "data": {
+                "attributes": user_bio.dict(),
+                "type": "user_bio",
+                "id": str(user_bio_created.id),
+            },
+            "meta": None,
+        }

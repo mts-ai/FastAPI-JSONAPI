@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict
 
-from fastapi_jsonapi.data_typing import TypeModel
 from fastapi_jsonapi.schema import (
     BaseJSONAPIDataInSchema,
     JSONAPIResultDetailSchema,
@@ -49,10 +48,11 @@ class ListViewBase(ViewBase):
         **extra_view_deps,
     ) -> JSONAPIResultDetailSchema:
         dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
-        created_object = await dl.create_object(data_create=data_create.data, view_kwargs={})
-        return await self.response_for_created_object(dl=dl, created_object=created_object)
+        return await self.process_create_object(dl=dl, data_create=data_create)
 
-    async def response_for_created_object(self, dl: "BaseDataLayer", created_object: TypeModel):
+    async def process_create_object(self, dl: "BaseDataLayer", data_create: BaseJSONAPIDataInSchema):
+        created_object = await dl.create_object(data_create=data_create.data, view_kwargs={})
+
         created_object_id = dl.get_object_id(created_object)
 
         view_kwargs = {dl.url_id_field: created_object_id}
