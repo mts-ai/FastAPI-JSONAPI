@@ -48,13 +48,20 @@ class DetailViewBase(ViewBase):
         data_update: BaseJSONAPIItemInSchema,
         **extra_view_deps,
     ) -> JSONAPIResultDetailSchema:
+        dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
+        return await self.process_update_object(dl=dl, obj_id=obj_id, data_update=data_update)
+
+    async def process_update_object(
+        self,
+        dl: "BaseDataLayer",
+        obj_id: str,
+        data_update: BaseJSONAPIItemInSchema,
+    ):
         if obj_id != data_update.id:
             raise BadRequest(
                 detail="obj_id and data.id should be same",
                 pointer="/data/id",
             )
-        dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
-
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
 

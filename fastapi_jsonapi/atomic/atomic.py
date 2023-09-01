@@ -20,6 +20,7 @@ from fastapi_jsonapi.atomic.schemas import (
     OperationRelationshipSchema,
 )
 from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
+from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.list_view import ListViewBase
 from fastapi_jsonapi.views.utils import HTTPMethodConfig
 from fastapi_jsonapi.views.view_base import ViewBase
@@ -105,6 +106,8 @@ class AtomicOperations:
 
         results = []
 
+        # TODO: try/except, catch schema ValidationError
+
         previous_dl: Optional["BaseDataLayer"] = None
         for operation in prepared_operations:
             dl = operation.data_layer
@@ -118,8 +121,16 @@ class AtomicOperations:
                 # response.data.id
                 results.append({"data": response.data})
             elif operation.action == "update":
-                # TODO
                 data = operation.jsonapi.schema_in_patch(data=operation.data)
+                assert isinstance(operation.view, DetailViewBase)
+                view: "DetailViewBase" = operation.view
+                response = await view.process_update_object(
+                    dl=dl,
+                    obj_id=data.data.id,
+                    data_update=data.data,
+                )
+                # response.data.id
+                results.append({"data": response.data})
             elif operation.action == "remove":
                 pass
             else:
