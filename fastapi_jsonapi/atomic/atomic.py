@@ -132,7 +132,13 @@ class AtomicOperations:
                 # response.data.id
                 results.append({"data": response.data})
             elif operation.action == "remove":
-                pass
+                assert isinstance(operation.view, DetailViewBase)
+                view: "DetailViewBase" = operation.view
+                response = await view.process_delete_object(
+                    dl=dl,
+                    obj_id=operation.data.id,
+                )
+                results.append({"data": response.data})
             else:
                 msg = f"unknown action {operation.action!r}"
                 raise ValueError(msg)

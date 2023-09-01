@@ -75,7 +75,13 @@ class DetailViewBase(ViewBase):
         **extra_view_deps,
     ):
         dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
+        return await self.process_delete_object(dl=dl, obj_id=obj_id)
 
+    async def process_delete_object(
+        self,
+        dl: "BaseDataLayer",
+        obj_id: str,
+    ):
         view_kwargs = {dl.url_id_field: obj_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
 

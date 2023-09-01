@@ -1,4 +1,4 @@
-from typing import List
+from typing import Awaitable, Callable, List
 
 from pytest import fixture  # noqa
 from pytest_asyncio import fixture as async_fixture
@@ -171,7 +171,7 @@ def user_1_post_for_comments(user_1_posts: List[Post]) -> Post:
     return user_1_posts[0]
 
 
-@async_fixture
+@async_fixture()
 async def computer_1(async_session: AsyncSession):
     computer = Computer(name="Halo")
 
@@ -185,7 +185,7 @@ async def computer_1(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture
+@async_fixture()
 async def computer_2(async_session: AsyncSession):
     computer = Computer(name="Nestor")
 
@@ -197,6 +197,18 @@ async def computer_2(async_session: AsyncSession):
 
     await async_session.delete(computer)
     await async_session.commit()
+
+
+@async_fixture()
+async def computer_factory(async_session: AsyncSession) -> Callable[[str | None], Awaitable[Computer]]:
+    async def factory(name: str | None = None) -> Computer:
+        computer = Computer(name=name or fake.word())
+        async_session.add(computer)
+        await async_session.commit()
+        await async_session.refresh(computer)
+        return computer
+
+    return factory
 
 
 @async_fixture()
