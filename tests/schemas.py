@@ -262,15 +262,18 @@ class ChildSchema(ChildInSchema):
     id: int
 
 
-class ComputerBaseSchema(BaseModel):
-    """Computer base schema."""
-
+class ComputerAttributesBaseSchema(BaseModel):
     class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
     name: str
+
+
+class ComputerBaseSchema(ComputerAttributesBaseSchema):
+    """Computer base schema."""
+
     user: Optional["UserSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="user",
