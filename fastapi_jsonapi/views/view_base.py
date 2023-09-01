@@ -66,6 +66,7 @@ class ViewBase:
         return self.data_layer_cls(
             schema=schema,
             model=self.jsonapi.model,
+            type_=self.jsonapi.type_,
             **dl_kwargs,
         )
 

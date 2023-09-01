@@ -95,16 +95,16 @@ class RoutersJSONAPI:
         self.list_views = None
         self.detail_view_resource: Type["DetailViewBase"] = class_detail
         self.list_view_resource: Type["ListViewBase"] = class_list
-        self._type: str = resource_type
+        self.type_: str = resource_type
         self._schema: Type[BaseModel] = schema
         self.schema_list: Type[BaseModel] = schema
         self.model: Type[TypeModel] = model
         self.schema_detail = schema
 
-        if self._type in self.all_jsonapi_routers:
-            msg = f"Resource type {self._type!r} already registered"
+        if self.type_ in self.all_jsonapi_routers:
+            msg = f"Resource type {self.type_!r} already registered"
             raise ValueError(msg)
-        self.all_jsonapi_routers[self._type] = self
+        self.all_jsonapi_routers[self.type_] = self
 
         self.pagination_default_size: Optional[int] = pagination_default_size
         self.pagination_default_number: Optional[int] = pagination_default_number
@@ -150,7 +150,7 @@ class RoutersJSONAPI:
         :param kind: list / detail
         :return:
         """
-        return f"{action}_{self._type}_{kind}"
+        return f"{action}_{self.type_}_{kind}"
 
     def _register_get_resource_list(self, path: str):
         list_response_example = {
@@ -161,7 +161,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=list_response_example | self.default_error_responses,
             methods=["GET"],
-            summary=f"Get list of `{self._type}` objects",
+            summary=f"Get list of `{self.type_}` objects",
             endpoint=self._create_get_resource_list_view(),
             name=self.get_endpoint_name("get", "list"),
         )
@@ -175,7 +175,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=create_resource_response_example | self.default_error_responses,
             methods=["POST"],
-            summary=f"Create object `{self._type}`",
+            summary=f"Create object `{self.type_}`",
             status_code=status.HTTP_201_CREATED,
             endpoint=self._create_post_resource_list_view(),
             name=self.get_endpoint_name("create", "list"),
@@ -190,7 +190,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["DELETE"],
-            summary=f"Delete objects `{self._type}` by filters",
+            summary=f"Delete objects `{self.type_}` by filters",
             endpoint=self._create_delete_resource_list_view(),
             name=self.get_endpoint_name("delete", "list"),
         )
@@ -206,7 +206,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["GET"],
-            summary=f"Get object `{self._type}` by id",
+            summary=f"Get object `{self.type_}` by id",
             endpoint=self._create_get_resource_detail_view(),
             name=self.get_endpoint_name("get", "detail"),
         )
@@ -222,7 +222,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["PATCH"],
-            summary=f"Patch object `{self._type}` by id",
+            summary=f"Patch object `{self.type_}` by id",
             endpoint=self._create_patch_resource_detail_view(),
             name=self.get_endpoint_name("update", "detail"),
         )
@@ -238,7 +238,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["DELETE"],
-            summary=f"Delete object `{self._type}` by id",
+            summary=f"Delete object `{self.type_}` by id",
             endpoint=self._create_delete_resource_detail_view(),
             name=self.get_endpoint_name("delete", "detail"),
         )
