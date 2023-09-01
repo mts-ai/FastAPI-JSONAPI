@@ -2,6 +2,7 @@
 
 from http import HTTPStatus
 from typing import (
+    Any,
     List,
     Optional,
     Union,
@@ -26,6 +27,7 @@ class HTTPException(FastApiHttpException):
         title: Optional[str] = None,
         status_code: Optional[int] = None,
         errors: Optional[List["HTTPException"]] = None,
+        meta: Optional[dict[str, Any]] = None,
     ):
         """
         Init base HTTP exception.
@@ -36,6 +38,7 @@ class HTTPException(FastApiHttpException):
         :param status_code: the HTTP status code applicable to this problem
         :param title: a short, human-readable summary of the problem
         :param errors: may be passed over other arguments as list of `HTTPException` objects
+        :param meta: default meta
         """
         if status_code is not None:
             self.status_code = status_code
@@ -44,7 +47,7 @@ class HTTPException(FastApiHttpException):
             self.title = title
 
         self.source = None
-        self.meta = None
+        self.meta = meta
         self._detail = detail
 
         parameter = parameter or self.parameter

@@ -361,15 +361,30 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 has_updated = True
         try:
             await self.save()
+        except IntegrityError:
+            log.exception("Could not update object with data update %s", data_update)
+            msg = "Object update error"
+            raise BadRequest(
+                msg,
+                pointer="/data",
+                meta={
+                    "type": self.type_,
+                    "id": view_kwargs.get(self.url_id_field),
+                },
+            )
         except DBAPIError as e:
             await self.session.rollback()
 
-            err_message = f"Got an error {e.__class__.__name__} during update data in DB"
+            err_message = f"Got an error {e.__class__.__name__} during updating obj {view_kwargs} data in DB"
             log.error(err_message, exc_info=e)
 
             raise InternalServerError(
                 detail=err_message,
                 pointer="/data",
+                meta={
+                    "type": self.type_,
+                    "id": view_kwargs.get(self.url_id_field),
+                },
             )
 
         await self.after_update_object(obj=obj, model_kwargs=new_data, view_kwargs=view_kwargs)
@@ -390,12 +405,16 @@ class SqlalchemyDataLayer(BaseDataLayer):
         except DBAPIError as e:
             await self.session.rollback()
 
-            err_message = f"Got an error {e.__class__.__name__} during update data in DB"
+            err_message = f"Got an error {e.__class__.__name__} deleting object {view_kwargs}"
             log.error(err_message, exc_info=e)
 
             raise InternalServerError(
                 detail=err_message,
                 pointer="/data",
+                meta={
+                    "type": self.type_,
+                    "id": view_kwargs.get(self.url_id_field),
+                },
             )
 
         await self.after_delete_object(obj, view_kwargs)

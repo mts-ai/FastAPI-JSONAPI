@@ -1304,14 +1304,18 @@ class TestPatchObjectRelationshipsToOne:
         url = app.url_path_for("get_user_bio_detail", obj_id=user_1_bio.id)
         url = f"{url}?include=user"
         res = await client.patch(url, json=patch_user_bio_body)
-        assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
+        assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
         assert res.json() == {
             "errors": [
                 {
-                    "detail": "Got an error IntegrityError during update data in DB",
+                    "detail": "Object update error",
                     "source": {"pointer": "/data"},
-                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    "title": "Internal Server Error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "title": "Bad Request",
+                    "meta": {
+                        "id": str(user_1_bio.id),
+                        "type": "user_bio",
+                    },
                 },
             ],
         }
