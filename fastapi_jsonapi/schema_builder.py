@@ -135,6 +135,7 @@ class SchemaBuilder:
         schemas_in_patch = self.build_schema_in(
             schema_in=schema_in_patch,
             schema_name_suffix=schema_name_in_patch_suffix,
+            id_field_required=True,
         )
 
         return BuiltSchemasDTO(
@@ -149,6 +150,7 @@ class SchemaBuilder:
         schema_in: Type[BaseModel],
         schema_name_suffix: str = "",
         non_optional_relationships: bool = False,
+        id_field_required: bool = False,
     ) -> Type[BaseJSONAPIDataInSchema]:
         base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
@@ -167,6 +169,7 @@ class SchemaBuilder:
             includes=not_passed,
             model_base=BaseJSONAPIItemInSchema,
             relationships_required=dto.has_required_relationship,
+            id_field_required=id_field_required,
         )
 
         wrapped_object_jsonapi_schema = pydantic.create_model(
@@ -259,6 +262,8 @@ class SchemaBuilder:
                 if not field.field_info.extra.get("client_can_set_id"):
                     continue
 
+                # todo: support for union types?
+                #  support custom cast func
                 resource_id_field = (str, Field(**field.field_info.extra), field.outer_type_)
             else:
                 attributes_schema_fields[name] = (field.outer_type_, field.field_info)
@@ -348,6 +353,7 @@ class SchemaBuilder:
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
         use_schema_cache: bool = True,
         relationships_required: bool = False,
+        id_field_required: bool = False,
     ) -> Type[JSONAPIObjectSchemaType]:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
@@ -362,7 +368,7 @@ class SchemaBuilder:
 
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
-            "id": (str, Field(None, **id_field_kw)),
+            "id": (str, Field(... if id_field_required else None, **id_field_kw)),
         }
         if includes:
             object_jsonapi_schema_fields.update(
