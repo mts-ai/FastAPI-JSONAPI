@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict
 
 from fastapi_jsonapi.schema import (
-    BaseJSONAPIDataInSchema,
+    BaseJSONAPIItemInSchema,
     JSONAPIResultDetailSchema,
     JSONAPIResultListSchema,
 )
@@ -44,14 +44,14 @@ class ListViewBase(ViewBase):
 
     async def handle_post_resource_list(
         self,
-        data_create: BaseJSONAPIDataInSchema,
+        data_create: BaseJSONAPIItemInSchema,
         **extra_view_deps,
     ) -> JSONAPIResultDetailSchema:
         dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
         return await self.process_create_object(dl=dl, data_create=data_create)
 
-    async def process_create_object(self, dl: "BaseDataLayer", data_create: BaseJSONAPIDataInSchema):
-        created_object = await dl.create_object(data_create=data_create.data, view_kwargs={})
+    async def process_create_object(self, dl: "BaseDataLayer", data_create: BaseJSONAPIItemInSchema):
+        created_object = await dl.create_object(data_create=data_create, view_kwargs={})
 
         created_object_id = dl.get_object_id(created_object)
 

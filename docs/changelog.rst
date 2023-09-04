@@ -9,6 +9,7 @@ Atomic Operations
 =================
 
 * Atomic Operations (see :ref:`example <atomic_operations>`, `JSON:API doc <https://jsonapi.org/ext/atomic/>`_)
+* Create view now accepts ``BaseJSONAPIItemInSchema`` as update view does
 
 Authors
 """""""

@@ -468,7 +468,7 @@ class RoutersJSONAPI:
             )
 
             response = await resource.handle_post_resource_list(
-                data_create=data_create,
+                data_create=data_create.data,
                 **extra_view_deps,
             )
             return response
