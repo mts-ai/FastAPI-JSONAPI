@@ -1,4 +1,7 @@
-from typing import List, Literal, Optional, Union
+from __future__ import annotations
+
+from enum import Enum
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field, root_validator
 from starlette.datastructures import URLPath
@@ -18,6 +21,19 @@ class OperationItemInSchema(BaseModel):
     id: Optional[str] = Field(default=None, description="Resource object ID")
     attributes: Optional[dict] = Field(None, description="Resource object attributes")
     relationships: Optional[dict] = Field(None, description="Resource object relationships")
+
+
+OperationDataType = Union[
+    # from biggest to smallest!
+    # any object creation
+    OperationItemInSchema,
+    # to-many relationship
+    List[OperationRelationshipSchema],
+    # to-one relationship
+    OperationRelationshipSchema,
+    # not required
+    None,
+]
 
 
 class AtomicOperationRef(BaseModel):
@@ -65,6 +81,12 @@ class AtomicOperationRef(BaseModel):
         raise ValueError(msg)
 
 
+class AtomicOperationAction(str, Enum):
+    add = "add"
+    update = "update"
+    remove = "remove"
+
+
 class AtomicOperation(BaseModel):
     """
     An operation object MUST contain the following member: op
@@ -79,7 +101,7 @@ class AtomicOperation(BaseModel):
     https://jsonapi.org/ext/atomic/#operation-objects
     """
 
-    op: Literal["add", "update", "remove"] = Field(
+    op: AtomicOperationAction = Field(
         default=...,
         description="an operation code, expressed as a string, that indicates the type of operation to perform.",
     )
@@ -89,17 +111,10 @@ class AtomicOperation(BaseModel):
         description="a string that contains a URI-reference that identifies the target of the operation.",
     )
 
-    data: Union[
-        # from biggest to smallest!
-        # any object creation
-        OperationItemInSchema,
-        # to-many relationship
-        List[OperationRelationshipSchema],
-        # to-one relationship
-        OperationRelationshipSchema,
-        # not required
-        None,
-    ] = Field(default=None, description="the operation’s “primary data”.")
+    data: OperationDataType = Field(
+        default=None,
+        description="the operation’s “primary data”.",
+    )
 
     meta: Optional[dict] = Field(
         default=None,

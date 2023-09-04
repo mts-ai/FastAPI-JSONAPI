@@ -17,6 +17,45 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 class TestAtomicMixedActions:
+    async def test_schema_validation_error(
+        self,
+        client: AsyncClient,
+        allowed_atomic_actions_list: list[str],
+        allowed_atomic_actions_as_string: str,
+    ):
+        operation_name = fake.word()
+        atomic_request_data = {
+            "atomic:operations": [
+                {
+                    "op": operation_name,
+                    "href": "/any",
+                    "data": {
+                        "type": "any",
+                        "attributes": {
+                            "any": "any",
+                        },
+                    },
+                },
+            ],
+        }
+        response = await client.post("/operations", json=atomic_request_data)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        response_data = response.json()
+
+        assert response_data == {
+            # TODO: jsonapi exception?
+            "detail": [
+                {
+                    "loc": ["body", "atomic:operations", 0, "op"],
+                    "msg": f"value is not a valid enumeration member; permitted: {allowed_atomic_actions_as_string}",
+                    "type": "type_error.enum",
+                    "ctx": {
+                        "enum_values": allowed_atomic_actions_list,
+                    },
+                },
+            ],
+        }
+
     async def test_create_and_update_atomic_success(
         self,
         client: AsyncClient,
