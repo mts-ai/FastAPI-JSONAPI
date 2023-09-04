@@ -7,6 +7,7 @@ from typing import (
     Literal,
     Optional,
     Type,
+    TypedDict,
     Union,
 )
 
@@ -48,15 +49,19 @@ class PreparedOperation:
     ] = None
 
 
-class AtomicOperations:
+#
+
+AtomicResponseDict = TypedDict("AtomicResponseDict", {"atomic:results": list[Any]})
+
+
+class AtomicViewHandler:
     def __init__(
         self,
-        url_path: str = "/operations",
-        router: Optional[APIRouter] = None,
+        request: Request,
+        operations_request: AtomicOperationRequest,
     ):
-        self.router = router or APIRouter(tags=["Atomic Operations"])
-        self.url_path = url_path
-        self._register_view()
+        self.request = request
+        self.operations_request = operations_request
 
     async def handle_view_dependencies(
         self,
@@ -76,21 +81,17 @@ class AtomicOperations:
         dependencies_result: Dict[str, Any] = await DependencyHelper(request=request).run(handle_dependencies)
         return dependencies_result
 
-    async def view_atomic(
-        self,
-        request: Request,
-        operations_request: AtomicOperationRequest,
-    ):
+    async def prepare_operations(self) -> List[PreparedOperation]:
         prepared_operations: List[PreparedOperation] = []
 
-        for operation in operations_request.operations:
+        for operation in self.operations_request.operations:
             jsonapi = RoutersJSONAPI.all_jsonapi_routers[operation.data.type]
             view_cls: Type["ViewBase"] = jsonapi.detail_view_resource
             if operation.op == "add":
                 view_cls = jsonapi.list_view_resource
-            view = view_cls(request=request, jsonapi=jsonapi)
+            view = view_cls(request=self.request, jsonapi=jsonapi)
             dependencies_result: Dict[str, Any] = await self.handle_view_dependencies(
-                request=request,
+                request=self.request,
                 jsonapi=jsonapi,
             )
             dl: "BaseDataLayer" = await view.get_data_layer(dependencies_result)
@@ -104,6 +105,10 @@ class AtomicOperations:
             )
             prepared_operations.append(one_operation)
 
+        return prepared_operations
+
+    async def handle(self) -> Union[AtomicResponseDict, AtomicResultResponse]:
+        prepared_operations = await self.prepare_operations()
         results = []
 
         # TODO: try/except, catch schema ValidationError
@@ -114,20 +119,20 @@ class AtomicOperations:
             await dl.atomic_start(previous_dl=previous_dl)
             previous_dl = dl
             if operation.action == "add":
-                data = operation.jsonapi.schema_in_post(data=operation.data)
+                data_in = operation.jsonapi.schema_in_post(data=operation.data)
                 assert isinstance(operation.view, ListViewBase)
                 view: "ListViewBase" = operation.view
-                response = await view.process_create_object(dl=operation.data_layer, data_create=data)
+                response = await view.process_create_object(dl=operation.data_layer, data_create=data_in.data)
                 # response.data.id
                 results.append({"data": response.data})
             elif operation.action == "update":
-                data = operation.jsonapi.schema_in_patch(data=operation.data)
+                data_in = operation.jsonapi.schema_in_patch(data=operation.data)
                 assert isinstance(operation.view, DetailViewBase)
                 view: "DetailViewBase" = operation.view
                 response = await view.process_update_object(
                     dl=dl,
-                    obj_id=data.data.id,
-                    data_update=data.data,
+                    obj_id=data_in.data.id,
+                    data_update=data_in.data,
                 )
                 # response.data.id
                 results.append({"data": response.data})
@@ -147,6 +152,30 @@ class AtomicOperations:
             await previous_dl.atomic_end(success=True)
 
         return {"atomic:results": results}
+
+
+class AtomicOperations:
+    atomic_handler: Type[AtomicViewHandler] = AtomicViewHandler
+
+    def __init__(
+        self,
+        url_path: str = "/operations",
+        router: Optional[APIRouter] = None,
+    ):
+        self.router = router or APIRouter(tags=["Atomic Operations"])
+        self.url_path = url_path
+        self._register_view()
+
+    async def view_atomic(
+        self,
+        request: Request,
+        operations_request: AtomicOperationRequest,
+    ):
+        atomic_handler = self.atomic_handler(
+            request=request,
+            operations_request=operations_request,
+        )
+        return await atomic_handler.handle()
 
     def _register_view(self):
         self.router.add_api_route(
