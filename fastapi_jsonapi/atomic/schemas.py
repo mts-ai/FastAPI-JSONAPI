@@ -121,8 +121,8 @@ class AtomicOperation(BaseModel):
         description="a meta object that contains non-standard meta-information about the operation",
     )
 
-    @root_validator
-    def validate_operation(cls, values: dict):
+    @classmethod
+    def _validate_one_of_ref_or_href(cls, values: dict):
         """
         An operation object MAY contain either of the following members,
         but not both, to specify the target of the operation: (ref, href)
@@ -147,6 +147,32 @@ class AtomicOperation(BaseModel):
         )
         # TODO: pydantic V2
         raise ValueError(msg)
+
+    @root_validator
+    def validate_operation(cls, values: dict):
+        """
+        :param values:
+        :return:
+        """
+        cls._validate_one_of_ref_or_href(values=values)
+        op = values.get("op")
+        ref: Optional[AtomicOperationRef] = values.get("ref")
+        if op == AtomicOperationAction.remove:
+            if not ref:
+                msg = f"ref should be present for action {op.value!r}"
+                raise ValueError(msg)
+            # when updating / removing item, ref [l]id has to be present
+            if not (ref.id or ref.lid):
+                msg = f"id or local id has to be present for action {op.value!r}"
+                raise ValueError(msg)
+
+        data: OperationDataType = values.get("data")
+        operation_type = ref and ref.type or data and data.type
+        if not operation_type:
+            msg = "Operation has to be in ref or in data"
+            raise ValueError(msg)
+
+        return values
 
 
 class AtomicOperationRequest(BaseModel):

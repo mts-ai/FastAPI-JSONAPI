@@ -212,7 +212,7 @@ class RoutersJSONAPI:
         )
 
     def _register_patch_resource_detail(self, path: str):
-        detail_response_example = {
+        update_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
         }
         self._router.add_api_route(
@@ -220,7 +220,7 @@ class RoutersJSONAPI:
             # TODO: trailing slash (optional)
             path=path + "/{obj_id}",
             tags=self._tags,
-            responses=detail_response_example | self.default_error_responses,
+            responses=update_response_example | self.default_error_responses,
             methods=["PATCH"],
             summary=f"Patch object `{self.type_}` by id",
             endpoint=self._create_patch_resource_detail_view(),
@@ -228,19 +228,23 @@ class RoutersJSONAPI:
         )
 
     def _register_delete_resource_detail(self, path: str):
-        detail_response_example = {
-            status.HTTP_200_OK: {"model": self.detail_response_schema},
+        delete_response_example = {
+            status.HTTP_204_NO_CONTENT: {
+                "description": "If a server is able to delete the resource,"
+                " the server MUST return a result with no data",
+            },
         }
         self._router.add_api_route(
             # TODO: variable path param name (set default name on DetailView class)
             # TODO: trailing slash (optional)
             path=path + "/{obj_id}",
             tags=self._tags,
-            responses=detail_response_example | self.default_error_responses,
+            responses=delete_response_example | self.default_error_responses,
             methods=["DELETE"],
             summary=f"Delete object `{self.type_}` by id",
             endpoint=self._create_delete_resource_detail_view(),
             name=self.get_endpoint_name("delete", "detail"),
+            status_code=status.HTTP_204_NO_CONTENT,
         )
 
     def _create_pagination_query_params(self) -> List[Parameter]:

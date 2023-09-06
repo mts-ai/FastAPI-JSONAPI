@@ -54,7 +54,9 @@ class AtomicViewHandler:
         prepared_operations: List[OperationBase] = []
 
         for operation in self.operations_request.operations:
-            jsonapi = RoutersJSONAPI.all_jsonapi_routers[operation.data.type]
+            operation_type = operation.ref and operation.ref.type or operation.data and operation.data.type
+            assert operation_type
+            jsonapi = RoutersJSONAPI.all_jsonapi_routers[operation_type]
 
             dependencies_result: Dict[str, Any] = await self.handle_view_dependencies(
                 jsonapi=jsonapi,
@@ -63,6 +65,7 @@ class AtomicViewHandler:
                 action=operation.op,
                 request=self.request,
                 jsonapi=jsonapi,
+                ref=operation.ref,
                 data=operation.data,
                 data_layer_view_dependencies=dependencies_result,
             )
@@ -70,7 +73,7 @@ class AtomicViewHandler:
 
         return prepared_operations
 
-    async def handle(self) -> Union[AtomicResponseDict, AtomicResultResponse]:
+    async def handle(self) -> Union[AtomicResponseDict, AtomicResultResponse, None]:
         prepared_operations = await self.prepare_operations()
         results = []
 
@@ -84,9 +87,16 @@ class AtomicViewHandler:
             previous_dl = dl
             response = await operation.handle(dl=dl)
             # response.data.id
-            results.append({"data": response.data})
+            if response:
+                results.append({"data": response.data})
 
         if previous_dl:
             await previous_dl.atomic_end(success=success)
 
-        return {"atomic:results": results}
+        if results:
+            return {"atomic:results": results}
+
+        """
+        if all results are empty,
+        the server MAY respond with 204 No Content and no document.
+        """

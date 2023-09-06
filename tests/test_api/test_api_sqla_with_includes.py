@@ -32,7 +32,7 @@ from tests.schemas import (
     PostCommentAttributesBaseSchema,
     SelfRelationshipSchema,
     UserAttributesBaseSchema,
-    UserBioBaseSchema,
+    UserBioAttributesBaseSchema,
     UserInSchemaAllowIdOnPost,
     UserPatchSchema,
     UserSchema,
@@ -689,7 +689,7 @@ class TestCreateObjects:
     ):
         create_user_bio_body = {
             "data": {
-                "attributes": UserBioBaseSchema(
+                "attributes": UserBioAttributesBaseSchema(
                     birth_city=fake.word(),
                     favourite_movies=fake.sentence(),
                     keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
@@ -1289,7 +1289,7 @@ class TestPatchObjectRelationshipsToOne:
         patch_user_bio_body = {
             "data": {
                 "id": user_1_bio.id,
-                "attributes": UserBioBaseSchema.from_orm(user_1_bio).dict(),
+                "attributes": UserBioAttributesBaseSchema.from_orm(user_1_bio).dict(),
                 "relationships": {
                     "user": {
                         "data": {
@@ -1579,16 +1579,8 @@ class TestDeleteObjects:
     ):
         url = app.url_path_for("get_user_detail", obj_id=user_1.id)
         res = await client.delete(url)
-        assert res.status_code == status.HTTP_200_OK, res.text
-        assert res.json() == {
-            "data": {
-                "attributes": UserAttributesBaseSchema.from_orm(user_1),
-                "id": str(user_1.id),
-                "type": "user",
-            },
-            "jsonapi": {"version": "1.0"},
-            "meta": None,
-        }
+        assert res.status_code == status.HTTP_204_NO_CONTENT, res.text
+        assert res.content == b""
 
         res = await client.get(url)
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text

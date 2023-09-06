@@ -70,7 +70,7 @@ class UserSchema(UserInSchema):
 # User Bio Schemas ⬇️
 
 
-class UserBioBaseSchema(BaseModel):
+class UserBioAttributesBaseSchema(BaseModel):
     """UserBio base schema."""
 
     class Config:
@@ -83,7 +83,7 @@ class UserBioBaseSchema(BaseModel):
     keys_to_ids_list: Dict[str, List[int]] = None
 
 
-class UserBioSchema(UserBioBaseSchema):
+class UserBioSchema(UserBioAttributesBaseSchema):
     """UserBio item schema."""
 
     id: int

@@ -3,7 +3,7 @@ from typing import (
     Type,
 )
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response, status
 
 from fastapi_jsonapi.atomic.atomic_handler import AtomicViewHandler
 from fastapi_jsonapi.atomic.schemas import (
@@ -33,7 +33,10 @@ class AtomicOperations:
             request=request,
             operations_request=operations_request,
         )
-        return await atomic_handler.handle()
+        result = await atomic_handler.handle()
+        if result:
+            return result
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     def _register_view(self):
         self.router.add_api_route(

@@ -10,7 +10,7 @@ from starlette import status
 
 from tests.misc.utils import fake
 from tests.models import User, UserBio
-from tests.schemas import UserAttributesBaseSchema, UserBioBaseSchema
+from tests.schemas import UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
 pytestmark = mark.asyncio
 
@@ -205,7 +205,7 @@ class TestAtomicCreateObjects:
         async_session: AsyncSession,
         user_1: User,
     ):
-        user_bio = UserBioBaseSchema(
+        user_bio = UserBioAttributesBaseSchema(
             birth_city=fake.city(),
             favourite_movies=fake.sentence(),
         )
@@ -241,7 +241,7 @@ class TestAtomicCreateObjects:
         result_bio_data = results[0]
         res: Result = await async_session.execute(stmt_bio)
         user_bio_created: UserBio = res.scalar_one()
-        assert user_bio == UserBioBaseSchema.from_orm(user_bio_created)
+        assert user_bio == UserBioAttributesBaseSchema.from_orm(user_bio_created)
         assert result_bio_data == {
             "data": {
                 "attributes": user_bio.dict(),

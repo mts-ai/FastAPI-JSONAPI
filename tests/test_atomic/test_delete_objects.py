@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
 from starlette import status
 
+from fastapi_jsonapi.atomic.schemas import AtomicOperationAction
 from tests.models import Computer
-from tests.schemas import ComputerAttributesBaseSchema
 
 pytestmark = mark.asyncio
 
@@ -40,14 +40,14 @@ class TestAtomicDeleteObjects:
             "atomic:operations": [
                 {
                     "op": "remove",
-                    "data": {
+                    "ref": {
                         "id": str(computer_1.id),
                         "type": "computer",
                     },
                 },
                 {
                     "op": "remove",
-                    "data": {
+                    "ref": {
                         "id": str(computer_2.id),
                         "type": "computer",
                     },
@@ -55,30 +55,36 @@ class TestAtomicDeleteObjects:
             ],
         }
         response = await client.post("/operations", json=data_atomic_request)
-        assert response.status_code == status.HTTP_200_OK, response.text
-        response_data = response.json()
-        assert "atomic:results" in response_data, response_data
-        results = response_data["atomic:results"]
-        assert results
+        assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+        assert response.content == b""
 
         computers_count = await async_session.scalar(stmt_computers)
         assert computers_count == 0
 
-        assert results == [
-            {
-                "data": {
-                    "id": str(computer_1.id),
-                    "type": "computer",
-                    "attributes": ComputerAttributesBaseSchema.from_orm(computer_1),
+    async def test_delete_no_ref(
+        self,
+        client: AsyncClient,
+    ):
+        data_atomic_request = {
+            "atomic:operations": [
+                {
+                    "op": "remove",
+                    "data": {
+                        "id": "0",
+                        "type": "computer",
+                    },
                 },
-                "meta": None,
-            },
-            {
-                "data": {
-                    "id": str(computer_2.id),
-                    "type": "computer",
-                    "attributes": ComputerAttributesBaseSchema.from_orm(computer_2),
+            ],
+        }
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        assert response.json() == {
+            # TODO: json:api exception
+            "detail": [
+                {
+                    "loc": ["body", "atomic:operations", 0, "__root__"],
+                    "msg": f"ref should be present for action {AtomicOperationAction.remove.value!r}",
+                    "type": "value_error",
                 },
-                "meta": None,
-            },
-        ]
+            ],
+        }

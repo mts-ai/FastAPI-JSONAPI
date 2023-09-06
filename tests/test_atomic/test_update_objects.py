@@ -7,7 +7,7 @@ from starlette import status
 
 from tests.misc.utils import fake
 from tests.models import User, UserBio
-from tests.schemas import UserAttributesBaseSchema, UserBioBaseSchema
+from tests.schemas import UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
 pytestmark = mark.asyncio
 
@@ -23,7 +23,7 @@ class TestAtomicUpdateObjects:
         user_1_bio: UserBio,
     ):
         user_data = UserAttributesBaseSchema.from_orm(user_1)
-        user_bio_data = UserBioBaseSchema.from_orm(user_1_bio)
+        user_bio_data = UserBioAttributesBaseSchema.from_orm(user_1_bio)
         user_data.name = fake.name()
         user_bio_data.favourite_movies = fake.sentence()
         assert user_1.name != user_data.name

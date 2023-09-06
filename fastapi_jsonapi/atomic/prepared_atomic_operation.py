@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from fastapi import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi.atomic.schemas import AtomicOperationAction, OperationDataType
+from fastapi_jsonapi.atomic.schemas import AtomicOperationAction, AtomicOperationRef, OperationDataType
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class OperationBase:
     jsonapi: RoutersJSONAPI
     view: ViewBase
+    ref: Optional[AtomicOperationRef]
     data: OperationDataType
     data_layer_view_dependencies: Dict[str, Any]
 
@@ -28,6 +29,7 @@ class OperationBase:
         action: str,
         request: Request,
         jsonapi: RoutersJSONAPI,
+        ref: Optional[AtomicOperationRef],
         data: OperationDataType,
         data_layer_view_dependencies: Dict[str, Any],
     ) -> "OperationBase":
@@ -49,6 +51,7 @@ class OperationBase:
         return operation_cls(
             jsonapi=jsonapi,
             view=view,
+            ref=ref,
             data=data,
             data_layer_view_dependencies=data_layer_view_dependencies,
         )
@@ -81,9 +84,10 @@ class OperationAdd(ListOperationBase):
 class OperationUpdate(DetailOperationBase):
     async def handle(self, dl: BaseDataLayer):
         data_in = self.jsonapi.schema_in_patch(data=self.data)
+        obj_id = self.ref and self.ref.id or self.data and self.data.id
         response = await self.view.process_update_object(
             dl=dl,
-            obj_id=data_in.data.id,
+            obj_id=obj_id,
             data_update=data_in.data,
         )
         return response
@@ -93,9 +97,19 @@ class OperationRemove(DetailOperationBase):
     async def handle(
         self,
         dl: BaseDataLayer,
-    ):
-        response = await self.view.process_delete_object(
+    ) -> None:
+        """
+        Todo: fix atomic delete
+         Deleting Resources
+           An operation that deletes a resource
+           MUST target that resource
+           through the operation’s ref or href members,
+           but not both.
+
+        :param dl:
+        :return:
+        """
+        await self.view.process_delete_object(
             dl=dl,
-            obj_id=self.data.id,
+            obj_id=self.ref and self.ref.id,
         )
-        return response
