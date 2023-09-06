@@ -18,6 +18,7 @@
 #
 import os
 import sys
+from datetime import datetime
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -52,9 +53,10 @@ source_suffix = ".rst"
 # The master toctree document.
 master_doc = "index"
 
+today_year = datetime.today().year
 # General information about the project.
 project = "FastAPI-JSONAPI"
-copyright = "2022, MTS AI"
+copyright = f"{today_year}, MTS AI"
 author = "MTS AI"
 
 # The version info for the project you're documenting, acts as replacement for
