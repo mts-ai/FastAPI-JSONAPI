@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,7 +14,7 @@ from typing import (
 from starlette.requests import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
-from fastapi_jsonapi.atomic.prepared_atomic_operation import OperationBase
+from fastapi_jsonapi.atomic.prepared_atomic_operation import LocalIdsType, OperationBase
 from fastapi_jsonapi.atomic.schemas import AtomicOperationRequest, AtomicResultResponse
 from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
 from fastapi_jsonapi.views.utils import HTTPMethodConfig
@@ -79,21 +80,32 @@ class AtomicViewHandler:
 
         # TODO: try/except, catch schema ValidationError
 
+        only_empty_responses = True
+        local_ids_cache: LocalIdsType = defaultdict(dict)
         success = True
         previous_dl: Optional[BaseDataLayer] = None
         for operation in prepared_operations:
             dl: BaseDataLayer = await operation.get_data_layer()
             await dl.atomic_start(previous_dl=previous_dl)
             previous_dl = dl
+            operation.update_relationships_with_lid(local_ids=local_ids_cache)
             response = await operation.handle(dl=dl)
             # response.data.id
-            if response:
-                results.append({"data": response.data})
+            if not response:
+                # https://jsonapi.org/ext/atomic/#result-objects
+                # An empty result object ({}) is acceptable
+                # for operations that are not required to return data.
+                results.append({})
+                continue
+            only_empty_responses = False
+            results.append({"data": response.data})
+            if operation.data.lid and response.data:
+                local_ids_cache[operation.data.type][operation.data.lid] = response.data.id
 
         if previous_dl:
             await previous_dl.atomic_end(success=success)
 
-        if results:
+        if not only_empty_responses:
             return {"atomic:results": results}
 
         """

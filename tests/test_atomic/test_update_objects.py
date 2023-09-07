@@ -1,12 +1,13 @@
 import logging
 
+import pytest
 from httpx import AsyncClient
 from pytest import mark  # noqa
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from tests.misc.utils import fake
-from tests.models import User, UserBio
+from tests.models import Computer, User, UserBio
 from tests.schemas import UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
 pytestmark = mark.asyncio
@@ -77,3 +78,116 @@ class TestAtomicUpdateObjects:
                 "meta": None,
             },
         ]
+
+    @pytest.mark.skip("todo: create relationships resources")
+    async def test_update_to_one_relationship_atomic(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+        user_1: User,
+        computer_1: Computer,
+    ):
+        """
+
+        # as in doc
+        https://jsonapi.org/ext/atomic/#auto-id-updating-to-one-relationships
+        {
+          "atomic:operations": [{
+            "op": "update",
+            "ref": {
+              "type": "articles",
+              "id": "13",
+              "relationship": "author"
+            },
+            "data": {
+              "type": "people",
+              "id": "9"
+            }
+          }]
+        }
+
+        :param client:
+        :param async_session:
+        :param user_1:
+        :param computer_1:
+        :return:
+        """
+        assert computer_1.user_id is None
+        operation_data = {
+            "atomic:operations": [
+                {
+                    "op": "update",
+                    "ref": {
+                        "type": "computer",
+                        "id": computer_1.id,
+                        "relationship": "user",
+                    },
+                    "data": {
+                        "type": "user",
+                        "id": user_1.id,
+                    },
+                },
+            ],
+        }
+
+        response = await client.post("/operations", json=operation_data)
+        assert response.status_code == status.HTTP_200_OK, response.text
+
+        await async_session.refresh(computer_1)
+        assert computer_1.user_id == user_1.id
+
+    @pytest.mark.skip("todo: create relationships resources")
+    async def test_update_to_one_relationship_clear_atomic(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+        user_1: User,
+        computer_1: Computer,
+    ):
+        """
+        # TODO: relationships resources
+
+        # as in doc
+        https://jsonapi.org/ext/atomic/#auto-id-updating-to-one-relationships
+        {
+          "atomic:operations": [{
+            "op": "update",
+            "ref": {
+              "type": "articles",
+              "id": "13",
+              "relationship": "author"
+            },
+            "data": null
+          }]
+        }
+
+        :param client:
+        :param async_session:
+        :param user_1:
+        :param computer_1:
+        :return:
+        """
+        computer_1.user_id = user_1.id
+        await async_session.commit()
+        await async_session.refresh(computer_1)
+        assert computer_1.user_id == user_1.id
+
+        operation_data = {
+            "atomic:operations": [
+                {
+                    "op": "update",
+                    "ref": {
+                        "type": "computer",
+                        "id": computer_1.id,
+                        "relationship": "author",
+                    },
+                    "data": None,
+                },
+            ],
+        }
+
+        response = await client.post("/operations", json=operation_data)
+        assert response.status_code == status.HTTP_200_OK, response.text
+
+        await async_session.refresh(computer_1)
+        assert computer_1.user_id == user_1.id

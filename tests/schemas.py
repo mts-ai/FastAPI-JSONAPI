@@ -299,6 +299,14 @@ class ComputerSchema(ComputerInSchema):
 
     id: int
 
+    # TODO: rename
+    # owner: Optional["UserSchema"] = Field(
+    user: Optional["UserSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="user",
+        ),
+    )
+
 
 class WorkplaceBaseSchema(BaseModel):
     """Workplace base schema."""

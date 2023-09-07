@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, String, Text
@@ -53,6 +53,8 @@ class User(AutoIdMixin, Base):
     )
     computers = relationship(
         "Computer",
+        # TODO: rename
+        # back_populates="owner",
         back_populates="user",
         uselist=True,
     )
@@ -61,6 +63,8 @@ class User(AutoIdMixin, Base):
         back_populates="user",
         uselist=False,
     )
+    if TYPE_CHECKING:
+        computers: list["Computer"]
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r})"
@@ -194,6 +198,8 @@ class Computer(AutoIdMixin, Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    # TODO: rename
+    # owner = relationship("User", back_populates="computers")
     user = relationship("User", back_populates="computers")
 
     def __repr__(self):

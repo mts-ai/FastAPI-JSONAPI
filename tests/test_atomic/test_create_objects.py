@@ -1,16 +1,18 @@
 import logging
 
+import pytest
 from httpx import AsyncClient
 from pytest import mark  # noqa
 from sqlalchemy import and_, or_, select
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
 from starlette import status
 
 from tests.misc.utils import fake
 from tests.models import User, UserBio
-from tests.schemas import UserAttributesBaseSchema, UserBioAttributesBaseSchema
+from tests.schemas import ComputerAttributesBaseSchema, UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
 pytestmark = mark.asyncio
 
@@ -250,3 +252,519 @@ class TestAtomicCreateObjects:
             },
             "meta": None,
         }
+
+    async def test_create_user_and_user_bio_with_local_id(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        """
+        - create user
+        - create bio for that user
+
+        :param client:
+        :param async_session:
+        :return:
+        """
+        user_data = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(min_value=13, max_value=99),
+            email=fake.email(),
+        )
+        user_bio_data = UserBioAttributesBaseSchema(
+            birth_city=fake.city(),
+            favourite_movies=fake.sentence(),
+        )
+
+        user_stmt = (
+            select(User)
+            # find such user
+            .where(
+                *(
+                    # all attrs match
+                    getattr(User, attr) == value
+                    # all model data
+                    for attr, value in user_data
+                ),
+            )
+            # joins
+            .options(
+                # with bio
+                joinedload(User.bio),
+            )
+        )
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+        user_lid = fake.word()
+        data_atomic_request = {
+            "atomic:operations": [
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user",
+                        "lid": user_lid,
+                        "attributes": user_data.dict(),
+                    },
+                },
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user_bio",
+                        "attributes": user_bio_data.dict(),
+                        "relationships": {
+                            "user": {
+                                "data": {
+                                    "lid": user_lid,
+                                    "type": "user",
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+        user = await async_session.scalar(user_stmt)
+        assert isinstance(user, User)
+        assert isinstance(user.bio, UserBio)
+
+        assert response_data == {
+            "atomic:results": [
+                {
+                    "data": {
+                        "id": str(user.id),
+                        "type": "user",
+                        "attributes": user_data.dict(),
+                    },
+                    "meta": None,
+                },
+                {
+                    "data": {
+                        "id": str(user.bio.id),
+                        "type": "user_bio",
+                        "attributes": user_bio_data.dict(),
+                    },
+                    "meta": None,
+                },
+            ],
+        }
+
+    async def test_create_user_and_create_computer_for_user(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        """
+
+        - create user
+        - create computer for this created user
+
+        :param client:
+        :param async_session:
+        :return:
+        """
+        user_data = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(min_value=13, max_value=99),
+            email=fake.email(),
+        )
+        computer_data = ComputerAttributesBaseSchema(
+            name=fake.word(),
+        )
+
+        user_stmt = (
+            select(User)
+            # find such user
+            .where(
+                *(
+                    # all attrs match
+                    getattr(User, attr) == value
+                    # all model data
+                    for attr, value in user_data
+                ),
+            )
+            # joins
+            .options(
+                # with computers
+                joinedload(User.computers),
+            )
+        )
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+        user_lid = fake.word()
+        data_atomic_request = {
+            "atomic:operations": [
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user",
+                        "lid": user_lid,
+                        "attributes": user_data.dict(),
+                    },
+                },
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "computer",
+                        "attributes": computer_data.dict(),
+                        "relationships": {
+                            "user": {
+                                "data": {
+                                    "lid": user_lid,
+                                    "type": "user",
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+        user = await async_session.scalar(user_stmt)
+        assert isinstance(user, User)
+        assert user.computers
+        assert len(user.computers) == 1
+
+        assert response_data == {
+            "atomic:results": [
+                {
+                    "data": {
+                        "id": str(user.id),
+                        "type": "user",
+                        "attributes": user_data.dict(),
+                    },
+                    "meta": None,
+                },
+                {
+                    "data": {
+                        "id": str(user.computers[0].id),
+                        "type": "computer",
+                        "attributes": computer_data.dict(),
+                    },
+                    "meta": None,
+                },
+            ],
+        }
+
+    async def test_create_user_and_create_bio_and_computer_for_user(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        """
+
+        - create user
+        - create bio for user
+        - create computer for this created user
+
+        :param client:
+        :param async_session:
+        :return:
+        """
+        user_data = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(min_value=13, max_value=99),
+            email=fake.email(),
+        )
+        user_bio_data = UserBioAttributesBaseSchema(
+            birth_city=fake.city(),
+            favourite_movies=fake.sentence(),
+        )
+        computer_data = ComputerAttributesBaseSchema(
+            name=fake.word(),
+        )
+
+        user_stmt = (
+            select(User)
+            # find such user
+            .where(
+                *(
+                    # all attrs match
+                    getattr(User, attr) == value
+                    # all model data
+                    for attr, value in user_data
+                ),
+            )
+            # joins
+            .options(
+                # with bio
+                joinedload(User.bio),
+                joinedload(User.computers),
+            )
+        )
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+        user_lid = fake.word()
+        data_atomic_request = {
+            "atomic:operations": [
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user",
+                        "lid": user_lid,
+                        "attributes": user_data.dict(),
+                    },
+                },
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user_bio",
+                        "attributes": user_bio_data.dict(),
+                        "relationships": {
+                            "user": {
+                                "data": {
+                                    "lid": user_lid,
+                                    "type": "user",
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "computer",
+                        "attributes": computer_data.dict(),
+                        "relationships": {
+                            "user": {
+                                "data": {
+                                    "lid": user_lid,
+                                    "type": "user",
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+        user = await async_session.scalar(user_stmt)
+        assert isinstance(user, User)
+        assert isinstance(user.bio, UserBio)
+        assert user.computers
+        assert len(user.computers) == 1
+
+        assert response_data == {
+            "atomic:results": [
+                {
+                    "data": {
+                        "id": str(user.id),
+                        "type": "user",
+                        "attributes": user_data.dict(),
+                    },
+                    "meta": None,
+                },
+                {
+                    "data": {
+                        "id": str(user.bio.id),
+                        "type": "user_bio",
+                        "attributes": user_bio_data.dict(),
+                    },
+                    "meta": None,
+                },
+                {
+                    "data": {
+                        "id": str(user.computers[0].id),
+                        "type": "computer",
+                        "attributes": computer_data.dict(),
+                    },
+                    "meta": None,
+                },
+            ],
+        }
+
+    async def test_resource_type_with_local_id_not_found(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        """
+
+        - create user
+        - create computer for this created user
+
+        :param client:
+        :param async_session:
+        :return:
+        """
+        user_data = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(min_value=13, max_value=99),
+            email=fake.email(),
+        )
+        computer_data = ComputerAttributesBaseSchema(
+            name=fake.word(),
+        )
+
+        user_stmt = (
+            select(User)
+            # find such user
+            .where(
+                *(
+                    # all attrs match
+                    getattr(User, attr) == value
+                    # all model data
+                    for attr, value in user_data
+                ),
+            )
+            # joins
+            .options(
+                # with computers
+                joinedload(User.computers),
+            )
+        )
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+        user_lid = fake.word()
+        relation_type = "user"
+        relationship_info = {
+            "lid": user_lid,
+            "type": relation_type,
+        }
+        data_atomic_request = {
+            "atomic:operations": [
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user",
+                        "attributes": user_data.dict(),
+                    },
+                },
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "computer",
+                        "attributes": computer_data.dict(),
+                        "relationships": {
+                            "user": {
+                                "data": relationship_info,
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+
+        expected_error_text = (
+            f"Resource {relation_type} not found in previous operations, "
+            f"no lid {user_lid} defined yet, cannot create {relationship_info}"
+        )
+
+        with pytest.raises(ValueError, match=expected_error_text):
+            # TODO: where's http exception?
+            await client.post("/operations", json=data_atomic_request)
+
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+    async def test_local_id_not_found(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        """
+
+        - create user
+        - create computer for this created user
+
+        :param client:
+        :param async_session:
+        :return:
+        """
+        user_data = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(min_value=13, max_value=99),
+            email=fake.email(),
+        )
+        computer_data = ComputerAttributesBaseSchema(
+            name=fake.word(),
+        )
+
+        user_stmt = (
+            select(User)
+            # find such user
+            .where(
+                *(
+                    # all attrs match
+                    getattr(User, attr) == value
+                    # all model data
+                    for attr, value in user_data
+                ),
+            )
+            # joins
+            .options(
+                # with computers
+                joinedload(User.computers),
+            )
+        )
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+        user_lid = fake.word()
+        another_lid = fake.word()
+        assert user_lid != another_lid
+        relation_type = "user"
+        relationship_info = {
+            "lid": another_lid,
+            "type": relation_type,
+        }
+        data_atomic_request = {
+            "atomic:operations": [
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "user",
+                        "lid": user_lid,
+                        "attributes": user_data.dict(),
+                    },
+                },
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "computer",
+                        "attributes": computer_data.dict(),
+                        "relationships": {
+                            "user": {
+                                "data": relationship_info,
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+
+        expected_error_text = (
+            f"lid {another_lid} for {relation_type} not found"
+            f" in previous operations, cannot process {relationship_info}"
+        )
+        with pytest.raises(ValueError, match=expected_error_text):
+            # TODO: where's http exception?
+            await client.post("/operations", json=data_atomic_request)
+
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+    @pytest.mark.skip("not ready yet")
+    async def test_update_to_many_relationship_with_local_id(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        """
+        - create post
+        - update post relationship to have new comment
+
+        :param client:
+        :param async_session:
+        :return:
+        """

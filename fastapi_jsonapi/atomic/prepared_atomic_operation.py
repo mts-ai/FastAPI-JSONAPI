@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from fastapi_jsonapi.views.list_view import ListViewBase
     from fastapi_jsonapi.views.view_base import ViewBase
 
+LocalIdsType = Dict[str, Dict[str, str]]
+
 
 @dataclass
 class OperationBase:
@@ -62,6 +64,55 @@ class OperationBase:
     async def handle(self, dl: BaseDataLayer):
         raise NotImplementedError
 
+    @classmethod
+    def upd_one_relationship_with_local_id(cls, relationship_info: dict, local_ids: LocalIdsType):
+        """
+        TODO: refactor
+
+        :param relationship_info:
+        :param local_ids:
+        :return:
+        """
+        missing = object()
+        lid = relationship_info.get("lid", missing)
+        if lid is missing:
+            return
+
+        resource_type = relationship_info["type"]
+        if resource_type not in local_ids:
+            msg = (
+                f"Resource {resource_type} not found in previous operations,"
+                f" no lid {lid} defined yet, cannot create {relationship_info}"
+            )
+            raise ValueError(
+                msg,
+            )
+
+        lids_for_resource = local_ids[resource_type]
+        if lid not in lids_for_resource:
+            msg = (
+                f"lid {lid} for {resource_type} not found in previous operations,"
+                f" cannot process {relationship_info}"
+            )
+            raise ValueError(msg)
+
+        relationship_info.pop("lid")
+        relationship_info["id"] = lids_for_resource[lid]
+
+    def update_relationships_with_lid(self, local_ids: LocalIdsType):
+        if not (self.data and self.data.relationships):
+            return
+        for relationship_name, relationship_value in self.data.relationships.items():
+            relationship_data = relationship_value["data"]
+            if isinstance(relationship_data, list):
+                for data in relationship_data:
+                    self.upd_one_relationship_with_local_id(data, local_ids=local_ids)
+            elif isinstance(relationship_data, dict):
+                self.upd_one_relationship_with_local_id(relationship_data, local_ids=local_ids)
+            else:
+                msg = "unexpected relationship data"
+                raise ValueError(msg)
+
 
 class ListOperationBase(OperationBase):
     view: ListViewBase
@@ -83,6 +134,10 @@ class OperationAdd(ListOperationBase):
 
 class OperationUpdate(DetailOperationBase):
     async def handle(self, dl: BaseDataLayer):
+        if self.data is None:
+            # TODO: clear to-one relationships
+            pass
+        # TODO: handle relationship update requests (relationship resources)
         data_in = self.jsonapi.schema_in_patch(data=self.data)
         obj_id = self.ref and self.ref.id or self.data and self.data.id
         response = await self.view.process_update_object(

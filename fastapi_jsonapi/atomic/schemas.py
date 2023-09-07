@@ -19,6 +19,7 @@ class OperationItemInSchema(BaseModel):
 
     type: str = Field(default=..., description="Resource type")
     id: Optional[str] = Field(default=None, description="Resource object ID")
+    lid: Optional[str] = Field(default=None, description="Resource object local ID")
     attributes: Optional[dict] = Field(None, description="Resource object attributes")
     relationships: Optional[dict] = Field(None, description="Resource object relationships")
 
