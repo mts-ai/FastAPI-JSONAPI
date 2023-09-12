@@ -1,6 +1,7 @@
 """JSON API schemas builder class."""
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -14,9 +15,9 @@ from typing import (
 )
 
 import pydantic
-from pydantic import BaseConfig
+from pydantic import BaseConfig, validator
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic.fields import FieldInfo, ModelField
+from pydantic.fields import FieldInfo, ModelField, Validator
 
 from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
@@ -33,6 +34,9 @@ from fastapi_jsonapi.schema import (
 )
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo, registry
 from fastapi_jsonapi.splitter import SPLIT_REL
+
+if TYPE_CHECKING:
+    pass
 
 JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
 
@@ -279,6 +283,7 @@ class SchemaBuilder:
             f"{base_name}AttributesJSONAPI",
             **attributes_schema_fields,
             __config__=ConfigOrmMode,
+            __validators__=self._extract_validators(schema),
         )
 
         relationships_schema = pydantic.create_model(
@@ -345,6 +350,29 @@ class SchemaBuilder:
         )
         self.relationship_schema_cache[cache_key] = relationship_data_schema
         return relationship_data_schema
+
+    def _extract_validators(self, model: Type[BaseModel]) -> Dict[str, Callable]:
+        validators = {}
+        validator_origin_param_keys = ["pre", "each_item", "always", "check_fields"]
+
+        for field_name, model_field in model.__fields__.items():
+            model_field: ModelField
+
+            for validator_name, field_validator in model_field.class_validators.items():
+                validator_name: str
+                field_validator: Validator
+
+                validators[validator_name] = validator(
+                    field_name,
+                    allow_reuse=True,
+                    **{
+                        # copy origin params
+                        param_name: getattr(field_validator, param_name)
+                        for param_name in validator_origin_param_keys
+                    },
+                )(field_validator.func)
+
+        return validators
 
     def _build_jsonapi_object(
         self,

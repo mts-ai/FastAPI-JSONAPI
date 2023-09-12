@@ -6,10 +6,12 @@ from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI, status
 from httpx import AsyncClient
+from pydantic import BaseModel, validator
 from pytest import mark, param  # noqa PT013
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi.exceptions import BadRequest
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.app import build_app_plain
 from tests.fixtures.entities import build_workplace, create_user
@@ -2038,6 +2040,51 @@ class TestSorts:
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 2, "totalPages": 1},
         }
+
+
+class TestValidators:
+    async def test_field_validator(self):
+        class UserSchemaWithValidator(BaseModel):
+            name: str
+
+            @validator("name")
+            def validate_name(cls, v):
+                # checks that cls arg is not bound to the origin class
+                assert cls is not UserSchemaWithValidator
+
+                raise BadRequest(detail="Check validator")
+
+            class Config:
+                orm_mode = True
+
+        resource_type = "user"
+        app = build_app_custom(
+            model=User,
+            schema=UserSchemaWithValidator,
+            schema_in_post=UserSchemaWithValidator,
+            schema_in_patch=UserSchemaWithValidator,
+            resource_type=resource_type,
+        )
+
+        attrs = {"name": fake.name()}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"get_{resource_type}_list")
+            res = await client.post(url, json=create_user_body)
+            assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
+            assert res.json() == {
+                "detail": {
+                    "errors": [
+                        {
+                            "detail": "Check validator",
+                            "source": {"pointer": ""},
+                            "status_code": 400,
+                            "title": "Bad Request",
+                        },
+                    ],
+                },
+            }
 
 
 # todo: test errors
