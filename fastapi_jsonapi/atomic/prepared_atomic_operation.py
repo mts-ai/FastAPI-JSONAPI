@@ -38,6 +38,10 @@ class OperationBase:
     ) -> "OperationBase":
         view_cls: Type[ViewBase] = jsonapi.detail_view_resource
 
+        if hasattr(action, "value"):
+            # convert to str if enum
+            action = action.value
+
         if action == AtomicOperationAction.add:
             operation_cls = OperationAdd
             view_cls = jsonapi.list_view_resource
