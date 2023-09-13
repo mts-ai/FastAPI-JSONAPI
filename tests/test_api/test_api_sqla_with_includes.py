@@ -32,7 +32,7 @@ from tests.schemas import (
     PostCommentAttributesBaseSchema,
     SelfRelationshipSchema,
     UserAttributesBaseSchema,
-    UserBioBaseSchema,
+    UserBioAttributesBaseSchema,
     UserInSchemaAllowIdOnPost,
     UserPatchSchema,
     UserSchema,
@@ -689,7 +689,7 @@ class TestCreateObjects:
     ):
         create_user_bio_body = {
             "data": {
-                "attributes": UserBioBaseSchema(
+                "attributes": UserBioAttributesBaseSchema(
                     birth_city=fake.word(),
                     favourite_movies=fake.sentence(),
                     keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
@@ -921,7 +921,7 @@ class TestCreateObjects:
         assert response_data["data"]["id"] == user_id
 
     async def test_create_id_by_client(self):
-        resource_type = "user"
+        resource_type = "user_custom_b"
         app = build_app_custom(
             model=User,
             schema=UserSchema,
@@ -1110,7 +1110,7 @@ class TestPatchObjects:
         class UserPatchSchemaWithExtraAttribute(UserPatchSchema):
             attr_which_is_not_presented_in_model: str
 
-        resource_type = "user"
+        resource_type = "user_custom_a"
         app = build_app_custom(
             model=User,
             schema=UserSchema,
@@ -1289,7 +1289,7 @@ class TestPatchObjectRelationshipsToOne:
         patch_user_bio_body = {
             "data": {
                 "id": user_1_bio.id,
-                "attributes": UserBioBaseSchema.from_orm(user_1_bio).dict(),
+                "attributes": UserBioAttributesBaseSchema.from_orm(user_1_bio).dict(),
                 "relationships": {
                     "user": {
                         "data": {
@@ -1304,14 +1304,18 @@ class TestPatchObjectRelationshipsToOne:
         url = app.url_path_for("get_user_bio_detail", obj_id=user_1_bio.id)
         url = f"{url}?include=user"
         res = await client.patch(url, json=patch_user_bio_body)
-        assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
+        assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
         assert res.json() == {
             "errors": [
                 {
-                    "detail": "Got an error IntegrityError during update data in DB",
+                    "detail": "Object update error",
                     "source": {"pointer": "/data"},
-                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    "title": "Internal Server Error",
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "title": "Bad Request",
+                    "meta": {
+                        "id": str(user_1_bio.id),
+                        "type": "user_bio",
+                    },
                 },
             ],
         }
@@ -1575,16 +1579,8 @@ class TestDeleteObjects:
     ):
         url = app.url_path_for("get_user_detail", obj_id=user_1.id)
         res = await client.delete(url)
-        assert res.status_code == status.HTTP_200_OK, res.text
-        assert res.json() == {
-            "data": {
-                "attributes": UserAttributesBaseSchema.from_orm(user_1),
-                "id": str(user_1.id),
-                "type": "user",
-            },
-            "jsonapi": {"version": "1.0"},
-            "meta": None,
-        }
+        assert res.status_code == status.HTTP_204_NO_CONTENT, res.text
+        assert res.content == b""
 
         res = await client.get(url)
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text

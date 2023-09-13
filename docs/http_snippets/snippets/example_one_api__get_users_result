@@ -1,0 +1,47 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "age": 21,
+        "email": "john@example.com",
+        "first_name": "John",
+        "last_name": "Smith",
+        "status": "active"
+      },
+      "id": "1",
+      "type": "user"
+    },
+    {
+      "attributes": {
+        "age": 42,
+        "email": "sam@example.com",
+        "first_name": "Sam",
+        "last_name": "White",
+        "status": "active"
+      },
+      "id": "2",
+      "type": "user"
+    },
+    {
+      "attributes": {
+        "age": 37,
+        "email": "bob@example.com",
+        "first_name": "Bob",
+        "last_name": "Green",
+        "status": "active"
+      },
+      "id": "3",
+      "type": "user"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "count": 3,
+    "totalPages": 1
+  }
+}

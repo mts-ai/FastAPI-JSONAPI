@@ -2,6 +2,21 @@ Changelog
 #########
 
 
+**2.1.0**
+*********
+
+Atomic Operations
+=================
+
+* Atomic Operations (see :ref:`example <atomic_operations>`, `JSON:API doc <https://jsonapi.org/ext/atomic/>`_)
+* Create view now accepts ``BaseJSONAPIItemInSchema`` as update view does
+
+Authors
+"""""""
+
+* `@mahenzon`_
+
+
 **2.0.0**
 *********
 

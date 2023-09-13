@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:8000/operations",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n   \"atomic:operations\":[\n      {\n         \"op\":\"add\",\n         \"data\":{\n            \"lid\":\"new-parent\",\n            \"type\":\"parent\",\n            \"attributes\":{\n               \"name\":\"David Newton\"\n            }\n         }\n      },\n      {\n         \"op\":\"add\",\n         \"data\":{\n            \"lid\":\"new-child\",\n            \"type\":\"child\",\n            \"attributes\":{\n               \"name\":\"James Owen\"\n            }\n         }\n      },\n      {\n         \"op\":\"add\",\n         \"data\":{\n            \"type\":\"parent-to-child-association\",\n            \"attributes\":{\n               \"extra_data\":\"Lay piece happy box.\"\n            },\n            \"relationships\":{\n               \"parent\":{\n                  \"data\":{\n                     \"lid\":\"new-parent\",\n                     \"type\":\"parent\"\n                  }\n               },\n               \"child\":{\n                  \"data\":{\n                     \"lid\":\"new-child\",\n                     \"type\":\"child\"\n                  }\n               }\n            }\n         }\n      }\n   ]\n}"
+  }
+}

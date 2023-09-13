@@ -27,7 +27,6 @@ classifiers = [
 ]
 dependencies = [
     "fastapi>=0.79.0",
-    "greenlet>=1.1.2",
     "pydantic>=1.9.1",
     "simplejson>=3.17.6",
     "uvicorn>=0.18.2",
@@ -37,14 +36,14 @@ dependencies = [
 all = [
     "pytest",
     "sphinx",
-    "SQLAlchemy>=1.4.39",
+    "SQLAlchemy[asyncio]>=1.4.39",
     "tortoise-orm>=0.19.2",
 ]
 docs = [
     "sphinx",
 ]
 sqlalchemy = [
-    "SQLAlchemy>=1.4.39",
+    "SQLAlchemy[asyncio]>=1.4.39",
 ]
 tests = [
     "pytest",
@@ -73,7 +72,7 @@ packages = [
 
 [tool.poetry]
 name = "fastapi-jsonapi"
-version = "2.0.0"
+version = "2.1.0"
 description = "FastAPI extension to create REST web api according to JSON:API specification"
 authors = [
     "Aleksei Nekrasov <nekrasov.aleks@mail.ru>",
@@ -81,7 +80,6 @@ authors = [
 ]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "fastapi_jsonapi"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"

@@ -23,6 +23,7 @@ from tests.fixtures.entities import (  # noqa
     child_4,
     computer_1,
     computer_2,
+    computer_factory,
     p1_c1_association,
     p1_c2_association,
     p2_c1_association,
@@ -54,6 +55,9 @@ from tests.models import Base
 
 def configure_logging():
     logging.getLogger("faker.factory").setLevel(logging.INFO)
+    logging.getLogger("aiosqlite").setLevel(logging.INFO)
+    # logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
 
 configure_logging()

@@ -46,15 +46,18 @@ class BaseDataLayer:
         id_name_field: Optional[str] = None,
         disable_collection_count: bool = False,
         default_collection_count: int = -1,
+        type_: str = "",
         **kwargs,
     ):
         """
+
         :param schema:
         :param model:
         :param url_id_field:
         :param id_name_field:
         :param disable_collection_count:
         :param default_collection_count:
+        :param type_: resource type
         :param kwargs:
         """
         self.model = model
@@ -63,6 +66,14 @@ class BaseDataLayer:
         self.id_name_field = id_name_field
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
+        self.is_atomic = False
+        self.type_ = type_
+
+    async def atomic_start(self, previous_dl: Optional["BaseDataLayer"] = None):
+        self.is_atomic = True
+
+    async def atomic_end(self, success: bool = True):
+        raise NotImplementedError
 
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
@@ -89,6 +100,9 @@ class BaseDataLayer:
             msg = f"{self.model.__name__} has no attribute {id_name_field}"
             # TODO: any custom exception type?
             raise Exception(msg)
+
+    def get_object_id(self, obj: TypeModel):
+        return getattr(obj, self.get_object_id_field_name())
 
     async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
         """

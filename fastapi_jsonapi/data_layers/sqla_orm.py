@@ -3,13 +3,14 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.exc import DBAPIError, NoResultFound
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import DBAPIError, IntegrityError, NoResultFound
+from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 
+from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
 from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
@@ -86,6 +87,30 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.eagerload_includes_ = eagerload_includes
         self._query = query
         self.auto_convert_id_to_column_type = auto_convert_id_to_column_type
+        self.transaction: Optional[AsyncSessionTransaction] = None
+
+    async def atomic_start(self, previous_dl: Optional["SqlalchemyDataLayer"] = None):
+        self.is_atomic = True
+        if previous_dl:
+            self.session = previous_dl.session
+            if previous_dl.transaction:
+                self.transaction = previous_dl.transaction
+                return
+
+        self.transaction = self.session.begin()
+        await self.transaction.start()
+
+    async def atomic_end(self, success: bool = True):
+        if success:
+            await self.transaction.commit()
+        else:
+            await self.transaction.rollback()
+
+    async def save(self):
+        if self.is_atomic:
+            await self.session.flush()
+        else:
+            await self.session.commit()
 
     def prepare_id_value(self, col: InstrumentedAttribute, value: Any) -> Any:
         """
@@ -188,6 +213,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return:
         """
+        log.debug("Create object with data %s", data_create)
         # todo: pydantic v2 model_dump()
         model_kwargs = data_create.attributes.dict()
         model_kwargs = self._apply_client_generated_id(data_create, model_kwargs=model_kwargs)
@@ -198,7 +224,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         self.session.add(obj)
         try:
-            await self.session.commit()
+            await self.save()
+        except IntegrityError:
+            log.exception("Could not create object with data create %s", data_create)
+            msg = "Object creation error"
+            raise BadRequest(msg, pointer="/data")
         except DBAPIError:
             log.exception("Could not create object with data create %s", data_create)
             msg = "Object creation error"
@@ -330,16 +360,31 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 setattr(obj, field_name, new_value)
                 has_updated = True
         try:
-            await self.session.commit()
+            await self.save()
+        except IntegrityError:
+            log.exception("Could not update object with data update %s", data_update)
+            msg = "Object update error"
+            raise BadRequest(
+                msg,
+                pointer="/data",
+                meta={
+                    "type": self.type_,
+                    "id": view_kwargs.get(self.url_id_field),
+                },
+            )
         except DBAPIError as e:
             await self.session.rollback()
 
-            err_message = f"Got an error {e.__class__.__name__} during update data in DB"
+            err_message = f"Got an error {e.__class__.__name__} during updating obj {view_kwargs} data in DB"
             log.error(err_message, exc_info=e)
 
             raise InternalServerError(
                 detail=err_message,
                 pointer="/data",
+                meta={
+                    "type": self.type_,
+                    "id": view_kwargs.get(self.url_id_field),
+                },
             )
 
         await self.after_update_object(obj=obj, model_kwargs=new_data, view_kwargs=view_kwargs)
@@ -356,16 +401,20 @@ class SqlalchemyDataLayer(BaseDataLayer):
         await self.before_delete_object(obj, view_kwargs)
         try:
             await self.session.delete(obj)
-            await self.session.commit()
+            await self.save()
         except DBAPIError as e:
             await self.session.rollback()
 
-            err_message = f"Got an error {e.__class__.__name__} during update data in DB"
+            err_message = f"Got an error {e.__class__.__name__} deleting object {view_kwargs}"
             log.error(err_message, exc_info=e)
 
             raise InternalServerError(
                 detail=err_message,
                 pointer="/data",
+                meta={
+                    "type": self.type_,
+                    "id": view_kwargs.get(self.url_id_field),
+                },
             )
 
         await self.after_delete_object(obj, view_kwargs)
@@ -376,7 +425,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         try:
             await self.session.execute(query)
-            await self.session.commit()
+            await self.save()
         except DBAPIError as e:
             await self.session.rollback()
             raise InternalServerError(

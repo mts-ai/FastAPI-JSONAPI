@@ -1,0 +1,88 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "attributes": {
+        "age": 21,
+        "email": "john@example.com",
+        "first_name": "John",
+        "last_name": "Smith",
+        "status": "active"
+      },
+      "id": "1",
+      "relationships": {
+        "computers": {
+          "data": []
+        }
+      },
+      "type": "user"
+    },
+    {
+      "attributes": {
+        "age": 42,
+        "email": "sam@example.com",
+        "first_name": "Sam",
+        "last_name": "White",
+        "status": "active"
+      },
+      "id": "2",
+      "relationships": {
+        "computers": {
+          "data": [
+            {
+              "id": "1",
+              "type": "computer"
+            }
+          ]
+        }
+      },
+      "type": "user"
+    },
+    {
+      "attributes": {
+        "age": 37,
+        "email": "bob@example.com",
+        "first_name": "Bob",
+        "last_name": "Green",
+        "status": "active"
+      },
+      "id": "3",
+      "relationships": {
+        "computers": {
+          "data": [
+            {
+              "id": "2",
+              "type": "computer"
+            }
+          ]
+        }
+      },
+      "type": "user"
+    }
+  ],
+  "included": [
+    {
+      "attributes": {
+        "name": "ZX Spectrum"
+      },
+      "id": "1",
+      "type": "computer"
+    },
+    {
+      "attributes": {
+        "name": "Amstrad"
+      },
+      "id": "2",
+      "type": "computer"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": {
+    "count": 3,
+    "totalPages": 1
+  }
+}

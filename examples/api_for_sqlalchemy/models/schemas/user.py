@@ -1,4 +1,5 @@
 """User schemas module."""
+from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
@@ -44,7 +45,7 @@ class UserBaseSchema(BaseModel):
         ),
     )
 
-    computers: Optional["ComputerSchema"] = Field(
+    computers: Optional[List["ComputerSchema"]] = Field(
         relationship=RelationshipInfo(
             resource_type="computer",
             many=True,

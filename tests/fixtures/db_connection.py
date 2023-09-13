@@ -28,7 +28,11 @@ async def async_session_dependency():
 
 @async_fixture(scope="class")
 async def async_engine():
-    engine = create_async_engine(url=make_url(sqla_uri()))
+    engine = create_async_engine(
+        url=make_url(sqla_uri()),
+        echo=False,
+        # echo=True,
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

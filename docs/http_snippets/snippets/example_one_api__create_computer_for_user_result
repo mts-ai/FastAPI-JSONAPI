@@ -1,0 +1,37 @@
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "data": {
+    "attributes": {
+      "name": "Amstrad"
+    },
+    "id": "2",
+    "relationships": {
+      "user": {
+        "data": {
+          "id": "3",
+          "type": "user"
+        }
+      }
+    },
+    "type": "computer"
+  },
+  "included": [
+    {
+      "attributes": {
+        "age": 37,
+        "email": "bob@example.com",
+        "first_name": "Bob",
+        "last_name": "Green",
+        "status": "active"
+      },
+      "id": "3",
+      "type": "user"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": null
+}

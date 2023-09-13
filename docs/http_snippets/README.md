@@ -5,13 +5,14 @@
 
 
 ```shell
+# checked on node@14 and npm@6.14.18
 # to use in cli
-npm install --global httpsnippet
+npm install --global httpsnippet@2
 ```
 
 ```shell
 # to use as a module
-npm install --save httpsnippet
+npm install --save httpsnippet@2
 ```
 
 ## Spec

@@ -40,7 +40,12 @@ not_passed = object()
 
 
 class RoutersJSONAPI:
-    """API Router interface for JSON API endpoints in web-services."""
+    """
+    API Router interface for JSON API endpoints in web-services.
+    """
+
+    # xxx: store in app, not in routers!
+    all_jsonapi_routers: Dict[str, "RoutersJSONAPI"] = {}
 
     def __init__(
         self,
@@ -90,11 +95,16 @@ class RoutersJSONAPI:
         self.list_views = None
         self.detail_view_resource: Type["DetailViewBase"] = class_detail
         self.list_view_resource: Type["ListViewBase"] = class_list
-        self._type: str = resource_type
+        self.type_: str = resource_type
         self._schema: Type[BaseModel] = schema
         self.schema_list: Type[BaseModel] = schema
         self.model: Type[TypeModel] = model
         self.schema_detail = schema
+
+        if self.type_ in self.all_jsonapi_routers:
+            msg = f"Resource type {self.type_!r} already registered"
+            raise ValueError(msg)
+        self.all_jsonapi_routers[self.type_] = self
 
         self.pagination_default_size: Optional[int] = pagination_default_size
         self.pagination_default_number: Optional[int] = pagination_default_number
@@ -107,8 +117,8 @@ class RoutersJSONAPI:
             schema_in_post=schema_in_post,
             schema_in_patch=schema_in_patch,
         )
-        self._schema_in_post = dto.schema_in_post
-        self._schema_in_patch = dto.schema_in_patch
+        self.schema_in_post = dto.schema_in_post
+        self.schema_in_patch = dto.schema_in_patch
         self.detail_response_schema = dto.detail_response_schema
         self.list_response_schema = dto.list_response_schema
 
@@ -140,7 +150,7 @@ class RoutersJSONAPI:
         :param kind: list / detail
         :return:
         """
-        return f"{action}_{self._type}_{kind}"
+        return f"{action}_{self.type_}_{kind}"
 
     def _register_get_resource_list(self, path: str):
         list_response_example = {
@@ -151,7 +161,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=list_response_example | self.default_error_responses,
             methods=["GET"],
-            summary=f"Get list of `{self._type}` objects",
+            summary=f"Get list of `{self.type_}` objects",
             endpoint=self._create_get_resource_list_view(),
             name=self.get_endpoint_name("get", "list"),
         )
@@ -165,7 +175,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=create_resource_response_example | self.default_error_responses,
             methods=["POST"],
-            summary=f"Create object `{self._type}`",
+            summary=f"Create object `{self.type_}`",
             status_code=status.HTTP_201_CREATED,
             endpoint=self._create_post_resource_list_view(),
             name=self.get_endpoint_name("create", "list"),
@@ -180,7 +190,7 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["DELETE"],
-            summary=f"Delete objects `{self._type}` by filters",
+            summary=f"Delete objects `{self.type_}` by filters",
             endpoint=self._create_delete_resource_list_view(),
             name=self.get_endpoint_name("delete", "list"),
         )
@@ -196,13 +206,13 @@ class RoutersJSONAPI:
             tags=self._tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["GET"],
-            summary=f"Get object `{self._type}` by id",
+            summary=f"Get object `{self.type_}` by id",
             endpoint=self._create_get_resource_detail_view(),
             name=self.get_endpoint_name("get", "detail"),
         )
 
     def _register_patch_resource_detail(self, path: str):
-        detail_response_example = {
+        update_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
         }
         self._router.add_api_route(
@@ -210,27 +220,31 @@ class RoutersJSONAPI:
             # TODO: trailing slash (optional)
             path=path + "/{obj_id}",
             tags=self._tags,
-            responses=detail_response_example | self.default_error_responses,
+            responses=update_response_example | self.default_error_responses,
             methods=["PATCH"],
-            summary=f"Patch object `{self._type}` by id",
+            summary=f"Patch object `{self.type_}` by id",
             endpoint=self._create_patch_resource_detail_view(),
             name=self.get_endpoint_name("update", "detail"),
         )
 
     def _register_delete_resource_detail(self, path: str):
-        detail_response_example = {
-            status.HTTP_200_OK: {"model": self.detail_response_schema},
+        delete_response_example = {
+            status.HTTP_204_NO_CONTENT: {
+                "description": "If a server is able to delete the resource,"
+                " the server MUST return a result with no data",
+            },
         }
         self._router.add_api_route(
             # TODO: variable path param name (set default name on DetailView class)
             # TODO: trailing slash (optional)
             path=path + "/{obj_id}",
             tags=self._tags,
-            responses=detail_response_example | self.default_error_responses,
+            responses=delete_response_example | self.default_error_responses,
             methods=["DELETE"],
-            summary=f"Delete object `{self._type}` by id",
+            summary=f"Delete object `{self.type_}` by id",
             endpoint=self._create_delete_resource_detail_view(),
             name=self.get_endpoint_name("delete", "detail"),
+            status_code=status.HTTP_204_NO_CONTENT,
         )
 
     def _create_pagination_query_params(self) -> List[Parameter]:
@@ -394,6 +408,30 @@ class RoutersJSONAPI:
 
         return self._create_dependency_params_from_pydantic_model(method_config.dependencies)
 
+    def get_method_config_for_create(self):
+        method_config = self._update_method_config(
+            view=self.list_view_resource,
+            method=HTTPMethod.POST,
+        )
+        return method_config
+
+    def prepare_dependencies_handler_signature(
+        self,
+        custom_handler: Callable[..., Any],
+        method_config: HTTPMethodConfig,
+    ) -> Signature:
+        sig = signature(custom_handler)
+
+        additional_dependency_params = []
+        if method_config.dependencies is not None:
+            additional_dependency_params = self._create_dependency_params_from_pydantic_model(
+                model_class=method_config.dependencies,
+            )
+
+        params, tail_params = self._get_separated_params(sig)
+
+        return sig.replace(parameters=params + list(additional_dependency_params) + tail_params)
+
     def _create_get_resource_list_view(self):
         """
         Create wrapper for GET list (get objects list)
@@ -425,7 +463,7 @@ class RoutersJSONAPI:
 
         :return:
         """
-        schema_in = self._schema_in_post
+        schema_in = self.schema_in_post
 
         async def wrapper(request: Request, data_create: schema_in, **extra_view_deps):
             resource = self.list_view_resource(
@@ -434,7 +472,7 @@ class RoutersJSONAPI:
             )
 
             response = await resource.handle_post_resource_list(
-                data_create=data_create,
+                data_create=data_create.data,
                 **extra_view_deps,
             )
             return response
@@ -515,7 +553,7 @@ class RoutersJSONAPI:
 
         :return:
         """
-        schema_in = self._schema_in_patch
+        schema_in = self.schema_in_patch
 
         async def wrapper(
             request: Request,

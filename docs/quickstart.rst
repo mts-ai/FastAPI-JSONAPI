@@ -182,7 +182,7 @@ You can see that we have added the query string parameter "include" to the URL
 
     POST /users?include=computers HTTP/1.1
 
-Thanks to this parameter, the related computers' details are included in the result. If you want to learn more: :ref:`include_related_objects`
+Thanks to this parameter, the related computers' details are included in the result. If you want to learn more: :ref:`include_related_objects` or :ref:`updated_includes_example`
 
 Update object and his relationships
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

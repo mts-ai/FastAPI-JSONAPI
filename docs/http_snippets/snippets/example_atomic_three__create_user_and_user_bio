@@ -1,0 +1,36 @@
+POST /operations HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+   "atomic:operations":[
+      {
+         "op":"add",
+         "data":{
+            "lid":"some-local-id",
+            "type":"user",
+            "attributes":{
+               "first_name":"Bob",
+               "last_name":"Pink"
+            }
+         }
+      },
+      {
+         "op":"add",
+         "data":{
+            "type":"user_bio",
+            "attributes":{
+               "birth_city":"Moscow",
+               "favourite_movies":"Jaws, Alien"
+            },
+            "relationships":{
+               "user":{
+                  "data":{
+                     "lid":"some-local-id",
+                     "type":"user"
+                  }
+               }
+            }
+         }
+      }
+   ]
+}

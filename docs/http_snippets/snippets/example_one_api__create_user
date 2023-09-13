@@ -1,0 +1,15 @@
+POST /users HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "data": {
+    "type": "user",
+    "attributes": {
+      "first_name": "Bob",
+      "last_name": "Green",
+      "age": 37,
+      "status": "active",
+      "email": "bob@example.com"
+    }
+  }
+}

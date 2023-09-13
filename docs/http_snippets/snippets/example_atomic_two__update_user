@@ -1,0 +1,18 @@
+POST /operations HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "atomic:operations": [
+    {
+      "op": "update",
+      "data": {
+        "id": "5",
+        "type": "user",
+        "attributes": {
+          "last_name": "White",
+          "email": "kate@example.com"
+        }
+      }
+    }
+  ]
+}

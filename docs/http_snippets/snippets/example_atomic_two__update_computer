@@ -1,0 +1,25 @@
+POST /operations HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "atomic:operations": [
+    {
+      "op": "update",
+      "data": {
+        "id": "4",
+        "type": "computer",
+        "attributes": {
+          "name": "Commodore PET"
+        },
+        "relationships": {
+          "user": {
+            "data": {
+              "id": "5",
+              "type": "user"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

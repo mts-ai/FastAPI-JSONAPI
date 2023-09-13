@@ -1,0 +1,20 @@
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "data": {
+    "attributes": {
+      "age": 37,
+      "email": "bob@example.com",
+      "first_name": "Bob",
+      "last_name": "Green",
+      "status": "active"
+    },
+    "id": "3",
+    "type": "user"
+  },
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": null
+}

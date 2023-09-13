@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:8000/operations",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"atomic:operations\": [\n    {\n      \"op\": \"remove\",\n      \"ref\": {\n        \"id\": \"6\",\n        \"type\": \"computer\"\n      }\n    },\n    {\n      \"op\": \"remove\",\n      \"ref\": {\n        \"id\": \"7\",\n        \"type\": \"computer\"\n      }\n    }\n  ]\n}"
+  }
+}

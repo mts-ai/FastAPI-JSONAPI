@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import Depends, Header
 from pydantic import BaseModel
 from sqlalchemy.engine import make_url

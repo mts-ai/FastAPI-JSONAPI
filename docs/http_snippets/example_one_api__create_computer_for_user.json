@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:8000/computers?include=user",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"data\": {\n    \"type\": \"computer\",\n    \"attributes\": {\n      \"name\": \"Amstrad\"\n    },\n    \"relationships\": {\n      \"user\": {\n        \"data\": {\n          \"id\": \"3\",\n          \"type\": \"user\"\n        }\n      }\n    }\n  }\n}"
+  }
+}

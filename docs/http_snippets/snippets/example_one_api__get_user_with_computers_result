@@ -1,0 +1,39 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "data": {
+    "attributes": {
+      "age": 37,
+      "email": "bob@example.com",
+      "first_name": "Bob",
+      "last_name": "Green",
+      "status": "active"
+    },
+    "id": "3",
+    "relationships": {
+      "computers": {
+        "data": [
+          {
+            "id": "2",
+            "type": "computer"
+          }
+        ]
+      }
+    },
+    "type": "user"
+  },
+  "included": [
+    {
+      "attributes": {
+        "name": "Amstrad"
+      },
+      "id": "2",
+      "type": "computer"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": null
+}

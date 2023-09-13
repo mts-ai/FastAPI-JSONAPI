@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:8000/operations",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"atomic:operations\": [\n    {\n      \"op\": \"add\",\n      \"data\": {\n        \"type\": \"computer\",\n        \"attributes\": {\n          \"name\": \"Commodore\"\n        }\n      }\n    },\n    {\n      \"op\": \"update\",\n      \"data\": {\n        \"type\": \"user_bio\",\n        \"attributes\": {\n          \"favourite_movies\": \"Saw\"\n        }\n      }\n    }\n  ]\n}"
+  }
+}
