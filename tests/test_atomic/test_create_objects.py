@@ -680,7 +680,7 @@ class TestAtomicCreateObjects:
                     "lid": None,
                 },
                 "error": expected_error_text,
-                "message": "Validation error on operation #2",
+                "message": f"Validation error on operation {action_1['op']}",
                 "ref": None,
             },
         }
@@ -780,7 +780,7 @@ class TestAtomicCreateObjects:
                     "lid": None,
                 },
                 "error": expected_error_text,
-                "message": "Validation error on operation #2",
+                "message": f"Validation error on operation {action_2['op']}",
                 "ref": None,
             },
         }
@@ -895,6 +895,47 @@ class TestAtomicCreateObjects:
                     "meta": None,
                 },
             ],
+        }
+
+    async def test_create_object_schema_validation_error(
+        self,
+        client: AsyncClient,
+    ):
+        action_add = {
+            "op": "add",
+            "data": {
+                "type": "user",
+                # not passing the required `name` attribute
+                "attributes": {},
+            },
+        }
+        data_atomic_request = {
+            "atomic:operations": [
+                action_add,
+            ],
+        }
+
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        # TODO: json:api exception
+        assert response.json() == {
+            "detail": {
+                "data": {
+                    **action_add["data"],
+                    "id": None,
+                    "lid": None,
+                    "relationships": None,
+                },
+                "errors": [
+                    {
+                        "loc": ["data", "attributes", "name"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    },
+                ],
+                "message": f"Validation error on operation {action_add['op']}",
+                "ref": None,
+            },
         }
 
     @pytest.mark.skip("not ready yet")

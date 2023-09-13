@@ -24,6 +24,7 @@ class OperationBase:
     ref: Optional[AtomicOperationRef]
     data: OperationDataType
     data_layer_view_dependencies: Dict[str, Any]
+    op_type: str
 
     @classmethod
     def prepare(
@@ -56,6 +57,7 @@ class OperationBase:
             ref=ref,
             data=data,
             data_layer_view_dependencies=data_layer_view_dependencies,
+            op_type=action,
         )
 
     async def get_data_layer(self) -> BaseDataLayer:
