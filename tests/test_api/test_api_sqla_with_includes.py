@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI, status
 from httpx import AsyncClient
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, root_validator, validator
 from pytest import mark, param  # noqa PT013
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -2043,41 +2043,25 @@ class TestSorts:
 
 
 class TestValidators:
-    async def test_field_validator(self):
-        class UserSchemaWithValidator(BaseModel):
-            name: str
-
-            @validator("name")
-            def validate_name(cls, v):
-                # checks that cls arg is not bound to the origin class
-                assert cls is not UserSchemaWithValidator
-
-                raise BadRequest(detail="Check validator")
-
-            class Config:
-                orm_mode = True
-
+    async def execute_request_and_check_response(self, body: Dict, schema, expected_detail: str):
         resource_type = "user"
         app = build_app_custom(
             model=User,
-            schema=UserSchemaWithValidator,
-            schema_in_post=UserSchemaWithValidator,
-            schema_in_patch=UserSchemaWithValidator,
+            schema=schema,
+            schema_in_post=schema,
+            schema_in_patch=schema,
             resource_type=resource_type,
         )
 
-        attrs = {"name": fake.name()}
-        create_user_body = {"data": {"attributes": attrs}}
-
         async with AsyncClient(app=app, base_url="http://test") as client:
             url = app.url_path_for(f"get_{resource_type}_list")
-            res = await client.post(url, json=create_user_body)
+            res = await client.post(url, json=body)
             assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
             assert res.json() == {
                 "detail": {
                     "errors": [
                         {
-                            "detail": "Check validator",
+                            "detail": expected_detail,
                             "source": {"pointer": ""},
                             "status_code": 400,
                             "title": "Bad Request",
@@ -2085,6 +2069,255 @@ class TestValidators:
                     ],
                 },
             }
+
+    async def test_field_validator_call(self):
+        """
+        Basic check to ensure that field validator called
+        """
+
+        class UserSchemaWithValidatorCase1(BaseModel):
+            name: str
+
+            @validator("name")
+            def validate_name(cls, v):
+                # checks that cls arg is not bound to the origin class
+                assert cls is not UserSchemaWithValidatorCase1
+
+                raise BadRequest(detail="Check validator")
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"name": fake.name()}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase1,
+            expected_detail="Check validator",
+        )
+
+    async def test_field_validator_each_item_arg(self):
+        class UserSchemaWithValidatorCase2(BaseModel):
+            names: List[str]
+
+            @validator("names", each_item=True)
+            def validate_name(cls, v):
+                if v == "bad_name":
+                    raise BadRequest(detail="Bad name not allowed")
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"names": ["good_name", "bad_name"]}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase2,
+            expected_detail="Bad name not allowed",
+        )
+
+    async def test_field_validator_pre_arg(self):
+        class UserSchemaWithValidatorCase3(BaseModel):
+            name: List[str]
+
+            @validator("name", pre=True)
+            def validate_name_pre(cls, v):
+                raise BadRequest(detail="Pre validator called")
+
+            @validator("name")
+            def validate_name(cls, v):
+                raise BadRequest(detail="Not pre validator called")
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"name": fake.name()}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase3,
+            expected_detail="Pre validator called",
+        )
+
+    async def test_field_validator_always_arg(self):
+        class UserSchemaWithValidatorCase4(BaseModel):
+            name: str = None
+
+            @validator("name", always=True)
+            def validate_name(cls, v):
+                raise BadRequest(detail="Called always validator")
+
+            class Config:
+                orm_mode = True
+
+        create_user_body = {"data": {"attributes": {}}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase4,
+            expected_detail="Called always validator",
+        )
+
+    async def test_field_validator_several_validators(self):
+        class UserSchemaWithValidatorCase5(BaseModel):
+            field: str
+
+            @validator("field")
+            def validator_1(cls, v):
+                if v == "check_validator_1":
+                    raise BadRequest(detail="Called validator 1")
+
+                return v
+
+            @validator("field")
+            def validator_2(cls, v):
+                if v == "check_validator_2":
+                    raise BadRequest(detail="Called validator 2")
+
+                return v
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"field": "check_validator_1"}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase5,
+            expected_detail="Called validator 1",
+        )
+
+        attrs = {"field": "check_validator_2"}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase5,
+            expected_detail="Called validator 2",
+        )
+
+    async def test_field_validator_asterisk(self):
+        class UserSchemaWithValidatorCase6(BaseModel):
+            field_1: str
+            field_2: str
+
+            @validator("*", pre=True)
+            def validator(cls, v):
+                if v == "bad_value":
+                    raise BadRequest(detail="Check validator")
+
+            class Config:
+                orm_mode = True
+
+        attrs = {
+            "field_1": "bad_value",
+            "field_2": "",
+        }
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase6,
+            expected_detail="Check validator",
+        )
+
+        attrs = {
+            "field_1": "",
+            "field_2": "bad_value",
+        }
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase6,
+            expected_detail="Check validator",
+        )
+
+    async def test_check_validator_for_id_field(self):
+        """
+        Unusual case because of "id" field handling in
+        a different way than attributes
+        """
+
+        class UserSchemaWithValidatorCase7(BaseModel):
+            id: int = Field(client_can_set_id=True)
+
+            @validator("id")
+            def validate_id(cls, v):
+                raise BadRequest(detail="Check validator")
+
+            class Config:
+                orm_mode = True
+
+        create_user_body = {
+            "data": {
+                "attributes": {},
+                "id": 42,
+            },
+        }
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase7,
+            expected_detail="Check validator",
+        )
+
+    @mark.parametrize(
+        ("name", "expected_detail"),
+        [
+            param("check_pre_1", "Raised 1 pre validator", id="check_1_pre_validator"),
+            param("check_pre_2", "Raised 2 pre validator", id="check_2_pre_validator"),
+            param("check_post_1", "Raised 1 post validator", id="check_1_post_validator"),
+            param("check_post_2", "Raised 2 post validator", id="check_2_post_validator"),
+        ],
+    )
+    async def test_root_validator(self, name: str, expected_detail: str):
+        class UserSchemaWithValidatorCase8(BaseModel):
+            name: str
+
+            @root_validator(pre=True, allow_reuse=True)
+            def validator_pre_1(cls, values):
+                if values["name"] == "check_pre_1":
+                    raise BadRequest(detail="Raised 1 pre validator")
+
+                return values
+
+            @root_validator(pre=True, allow_reuse=True)
+            def validator_pre_2(cls, values):
+                if values["name"] == "check_pre_2":
+                    raise BadRequest(detail="Raised 2 pre validator")
+
+                return values
+
+            @root_validator(allow_reuse=True)
+            def validator_post_1(cls, values):
+                if values["name"] == "check_post_1":
+                    raise BadRequest(detail="Raised 1 post validator")
+
+                return values
+
+            @root_validator(allow_reuse=True)
+            def validator_post_2(cls, values):
+                if values["name"] == "check_post_2":
+                    raise BadRequest(detail="Raised 2 post validator")
+
+                return values
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"name": name}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            body=create_user_body,
+            schema=UserSchemaWithValidatorCase8,
+            expected_detail=expected_detail,
+        )
 
 
 # todo: test errors
