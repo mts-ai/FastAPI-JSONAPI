@@ -141,8 +141,11 @@ Response:
 Remove object
 -------------
 
-You can mix any actions, for example you can create, update, remove at the same time:
 
+Operations include remove object action
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can mix any actions, for example you can create, update, remove at the same time:
 
 Request:
 
@@ -154,6 +157,9 @@ Response:
 .. literalinclude:: ./http_snippets/snippets/example_atomic_five__mixed_actions_result
   :language: HTTP
 
+
+All operations remove objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If all actions are to delete objects, empty response will be returned:
 
