@@ -2063,7 +2063,7 @@ class TestValidators:
                         {
                             "detail": expected_detail,
                             "source": {"pointer": ""},
-                            "status_code": 400,
+                            "status_code": status.HTTP_400_BAD_REQUEST,
                             "title": "Bad Request",
                         },
                     ],
