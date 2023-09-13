@@ -1,0 +1,50 @@
+POST /operations HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+   "atomic:operations":[
+      {
+         "op":"add",
+         "data":{
+            "lid":"new-parent",
+            "type":"parent",
+            "attributes":{
+               "name":"David Newton"
+            }
+         }
+      },
+      {
+         "op":"add",
+         "data":{
+            "lid":"new-child",
+            "type":"child",
+            "attributes":{
+               "name":"James Owen"
+            }
+         }
+      },
+      {
+         "op":"add",
+         "data":{
+            "type":"parent-to-child-association",
+            "attributes":{
+               "extra_data":"Lay piece happy box."
+            },
+            "relationships":{
+               "parent":{
+                  "data":{
+                     "lid":"new-parent",
+                     "type":"parent"
+                  }
+               },
+               "child":{
+                  "data":{
+                     "lid":"new-child",
+                     "type":"child"
+                  }
+               }
+            }
+         }
+      }
+   ]
+}

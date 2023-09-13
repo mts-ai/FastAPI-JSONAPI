@@ -1,0 +1,42 @@
+POST /operations HTTP/1.1
+Content-Type: application/vnd.api+json
+
+{
+  "atomic:operations": [
+    {
+      "op": "add",
+      "data": {
+        "type": "computer",
+        "attributes": {
+          "name": "Liza"
+        },
+        "relationships": {
+          "user": {
+            "data": {
+              "id": "1",
+              "type": "user"
+            }
+          }
+        }
+      }
+    },
+    {
+      "op": "update",
+      "data": {
+        "id": "2",
+        "type": "user_bio",
+        "attributes": {
+          "birth_city": "Saint Petersburg",
+          "favourite_movies": "\"The Good, the Bad and the Ugly\", \"Once Upon a Time in America\""
+        }
+      }
+    },
+    {
+      "op": "remove",
+      "ref": {
+        "id": "2",
+        "type": "child"
+      }
+    }
+  ]
+}

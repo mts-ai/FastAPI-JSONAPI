@@ -1,0 +1,31 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "atomic:results": [
+    {
+      "data": {
+        "attributes": {
+          "name": "Commodore"
+        },
+        "id": "4",
+        "type": "computer"
+      },
+      "meta": null
+    },
+    {
+      "data": {
+        "attributes": {
+          "age": null,
+          "email": null,
+          "first_name": "Kate",
+          "last_name": "Grey",
+          "status": "active"
+        },
+        "id": "5",
+        "type": "user"
+      },
+      "meta": null
+    }
+  ]
+}

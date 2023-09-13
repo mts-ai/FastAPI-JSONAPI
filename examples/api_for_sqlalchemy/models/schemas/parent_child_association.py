@@ -12,12 +12,14 @@ class ParentToChildAssociationSchema(BaseModel):
     extra_data: str
 
     parent: "ParentSchema" = Field(
+        default=None,
         relationship=RelationshipInfo(
             resource_type="parent",
         ),
     )
 
     child: "ChildSchema" = Field(
+        default=None,
         relationship=RelationshipInfo(
             resource_type="child",
         ),

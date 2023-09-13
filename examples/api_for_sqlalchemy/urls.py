@@ -15,6 +15,7 @@ from examples.api_for_sqlalchemy.models import (
     Child,
     Computer,
     Parent,
+    ParentToChildAssociation,
     Post,
     User,
     UserBio,
@@ -33,6 +34,7 @@ from .models.schemas import (
     ParentInSchema,
     ParentPatchSchema,
     ParentSchema,
+    ParentToChildAssociationSchema,
     PostInSchema,
     PostPatchSchema,
     PostSchema,
@@ -122,6 +124,18 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
         schema_in_patch=ChildPatchSchema,
         schema_in_post=ChildInSchema,
     )
+
+    RoutersJSONAPI(
+        router=router,
+        path="/parent-to-child-association",
+        tags=["Parent To Child Association"],
+        class_detail=DetailViewBase,
+        class_list=ListViewBase,
+        schema=ParentToChildAssociationSchema,
+        resource_type="parent-to-child-association",
+        model=ParentToChildAssociation,
+    )
+
     RoutersJSONAPI(
         router=router,
         path="/computers",

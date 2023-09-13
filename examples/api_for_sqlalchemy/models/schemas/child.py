@@ -15,6 +15,7 @@ class ChildBaseSchema(BaseModel):
     name: str
 
     parents: List["ParentToChildAssociationSchema"] = Field(
+        default=None,
         relationship=RelationshipInfo(
             resource_type="parent_child_association",
             many=True,

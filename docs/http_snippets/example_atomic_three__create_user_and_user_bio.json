@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:8000/operations",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n   \"atomic:operations\":[\n      {\n         \"op\":\"add\",\n         \"data\":{\n            \"lid\":\"some-local-id\",\n            \"type\":\"user\",\n            \"attributes\":{\n               \"first_name\":\"Bob\",\n               \"last_name\":\"Pink\"\n            }\n         }\n      },\n      {\n         \"op\":\"add\",\n         \"data\":{\n            \"type\":\"user_bio\",\n            \"attributes\":{\n               \"birth_city\":\"Moscow\",\n               \"favourite_movies\":\"Jaws, Alien\"\n            },\n            \"relationships\":{\n               \"user\":{\n                  \"data\":{\n                     \"lid\":\"some-local-id\",\n                     \"type\":\"user\"\n                  }\n               }\n            }\n         }\n      }\n   ]\n}"
+  }
+}

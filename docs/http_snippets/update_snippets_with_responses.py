@@ -76,21 +76,19 @@ def run_request_for_module(module_name: str):
         )
     )
 
-    http_response_text.append(
-        "{}: {}".format(
-            "Content-Type",
-            response.headers.get("content-type"),
-        )
-    )
+    if ct := response.headers.get("content-type"):
+        http_response_text.append("{}: {}".format("Content-Type", ct))
     http_response_text.append("")
 
-    http_response_text.append(
-        simplejson.dumps(
-            response.json(),
-            sort_keys=SORT_KEYS_ON_DUMP,
-            indent=2,
-        ),
-    )
+    if response.content:
+        # TODO: handle non-json response?
+        http_response_text.append(
+            simplejson.dumps(
+                response.json(),
+                sort_keys=SORT_KEYS_ON_DUMP,
+                indent=2,
+            ),
+        )
 
     http_response_text.append("")
 

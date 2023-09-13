@@ -1,0 +1,37 @@
+HTTP/1.1 422 Unprocessable Entity
+Content-Type: application/json
+
+{
+  "detail": {
+    "data": {
+      "attributes": {
+        "favourite_movies": "Saw"
+      },
+      "id": null,
+      "lid": null,
+      "relationships": null,
+      "type": "user_bio"
+    },
+    "errors": [
+      {
+        "loc": [
+          "data",
+          "attributes",
+          "birth_city"
+        ],
+        "msg": "field required",
+        "type": "value_error.missing"
+      },
+      {
+        "loc": [
+          "data",
+          "id"
+        ],
+        "msg": "none is not an allowed value",
+        "type": "type_error.none.not_allowed"
+      }
+    ],
+    "message": "Validation error on operation update",
+    "ref": null
+  }
+}

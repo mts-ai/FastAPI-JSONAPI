@@ -1,0 +1,33 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "atomic:results": [
+    {
+      "data": {
+        "attributes": {
+          "name": "Liza"
+        },
+        "id": "5",
+        "type": "computer"
+      },
+      "meta": null
+    },
+    {
+      "data": {
+        "attributes": {
+          "birth_city": "Saint Petersburg",
+          "favourite_movies": "\"The Good, the Bad and the Ugly\", \"Once Upon a Time in America\"",
+          "keys_to_ids_list": null,
+        },
+        "id": "2",
+        "type": "user_bio"
+      },
+      "meta": null
+    },
+    {
+      "data": null,
+      "meta": null
+    }
+  ]
+}

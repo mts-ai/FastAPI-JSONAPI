@@ -1,0 +1,37 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "atomic:results": [
+    {
+      "data": {
+        "attributes": {
+          "name": "David Newton"
+        },
+        "id": "1",
+        "type": "parent"
+      },
+      "meta": null
+    },
+    {
+      "data": {
+        "attributes": {
+          "name": "James Owen"
+        },
+        "id": "1",
+        "type": "child"
+      },
+      "meta": null
+    },
+    {
+      "data": {
+        "attributes": {
+          "extra_data": "Lay piece happy box."
+        },
+        "id": "1",
+        "type": "parent-to-child-association"
+      },
+      "meta": null
+    }
+  ]
+}

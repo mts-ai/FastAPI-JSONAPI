@@ -1,0 +1,46 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "data": {
+    "attributes": {
+      "extra_data": "Lay piece happy box."
+    },
+    "id": "1",
+    "relationships": {
+      "child": {
+        "data": {
+          "id": "1",
+          "type": "child"
+        }
+      },
+      "parent": {
+        "data": {
+          "id": "1",
+          "type": "parent"
+        }
+      }
+    },
+    "type": "parent-to-child-association"
+  },
+  "included": [
+    {
+      "attributes": {
+        "name": "James Owen"
+      },
+      "id": "1",
+      "type": "child"
+    },
+    {
+      "attributes": {
+        "name": "David Newton"
+      },
+      "id": "1",
+      "type": "parent"
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "meta": null
+}

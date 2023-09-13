@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "url": "http://localhost:8000/operations",
+  "httpVersion": "HTTP/1.1",
+  "queryString": [
+  ],
+  "headers": [
+    {
+      "name": "content-type",
+      "value": "application/vnd.api+json"
+    }
+  ],
+  "postData": {
+    "mimeType": "application/json",
+    "text": "{\n  \"atomic:operations\": [\n    {\n      \"op\": \"add\",\n      \"data\": {\n        \"type\": \"computer\",\n        \"attributes\": {\n          \"name\": \"Liza\"\n        },\n        \"relationships\": {\n          \"user\": {\n            \"data\": {\n              \"id\": \"1\",\n              \"type\": \"user\"\n            }\n          }\n        }\n      }\n    },\n    {\n      \"op\": \"update\",\n      \"data\": {\n        \"id\": \"2\",\n        \"type\": \"user_bio\",\n        \"attributes\": {\n          \"birth_city\": \"Saint Petersburg\",\n          \"favourite_movies\": \"\\\"The Good, the Bad and the Ugly\\\", \\\"Once Upon a Time in America\\\"\"\n        }\n      }\n    },\n    {\n      \"op\": \"remove\",\n      \"ref\": {\n        \"id\": \"2\",\n        \"type\": \"child\"\n      }\n    }\n  ]\n}"
+  }
+}

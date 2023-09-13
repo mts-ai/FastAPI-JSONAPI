@@ -1,0 +1,32 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "atomic:results": [
+    {
+      "data": {
+        "attributes": {
+          "age": null,
+          "email": null,
+          "first_name": "Bob",
+          "last_name": "Pink",
+          "status": "active"
+        },
+        "id": "7",
+        "type": "user"
+      },
+      "meta": null
+    },
+    {
+      "data": {
+        "attributes": {
+          "birth_city": "Moscow",
+          "favourite_movies": "Jaws, Alien"
+        },
+        "id": "2",
+        "type": "user_bio"
+      },
+      "meta": null
+    }
+  ]
+}
