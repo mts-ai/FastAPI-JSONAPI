@@ -252,7 +252,11 @@ class SchemaBuilder:
                     field=field,
                     relationship_info=relationship,
                 )
-                relationship_field = ... if (non_optional_relationships and field.required) else None
+                # TODO: xxx
+                #  is there a way to read that the field type is Optional? (r.n. it's ForwardRef)
+                # consider field is not required until is marked required explicitly (`default=...` means required)
+                field_marked_required = field.required is True
+                relationship_field = ... if (non_optional_relationships and field_marked_required) else None
                 if relationship_field is not None:
                     has_required_relationship = True
                 relationships_schema_fields[name] = (relationship_schema, relationship_field)

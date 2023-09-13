@@ -81,17 +81,15 @@ class OperationBase:
         resource_type = relationship_info["type"]
         if resource_type not in local_ids:
             msg = (
-                f"Resource {resource_type} not found in previous operations,"
-                f" no lid {lid} defined yet, cannot create {relationship_info}"
+                f"Resource {resource_type!r} not found in previous operations,"
+                f" no lid {lid!r} defined yet, cannot create {relationship_info}"
             )
-            raise ValueError(
-                msg,
-            )
+            raise ValueError(msg)
 
         lids_for_resource = local_ids[resource_type]
         if lid not in lids_for_resource:
             msg = (
-                f"lid {lid} for {resource_type} not found in previous operations,"
+                f"lid {lid!r} for {resource_type!r} not found in previous operations,"
                 f" cannot process {relationship_info}"
             )
             raise ValueError(msg)

@@ -14,6 +14,7 @@ from tests.models import (
     Child,
     Computer,
     Parent,
+    ParentToChildAssociation,
     Post,
     PostComment,
     User,
@@ -28,6 +29,7 @@ from tests.schemas import (
     ComputerSchema,
     ParentPatchSchema,
     ParentSchema,
+    ParentToChildAssociationSchema,
     PostCommentSchema,
     PostInSchema,
     PostPatchSchema,
@@ -131,6 +133,17 @@ def add_routers(app_plain: FastAPI):
         schema_in_patch=ChildPatchSchema,
         schema_in_post=ChildInSchema,
         model=Child,
+    )
+
+    RoutersJSONAPI(
+        router=router,
+        path="/parent-to-child-association",
+        tags=["Parent To Child Association"],
+        class_detail=DetailViewBaseGeneric,
+        class_list=ListViewBaseGeneric,
+        schema=ParentToChildAssociationSchema,
+        resource_type="parent-to-child-association",
+        model=ParentToChildAssociation,
     )
 
     RoutersJSONAPI(

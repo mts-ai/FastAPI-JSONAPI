@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -11,6 +12,8 @@ from typing import (
     Union,
 )
 
+from fastapi import HTTPException, status
+from pydantic import ValidationError
 from starlette.requests import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
@@ -22,6 +25,7 @@ from fastapi_jsonapi.views.utils import HTTPMethodConfig
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
 
+log = logging.getLogger(__name__)
 AtomicResponseDict = TypedDict("AtomicResponseDict", {"atomic:results": List[Any]})
 
 
@@ -84,12 +88,35 @@ class AtomicViewHandler:
         local_ids_cache: LocalIdsType = defaultdict(dict)
         success = True
         previous_dl: Optional[BaseDataLayer] = None
-        for operation in prepared_operations:
+        for idx, operation in enumerate(prepared_operations, start=1):
             dl: BaseDataLayer = await operation.get_data_layer()
             await dl.atomic_start(previous_dl=previous_dl)
             previous_dl = dl
-            operation.update_relationships_with_lid(local_ids=local_ids_cache)
-            response = await operation.handle(dl=dl)
+            try:
+                operation.update_relationships_with_lid(local_ids=local_ids_cache)
+                response = await operation.handle(dl=dl)
+            except (ValidationError, ValueError) as ex:
+                log.exception(
+                    "Validation error on atomic action ref=%s, data=%s",
+                    operation.ref,
+                    operation.data,
+                )
+                errors_details = {
+                    "message": f"Validation error on operation #{idx}",
+                    "ref": operation.ref,
+                    "data": operation.data.dict(),
+                }
+                if isinstance(ex, ValidationError):
+                    errors_details.update(errors=ex.errors())
+                elif isinstance(ex, ValueError):
+                    errors_details.update(error=str(ex))
+                else:
+                    raise
+                # TODO: json:api exception
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=errors_details,
+                )
             # response.data.id
             if not response:
                 # https://jsonapi.org/ext/atomic/#result-objects

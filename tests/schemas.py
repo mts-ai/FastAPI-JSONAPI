@@ -176,9 +176,14 @@ class PostCommentSchema(PostCommentBaseSchema):
 # Association Schemas ⬇️
 
 
-class ParentToChildAssociationSchema(BaseModel):
-    id: int
+class ParentToChildAssociationAttributesSchema(BaseModel):
     extra_data: str
+
+    class Config:
+        orm_mode = True
+
+
+class ParentToChildAssociationSchema(ParentToChildAssociationAttributesSchema):
     parent: "ParentSchema" = Field(
         relationship=RelationshipInfo(
             resource_type="parent",
@@ -195,17 +200,20 @@ class ParentToChildAssociationSchema(BaseModel):
 # Parent Schemas ⬇️
 
 
-class ParentBaseSchema(BaseModel):
-    """Parent base schema."""
+class ParentAttributesSchema(BaseModel):
+    name: str
 
     class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
-    name: str
+
+class ParentBaseSchema(ParentAttributesSchema):
+    """Parent base schema."""
 
     children: List["ParentToChildAssociationSchema"] = Field(
+        default=None,
         relationship=RelationshipInfo(
             resource_type="parent_child_association",
             many=True,
@@ -230,17 +238,20 @@ class ParentSchema(ParentInSchema):
 # Child Schemas ⬇️
 
 
-class ChildBaseSchema(BaseModel):
-    """Child base schema."""
+class ChildAttributesSchema(BaseModel):
+    name: str
 
     class Config:
         """Pydantic schema config."""
 
         orm_mode = True
 
-    name: str
+
+class ChildBaseSchema(ChildAttributesSchema):
+    """Child base schema."""
 
     parents: List["ParentToChildAssociationSchema"] = Field(
+        default=None,
         relationship=RelationshipInfo(
             resource_type="parent_child_association",
             many=True,

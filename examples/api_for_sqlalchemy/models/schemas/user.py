@@ -45,7 +45,7 @@ class UserBaseSchema(BaseModel):
         ),
     )
 
-    computers: Optional["ComputerSchema"] = Field(
+    computers: Optional[List["ComputerSchema"]] = Field(
         relationship=RelationshipInfo(
             resource_type="computer",
             many=True,

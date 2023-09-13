@@ -11,8 +11,15 @@ from sqlalchemy.sql.functions import count
 from starlette import status
 
 from tests.misc.utils import fake
-from tests.models import User, UserBio
-from tests.schemas import ComputerAttributesBaseSchema, UserAttributesBaseSchema, UserBioAttributesBaseSchema
+from tests.models import Child, Parent, ParentToChildAssociation, User, UserBio
+from tests.schemas import (
+    ChildAttributesSchema,
+    ComputerAttributesBaseSchema,
+    ParentAttributesSchema,
+    ParentToChildAssociationAttributesSchema,
+    UserAttributesBaseSchema,
+    UserBioAttributesBaseSchema,
+)
 
 pytestmark = mark.asyncio
 
@@ -631,38 +638,52 @@ class TestAtomicCreateObjects:
             "lid": user_lid,
             "type": relation_type,
         }
+
+        action_1 = {
+            "op": "add",
+            "data": {
+                "type": "user",
+                "attributes": user_data.dict(),
+            },
+        }
+        action_2 = {
+            "op": "add",
+            "data": {
+                "type": "computer",
+                "attributes": computer_data.dict(),
+                "relationships": {
+                    "user": {
+                        "data": relationship_info,
+                    },
+                },
+            },
+        }
         data_atomic_request = {
             "atomic:operations": [
-                {
-                    "op": "add",
-                    "data": {
-                        "type": "user",
-                        "attributes": user_data.dict(),
-                    },
-                },
-                {
-                    "op": "add",
-                    "data": {
-                        "type": "computer",
-                        "attributes": computer_data.dict(),
-                        "relationships": {
-                            "user": {
-                                "data": relationship_info,
-                            },
-                        },
-                    },
-                },
+                action_1,
+                action_2,
             ],
         }
 
         expected_error_text = (
-            f"Resource {relation_type} not found in previous operations, "
-            f"no lid {user_lid} defined yet, cannot create {relationship_info}"
+            f"Resource {relation_type!r} not found in previous operations, "
+            f"no lid {user_lid!r} defined yet, cannot create {relationship_info}"
         )
 
-        with pytest.raises(ValueError, match=expected_error_text):
-            # TODO: where's http exception?
-            await client.post("/operations", json=data_atomic_request)
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        assert response.json() == {
+            "detail": {
+                "data": {
+                    **action_2["data"],
+                    "id": None,
+                    "lid": None,
+                },
+                "error": expected_error_text,
+                "message": "Validation error on operation #2",
+                "ref": None,
+            },
+        }
 
         user = await async_session.scalar(user_stmt)
         assert user is None
@@ -718,24 +739,104 @@ class TestAtomicCreateObjects:
             "lid": another_lid,
             "type": relation_type,
         }
-        data_atomic_request = {
-            "atomic:operations": [
-                {
-                    "op": "add",
-                    "data": {
-                        "type": "user",
-                        "lid": user_lid,
-                        "attributes": user_data.dict(),
+        action_1 = {
+            "op": "add",
+            "data": {
+                "type": "user",
+                "lid": user_lid,
+                "attributes": user_data.dict(),
+            },
+        }
+        action_2 = {
+            "op": "add",
+            "data": {
+                "type": "computer",
+                "attributes": computer_data.dict(),
+                "relationships": {
+                    "user": {
+                        "data": relationship_info,
                     },
                 },
+            },
+        }
+        data_atomic_request = {
+            "atomic:operations": [
+                action_1,
+                action_2,
+            ],
+        }
+
+        expected_error_text = (
+            f"lid {another_lid!r} for {relation_type!r} not found"
+            f" in previous operations, cannot process {relationship_info}"
+        )
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+        assert response.json() == {
+            "detail": {
+                "data": {
+                    **action_2["data"],
+                    "id": None,
+                    "lid": None,
+                },
+                "error": expected_error_text,
+                "message": "Validation error on operation #2",
+                "ref": None,
+            },
+        }
+
+        user = await async_session.scalar(user_stmt)
+        assert user is None
+
+    async def test_create_and_associate_many_to_many(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        parent_data = ParentAttributesSchema(name=fake.name())
+        child_data = ChildAttributesSchema(name=fake.name())
+        association_extra_data = fake.sentence()
+
+        data_atomic_request = {
+            "atomic:operations": [
+                # create parent
                 {
                     "op": "add",
                     "data": {
-                        "type": "computer",
-                        "attributes": computer_data.dict(),
+                        "lid": "new-parent",
+                        "type": "parent",
+                        "attributes": parent_data.dict(),
+                    },
+                },
+                # create child
+                {
+                    "op": "add",
+                    "data": {
+                        "lid": "new-child",
+                        "type": "child",
+                        "attributes": child_data.dict(),
+                    },
+                },
+                # create parent-to-child association
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "parent-to-child-association",
+                        "attributes": {
+                            "extra_data": association_extra_data,
+                        },
                         "relationships": {
-                            "user": {
-                                "data": relationship_info,
+                            "parent": {
+                                "data": {
+                                    "lid": "new-parent",
+                                    "type": "parent",
+                                },
+                            },
+                            "child": {
+                                "data": {
+                                    "lid": "new-child",
+                                    "type": "child",
+                                },
                             },
                         },
                     },
@@ -743,16 +844,58 @@ class TestAtomicCreateObjects:
             ],
         }
 
-        expected_error_text = (
-            f"lid {another_lid} for {relation_type} not found"
-            f" in previous operations, cannot process {relationship_info}"
-        )
-        with pytest.raises(ValueError, match=expected_error_text):
-            # TODO: where's http exception?
-            await client.post("/operations", json=data_atomic_request)
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
 
-        user = await async_session.scalar(user_stmt)
-        assert user is None
+        stmt = (
+            select(ParentToChildAssociation)
+            .join(ParentToChildAssociation.parent)
+            .join(ParentToChildAssociation.child)
+            .where(
+                ParentToChildAssociation.extra_data == association_extra_data,
+                Parent.name == parent_data.name,
+                Child.name == child_data.name,
+            )
+            .options(
+                joinedload(ParentToChildAssociation.parent),
+                joinedload(ParentToChildAssociation.child),
+            )
+        )
+        result: Result = await async_session.execute(stmt)
+        assoc: ParentToChildAssociation = result.scalar_one()
+
+        assert isinstance(assoc.parent, Parent)
+        assert isinstance(assoc.child, Child)
+
+        assert response_data == {
+            "atomic:results": [
+                {
+                    "data": {
+                        "attributes": ParentAttributesSchema.from_orm(assoc.parent).dict(),
+                        "id": str(assoc.parent.id),
+                        "type": "parent",
+                    },
+                    "meta": None,
+                },
+                {
+                    "data": {
+                        "attributes": ChildAttributesSchema.from_orm(assoc.child).dict(),
+                        "id": str(assoc.child.id),
+                        "type": "child",
+                    },
+                    "meta": None,
+                },
+                {
+                    "data": {
+                        "attributes": ParentToChildAssociationAttributesSchema.from_orm(assoc).dict(),
+                        "id": str(assoc.id),
+                        "type": "parent-to-child-association",
+                    },
+                    "meta": None,
+                },
+            ],
+        }
 
     @pytest.mark.skip("not ready yet")
     async def test_update_to_many_relationship_with_local_id(
