@@ -2293,6 +2293,38 @@ class TestValidators:
             expected_detail="Check validator",
         )
 
+    async def test_field_validator_can_change_value(self):
+        class UserSchemaWithValidator(BaseModel):
+            name: str
+
+            @validator("name")
+            def fix_title(cls, v):
+                return v.title()
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"name": "john doe"}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        app = self.build_app(UserSchemaWithValidator)
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"get_{self.resource_type}_list")
+            res = await client.post(url, json=create_user_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+
+            res_json = res.json()
+            assert res_json["data"]
+            assert res_json["data"].pop("id")
+            assert res_json == {
+                "data": {
+                    "attributes": {"name": "John Doe"},
+                    "type": "validator",
+                },
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
+
     @mark.parametrize(
         ("name", "expected_detail"),
         [
@@ -2345,6 +2377,39 @@ class TestValidators:
             body=create_user_body,
             expected_detail=expected_detail,
         )
+
+    async def test_root_validator_can_change_value(self):
+        class UserSchemaWithValidator(BaseModel):
+            name: str
+
+            @root_validator
+            def fix_title(cls, v):
+                v["name"] = v["name"].title()
+                return v
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"name": "john doe"}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        app = self.build_app(UserSchemaWithValidator)
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"get_{self.resource_type}_list")
+            res = await client.post(url, json=create_user_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+
+            res_json = res.json()
+            assert res_json["data"]
+            assert res_json["data"].pop("id")
+            assert res_json == {
+                "data": {
+                    "attributes": {"name": "John Doe"},
+                    "type": "validator",
+                },
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
 
 
 # todo: test errors
