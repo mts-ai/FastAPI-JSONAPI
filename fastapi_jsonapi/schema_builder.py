@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -14,9 +15,10 @@ from typing import (
 )
 
 import pydantic
-from pydantic import BaseConfig
+from pydantic import BaseConfig, root_validator, validator
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic.fields import FieldInfo, ModelField
+from pydantic.class_validators import ROOT_VALIDATOR_CONFIG_KEY, VALIDATOR_CONFIG_KEY
+from pydantic.fields import FieldInfo, ModelField, Validator
 
 from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
@@ -64,13 +66,13 @@ class BuiltSchemasDTO:
     list_response_schema: Type[JSONAPIResultListSchema]
 
 
-FieldValidator = Optional[Any]
+FieldValidators = Dict[str, Callable]
 
 
 @dataclass(frozen=True)
 class SchemasInfoDTO:
     # id field
-    resource_id_field: Tuple[Type, FieldInfo, Callable]
+    resource_id_field: Tuple[Type, FieldInfo, Callable, FieldValidators]
     # pre-built attributes
     attributes_schema: Type[BaseModel]
     # relationships
@@ -236,7 +238,7 @@ class SchemaBuilder:
         relationships_schema_fields = {}
         included_schemas: List[Tuple[str, BaseModel, str]] = []
         has_required_relationship = False
-        resource_id_field = (str, Field(None), None)
+        resource_id_field = (str, Field(None), None, {})
 
         for name, field in (schema.__fields__ or {}).items():
             if isinstance(field.field_info.extra.get("relationship"), RelationshipInfo):
@@ -263,12 +265,15 @@ class SchemaBuilder:
                 # works both for to-one and to-many
                 included_schemas.append((name, field.type_, relationship.resource_type))
             elif name == "id":
+                id_validators = self._extract_field_validators(schema, target_field_name="id")
+                resource_id_field = (*(resource_id_field[:-1]), id_validators)
+
                 if not field.field_info.extra.get("client_can_set_id"):
                     continue
 
                 # todo: support for union types?
                 #  support custom cast func
-                resource_id_field = (str, Field(**field.field_info.extra), field.outer_type_)
+                resource_id_field = (str, Field(**field.field_info.extra), field.outer_type_, id_validators)
             else:
                 attributes_schema_fields[name] = (field.outer_type_, field.field_info)
 
@@ -279,6 +284,7 @@ class SchemaBuilder:
             f"{base_name}AttributesJSONAPI",
             **attributes_schema_fields,
             __config__=ConfigOrmMode,
+            __validators__=self._extract_validators(schema, exclude_for_field_names={"id"}),
         )
 
         relationships_schema = pydantic.create_model(
@@ -346,6 +352,111 @@ class SchemaBuilder:
         self.relationship_schema_cache[cache_key] = relationship_data_schema
         return relationship_data_schema
 
+    def _is_target_validator(self, attr_name: str, value: Any, validator_config_key: str) -> bool:
+        """
+        True if passed object is validator of type identified by "validator_config_key" arg
+
+        :param attr_name:
+        :param value:
+        :param validator_config_key: Choice field, available options are pydantic consts
+                                     VALIDATOR_CONFIG_KEY, ROOT_VALIDATOR_CONFIG_KEY
+        """
+        return (
+            # also with private items
+            not attr_name.startswith("__")
+            and getattr(value, validator_config_key, None)
+        )
+
+    def _unpack_validators(self, model: Type[BaseModel], validator_config_key: str) -> Dict[str, Validator]:
+        """
+        Selects all validators from model attrs and unpack them from class methods
+
+        :param model: Type[BaseModel]
+        :param validator_config_key: Choice field, available options are pydantic consts
+                                     VALIDATOR_CONFIG_KEY, ROOT_VALIDATOR_CONFIG_KEY
+        """
+        root_validator_class_methods = {
+            # validators only
+            attr_name: value
+            for attr_name, value in model.__dict__.items()
+            if self._is_target_validator(attr_name, value, validator_config_key)
+        }
+
+        return {
+            validator_name: getattr(validator_method, validator_config_key)
+            for validator_name, validator_method in root_validator_class_methods.items()
+        }
+
+    def _extract_root_validators(self, model: Type[BaseModel]) -> Dict[str, Callable]:
+        validators = {}
+
+        unpacked_validators = self._unpack_validators(model, ROOT_VALIDATOR_CONFIG_KEY)
+        for validator_name, validator_instance in unpacked_validators.items():
+            validators[validator_name] = root_validator(
+                pre=validator_instance.pre,
+                skip_on_failure=validator_instance.skip_on_failure,
+                allow_reuse=True,
+            )(validator_instance.func)
+
+        return validators
+
+    def _extract_field_validators(
+        self,
+        model: Type[BaseModel],
+        target_field_name: str = None,
+        exclude_for_field_names: Set[str] = None,
+    ) -> Dict[str, Callable]:
+        """
+        :param model: Type[BaseModel]
+        :param target_field_name: Name of field for which validators will be returned.
+                                  If not set the function will return validators for all fields.
+        """
+        validators = {}
+        validator_origin_param_keys = ("pre", "each_item", "always", "check_fields")
+
+        unpacked_validators = self._unpack_validators(model, VALIDATOR_CONFIG_KEY)
+        for validator_name, (field_names, validator_instance) in unpacked_validators.items():
+            if target_field_name and target_field_name not in field_names:
+                continue
+            elif target_field_name:
+                field_names = [target_field_name]  # noqa: PLW2901
+
+            if exclude_for_field_names:
+                field_names = [  # noqa: PLW2901
+                    # filter names
+                    field_name
+                    for field_name in field_names
+                    if field_name not in exclude_for_field_names
+                ]
+
+            if not field_names:
+                continue
+
+            validators[validator_name] = validator(
+                *field_names,
+                allow_reuse=True,
+                **{
+                    # copy origin params
+                    param_name: getattr(validator_instance, param_name)
+                    for param_name in validator_origin_param_keys
+                },
+            )(validator_instance.func)
+
+        return validators
+
+    def _extract_validators(
+        self,
+        model: Type[BaseModel],
+        exclude_for_field_names: Set[str] = None,
+    ) -> Dict[str, Callable]:
+        return {
+            **self._extract_field_validators(
+                model,
+                exclude_for_field_names=exclude_for_field_names,
+            ),
+            **self._extract_root_validators(model),
+        }
+
     def _build_jsonapi_object(
         self,
         base_name: str,
@@ -353,7 +464,7 @@ class SchemaBuilder:
         attributes_schema: Type[TypeSchema],
         relationships_schema: Type[TypeSchema],
         includes,
-        resource_id_field: Tuple[Type, FieldInfo, Callable],
+        resource_id_field: Tuple[Type, FieldInfo, Callable, FieldValidators],
         model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
         use_schema_cache: bool = True,
         relationships_required: bool = False,
@@ -362,7 +473,7 @@ class SchemaBuilder:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
 
-        field_type, field_info, id_cast_func = resource_id_field
+        field_type, field_info, id_cast_func, id_validators = resource_id_field
 
         id_field_kw = {
             **field_info.extra,
@@ -383,6 +494,7 @@ class SchemaBuilder:
             f"{base_name}ObjectJSONAPI",
             **object_jsonapi_schema_fields,
             type=(str, Field(default=resource_type or self._resource_type, description="Resource type")),
+            __validators__=id_validators,
             __base__=model_base,
         )
 

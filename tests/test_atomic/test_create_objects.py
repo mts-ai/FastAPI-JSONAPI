@@ -21,9 +21,15 @@ from tests.schemas import (
     UserBioAttributesBaseSchema,
 )
 
+COLUMN_CHARACTERS_LIMIT = 50
+
 pytestmark = mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
+
+
+def random_sentence() -> str:
+    return fake.sentence()[:COLUMN_CHARACTERS_LIMIT]
 
 
 class TestAtomicCreateObjects:
@@ -216,7 +222,7 @@ class TestAtomicCreateObjects:
     ):
         user_bio = UserBioAttributesBaseSchema(
             birth_city=fake.city(),
-            favourite_movies=fake.sentence(),
+            favourite_movies=random_sentence(),
         )
         stmt_bio = select(UserBio).where(UserBio.user_id == user_1.id)
         res: Result = await async_session.execute(stmt_bio)
@@ -280,7 +286,7 @@ class TestAtomicCreateObjects:
         )
         user_bio_data = UserBioAttributesBaseSchema(
             birth_city=fake.city(),
-            favourite_movies=fake.sentence(),
+            favourite_movies=random_sentence(),
         )
 
         user_stmt = (
@@ -481,7 +487,7 @@ class TestAtomicCreateObjects:
         )
         user_bio_data = UserBioAttributesBaseSchema(
             birth_city=fake.city(),
-            favourite_movies=fake.sentence(),
+            favourite_movies=random_sentence(),
         )
         computer_data = ComputerAttributesBaseSchema(
             name=fake.word(),
@@ -795,7 +801,7 @@ class TestAtomicCreateObjects:
     ):
         parent_data = ParentAttributesSchema(name=fake.name())
         child_data = ChildAttributesSchema(name=fake.name())
-        association_extra_data = fake.sentence()
+        association_extra_data = random_sentence()
 
         data_atomic_request = {
             "atomic:operations": [
