@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from itertools import chain, zip_longest
 from json import dumps
 from typing import Dict, List
@@ -7,11 +8,12 @@ from uuid import uuid4
 from fastapi import APIRouter, FastAPI, status
 from httpx import AsyncClient
 from pydantic import BaseModel, Field, root_validator, validator
-from pytest import mark, param  # noqa PT013
+from pytest import fixture, mark, param  # noqa PT013
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import BadRequest
+from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.app import build_app_plain
 from tests.fixtures.entities import build_workplace, create_user
@@ -2043,18 +2045,41 @@ class TestSorts:
 
 
 class TestValidators:
-    async def execute_request_and_check_response(self, body: Dict, schema, expected_detail: str):
-        resource_type = "user"
-        app = build_app_custom(
+    resource_type = "validator"
+
+    @fixture(autouse=True)
+    def _refresh_caches(self) -> None:
+        object_schemas_cache = deepcopy(SchemaBuilder.object_schemas_cache)
+        relationship_schema_cache = deepcopy(SchemaBuilder.relationship_schema_cache)
+        base_jsonapi_object_schemas_cache = deepcopy(SchemaBuilder.base_jsonapi_object_schemas_cache)
+
+        all_jsonapi_routers = deepcopy(RoutersJSONAPI.all_jsonapi_routers)
+
+        yield
+
+        SchemaBuilder.object_schemas_cache = object_schemas_cache
+        SchemaBuilder.relationship_schema_cache = relationship_schema_cache
+        SchemaBuilder.base_jsonapi_object_schemas_cache = base_jsonapi_object_schemas_cache
+
+        RoutersJSONAPI.all_jsonapi_routers = all_jsonapi_routers
+
+    def build_app(self, schema) -> FastAPI:
+        return build_app_custom(
             model=User,
             schema=schema,
             schema_in_post=schema,
             schema_in_patch=schema,
-            resource_type=resource_type,
+            resource_type=self.resource_type,
         )
 
+    async def execute_request_and_check_response(
+        self,
+        app: FastAPI,
+        body: Dict,
+        expected_detail: str,
+    ):
         async with AsyncClient(app=app, base_url="http://test") as client:
-            url = app.url_path_for(f"get_{resource_type}_list")
+            url = app.url_path_for(f"get_{self.resource_type}_list")
             res = await client.post(url, json=body)
             assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
             assert res.json() == {
@@ -2075,13 +2100,13 @@ class TestValidators:
         Basic check to ensure that field validator called
         """
 
-        class UserSchemaWithValidatorCase1(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             name: str
 
             @validator("name")
             def validate_name(cls, v):
                 # checks that cls arg is not bound to the origin class
-                assert cls is not UserSchemaWithValidatorCase1
+                assert cls is not UserSchemaWithValidator
 
                 raise BadRequest(detail="Check validator")
 
@@ -2092,13 +2117,13 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         await self.execute_request_and_check_response(
+            app=self.build_app(UserSchemaWithValidator),
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase1,
             expected_detail="Check validator",
         )
 
     async def test_field_validator_each_item_arg(self):
-        class UserSchemaWithValidatorCase2(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             names: List[str]
 
             @validator("names", each_item=True)
@@ -2113,13 +2138,13 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         await self.execute_request_and_check_response(
+            app=self.build_app(UserSchemaWithValidator),
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase2,
             expected_detail="Bad name not allowed",
         )
 
     async def test_field_validator_pre_arg(self):
-        class UserSchemaWithValidatorCase3(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             name: List[str]
 
             @validator("name", pre=True)
@@ -2137,13 +2162,13 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         await self.execute_request_and_check_response(
+            app=self.build_app(UserSchemaWithValidator),
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase3,
             expected_detail="Pre validator called",
         )
 
     async def test_field_validator_always_arg(self):
-        class UserSchemaWithValidatorCase4(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             name: str = None
 
             @validator("name", always=True)
@@ -2156,13 +2181,13 @@ class TestValidators:
         create_user_body = {"data": {"attributes": {}}}
 
         await self.execute_request_and_check_response(
+            app=self.build_app(UserSchemaWithValidator),
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase4,
             expected_detail="Called always validator",
         )
 
     async def test_field_validator_several_validators(self):
-        class UserSchemaWithValidatorCase5(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             field: str
 
             @validator("field")
@@ -2185,9 +2210,10 @@ class TestValidators:
         attrs = {"field": "check_validator_1"}
         create_user_body = {"data": {"attributes": attrs}}
 
+        app = self.build_app(UserSchemaWithValidator)
         await self.execute_request_and_check_response(
+            app=app,
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase5,
             expected_detail="Called validator 1",
         )
 
@@ -2195,13 +2221,13 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         await self.execute_request_and_check_response(
+            app=app,
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase5,
             expected_detail="Called validator 2",
         )
 
     async def test_field_validator_asterisk(self):
-        class UserSchemaWithValidatorCase6(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             field_1: str
             field_2: str
 
@@ -2219,9 +2245,10 @@ class TestValidators:
         }
         create_user_body = {"data": {"attributes": attrs}}
 
+        app = self.build_app(UserSchemaWithValidator)
         await self.execute_request_and_check_response(
+            app=app,
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase6,
             expected_detail="Check validator",
         )
 
@@ -2232,8 +2259,8 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         await self.execute_request_and_check_response(
+            app=app,
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase6,
             expected_detail="Check validator",
         )
 
@@ -2243,7 +2270,7 @@ class TestValidators:
         a different way than attributes
         """
 
-        class UserSchemaWithValidatorCase7(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             id: int = Field(client_can_set_id=True)
 
             @validator("id")
@@ -2261,8 +2288,8 @@ class TestValidators:
         }
 
         await self.execute_request_and_check_response(
+            app=self.build_app(UserSchemaWithValidator),
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase7,
             expected_detail="Check validator",
         )
 
@@ -2276,7 +2303,7 @@ class TestValidators:
         ],
     )
     async def test_root_validator(self, name: str, expected_detail: str):
-        class UserSchemaWithValidatorCase8(BaseModel):
+        class UserSchemaWithValidator(BaseModel):
             name: str
 
             @root_validator(pre=True, allow_reuse=True)
@@ -2314,8 +2341,8 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         await self.execute_request_and_check_response(
+            app=self.build_app(UserSchemaWithValidator),
             body=create_user_body,
-            schema=UserSchemaWithValidatorCase8,
             expected_detail=expected_detail,
         )
 
