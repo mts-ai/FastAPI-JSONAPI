@@ -2,6 +2,20 @@ Changelog
 #########
 
 
+**2.2.0**
+*********
+
+Support for pydantic validators
+===============================
+
+* Pydantic validators are applied to generated schemas now
+
+Authors
+"""""""
+
+* `@CosmoV`_
+
+
 **2.1.0**
 *********
 
