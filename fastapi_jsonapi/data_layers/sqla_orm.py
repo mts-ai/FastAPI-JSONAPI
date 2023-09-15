@@ -1,6 +1,6 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import DBAPIError, IntegrityError, NoResultFound
@@ -32,6 +32,7 @@ from fastapi_jsonapi.schema import (
     get_related_schema,
 )
 from fastapi_jsonapi.schema_base import RelationshipInfo
+from fastapi_jsonapi.schema_builder import FieldConfig, TransferSaveWrapper
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
@@ -184,6 +185,14 @@ class SqlalchemyDataLayer(BaseDataLayer):
             # todo: relation name may be different?
             setattr(obj, relation_name, related_data)
 
+    def _unwrap_field_config(self, extra: Dict):
+        field_config_wrapper: TransferSaveWrapper = extra.get("field_config")
+
+        if field_config_wrapper:
+            return field_config_wrapper.field_config
+
+        return FieldConfig()
+
     def _apply_client_generated_id(
         self,
         data_create: BaseJSONAPIItemInSchema,
@@ -199,8 +208,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         extra = data_create.__fields__["id"].field_info.extra
         if extra.get("client_can_set_id"):
             id_value = data_create.id
-            if cast_type := extra.get("id_cast_func"):
-                id_value = cast_type(id_value)
+            field_config = self._unwrap_field_config(extra)
+
+            if field_config.cast_type:
+                id_value = field_config.cast_type(id_value)
+
             model_kwargs["id"] = id_value
 
         return model_kwargs

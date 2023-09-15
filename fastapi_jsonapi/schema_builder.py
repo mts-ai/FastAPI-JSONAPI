@@ -46,6 +46,29 @@ not_passed = object()
 # todo: when 3.9 support is dropped, return back `slots=True to JSONAPIObjectSchemas dataclass`
 
 
+class FieldConfig:
+    cast_type: Callable
+
+    def __init__(self, cast_type: Optional[Callable] = None):
+        self.cast_type = cast_type
+
+
+class TransferSaveWrapper:
+    """
+    Types doesn't allowed to be passed as keywords to pydantic Field,
+    so this exists to help save them
+
+    In other case OpenAPI generation will fail
+    """
+
+    def __init__(self, field_config: FieldConfig):
+        self.get_config = lambda: field_config
+
+    @property
+    def field_config(self) -> FieldConfig:
+        return self.get_config()
+
+
 @dataclass(frozen=True)
 class JSONAPIObjectSchemas:
     attributes_schema: Type[BaseModel]
@@ -479,7 +502,9 @@ class SchemaBuilder:
             **field_info.extra,
         }
         if id_cast_func:
-            id_field_kw.update(id_cast_func=id_cast_func)
+            id_field_kw.update(
+                field_config=TransferSaveWrapper(field_config=FieldConfig(cast_type=id_cast_func)),
+            )
 
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
