@@ -3,7 +3,7 @@ from copy import deepcopy
 from itertools import chain, zip_longest
 from json import dumps
 from typing import Dict, List
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, FastAPI, status
 from httpx import AsyncClient
@@ -1666,6 +1666,22 @@ class TestOpenApi:
         assert response.status_code == status.HTTP_200_OK, response.text
         resp = response.json()
         assert isinstance(resp, dict)
+
+    async def test_openapi_for_client_can_set_id(self):
+        class Schema(BaseModel):
+            id: UUID = Field(client_can_set_id=True)
+
+        app = build_app_custom(
+            model=User,
+            schema=Schema,
+            schema_in_post=Schema,
+            schema_in_patch=Schema,
+            resource_type="openapi_case_1",
+        )
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            response = await client.get(app.openapi_url)
+            assert response.status_code == status.HTTP_200_OK, response.text
 
 
 class TestFilters:

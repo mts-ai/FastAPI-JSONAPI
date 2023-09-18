@@ -184,27 +184,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
             # todo: relation name may be different?
             setattr(obj, relation_name, related_data)
 
-    def _apply_client_generated_id(
-        self,
-        data_create: BaseJSONAPIItemInSchema,
-        model_kwargs: dict,
-    ):
-        """
-        :param data_create: the data validated by pydantic.
-        :param model_kwargs: the data validated by pydantic.
-        """
-        if data_create.id is None:
-            return model_kwargs
-
-        extra = data_create.__fields__["id"].field_info.extra
-        if extra.get("client_can_set_id"):
-            id_value = data_create.id
-            if cast_type := extra.get("id_cast_func"):
-                id_value = cast_type(id_value)
-            model_kwargs["id"] = id_value
-
-        return model_kwargs
-
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
         Create an object through sqlalchemy.

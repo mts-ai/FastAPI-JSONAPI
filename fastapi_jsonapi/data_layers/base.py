@@ -5,11 +5,12 @@ you must inherit from this base class
 """
 
 import types
-from typing import List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
+from fastapi_jsonapi.schema_builder import FieldConfig, TransferSaveWrapper
 
 
 class BaseDataLayer:
@@ -74,6 +75,38 @@ class BaseDataLayer:
 
     async def atomic_end(self, success: bool = True):
         raise NotImplementedError
+
+    def _unwrap_field_config(self, extra: Dict):
+        field_config_wrapper: Optional[TransferSaveWrapper] = extra.get("field_config")
+
+        if field_config_wrapper:
+            return field_config_wrapper.get_field_config()
+
+        return FieldConfig()
+
+    def _apply_client_generated_id(
+        self,
+        data_create: BaseJSONAPIItemInSchema,
+        model_kwargs: dict,
+    ):
+        """
+        :param data_create: the data validated by pydantic.
+        :param model_kwargs: the data validated by pydantic.
+        """
+        if data_create.id is None:
+            return model_kwargs
+
+        extra = data_create.__fields__["id"].field_info.extra
+        if extra.get("client_can_set_id"):
+            id_value = data_create.id
+            field_config = self._unwrap_field_config(extra)
+
+            if field_config.cast_type:
+                id_value = field_config.cast_type(id_value)
+
+            model_kwargs["id"] = id_value
+
+        return model_kwargs
 
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
