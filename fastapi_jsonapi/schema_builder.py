@@ -62,11 +62,10 @@ class TransferSaveWrapper:
     """
 
     def __init__(self, field_config: FieldConfig):
-        self.get_config = lambda: field_config
+        def get_field_config() -> FieldConfig:
+            return field_config
 
-    @property
-    def field_config(self) -> FieldConfig:
-        return self.get_config()
+        self.get_field_config = get_field_config
 
 
 @dataclass(frozen=True)
