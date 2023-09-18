@@ -23,7 +23,7 @@ class SessionDependency(BaseModel):
         arbitrary_types_allowed = True
 
 
-def common_handler(view: ViewBase, dto: BaseModel) -> Dict:
+def common_handler(view: ViewBase, dto: SessionDependency) -> Dict:
     return {"session": dto.session}
 
 
