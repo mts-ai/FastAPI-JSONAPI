@@ -2,6 +2,20 @@ Changelog
 #########
 
 
+**2.2.1**
+*********
+
+OpenAPI generation fixes
+========================
+
+* fixed openapi generation for custom id type `#40 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/40>`_
+
+Authors
+"""""""
+
+* `@CosmoV`_
+
+
 **2.2.0**
 *********
 
