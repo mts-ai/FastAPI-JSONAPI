@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from fastapi import APIRouter, Depends, FastAPI, Header, status
+from fastapi import APIRouter, Depends, FastAPI, Header, Path, status
 from httpx import AsyncClient
 from pydantic import BaseModel
 from pytest import mark  # noqa
@@ -17,7 +17,7 @@ from fastapi_jsonapi.views.utils import (
 )
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
-from tests.fixtures.views import SessionDependency, common_handler
+from tests.fixtures.views import SessionDependency
 from tests.misc.utils import fake
 from tests.models import User
 from tests.schemas import (
@@ -131,12 +131,23 @@ async def test_dependencies_as_permissions(user_1: User):
     class AdminOnlyPermission(BaseModel):
         is_admin: Optional[bool] = Depends(check_that_user_is_admin)
 
+    def get_path_obj_id(obj_id: int = Path(default=...)):
+        return obj_id
+
+    class DetailGenericDependency(SessionDependency):
+        custom_name_obj_id: int = Depends(get_path_obj_id)
+
+    def all_handler(view: ViewBase, dto: DetailGenericDependency) -> Dict:
+        # test inside handler
+        assert dto.custom_name_obj_id == int(view.request.path_params["obj_id"])
+        return {"session": dto.session}
+
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
         method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
             HTTPMethod.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
             HTTPMethod.ALL: HTTPMethodConfig(
-                dependencies=SessionDependency,
-                prepare_data_layer_kwargs=common_handler,
+                dependencies=DetailGenericDependency,
+                prepare_data_layer_kwargs=all_handler,
             ),
         }
 
