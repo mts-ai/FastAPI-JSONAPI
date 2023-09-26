@@ -5,7 +5,7 @@ from json import dumps
 from typing import Dict, List
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, FastAPI, status
+from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import BaseModel, Field, root_validator, validator
 from pytest import fixture, mark, param  # noqa PT013
@@ -15,9 +15,8 @@ from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import BadRequest
 from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.views.view_base import ViewBase
-from tests.fixtures.app import build_app_plain
+from tests.fixtures.app import build_app_custom
 from tests.fixtures.entities import build_workplace, create_user
-from tests.fixtures.views import DetailViewBaseGeneric, ListViewBaseGeneric
 from tests.misc.utils import fake
 from tests.models import (
     Computer,
@@ -49,34 +48,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 def association_key(data: dict):
     return data["type"], data["id"]
-
-
-def build_app_custom(
-    model,
-    schema,
-    schema_in_patch=None,
-    schema_in_post=None,
-    resource_type: str = "misc",
-) -> FastAPI:
-    router: APIRouter = APIRouter()
-
-    RoutersJSONAPI(
-        router=router,
-        path="/misc",
-        tags=["Misc"],
-        class_detail=DetailViewBaseGeneric,
-        class_list=ListViewBaseGeneric,
-        schema=schema,
-        resource_type=resource_type,
-        schema_in_patch=schema_in_patch,
-        schema_in_post=schema_in_post,
-        model=model,
-    )
-
-    app = build_app_plain()
-    app.include_router(router, prefix="")
-
-    return app
 
 
 async def test_root(client: AsyncClient):
