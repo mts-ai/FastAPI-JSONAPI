@@ -8,7 +8,6 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Dict,
     List,
     Optional,
     TypedDict,
@@ -22,8 +21,6 @@ from starlette.requests import Request
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.atomic.prepared_atomic_operation import LocalIdsType, OperationBase
 from fastapi_jsonapi.atomic.schemas import AtomicOperation, AtomicOperationRequest, AtomicResultResponse
-from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
-from fastapi_jsonapi.views.utils import HTTPMethodConfig
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
@@ -73,23 +70,6 @@ class AtomicViewHandler:
         self.operations_request = operations_request
         self.local_ids_cache: LocalIdsType = defaultdict(dict)
 
-    async def handle_view_dependencies(
-        self,
-        jsonapi: RoutersJSONAPI,
-    ) -> Dict[str, Any]:
-        method_config: HTTPMethodConfig = jsonapi.get_method_config_for_create()
-
-        def handle_dependencies(**dep_kwargs):
-            return dep_kwargs
-
-        handle_dependencies.__signature__ = jsonapi.prepare_dependencies_handler_signature(
-            custom_handler=handle_dependencies,
-            method_config=method_config,
-        )
-
-        dependencies_result: Dict[str, Any] = await DependencyHelper(request=self.request).run(handle_dependencies)
-        return dependencies_result
-
     async def prepare_one_operation(self, operation: AtomicOperation):
         """
         :param operation:
@@ -102,16 +82,12 @@ class AtomicViewHandler:
             raise ValueError(msg)
         jsonapi = RoutersJSONAPI.all_jsonapi_routers[operation_type]
 
-        dependencies_result: Dict[str, Any] = await self.handle_view_dependencies(
-            jsonapi=jsonapi,
-        )
-        one_operation = OperationBase.prepare(
+        one_operation = await OperationBase.prepare(
             action=operation.op,
             request=self.request,
             jsonapi=jsonapi,
             ref=operation.ref,
             data=operation.data,
-            data_layer_view_dependencies=dependencies_result,
         )
         return one_operation
 
