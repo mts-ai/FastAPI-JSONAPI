@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Type
 
 import uvicorn
 from fastapi import APIRouter, FastAPI
@@ -6,6 +7,8 @@ from pytest import fixture  # noqa PT013
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.atomic import AtomicOperations
+from fastapi_jsonapi.views.detail_view import DetailViewBase
+from fastapi_jsonapi.views.list_view import ListViewBase
 from tests.fixtures.views import (
     DetailViewBaseGeneric,
     ListViewBaseGeneric,
@@ -191,3 +194,36 @@ if __name__ == "__main__":
         reload=True,
         app_dir=str(CURRENT_DIR),
     )
+
+
+def build_app_custom(
+    model,
+    schema,
+    schema_in_patch=None,
+    schema_in_post=None,
+    path: str = "/misc",
+    resource_type: str = "misc",
+    class_list: Type[ListViewBase] = ListViewBaseGeneric,
+    class_detail: Type[DetailViewBase] = DetailViewBaseGeneric,
+) -> FastAPI:
+    router: APIRouter = APIRouter()
+
+    RoutersJSONAPI(
+        router=router,
+        path=path,
+        tags=["Misc"],
+        class_list=class_list,
+        class_detail=class_detail,
+        schema=schema,
+        resource_type=resource_type,
+        schema_in_patch=schema_in_patch,
+        schema_in_post=schema_in_post,
+        model=model,
+    )
+
+    app = build_app_plain()
+    app.include_router(router, prefix="")
+
+    atomic = AtomicOperations()
+    app.include_router(atomic.router, prefix="")
+    return app

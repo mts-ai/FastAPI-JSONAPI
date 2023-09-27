@@ -16,11 +16,13 @@ from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
 
 
-class SessionDependency(BaseModel):
-    session: AsyncSession = Depends(async_session_dependency)
-
+class ArbitraryModelBase(BaseModel):
     class Config:
         arbitrary_types_allowed = True
+
+
+class SessionDependency(ArbitraryModelBase):
+    session: AsyncSession = Depends(async_session_dependency)
 
 
 def common_handler(view: ViewBase, dto: SessionDependency) -> Dict:

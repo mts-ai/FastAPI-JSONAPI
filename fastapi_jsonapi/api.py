@@ -22,6 +22,7 @@ from fastapi_jsonapi.exceptions import ExceptionResponseSchema
 from fastapi_jsonapi.schema_base import BaseModel
 from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.signature import create_additional_query_params
+from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
 from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
@@ -408,13 +409,6 @@ class RoutersJSONAPI:
 
         return self._create_dependency_params_from_pydantic_model(method_config.dependencies)
 
-    def get_method_config_for_create(self):
-        method_config = self._update_method_config(
-            view=self.list_view_resource,
-            method=HTTPMethod.POST,
-        )
-        return method_config
-
     def prepare_dependencies_handler_signature(
         self,
         custom_handler: Callable[..., Any],
@@ -431,6 +425,35 @@ class RoutersJSONAPI:
         params, tail_params = self._get_separated_params(sig)
 
         return sig.replace(parameters=params + list(additional_dependency_params) + tail_params)
+
+    async def handle_view_dependencies(
+        self,
+        request: Request,
+        view_cls: Type["ViewBase"],
+        method: HTTPMethod,
+    ) -> Dict[str, Any]:
+        """
+        Consider method config is already prepared for generic views
+        Reuse the same config for atomic operations
+
+        :param request:
+        :param view_cls:
+        :param method:
+        :return:
+        """
+        method_config: HTTPMethodConfig = view_cls.method_dependencies[method]
+
+        def handle_dependencies(**dep_kwargs):
+            return dep_kwargs
+
+        handle_dependencies.__signature__ = self.prepare_dependencies_handler_signature(
+            custom_handler=handle_dependencies,
+            method_config=method_config,
+        )
+
+        dep_helper = DependencyHelper(request=request)
+        dependencies_result: Dict[str, Any] = await dep_helper.run(handle_dependencies)
+        return dependencies_result
 
     def _create_get_resource_list_view(self):
         """

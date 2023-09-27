@@ -7,6 +7,7 @@ from fastapi import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.atomic.schemas import AtomicOperationAction, AtomicOperationRef, OperationDataType
+from fastapi_jsonapi.views.utils import HTTPMethod
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
@@ -27,14 +28,13 @@ class OperationBase:
     op_type: str
 
     @classmethod
-    def prepare(
+    async def prepare(
         cls,
         action: str,
         request: Request,
         jsonapi: RoutersJSONAPI,
         ref: Optional[AtomicOperationRef],
         data: OperationDataType,
-        data_layer_view_dependencies: Dict[str, Any],
     ) -> "OperationBase":
         view_cls: Type[ViewBase] = jsonapi.detail_view_resource
 
@@ -55,6 +55,11 @@ class OperationBase:
 
         view = view_cls(request=request, jsonapi=jsonapi)
 
+        data_layer_view_dependencies: Dict[str, Any] = await jsonapi.handle_view_dependencies(
+            request=request,
+            view_cls=view_cls,
+            method=operation_cls.http_method,
+        )
         return operation_cls(
             jsonapi=jsonapi,
             view=view,
@@ -127,6 +132,8 @@ class DetailOperationBase(OperationBase):
 
 
 class OperationAdd(ListOperationBase):
+    http_method = HTTPMethod.POST
+
     async def handle(self, dl: BaseDataLayer):
         data_in = self.jsonapi.schema_in_post(data=self.data)
         response = await self.view.process_create_object(
@@ -137,6 +144,8 @@ class OperationAdd(ListOperationBase):
 
 
 class OperationUpdate(DetailOperationBase):
+    http_method = HTTPMethod.PATCH
+
     async def handle(self, dl: BaseDataLayer):
         if self.data is None:
             # TODO: clear to-one relationships
@@ -153,6 +162,8 @@ class OperationUpdate(DetailOperationBase):
 
 
 class OperationRemove(DetailOperationBase):
+    http_method = HTTPMethod.DELETE
+
     async def handle(
         self,
         dl: BaseDataLayer,
