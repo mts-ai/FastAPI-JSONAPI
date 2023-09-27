@@ -1,6 +1,18 @@
 Changelog
 #########
 
+**2.2.2**
+*********
+
+Atomic Operation dependency resolution fixes
+============================================
+
+* fixed Atomic Operation dependency resolution `#43 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/43>`_
+
+Authors
+"""""""
+
+* `@mahenzon`_
 
 **2.2.1**
 *********
