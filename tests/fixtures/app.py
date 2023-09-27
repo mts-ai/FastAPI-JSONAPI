@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Type
 
 import pytest
+import uvicorn
 from fastapi import APIRouter, FastAPI
 
 from fastapi_jsonapi import RoutersJSONAPI, init
@@ -19,6 +20,7 @@ from tests.models import (
     ParentToChildAssociation,
     Post,
     PostComment,
+    Task,
     User,
     UserBio,
 )
@@ -36,6 +38,9 @@ from tests.schemas import (
     PostInSchema,
     PostPatchSchema,
     PostSchema,
+    TaskInSchema,
+    TaskPatchSchema,
+    TaskSchema,
     UserBioSchema,
     UserInSchema,
     UserPatchSchema,
@@ -159,6 +164,19 @@ def add_routers(app_plain: FastAPI):
         resource_type="computer",
         schema_in_patch=ComputerPatchSchema,
         schema_in_post=ComputerInSchema,
+    )
+
+    RoutersJSONAPI(
+        router=router,
+        path="/tasks",
+        tags=["Task"],
+        class_detail=DetailViewBaseGeneric,
+        class_list=ListViewBaseGeneric,
+        model=Task,
+        schema=TaskSchema,
+        resource_type="task",
+        schema_in_patch=TaskPatchSchema,
+        schema_in_post=TaskInSchema,
     )
 
     atomic = AtomicOperations()

@@ -222,6 +222,15 @@ class Workplace(AutoIdMixin, Base):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r}, user_id={self.user_id})"
 
 
+class Task(Base):
+    __tablename__ = "tasks"
+    id = Column(Integer, primary_key=True)
+    task_ids = Column(JSON, nullable=True, unique=False)
+
+
+# uuid below
+
+
 class CustomUUIDType(TypeDecorator):
     cache_ok = True
 

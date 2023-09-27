@@ -2,7 +2,6 @@ import logging
 
 import pytest
 from httpx import AsyncClient
-from pytest import mark  # noqa
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
@@ -10,7 +9,7 @@ from tests.misc.utils import fake
 from tests.models import Computer, User, UserBio
 from tests.schemas import UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
-pytestmark = mark.asyncio
+pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 

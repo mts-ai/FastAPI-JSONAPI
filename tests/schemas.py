@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional
 from uuid import UUID
 
+from pydantic import validator
+
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 
@@ -352,6 +354,40 @@ class WorkplaceSchema(ComputerInSchema):
         orm_mode = True
 
     id: int
+
+
+# task
+class TaskBaseSchema(BaseModel):
+    class Config:
+        orm_mode = True
+
+    task_ids: Optional[list[str]] = None
+
+    # noinspection PyMethodParameters
+    @validator("task_ids", pre=True)
+    def task_ids_validator(cls, value: Optional[list[str]]):
+        """
+        return `[]`, if value is None
+        both on get and on create
+        """
+        return value or []
+
+
+class TaskPatchSchema(TaskBaseSchema):
+    """Task PATCH schema."""
+
+
+class TaskInSchema(TaskBaseSchema):
+    """Task create schema."""
+
+
+class TaskSchema(TaskBaseSchema):
+    """Task item schema."""
+
+    id: int
+
+
+# uuid below
 
 
 class IdCastSchema(BaseModel):
