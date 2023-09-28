@@ -1,6 +1,23 @@
 Changelog
 #########
 
+
+**2.3.0**
+*********
+
+Current Atomic Operation context var
+====================================
+
+* create context var for current atomic operation `#46 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/46>`_
+* create example and coverage for universal dependency both for generic views and atomic operations
+* tests refactoring
+
+Authors
+"""""""
+
+
+* `@mahenzon`_
+
 **2.2.2**
 *********
 
@@ -13,6 +30,7 @@ Authors
 """""""
 
 * `@mahenzon`_
+
 
 **2.2.1**
 *********

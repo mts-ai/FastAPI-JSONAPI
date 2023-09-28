@@ -262,6 +262,11 @@ Notes
     See `examples for SQLAlchemy <SQLA_examples>`_ in the repo, all examples are based on it.
 
 
+.. note::
+    Atomic Operations provide ``current_atomic_operation`` context variable.
+    Usage example can be found in `tests for current_atomic_operation <tests_current_atomic>`_.
+
+
 .. warning::
     Field "href" is not supported yet. Resource can be referenced only by the "type" field.
 
@@ -272,3 +277,4 @@ Notes
     Includes in the response body are not supported (and not planned, until you PR it)
 
 .. _SQLA_examples: https://github.com/mts-ai/FastAPI-JSONAPI/tree/main/examples/api_for_sqlalchemy
+.. _tests_current_atomic: https://github.com/mts-ai/FastAPI-JSONAPI/blob/main/tests/test_atomic/test_current_atomic_operation.py
