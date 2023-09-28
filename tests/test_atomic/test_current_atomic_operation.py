@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Literal
+from typing import Dict, Literal, Optional
 
 import pytest
 from fastapi import Body, Depends, FastAPI, HTTPException, status
@@ -74,7 +74,7 @@ def get_validated_attribute_from_body(data: dict):
 
 
 async def get_custom_name_from_body_universal(
-    data: dict | None = Body(None, embed=True),
+    data: Optional[dict] = Body(None, embed=True),
 ) -> str:
     atomic_operation = current_atomic_operation.get(missing)
     if atomic_operation is missing:
