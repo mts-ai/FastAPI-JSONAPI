@@ -47,6 +47,7 @@ If you want to filter through relationships you can do that:
 
 
 .. sourcecode:: json
+
     [
       {
         "name": "group",
