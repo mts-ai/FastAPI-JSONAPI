@@ -50,10 +50,8 @@ class BaseJSONAPIItemSchema(BaseModel):
 class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
     """
     post/patch
-    TODO POST: optionally accept custom id for object
-     https://jsonapi.org/format/#crud-creating-client-ids
+    TODO POST: optionally accept custom id for object https://jsonapi.org/format/#crud-creating-client-ids
     TODO PATCH: accept object id (maybe create a new separate schema)
-
     """
 
     attributes: "TypeSchema" = Field(description="Resource object attributes")

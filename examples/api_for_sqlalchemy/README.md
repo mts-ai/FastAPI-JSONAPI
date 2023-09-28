@@ -1,10 +1,10 @@
-## App API-FOR-TORTOISE-ORM
+## App API-FOR-SQLALCHEMY-ORM
 
 ### Start app
 ```shell
 # in dir fastapi-jsonapi
 
-export PYTHOPATH="${PYTHONPATH}:./"
-python examples/api_for_tortoise_orm/main.py
+cd examples
+python api_minimal.py
 ```
 http://0.0.0.0:8080/docs

@@ -44,9 +44,11 @@ In this example, we want to retrieve people whose name is equal to their birth_d
 
 If you want to filter through relationships you can do that:
 
-.. sourcecode:: http
 
-    GET /user?filter=[
+
+.. sourcecode:: json
+
+    [
       {
         "name": "group",
         "op": "any",
@@ -56,7 +58,12 @@ If you want to filter through relationships you can do that:
           "val": "%admin%"
         }
       }
-    ] HTTP/1.1
+    ]
+
+
+.. sourcecode:: http
+
+    GET [{"name":"group","op":"any","val":{"name":"name","op":"ilike","val":"%admin%"}}] HTTP/1.1
     Accept: application/vnd.api+json
 
 .. note ::
@@ -72,9 +79,9 @@ There is a shortcut to achieve the same filtering:
 
 You can also use boolean combination of operations:
 
-.. sourcecode:: http
+.. sourcecode:: json
 
-    GET /user?filter=[
+    [
       {
         "name":"group.name",
         "op":"ilike",
@@ -105,7 +112,11 @@ You can also use boolean combination of operations:
           }
         ]
       }
-    ] HTTP/1.1
+    ]
+
+.. sourcecode:: http
+
+    GET /user?filter=[{"name":"group.name","op":"ilike","val":"%admin%"},{"or":[{"not":{"name":"first_name","op":"eq","val":"John"}},{"and":[{"name":"first_name","op":"like","val":"%Jim%"},{"name":"date_create","op":"gt","val":"1990-01-01"}]}]}] HTTP/1.1
     Accept: application/vnd.api+json
 
 Common available operators:
@@ -165,9 +176,24 @@ You can also use more than one simple filter in a request:
 
 which is equal to:
 
+.. sourcecode:: json
+
+    [
+       {
+          "name":"first_name",
+          "op":"eq",
+          "val":"John"
+       },
+       {
+          "name":"gender",
+          "op":"eq",
+          "val":"male"
+       }
+    ]
+
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"first_name","op":"eq","val":"John"}, {"name":"gender","op":"eq","val":"male"}] HTTP/1.1
+    GET /user?filter=[{"name":"first_name","op":"eq","val":"John"},{"name":"gender","op":"eq","val":"male"}] HTTP/1.1
 
 You can also use relationship attribute in a request:
 

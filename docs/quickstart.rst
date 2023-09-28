@@ -24,61 +24,61 @@ An example of FastAPI-JSONAPI API looks like this:
 
 This example provides the following API:
 
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| url                                       | method | endpoint         | action                                                |
-+===========================================+========+==================+=======================================================+
-| /user                                     | GET    | user_list      | Retrieve a collection of users                      |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user                                     | POST   | user_list      | Create a user                                       |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>                            | GET    | user_detail    | Retrieve details of a user                          |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>                            | PATCH  | user_detail    | Update a user                                       |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>                            | DELETE | user_detail    | Delete a user                                       |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
++----------------+--------+----------------+---------------------------------+
+| url            | method | endpoint       | action                          |
++================+========+================+=================================+
+| /user          | GET    | user_list      | Retrieve a collection of users  |
++----------------+--------+----------------+---------------------------------+
+| /user          | POST   | user_list      | Create a user                   |
++----------------+--------+----------------+---------------------------------+
+| /user/<int:id> | GET    | user_detail    | Retrieve details of a user      |
++----------------+--------+----------------+---------------------------------+
+| /user/<int:id> | PATCH  | user_detail    | Update a user                   |
++----------------+--------+----------------+---------------------------------+
+| /user/<int:id> | DELETE | user_detail    | Delete a user                   |
++----------------+--------+----------------+---------------------------------+
 
 in developing
 
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| url                                       | method | endpoint         | action                                                |
-+===========================================+========+==================+=======================================================+
-| /user/<int:id>/group                      | GET    | computer_list    | Retrieve a collection computers related to a user   |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>/group                      | POST   | computer_list    | Create a computer related to a user                 |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /user/<int:id>/relationships/group        | GET    | user_computers | Retrieve relationships between a user and computers |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /users/<int:id>/relationships/computers | POST   | user_computers | Create relationships between a user and computers   |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /users/<int:id>/relationships/computers | PATCH  | user_computers | Update relationships between a user and computers   |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /users/<int:id>/relationships/computers | DELETE | user_computers | Delete relationships between a user and computers   |
-+--------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers                                | GET    | computer_list    | Retrieve a collection of computers                    |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers                                | POST   | computer_list    | Create a computer                                     |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>                       | GET    | computer_detail  | Retrieve details of a computer                        |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>                       | PATCH  | computer_detail  | Update a computer                                     |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>                       | DELETE | computer_detail  | Delete a computer                                     |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/owner                 | GET    | user_detail    | Retrieve details of the owner of a computer           |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/owner                 | PATCH  | user_detail    | Update the owner of a computer                        |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/owner                 | DELETE | user_detail    | Delete the owner of a computer                        |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | GET    | user_computers | Retrieve relationships between a user and computers |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | POST   | user_computers | Create relationships between a user and computers   |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | PATCH  | user_computers | Update relationships between a user and computers   |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
-| /computers/<int:id>/relationships/owner   | DELETE | user_computers | Delete relationships between a user and computers   |
-+-------------------------------------------+--------+------------------+-------------------------------------------------------+
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| url                                       | method | endpoint         | action                                               |
++===========================================+========+==================+======================================================+
+| /user/<int:id>/group                      | GET    | computer_list    | Retrieve a collection computers related to a user    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /user/<int:id>/group                      | POST   | computer_list    | Create a computer related to a user                  |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /user/<int:id>/relationships/group        | GET    | user_computers   | Retrieve relationships between a user and computers  |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /users/<int:id>/relationships/computers   | POST   | user_computers   | Create relationships between a user and computers    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /users/<int:id>/relationships/computers   | PATCH  | user_computers   | Update relationships between a user and computers    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /users/<int:id>/relationships/computers   | DELETE | user_computers   | Delete relationships between a user and computers    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers                                | GET    | computer_list    | Retrieve a collection of computers                   |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers                                | POST   | computer_list    | Create a computer                                    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>                       | GET    | computer_detail  | Retrieve details of a computer                       |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>                       | PATCH  | computer_detail  | Update a computer                                    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>                       | DELETE | computer_detail  | Delete a computer                                    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>/owner                 | GET    | user_detail      | Retrieve details of the owner of a computer          |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>/owner                 | PATCH  | user_detail      | Update the owner of a computer                       |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>/owner                 | DELETE | user_detail      | Delete the owner of a computer                       |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>/relationships/owner   | GET    | user_computers   | Retrieve relationships between a user and computers  |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>/relationships/owner   | POST   | user_computers   | Create relationships between a user and computers    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>/relationships/owner   | PATCH  | user_computers   | Update relationships between a user and computers    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
+| /computers/<int:id>/relationships/owner   | DELETE | user_computers   | Delete relationships between a user and computers    |
++-------------------------------------------+--------+------------------+------------------------------------------------------+
 
 
 Save `this file <https://github.com/mts-ai/FastAPI-JSONAPI/blob/main/examples/api_for_sqlalchemy/main.py>`_ as api.py and run it using your Python interpreter. Note that we've enabled

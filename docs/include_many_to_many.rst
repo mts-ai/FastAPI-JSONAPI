@@ -90,27 +90,8 @@ Base Views
 
 ``api/base.py``:
 
-.. literalinclude:: ../examples/api_for_sqlalchemy/api/base.py
+.. literalinclude:: ../examples/api_for_sqlalchemy/api/views_base.py
     :language: python
-
-
-Parent Views
-^^^^^^^^^^^^
-
-``schemas/child.py``:
-
-.. literalinclude:: ../examples/api_for_sqlalchemy/api/parent.py
-    :language: python
-
-
-Child Views
-^^^^^^^^^^^
-
-``schemas/child.py``:
-
-.. literalinclude:: ../examples/api_for_sqlalchemy/api/child.py
-    :language: python
-
 
 
 List Parent objects with Children through an Association object

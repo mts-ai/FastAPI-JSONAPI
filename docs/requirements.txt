@@ -1,0 +1,5 @@
+fastapi<0.100.0
+pydantic<2
+simplejson>=3.17.6
+sqlalchemy<2
+tortoise-orm>=0.19.3

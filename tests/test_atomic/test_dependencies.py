@@ -104,8 +104,7 @@ class TestDependenciesResolver:
 
     @fixture(scope="class")
     async def client(self, app_w_deps):
-        app = app_w_deps
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(app=app_w_deps, base_url="http://test") as client:
             yield client
 
     async def send_and_validate_atomic(

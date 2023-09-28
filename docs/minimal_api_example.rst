@@ -1,3 +1,5 @@
+.. _minimal_api_example:
+
 .. include:: ./minimal_api_head.rst
 
 Request:

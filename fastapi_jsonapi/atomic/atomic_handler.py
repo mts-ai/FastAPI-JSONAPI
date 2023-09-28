@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from contextvars import ContextVar
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
@@ -27,6 +28,8 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 AtomicResponseDict = TypedDict("AtomicResponseDict", {"atomic:results": List[Any]})
+
+current_atomic_operation: ContextVar[OperationBase] = ContextVar("current_atomic_operation")
 
 
 def catch_exc_on_operation_handle(func: Callable[..., Awaitable]):
@@ -82,7 +85,7 @@ class AtomicViewHandler:
             raise ValueError(msg)
         jsonapi = RoutersJSONAPI.all_jsonapi_routers[operation_type]
 
-        one_operation = await OperationBase.prepare(
+        one_operation = OperationBase.prepare(
             action=operation.op,
             request=self.request,
             jsonapi=jsonapi,
@@ -116,6 +119,9 @@ class AtomicViewHandler:
         success = True
         previous_dl: Optional[BaseDataLayer] = None
         for operation in prepared_operations:
+            # set context var
+            ctx_var_token = current_atomic_operation.set(operation)
+
             dl: BaseDataLayer = await operation.get_data_layer()
             await dl.atomic_start(previous_dl=previous_dl)
             response = await self.process_one_operation(
@@ -135,6 +141,9 @@ class AtomicViewHandler:
             results.append({"data": response.data})
             if operation.data.lid and response.data:
                 self.local_ids_cache[operation.data.type][operation.data.lid] = response.data.id
+
+            # reset context var
+            current_atomic_operation.reset(ctx_var_token)
 
         if previous_dl:
             await previous_dl.atomic_end(success=success)

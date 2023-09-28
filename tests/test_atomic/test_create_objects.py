@@ -1,4 +1,5 @@
 import logging
+from typing import Callable
 
 import pytest
 from httpx import AsyncClient
@@ -55,12 +56,9 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes: UserAttributesBaseSchema,
     ):
-        user = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user = user_attributes
         data_atomic_request = {
             "atomic:operations": [
                 {
@@ -99,17 +97,10 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes_factory: Callable[[], UserAttributesBaseSchema],
     ):
-        user_data_1 = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
-        user_data_2 = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user_data_1 = user_attributes_factory()
+        user_data_2 = user_attributes_factory()
         users_data = [user_data_1, user_data_2]
         data_atomic_request = {
             "atomic:operations": [
@@ -156,6 +147,7 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes_factory: Callable[[], UserAttributesBaseSchema],
     ):
         """
         User name is unique
@@ -169,16 +161,9 @@ class TestAtomicCreateObjects:
         :param async_session:
         :return:
         """
-        user_data_1 = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
-        user_data_2 = UserAttributesBaseSchema(
-            name=user_data_1.name,
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user_data_1 = user_attributes_factory()
+        user_data_2 = user_attributes_factory()
+        user_data_2.name = user_data_1.name
         users_data = [user_data_1, user_data_2]
         data_atomic_request = {
             "atomic:operations": [
@@ -270,6 +255,7 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes: UserAttributesBaseSchema,
     ):
         """
         - create user
@@ -279,11 +265,7 @@ class TestAtomicCreateObjects:
         :param async_session:
         :return:
         """
-        user_data = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user_data = user_attributes
         user_bio_data = UserBioAttributesBaseSchema(
             birth_city=fake.city(),
             favourite_movies=random_sentence(),
@@ -369,6 +351,7 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes: UserAttributesBaseSchema,
     ):
         """
 
@@ -379,11 +362,7 @@ class TestAtomicCreateObjects:
         :param async_session:
         :return:
         """
-        user_data = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user_data = user_attributes
         computer_data = ComputerAttributesBaseSchema(
             name=fake.word(),
         )
@@ -469,6 +448,7 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes: UserAttributesBaseSchema,
     ):
         """
 
@@ -480,11 +460,7 @@ class TestAtomicCreateObjects:
         :param async_session:
         :return:
         """
-        user_data = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user_data = user_attributes
         user_bio_data = UserBioAttributesBaseSchema(
             birth_city=fake.city(),
             favourite_movies=random_sentence(),
@@ -599,6 +575,7 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes: UserAttributesBaseSchema,
     ):
         """
 
@@ -609,11 +586,7 @@ class TestAtomicCreateObjects:
         :param async_session:
         :return:
         """
-        user_data = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user_data = user_attributes
         computer_data = ComputerAttributesBaseSchema(
             name=fake.word(),
         )
@@ -698,6 +671,7 @@ class TestAtomicCreateObjects:
         self,
         client: AsyncClient,
         async_session: AsyncSession,
+        user_attributes: UserAttributesBaseSchema,
     ):
         """
 
@@ -708,11 +682,7 @@ class TestAtomicCreateObjects:
         :param async_session:
         :return:
         """
-        user_data = UserAttributesBaseSchema(
-            name=fake.name(),
-            age=fake.pyint(min_value=13, max_value=99),
-            email=fake.email(),
-        )
+        user_data = user_attributes
         computer_data = ComputerAttributesBaseSchema(
             name=fake.word(),
         )
