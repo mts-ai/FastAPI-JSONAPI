@@ -81,8 +81,8 @@ Authors
 Generic views, process relationships
 ====================================
 
-Backward-incompatible changes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
+    Backward-incompatible changes
 
 * Automatically create all CRUD views based on schemas (see :ref:`example <minimal_api_example>`)
 * Allow to pass Client-Generated IDs (see :ref:`example <client_generated_id>`, `JSON:API doc <https://jsonapi.org/format/#crud-creating-client-ids>`_)
