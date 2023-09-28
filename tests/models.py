@@ -223,6 +223,8 @@ class Workplace(AutoIdMixin, Base):
 
 
 class CustomUUIDType(TypeDecorator):
+    cache_ok = True
+
     impl = CHAR
 
     def __init__(self, *args, as_uuid=True, **kwargs):
