@@ -37,8 +37,39 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
     validator_create = ValidateCustomNameEqualsBase(None)
     validator_update = ValidateCustomNameEqualsBase(None)
 
-    def validate_field_not_passed_response(self, response):
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+    def prepare_user_create_data(
+        self,
+        user_attributes: UserAttributesBaseSchema,
+        resource_type: str,
+    ):
+        data_user_attributes = user_attributes.dict()
+        data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_create.expected_value
+        data_user_create = {
+            "type": resource_type,
+            "attributes": data_user_attributes,
+        }
+        return data_user_create
+
+    def prepare_user_update_data(
+        self,
+        user: User,
+        user_attributes: UserAttributesBaseSchema,
+        resource_type: str,
+    ):
+        for field_name, value in user_attributes:
+            assert getattr(user, field_name) != value
+
+        data_user_attributes = user_attributes.dict()
+        data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_update.expected_value
+        data_user_update = {
+            "id": user.id,
+            "type": resource_type,
+            "attributes": data_user_attributes,
+        }
+        return data_user_update
+
+    def validate_field_not_passed_response(self, response, expected_status=status.HTTP_422_UNPROCESSABLE_ENTITY):
+        assert response.status_code == expected_status, response.text
         response_data = response.json()
         assert response_data == {
             "detail": [
@@ -68,6 +99,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         user_attributes: UserAttributesBaseSchema,
     ):
         attributes_data = user_attributes.dict()
+        assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_create = {
             "data": {
                 "type": resource_type,
@@ -87,6 +119,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
     ):
         attributes_data = user_attributes.dict()
         attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
+        assert attributes_data[self.FIELD_CUSTOM_NAME] != self.validator_create.expected_value
         data_user_create = {
             "data": {
                 "type": resource_type,
@@ -106,6 +139,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         user_attributes: UserAttributesBaseSchema,
     ):
         attributes_data = user_attributes.dict()
+        assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_update = {
             "data": {
                 "id": user.id,
@@ -127,35 +161,25 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
     ):
         attributes_data = user_attributes.dict()
         attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
-        data_user_create = {
+        assert attributes_data[self.FIELD_CUSTOM_NAME] != self.validator_update.expected_value
+        data_user_update = {
             "data": {
+                "id": user.id,
                 "type": resource_type,
                 "attributes": attributes_data,
             },
         }
         url = app.url_path_for(f"update_{resource_type}_detail", obj_id=user.id)
-        response = await client.patch(url, json=data_user_create)
+        response = await client.patch(url, json=data_user_update)
         self.validate_field_value_invalid_response(response, self.validator_update)
 
-    async def validate_generic_user_create_works(
+    async def validate_created_user(
         self,
-        app: FastAPI,
-        client: AsyncClient,
         async_session: AsyncSession,
-        resource_type: str,
+        user_created_data: dict,
         user_attributes: UserAttributesBaseSchema,
+        resource_type: str,
     ):
-        data_user_attributes = user_attributes.dict()
-        data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_create.expected_value
-        data_user_create = {
-            "data": {
-                "type": resource_type,
-                "attributes": data_user_attributes,
-            },
-        }
-        url = app.url_path_for(f"create_{resource_type}_list")
-        response = await client.post(url, json=data_user_create)
-        assert response.status_code == status.HTTP_201_CREATED, response.text
         user = await async_session.scalar(
             select(User).where(
                 *(
@@ -167,10 +191,48 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
             ),
         )
         assert isinstance(user, User)
-        response_data = response.json()
-        user_created_data = response_data["data"]
         assert user_created_data["id"] == str(user.id)
         assert user_created_data["attributes"] == user_attributes.dict()
+        assert user_created_data["type"] == resource_type
+        assert user_attributes == UserAttributesBaseSchema.from_orm(user)
+
+    async def validate_generic_user_create_works(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        async_session: AsyncSession,
+        resource_type: str,
+        user_attributes: UserAttributesBaseSchema,
+    ):
+        data_user_create = self.prepare_user_create_data(
+            user_attributes=user_attributes,
+            resource_type=resource_type,
+        )
+        url = app.url_path_for(f"create_{resource_type}_list")
+        response = await client.post(url, json={"data": data_user_create})
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        response_data = response.json()
+        user_created_data = response_data["data"]
+        await self.validate_created_user(
+            async_session=async_session,
+            user_created_data=user_created_data,
+            user_attributes=user_attributes,
+            resource_type=resource_type,
+        )
+
+    async def validate_updated_user(
+        self,
+        user: User,
+        async_session: AsyncSession,
+        user_updated_data: dict,
+        user_attributes: UserAttributesBaseSchema,
+        resource_type: str,
+    ):
+        await async_session.refresh(user)
+        assert user_updated_data["id"] == str(user.id)
+        assert user_updated_data["attributes"] == user_attributes.dict()
+        assert user_updated_data["type"] == resource_type
+        assert user_attributes == UserAttributesBaseSchema.from_orm(user)
 
     async def validate_generic_user_update_works(
         self,
@@ -181,23 +243,20 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         user_attributes: UserAttributesBaseSchema,
         user: User,
     ):
-        for field_name, value in user_attributes:
-            assert getattr(user, field_name) != value
-
-        data_user_attributes = user_attributes.dict()
-        data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_update.expected_value
-        data_user_update = {
-            "data": {
-                "id": user.id,
-                "type": resource_type,
-                "attributes": data_user_attributes,
-            },
-        }
+        data_user_update = self.prepare_user_update_data(
+            user=user,
+            user_attributes=user_attributes,
+            resource_type=resource_type,
+        )
         url = app.url_path_for(f"update_{resource_type}_detail", obj_id=user.id)
-        response = await client.patch(url, json=data_user_update)
+        response = await client.patch(url, json={"data": data_user_update})
         assert response.status_code == status.HTTP_200_OK, response.text
-        await async_session.refresh(user)
         response_data = response.json()
-        user_created_data = response_data["data"]
-        assert user_created_data["id"] == str(user.id)
-        assert user_created_data["attributes"] == user_attributes.dict()
+        user_updated_data = response_data["data"]
+        await self.validate_updated_user(
+            user=user,
+            async_session=async_session,
+            user_updated_data=user_updated_data,
+            user_attributes=user_attributes,
+            resource_type=resource_type,
+        )
