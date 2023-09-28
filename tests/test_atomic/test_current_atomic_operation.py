@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Dict, Literal
 
 import pytest
@@ -34,6 +36,7 @@ pytestmark = pytest.mark.asyncio
 FIELD_CUSTOM_NAME = "custom_name"
 
 
+# this one can be used only for generic views
 # def get_custom_name_from_body_only_on_generic(
 #     data: CustomNameAttributesJSONAPI = Body(embed=True),
 # ) -> str:
