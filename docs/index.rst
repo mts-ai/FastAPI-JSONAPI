@@ -74,14 +74,18 @@ FastAPI-JSONAPI with FastAPI.
    resource_manager
    data_layer
    relationships
+   configuration
+
+.. toctree::
+   :maxdepth: 2
+
    sparse_fieldsets
    pagination
    sorting
    errors
-   api
    permission
    oauth
-   configuration
+   fastapi-jsonapi
 
 .. toctree::
    :maxdepth: 2
