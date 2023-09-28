@@ -48,6 +48,7 @@ from tests.fixtures.entities import (  # noqa
 )
 from tests.fixtures.user import (  # noqa
     user_attributes,
+    user_attributes_factory,
 )
 from tests.fixtures.views import (  # noqa
     DetailViewBaseGeneric,
