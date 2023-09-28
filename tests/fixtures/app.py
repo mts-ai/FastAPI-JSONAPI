@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Type
 
-import uvicorn
+import pytest
 from fastapi import APIRouter, FastAPI
-from pytest import fixture  # noqa PT013
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.atomic import AtomicOperations
@@ -172,28 +171,16 @@ def add_routers(app_plain: FastAPI):
     return app_plain
 
 
-@fixture(scope="session")
+@pytest.fixture(scope="session")
 def app_plain() -> FastAPI:
     return build_app_plain()
 
 
-@fixture(scope="session")
+@pytest.fixture(scope="session")
 def app(app_plain: FastAPI):
     add_routers(app_plain)
 
     return app_plain
-
-
-if __name__ == "__main__":
-    fastapi_app = build_app_plain()
-    add_routers(fastapi_app)
-    uvicorn.run(
-        "asgi:app",
-        host="0.0.0.0",
-        port=8082,
-        reload=True,
-        app_dir=str(CURRENT_DIR),
-    )
 
 
 def build_app_custom(

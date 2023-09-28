@@ -46,6 +46,9 @@ from tests.fixtures.entities import (  # noqa
     workplace_1,
     workplace_2,
 )
+from tests.fixtures.user import (  # noqa
+    user_attributes,
+)
 from tests.fixtures.views import (  # noqa
     DetailViewBaseGeneric,
     ListViewBaseGeneric,

@@ -83,7 +83,9 @@ class JSONAPIObjectSchemas:
 @dataclass(frozen=True)
 class BuiltSchemasDTO:
     schema_in_post: Type[BaseJSONAPIDataInSchema]
+    schema_in_post_data: Type[BaseJSONAPIItemInSchema]
     schema_in_patch: Type[BaseJSONAPIDataInSchema]
+    schema_in_patch_data: Type[BaseJSONAPIItemInSchema]
     detail_response_schema: Type[JSONAPIResultDetailSchema]
     list_response_schema: Type[JSONAPIResultListSchema]
 
@@ -150,21 +152,23 @@ class SchemaBuilder:
         if any(schema_in_patch is cmp_schema for cmp_schema in [schema, schema_in_post]):
             schema_name_in_patch_suffix = "InPatch"
 
-        schemas_in_post = self.build_schema_in(
+        schema_in_post, schema_in_post_data = self.build_schema_in(
             schema_in=schema_in_post,
             schema_name_suffix=schema_name_in_post_suffix,
             non_optional_relationships=True,
         )
 
-        schemas_in_patch = self.build_schema_in(
+        schema_in_patch, schema_in_patch_data = self.build_schema_in(
             schema_in=schema_in_patch,
             schema_name_suffix=schema_name_in_patch_suffix,
             id_field_required=True,
         )
 
         return BuiltSchemasDTO(
-            schema_in_post=schemas_in_post,
-            schema_in_patch=schemas_in_patch,
+            schema_in_post=schema_in_post,
+            schema_in_post_data=schema_in_post_data,
+            schema_in_patch=schema_in_patch,
+            schema_in_patch_data=schema_in_patch_data,
             list_response_schema=self._create_schemas_objects_list(schema),
             detail_response_schema=self._create_schemas_object_detail(schema),
         )
@@ -175,7 +179,7 @@ class SchemaBuilder:
         schema_name_suffix: str = "",
         non_optional_relationships: bool = False,
         id_field_required: bool = False,
-    ) -> Type[BaseJSONAPIDataInSchema]:
+    ) -> Tuple[Type[BaseJSONAPIDataInSchema], Type[BaseJSONAPIItemInSchema]]:
         base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
         dto = self._get_info_from_schema_for_building(
@@ -202,7 +206,7 @@ class SchemaBuilder:
             __base__=BaseJSONAPIDataInSchema,
         )
 
-        return wrapped_object_jsonapi_schema
+        return wrapped_object_jsonapi_schema, object_jsonapi_schema
 
     def _build_schema(
         self,

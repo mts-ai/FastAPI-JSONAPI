@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from fastapi import APIRouter, Path, Query, Request, status
+from fastapi import APIRouter, Body, Path, Query, Request, status
 from pydantic import BaseModel as PydanticBaseModel
 
 from fastapi_jsonapi.data_typing import TypeModel
@@ -118,8 +118,18 @@ class RoutersJSONAPI:
             schema_in_post=schema_in_post,
             schema_in_patch=schema_in_patch,
         )
+        # we need to save post_data and patch_data
+        # and set dependency `data` as `embed=True`
+        # because if there's more than one Body dependency,
+        # FastAPI makes them all `embed=True` and validation breaks!
+        # doc url
+        # https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter
+        # code:
+        # https://github.com/tiangolo/fastapi/blob/831b5d5402a65ee9f415670f4116522c8e874ed3/fastapi/dependencies/utils.py#L768
         self.schema_in_post = dto.schema_in_post
+        self.schema_in_post_data = dto.schema_in_post_data
         self.schema_in_patch = dto.schema_in_patch
+        self.schema_in_patch_data = dto.schema_in_patch_data
         self.detail_response_schema = dto.detail_response_schema
         self.list_response_schema = dto.list_response_schema
 
@@ -486,16 +496,21 @@ class RoutersJSONAPI:
 
         :return:
         """
-        schema_in = self.schema_in_post
+        # `data` as embed Body param
+        schema_in = self.schema_in_post_data
 
-        async def wrapper(request: Request, data_create: schema_in, **extra_view_deps):
+        async def wrapper(
+            request: Request,
+            data: schema_in = Body(embed=True),
+            **extra_view_deps,
+        ):
             resource = self.list_view_resource(
                 request=request,
                 jsonapi=self,
             )
 
             response = await resource.handle_post_resource_list(
-                data_create=data_create.data,
+                data_create=data,
                 **extra_view_deps,
             )
             return response
@@ -576,11 +591,12 @@ class RoutersJSONAPI:
 
         :return:
         """
-        schema_in = self.schema_in_patch
+        # `data` as embed Body param
+        schema_in = self.schema_in_patch_data
 
         async def wrapper(
             request: Request,
-            data_update: schema_in,
+            data: schema_in = Body(embed=True),
             obj_id: str = Path(...),
             **extra_view_deps,
         ):
@@ -592,7 +608,7 @@ class RoutersJSONAPI:
             # TODO: pass obj_id as kwarg (get name from DetailView class)
             response = await resource.handle_update_resource(
                 obj_id=obj_id,
-                data_update=data_update.data,
+                data_update=data,
                 **extra_view_deps,
             )
             return response
