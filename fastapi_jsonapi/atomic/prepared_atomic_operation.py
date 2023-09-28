@@ -24,11 +24,14 @@ class OperationBase:
     view: ViewBase
     ref: Optional[AtomicOperationRef]
     data: OperationDataType
-    data_layer_view_dependencies: Dict[str, Any]
     op_type: str
 
+    @property
+    def http_method(self) -> HTTPMethod:
+        raise NotImplementedError
+
     @classmethod
-    async def prepare(
+    def prepare(
         cls,
         action: str,
         request: Request,
@@ -55,22 +58,21 @@ class OperationBase:
 
         view = view_cls(request=request, jsonapi=jsonapi)
 
-        data_layer_view_dependencies: Dict[str, Any] = await jsonapi.handle_view_dependencies(
-            request=request,
-            view_cls=view_cls,
-            method=operation_cls.http_method,
-        )
         return operation_cls(
             jsonapi=jsonapi,
             view=view,
             ref=ref,
             data=data,
-            data_layer_view_dependencies=data_layer_view_dependencies,
             op_type=action,
         )
 
     async def get_data_layer(self) -> BaseDataLayer:
-        return await self.view.get_data_layer(self.data_layer_view_dependencies)
+        data_layer_view_dependencies: Dict[str, Any] = await self.jsonapi.handle_view_dependencies(
+            request=self.view.request,
+            view_cls=self.view.__class__,
+            method=self.http_method,
+        )
+        return await self.view.get_data_layer(data_layer_view_dependencies)
 
     async def handle(self, dl: BaseDataLayer):
         raise NotImplementedError
@@ -135,6 +137,9 @@ class OperationAdd(ListOperationBase):
     http_method = HTTPMethod.POST
 
     async def handle(self, dl: BaseDataLayer):
+        # use outer schema wrapper because we need this error path:
+        # `{'loc': ['data', 'attributes', 'name']`
+        # and not `{'loc': ['attributes', 'name']`
         data_in = self.jsonapi.schema_in_post(data=self.data)
         response = await self.view.process_create_object(
             dl=dl,
@@ -151,6 +156,10 @@ class OperationUpdate(DetailOperationBase):
             # TODO: clear to-one relationships
             pass
         # TODO: handle relationship update requests (relationship resources)
+
+        # use outer schema wrapper because we need this error path:
+        # `{'loc': ['data', 'attributes', 'name']`
+        # and not `{'loc': ['attributes', 'name']`
         data_in = self.jsonapi.schema_in_patch(data=self.data)
         obj_id = self.ref and self.ref.id or self.data and self.data.id
         response = await self.view.process_update_object(
