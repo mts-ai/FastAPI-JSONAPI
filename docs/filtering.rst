@@ -175,9 +175,24 @@ You can also use more than one simple filter in a request:
 
 which is equal to:
 
+.. sourcecode:: json
+
+    [
+       {
+          "name":"first_name",
+          "op":"eq",
+          "val":"John"
+       },
+       {
+          "name":"gender",
+          "op":"eq",
+          "val":"male"
+       }
+    ]
+
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"first_name","op":"eq","val":"John"}, {"name":"gender","op":"eq","val":"male"}] HTTP/1.1
+    GET /user?filter=[{"name":"first_name","op":"eq","val":"John"},{"name":"gender","op":"eq","val":"male"}] HTTP/1.1
 
 You can also use relationship attribute in a request:
 
