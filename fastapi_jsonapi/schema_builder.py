@@ -1,4 +1,5 @@
 """JSON API schemas builder class."""
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -17,7 +18,12 @@ from typing import (
 import pydantic
 from pydantic import BaseConfig, root_validator, validator
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic.class_validators import ROOT_VALIDATOR_CONFIG_KEY, VALIDATOR_CONFIG_KEY
+from pydantic.class_validators import (
+    ROOT_VALIDATOR_CONFIG_KEY,
+    VALIDATOR_CONFIG_KEY,
+    extract_validators,
+    inherit_validators,
+)
 from pydantic.fields import FieldInfo, ModelField, Validator
 
 from fastapi_jsonapi.data_typing import TypeSchema
@@ -377,6 +383,51 @@ class SchemaBuilder:
         )
         self.relationship_schema_cache[cache_key] = relationship_data_schema
         return relationship_data_schema
+
+    def deduplicate_field_validators(self, validators: dict) -> dict:
+        result_validators = {}
+
+        for field_name, field_validators in validators.items():
+            result_validators[field_name] = list(
+                {
+                    # override in definition order
+                    field_validator.func.__name__: field_validator
+                    for field_validator in field_validators
+                }.values(),
+            )
+
+        return result_validators
+
+    def prepare_validators(self, model: Type[BaseModel]):
+        validators = inherit_validators(
+            extract_validators(model.__dict__),
+            deepcopy(model.__validators__),
+        )
+        validators = self.deduplicate_field_validators(validators)
+        validator_origin_param_keys = (
+            "pre",
+            "each_item",
+            "always",
+            "check_fields",
+        )
+
+        result_validators = {}
+        for field_name, field_validators in validators.items():
+            field_validator: Validator
+            for field_validator in field_validators:
+                validator_name = f"{field_name}_{field_validator.func.__name__}_validator"
+                validator_params = {
+                    # copy validator params
+                    param_key: getattr(field_validator, param_key)
+                    for param_key in validator_origin_param_keys
+                }
+                result_validators[validator_name] = validator(
+                    field_name,
+                    **validator_params,
+                    allow_reuse=True,
+                )(field_validator.func)
+
+        return result_validators
 
     def _is_target_validator(self, attr_name: str, value: Any, validator_config_key: str) -> bool:
         """
