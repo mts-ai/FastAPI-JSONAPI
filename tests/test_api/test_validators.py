@@ -18,10 +18,7 @@ async def task_with_none_ids(
     async_session.add(task)
     await async_session.commit()
 
-    yield task
-
-    await async_session.delete(task)
-    await async_session.commit()
+    return task
 
 
 @pytest.fixture()

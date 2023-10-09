@@ -2,7 +2,7 @@ import logging
 from copy import deepcopy
 from itertools import chain, zip_longest
 from json import dumps
-from typing import Dict, List
+from typing import Dict, List, Type
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, status
@@ -2050,6 +2050,11 @@ class TestValidators:
 
         RoutersJSONAPI.all_jsonapi_routers = all_jsonapi_routers
 
+    def _clear_cache(self):
+        SchemaBuilder.object_schemas_cache = {}
+        SchemaBuilder.relationship_schema_cache = {}
+        SchemaBuilder.base_jsonapi_object_schemas_cache = {}
+
     def build_app(self, schema) -> FastAPI:
         return build_app_custom(
             model=User,
@@ -2058,6 +2063,12 @@ class TestValidators:
             schema_in_patch=schema,
             resource_type=self.resource_type,
         )
+
+    def inherit(self, schema: Type[BaseModel]) -> Type[BaseModel]:
+        class InheritedSchema(schema):
+            pass
+
+        return InheritedSchema
 
     async def execute_request_and_check_response(
         self,
@@ -2082,6 +2093,28 @@ class TestValidators:
                 },
             }
 
+    async def execute_request_twice_and_check_response(
+        self,
+        schema: Type[BaseModel],
+        body: Dict,
+        expected_detail: str,
+    ):
+        """
+        Makes two requests for check schema inheritance
+        """
+        apps = [
+            self.build_app(schema),
+            self.build_app(self.inherit(schema)),
+        ]
+
+        for app in apps:
+            await self.execute_request_and_check_response(
+                app=app,
+                body=body,
+                expected_detail=expected_detail,
+            )
+            self._clear_cache()
+
     async def test_field_validator_call(self):
         """
         Basic check to ensure that field validator called
@@ -2103,8 +2136,8 @@ class TestValidators:
         attrs = {"name": fake.name()}
         create_user_body = {"data": {"attributes": attrs}}
 
-        await self.execute_request_and_check_response(
-            app=self.build_app(UserSchemaWithValidator),
+        await self.execute_request_twice_and_check_response(
+            schema=UserSchemaWithValidator,
             body=create_user_body,
             expected_detail="Check validator",
         )
@@ -2124,8 +2157,8 @@ class TestValidators:
         attrs = {"names": ["good_name", "bad_name"]}
         create_user_body = {"data": {"attributes": attrs}}
 
-        await self.execute_request_and_check_response(
-            app=self.build_app(UserSchemaWithValidator),
+        await self.execute_request_twice_and_check_response(
+            schema=UserSchemaWithValidator,
             body=create_user_body,
             expected_detail="Bad name not allowed",
         )
@@ -2148,8 +2181,8 @@ class TestValidators:
         attrs = {"name": fake.name()}
         create_user_body = {"data": {"attributes": attrs}}
 
-        await self.execute_request_and_check_response(
-            app=self.build_app(UserSchemaWithValidator),
+        await self.execute_request_twice_and_check_response(
+            schema=UserSchemaWithValidator,
             body=create_user_body,
             expected_detail="Pre validator called",
         )
@@ -2167,8 +2200,8 @@ class TestValidators:
 
         create_user_body = {"data": {"attributes": {}}}
 
-        await self.execute_request_and_check_response(
-            app=self.build_app(UserSchemaWithValidator),
+        await self.execute_request_twice_and_check_response(
+            schema=UserSchemaWithValidator,
             body=create_user_body,
             expected_detail="Called always validator",
         )
@@ -2274,8 +2307,8 @@ class TestValidators:
             },
         }
 
-        await self.execute_request_and_check_response(
-            app=self.build_app(UserSchemaWithValidator),
+        await self.execute_request_twice_and_check_response(
+            schema=UserSchemaWithValidator,
             body=create_user_body,
             expected_detail="Check validator",
         )

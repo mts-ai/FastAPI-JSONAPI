@@ -20,7 +20,6 @@ from pydantic import BaseConfig, root_validator, validator
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.class_validators import (
     ROOT_VALIDATOR_CONFIG_KEY,
-    VALIDATOR_CONFIG_KEY,
     extract_validators,
     inherit_validators,
 )
@@ -297,7 +296,10 @@ class SchemaBuilder:
                 # works both for to-one and to-many
                 included_schemas.append((name, field.type_, relationship.resource_type))
             elif name == "id":
-                id_validators = self._extract_field_validators(schema, target_field_name="id")
+                id_validators = self._extract_field_validators(
+                    schema,
+                    include_for_field_names={"id"},
+                )
                 resource_id_field = (*(resource_id_field[:-1]), id_validators)
 
                 if not field.field_info.extra.get("client_can_set_id"):
@@ -398,7 +400,13 @@ class SchemaBuilder:
 
         return result_validators
 
-    def prepare_validators(self, model: Type[BaseModel]):
+    def _extract_field_validators(
+        self,
+        model: Type[BaseModel],
+        *,
+        include_for_field_names: Set[str] = None,
+        exclude_for_field_names: Set[str] = None,
+    ):
         validators = inherit_validators(
             extract_validators(model.__dict__),
             deepcopy(model.__validators__),
@@ -411,8 +419,21 @@ class SchemaBuilder:
             "check_fields",
         )
 
+        exclude_for_field_names = exclude_for_field_names or set()
+
+        if include_for_field_names and exclude_for_field_names:
+            exclude_for_field_names = include_for_field_names.difference(
+                exclude_for_field_names,
+            )
+
         result_validators = {}
         for field_name, field_validators in validators.items():
+            if field_name in exclude_for_field_names:
+                continue
+
+            if include_for_field_names and field_name not in include_for_field_names:
+                continue
+
             field_validator: Validator
             for field_validator in field_validators:
                 validator_name = f"{field_name}_{field_validator.func.__name__}_validator"
@@ -452,7 +473,7 @@ class SchemaBuilder:
         :param validator_config_key: Choice field, available options are pydantic consts
                                      VALIDATOR_CONFIG_KEY, ROOT_VALIDATOR_CONFIG_KEY
         """
-        root_validator_class_methods = {
+        validator_class_methods = {
             # validators only
             attr_name: value
             for attr_name, value in model.__dict__.items()
@@ -461,7 +482,7 @@ class SchemaBuilder:
 
         return {
             validator_name: getattr(validator_method, validator_config_key)
-            for validator_name, validator_method in root_validator_class_methods.items()
+            for validator_name, validator_method in validator_class_methods.items()
         }
 
     def _extract_root_validators(self, model: Type[BaseModel]) -> Dict[str, Callable]:
@@ -473,50 +494,6 @@ class SchemaBuilder:
                 pre=validator_instance.pre,
                 skip_on_failure=validator_instance.skip_on_failure,
                 allow_reuse=True,
-            )(validator_instance.func)
-
-        return validators
-
-    def _extract_field_validators(
-        self,
-        model: Type[BaseModel],
-        target_field_name: str = None,
-        exclude_for_field_names: Set[str] = None,
-    ) -> Dict[str, Callable]:
-        """
-        :param model: Type[BaseModel]
-        :param target_field_name: Name of field for which validators will be returned.
-                                  If not set the function will return validators for all fields.
-        """
-        validators = {}
-        validator_origin_param_keys = ("pre", "each_item", "always", "check_fields")
-
-        unpacked_validators = self._unpack_validators(model, VALIDATOR_CONFIG_KEY)
-        for validator_name, (field_names, validator_instance) in unpacked_validators.items():
-            if target_field_name and target_field_name not in field_names:
-                continue
-            elif target_field_name:
-                field_names = [target_field_name]  # noqa: PLW2901
-
-            if exclude_for_field_names:
-                field_names = [  # noqa: PLW2901
-                    # filter names
-                    field_name
-                    for field_name in field_names
-                    if field_name not in exclude_for_field_names
-                ]
-
-            if not field_names:
-                continue
-
-            validators[validator_name] = validator(
-                *field_names,
-                allow_reuse=True,
-                **{
-                    # copy origin params
-                    param_name: getattr(validator_instance, param_name)
-                    for param_name in validator_origin_param_keys
-                },
             )(validator_instance.func)
 
         return validators
