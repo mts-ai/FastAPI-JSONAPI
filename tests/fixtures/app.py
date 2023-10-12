@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Type
 
 import pytest
-import uvicorn
 from fastapi import APIRouter, FastAPI
 
 from fastapi_jsonapi import RoutersJSONAPI, init

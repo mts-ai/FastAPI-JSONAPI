@@ -8,7 +8,7 @@ Changelog
 Pydantic validators inheritance fix
 ====================================
 
-* fixed bag with schema validators passthrough `#45 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/45>`_
+* fix schema validators passthrough `#45 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/45>`_
 
 Authors
 """""""
@@ -30,8 +30,8 @@ Current Atomic Operation context var
 Authors
 """""""
 
-
 * `@mahenzon`_
+
 
 **2.2.2**
 *********
