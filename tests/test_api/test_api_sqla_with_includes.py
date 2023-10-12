@@ -2313,11 +2313,18 @@ class TestValidators:
             expected_detail="Check validator",
         )
 
-    async def test_field_validator_can_change_value(self):
+    @mark.parametrize(
+        "inherit",
+        [
+            param(True, id="inherited_true"),
+            param(False, id="inherited_false"),
+        ],
+    )
+    async def test_field_validator_can_change_value(self, inherit: bool):
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @validator("name")
+            @validator("name", allow_reuse=True)
             def fix_title(cls, v):
                 return v.title()
 
@@ -2327,7 +2334,11 @@ class TestValidators:
         attrs = {"name": "john doe"}
         create_user_body = {"data": {"attributes": attrs}}
 
-        app = self.build_app(UserSchemaWithValidator)
+        if inherit:
+            app = self.build_app(self.inherit(UserSchemaWithValidator))
+        else:
+            app = self.build_app(UserSchemaWithValidator)
+
         async with AsyncClient(app=app, base_url="http://test") as client:
             url = app.url_path_for(f"get_{self.resource_type}_list")
             res = await client.post(url, json=create_user_body)
@@ -2392,17 +2403,24 @@ class TestValidators:
         attrs = {"name": name}
         create_user_body = {"data": {"attributes": attrs}}
 
-        await self.execute_request_and_check_response(
-            app=self.build_app(UserSchemaWithValidator),
+        await self.execute_request_twice_and_check_response(
+            schema=UserSchemaWithValidator,
             body=create_user_body,
             expected_detail=expected_detail,
         )
 
-    async def test_root_validator_can_change_value(self):
+    @mark.parametrize(
+        "inherit",
+        [
+            param(True, id="inherited_true"),
+            param(False, id="inherited_false"),
+        ],
+    )
+    async def test_root_validator_can_change_value(self, inherit: bool):
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @root_validator
+            @root_validator(allow_reuse=True)
             def fix_title(cls, v):
                 v["name"] = v["name"].title()
                 return v
@@ -2413,7 +2431,11 @@ class TestValidators:
         attrs = {"name": "john doe"}
         create_user_body = {"data": {"attributes": attrs}}
 
-        app = self.build_app(UserSchemaWithValidator)
+        if inherit:
+            app = self.build_app(self.inherit(UserSchemaWithValidator))
+        else:
+            app = self.build_app(UserSchemaWithValidator)
+
         async with AsyncClient(app=app, base_url="http://test") as client:
             url = app.url_path_for(f"get_{self.resource_type}_list")
             res = await client.post(url, json=create_user_body)
@@ -2430,6 +2452,93 @@ class TestValidators:
                 "jsonapi": {"version": "1.0"},
                 "meta": None,
             }
+
+    @mark.parametrize(
+        ("name", "expected_detail"),
+        [
+            param("check_pre_1", "check_pre_1", id="check_1_pre_validator"),
+            param("check_pre_2", "check_pre_2", id="check_2_pre_validator"),
+            param("check_post_1", "check_post_1", id="check_1_post_validator"),
+            param("check_post_2", "check_post_2", id="check_2_post_validator"),
+        ],
+    )
+    async def test_root_validator_inheritance(self, name: str, expected_detail: str):
+        class UserSchemaWithValidatorBase(BaseModel):
+            name: str
+
+            @root_validator(pre=True, allow_reuse=True)
+            def validator_pre_1(cls, values):
+                if values["name"] == "check_pre_1":
+                    raise BadRequest(detail="Base check_pre_1")
+
+                return values
+
+            @root_validator(pre=True, allow_reuse=True)
+            def validator_pre_2(cls, values):
+                if values["name"] == "check_pre_2":
+                    raise BadRequest(detail="Base check_pre_2")
+
+                return values
+
+            @root_validator(allow_reuse=True)
+            def validator_post_1(cls, values):
+                if values["name"] == "check_post_1":
+                    raise BadRequest(detail="Base check_post_1")
+
+                return values
+
+            @root_validator(allow_reuse=True)
+            def validator_post_2(cls, values):
+                if values["name"] == "check_post_2":
+                    raise BadRequest(detail="Base check_post_2")
+
+                return values
+
+            class Config:
+                orm_mode = True
+
+        class UserSchemaWithValidator(UserSchemaWithValidatorBase):
+            name: str
+
+            @root_validator(pre=True, allow_reuse=True)
+            def validator_pre_1(cls, values):
+                if values["name"] == "check_pre_1":
+                    raise BadRequest(detail="check_pre_1")
+
+                return values
+
+            @root_validator(pre=True, allow_reuse=True)
+            def validator_pre_2(cls, values):
+                if values["name"] == "check_pre_2":
+                    raise BadRequest(detail="check_pre_2")
+
+                return values
+
+            @root_validator(allow_reuse=True)
+            def validator_post_1(cls, values):
+                if values["name"] == "check_post_1":
+                    raise BadRequest(detail="check_post_1")
+
+                return values
+
+            @root_validator(allow_reuse=True)
+            def validator_post_2(cls, values):
+                if values["name"] == "check_post_2":
+                    raise BadRequest(detail="check_post_2")
+
+                return values
+
+            class Config:
+                orm_mode = True
+
+        attrs = {"name": name}
+        create_user_body = {"data": {"attributes": attrs}}
+
+        await self.execute_request_and_check_response(
+            app=self.build_app(UserSchemaWithValidator),
+            body=create_user_body,
+            expected_detail=expected_detail,
+        )
 
 
 # todo: test errors

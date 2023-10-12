@@ -16,14 +16,19 @@ from typing import (
 )
 
 import pydantic
-from pydantic import BaseConfig, root_validator, validator
+from pydantic import (
+    BaseConfig,
+    root_validator,
+    validator,
+)
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.class_validators import (
-    ROOT_VALIDATOR_CONFIG_KEY,
+    extract_root_validators,
     extract_validators,
     inherit_validators,
 )
 from pydantic.fields import FieldInfo, ModelField, Validator
+from pydantic.utils import unique_list
 
 from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
@@ -386,7 +391,34 @@ class SchemaBuilder:
         self.relationship_schema_cache[cache_key] = relationship_data_schema
         return relationship_data_schema
 
-    def deduplicate_field_validators(self, validators: dict) -> dict:
+    def _extract_root_validators(self, model: Type[BaseModel]) -> Dict[str, Callable]:
+        pre_rv_new, post_rv_new = extract_root_validators(model.__dict__)
+        pre_root_validators = unique_list(
+            model.__pre_root_validators__ + pre_rv_new,
+            name_factory=lambda v: v.__name__,
+        )
+        post_root_validators = unique_list(
+            model.__post_root_validators__ + post_rv_new,
+            name_factory=lambda skip_on_failure_and_v: skip_on_failure_and_v[1].__name__,
+        )
+
+        result_validators = {}
+
+        for validator_func in pre_root_validators:
+            result_validators[validator_func.__name__] = root_validator(
+                pre=True,
+                allow_reuse=True,
+            )(validator_func)
+
+        for skip_on_failure, validator_func in post_root_validators:
+            result_validators[validator_func.__name__] = root_validator(
+                allow_reuse=True,
+                skip_on_failure=skip_on_failure,
+            )(validator_func)
+
+        return result_validators
+
+    def _deduplicate_field_validators(self, validators: dict) -> dict:
         result_validators = {}
 
         for field_name, field_validators in validators.items():
@@ -411,7 +443,7 @@ class SchemaBuilder:
             extract_validators(model.__dict__),
             deepcopy(model.__validators__),
         )
-        validators = self.deduplicate_field_validators(validators)
+        validators = self._deduplicate_field_validators(validators)
         validator_origin_param_keys = (
             "pre",
             "each_item",
@@ -449,54 +481,6 @@ class SchemaBuilder:
                 )(field_validator.func)
 
         return result_validators
-
-    def _is_target_validator(self, attr_name: str, value: Any, validator_config_key: str) -> bool:
-        """
-        True if passed object is validator of type identified by "validator_config_key" arg
-
-        :param attr_name:
-        :param value:
-        :param validator_config_key: Choice field, available options are pydantic consts
-                                     VALIDATOR_CONFIG_KEY, ROOT_VALIDATOR_CONFIG_KEY
-        """
-        return (
-            # also with private items
-            not attr_name.startswith("__")
-            and getattr(value, validator_config_key, None)
-        )
-
-    def _unpack_validators(self, model: Type[BaseModel], validator_config_key: str) -> Dict[str, Validator]:
-        """
-        Selects all validators from model attrs and unpack them from class methods
-
-        :param model: Type[BaseModel]
-        :param validator_config_key: Choice field, available options are pydantic consts
-                                     VALIDATOR_CONFIG_KEY, ROOT_VALIDATOR_CONFIG_KEY
-        """
-        validator_class_methods = {
-            # validators only
-            attr_name: value
-            for attr_name, value in model.__dict__.items()
-            if self._is_target_validator(attr_name, value, validator_config_key)
-        }
-
-        return {
-            validator_name: getattr(validator_method, validator_config_key)
-            for validator_name, validator_method in validator_class_methods.items()
-        }
-
-    def _extract_root_validators(self, model: Type[BaseModel]) -> Dict[str, Callable]:
-        validators = {}
-
-        unpacked_validators = self._unpack_validators(model, ROOT_VALIDATOR_CONFIG_KEY)
-        for validator_name, validator_instance in unpacked_validators.items():
-            validators[validator_name] = root_validator(
-                pre=validator_instance.pre,
-                skip_on_failure=validator_instance.skip_on_failure,
-                allow_reuse=True,
-            )(validator_instance.func)
-
-        return validators
 
     def _extract_validators(
         self,
