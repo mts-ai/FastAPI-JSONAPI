@@ -2054,6 +2054,7 @@ class TestValidators:
         SchemaBuilder.object_schemas_cache = {}
         SchemaBuilder.relationship_schema_cache = {}
         SchemaBuilder.base_jsonapi_object_schemas_cache = {}
+        RoutersJSONAPI.all_jsonapi_routers = {}
 
     def build_app(self, schema) -> FastAPI:
         return build_app_custom(
@@ -2092,6 +2093,7 @@ class TestValidators:
                     ],
                 },
             }
+        self._clear_cache()
 
     async def execute_request_twice_and_check_response(
         self,
@@ -2102,18 +2104,16 @@ class TestValidators:
         """
         Makes two requests for check schema inheritance
         """
-        apps = [
-            self.build_app(schema),
-            self.build_app(self.inherit(schema)),
-        ]
+        app_1 = self.build_app(schema)
+        self._clear_cache()
+        app_2 = self.build_app(self.inherit(schema))
 
-        for app in apps:
+        for app in [app_1, app_2]:
             await self.execute_request_and_check_response(
                 app=app,
                 body=body,
                 expected_detail=expected_detail,
             )
-            self._clear_cache()
 
     async def test_field_validator_call(self):
         """
