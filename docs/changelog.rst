@@ -2,6 +2,21 @@ Changelog
 #########
 
 
+**2.3.1**
+*********
+
+Pydantic validators inheritance fix
+====================================
+
+* fixed bag with schema validators passthrough `#45 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/45>`_
+
+Authors
+"""""""
+
+* `@CosmoV`_
+* `@mahenzon`_
+
+
 **2.3.0**
 *********
 
