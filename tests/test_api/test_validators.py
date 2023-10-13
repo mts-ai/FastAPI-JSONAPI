@@ -27,7 +27,7 @@ def resource_type():
 
 
 class TestTaskValidators:
-    async def test_base_model_root_validator_get_one(
+    async def test_base_model_validator_pre_true_get_one(
         self,
         app: FastAPI,
         client: AsyncClient,
