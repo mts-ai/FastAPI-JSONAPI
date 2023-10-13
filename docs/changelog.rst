@@ -9,6 +9,7 @@ Pydantic validators inheritance fix
 ====================================
 
 * fix schema validators passthrough `#45 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/45>`_
+* fix doc build
 
 Authors
 """""""
