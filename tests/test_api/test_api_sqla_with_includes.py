@@ -2332,9 +2332,8 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         if inherit:
-            app = self.build_app(self.inherit(UserSchemaWithValidator))
-        else:
-            app = self.build_app(UserSchemaWithValidator)
+            UserSchemaWithValidator = self.inherit(UserSchemaWithValidator)
+        app = self.build_app(UserSchemaWithValidator)
 
         async with AsyncClient(app=app, base_url="http://test") as client:
             url = app.url_path_for(f"get_{self.resource_type}_list")
@@ -2429,9 +2428,8 @@ class TestValidators:
         create_user_body = {"data": {"attributes": attrs}}
 
         if inherit:
-            app = self.build_app(self.inherit(UserSchemaWithValidator))
-        else:
-            app = self.build_app(UserSchemaWithValidator)
+            UserSchemaWithValidator = self.inherit(UserSchemaWithValidator)
+        app = self.build_app(UserSchemaWithValidator)
 
         async with AsyncClient(app=app, base_url="http://test") as client:
             url = app.url_path_for(f"get_{self.resource_type}_list")
