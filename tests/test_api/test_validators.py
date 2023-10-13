@@ -34,6 +34,7 @@ class TestTaskValidators:
         resource_type: str,
         task_with_none_ids: Task,
     ):
+        assert task_with_none_ids.task_ids is None
         url = app.url_path_for(f"get_{resource_type}_detail", obj_id=task_with_none_ids.id)
         res = await client.get(url)
         assert res.status_code == status.HTTP_200_OK, res.text
@@ -61,6 +62,7 @@ class TestTaskValidators:
         resource_type: str,
         task_with_none_ids: Task,
     ):
+        assert task_with_none_ids.task_ids is None
         url = app.url_path_for(f"get_{resource_type}_list")
         res = await client.get(url)
         assert res.status_code == status.HTTP_200_OK, res.text
@@ -110,6 +112,7 @@ class TestTaskValidators:
         task_id = response_data["data"].pop("id")
         task = await async_session.get(Task, int(task_id))
         assert isinstance(task, Task)
+        assert task.task_ids == []
         # we sent request with `None`, but value in db is `[]`
         # because validator converted data before object creation
         assert task.task_ids == []

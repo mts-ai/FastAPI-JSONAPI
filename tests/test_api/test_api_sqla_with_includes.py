@@ -2,7 +2,7 @@ import logging
 from copy import deepcopy
 from itertools import chain, zip_longest
 from json import dumps
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Type
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, status
@@ -2050,19 +2050,13 @@ class TestValidators:
 
         RoutersJSONAPI.all_jsonapi_routers = all_jsonapi_routers
 
-    def _clear_cache(self):
-        SchemaBuilder.object_schemas_cache = {}
-        SchemaBuilder.relationship_schema_cache = {}
-        SchemaBuilder.base_jsonapi_object_schemas_cache = {}
-        RoutersJSONAPI.all_jsonapi_routers = {}
-
-    def build_app(self, schema) -> FastAPI:
+    def build_app(self, schema, resource_type: Optional[str] = None) -> FastAPI:
         return build_app_custom(
             model=User,
             schema=schema,
-            schema_in_post=schema,
-            schema_in_patch=schema,
-            resource_type=self.resource_type,
+            # schema_in_post=schema,
+            # schema_in_patch=schema,
+            resource_type=resource_type or self.resource_type,
         )
 
     def inherit(self, schema: Type[BaseModel]) -> Type[BaseModel]:
@@ -2076,9 +2070,11 @@ class TestValidators:
         app: FastAPI,
         body: Dict,
         expected_detail: str,
+        resource_type: Optional[str] = None,
     ):
+        resource_type = resource_type or self.resource_type
         async with AsyncClient(app=app, base_url="http://test") as client:
-            url = app.url_path_for(f"get_{self.resource_type}_list")
+            url = app.url_path_for(f"get_{resource_type}_list")
             res = await client.post(url, json=body)
             assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
             assert res.json() == {
@@ -2093,7 +2089,6 @@ class TestValidators:
                     ],
                 },
             }
-        self._clear_cache()
 
     async def execute_request_twice_and_check_response(
         self,
@@ -2104,15 +2099,17 @@ class TestValidators:
         """
         Makes two requests for check schema inheritance
         """
-        app_1 = self.build_app(schema)
-        self._clear_cache()
-        app_2 = self.build_app(self.inherit(schema))
+        resource_type_1 = self.resource_type + fake.word()
+        app_1 = self.build_app(schema, resource_type=resource_type_1)
+        resource_type_2 = self.resource_type + fake.word()
+        app_2 = self.build_app(self.inherit(schema), resource_type=resource_type_2)
 
-        for app in [app_1, app_2]:
+        for app, resource_type in [(app_1, resource_type_1), (app_2, resource_type_2)]:
             await self.execute_request_and_check_response(
                 app=app,
                 body=body,
                 expected_detail=expected_detail,
+                resource_type=resource_type,
             )
 
     async def test_field_validator_call(self):
