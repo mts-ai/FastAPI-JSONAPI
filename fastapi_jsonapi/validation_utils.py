@@ -81,7 +81,7 @@ def extract_field_validators(
     exclude_for_field_names = exclude_for_field_names or set()
 
     if include_for_field_names and exclude_for_field_names:
-        exclude_for_field_names = include_for_field_names.difference(
+        include_for_field_names = include_for_field_names.difference(
             exclude_for_field_names,
         )
 

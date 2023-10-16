@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Set, Type
 
 import pytest
 from fastapi import FastAPI, status
@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import BadRequest
 from fastapi_jsonapi.schema_builder import SchemaBuilder
+from fastapi_jsonapi.validation_utils import extract_field_validators
 from tests.fixtures.app import build_app_custom
 from tests.misc.utils import fake
 from tests.models import (
@@ -645,3 +646,43 @@ class TestValidators:
             body=create_user_body,
             expected_detail=expected_detail,
         )
+
+
+class TestValidationUtils:
+    @mark.parametrize(
+        ("include", "exclude", "expected"),
+        [
+            param({"item_1"}, None, {"item_1_validator"}, id="include"),
+            param(None, {"item_1"}, {"item_2_validator"}, id="exclude"),
+            param(None, None, {"item_1_validator", "item_2_validator"}, id="empty_params"),
+            param({"item_1", "item_2"}, {"item_2"}, {"item_1_validator"}, id="intersection"),
+        ],
+    )
+    def test_extract_field_validators_args(
+        self,
+        include: Set[str],
+        exclude: Set[str],
+        expected: Set[str],
+    ):
+        class ValidationSchema(BaseModel):
+            item_1: str
+            item_2: str
+
+            @validator("item_1", allow_reuse=True)
+            def item_1_validator(cls, v):
+                return v
+
+            @validator("item_2", allow_reuse=True)
+            def item_2_validator(cls, v):
+                return v
+
+        validators = extract_field_validators(
+            ValidationSchema,
+            include_for_field_names=include,
+            exclude_for_field_names=exclude,
+        )
+        validator_func_names = {
+            validator_item.__validator_config__[1].func.__name__ for validator_item in validators.values()
+        }
+
+        assert expected == validator_func_names
