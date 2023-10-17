@@ -2,6 +2,22 @@ Changelog
 #########
 
 
+**2.3.1**
+*********
+
+Pydantic validators inheritance fix
+====================================
+
+* fix schema validators passthrough `#45 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/45>`_
+* fix doc build
+
+Authors
+"""""""
+
+* `@CosmoV`_
+* `@mahenzon`_
+
+
 **2.3.0**
 *********
 
@@ -15,8 +31,8 @@ Current Atomic Operation context var
 Authors
 """""""
 
-
 * `@mahenzon`_
+
 
 **2.2.2**
 *********
