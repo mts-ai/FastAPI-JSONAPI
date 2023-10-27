@@ -9,6 +9,7 @@ from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
+from sqlalchemy.sql import column, distinct
 
 from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
@@ -270,7 +271,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if self.disable_collection_count is True:
             return self.default_collection_count
 
-        return (await self.session.execute(select(func.count()).select_from(query.subquery()))).scalar_one()
+        count_query = select(func.count(distinct(column("id")))).select_from(query.subquery())
+        return (await self.session.execute(count_query)).scalar_one()
 
     async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
         """
@@ -299,7 +301,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         query = self.paginate_query(query, qs.pagination)
 
-        collection = (await self.session.execute(query)).scalars().all()
+        collection = (await self.session.execute(query)).unique().scalars().all()
 
         collection = await self.after_get_collection(collection, qs, view_kwargs)
 

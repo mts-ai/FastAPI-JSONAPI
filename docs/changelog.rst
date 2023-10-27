@@ -2,6 +2,21 @@ Changelog
 #########
 
 
+**2.3.2**
+*********
+
+Duplicated entities in response fix
+=======================================
+* fix duplicates in list response `#48 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/48>`_
+
+
+Authors
+"""""""
+
+* `@CosmoV`_
+* `@mahenzon`_
+
+
 **2.3.1**
 *********
 
