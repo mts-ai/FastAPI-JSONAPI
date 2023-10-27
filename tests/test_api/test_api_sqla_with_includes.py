@@ -1958,6 +1958,55 @@ class TestFilters:
             "meta": {"count": 3, "totalPages": 1},
         }
 
+    async def test_join_by_relationships_does_not_duplicating_response_entities(
+        self,
+        app: FastAPI,
+        async_session: AsyncSession,
+        client: AsyncClient,
+        user_1: User,
+        user_1_post: PostComment,
+    ):
+        text = fake.sentence()
+        comment_1 = PostComment(
+            text=text,
+            post_id=user_1_post.id,
+            author_id=user_1.id,
+        )
+        comment_2 = PostComment(
+            text=text,
+            post_id=user_1_post.id,
+            author_id=user_1.id,
+        )
+        async_session.add_all([comment_1, comment_2])
+        await async_session.commit()
+
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "posts.comments.text",
+                        "op": "eq",
+                        "val": text,
+                    },
+                ],
+            ),
+        }
+
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 1, "totalPages": 1},
+        }
+
 
 ASCENDING = ""
 DESCENDING = "-"
