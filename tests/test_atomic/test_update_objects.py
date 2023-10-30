@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,8 +8,6 @@ from tests.models import Computer, User, UserBio
 from tests.schemas import UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
 pytestmark = pytest.mark.asyncio
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 class TestAtomicUpdateObjects:

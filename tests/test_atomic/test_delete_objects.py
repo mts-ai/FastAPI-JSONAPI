@@ -1,4 +1,3 @@
-import logging
 from typing import Awaitable, Callable
 
 from httpx import AsyncClient
@@ -12,8 +11,6 @@ from fastapi_jsonapi.atomic.schemas import AtomicOperationAction
 from tests.models import Computer
 
 pytestmark = mark.asyncio
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 class TestAtomicDeleteObjects:
