@@ -30,6 +30,7 @@ async def async_session_dependency():
 async def async_engine():
     engine = create_async_engine(
         url=make_url(sqla_uri()),
+        # TODO: env var
         echo=False,
         # echo=True,
     )

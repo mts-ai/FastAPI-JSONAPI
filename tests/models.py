@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
-from tests.common import sqla_uri
+from tests.common import IS_POSTGRES, IS_SQLITE, sqla_uri
 
 
 class Base:
@@ -74,6 +74,7 @@ class UserBio(AutoIdMixin, Base):
     birth_city: str = Column(String, nullable=False, default="", server_default="")
     favourite_movies: str = Column(String, nullable=False, default="", server_default="")
     keys_to_ids_list: Dict[str, List[int]] = Column(JSON)
+    meta: Dict[str, str] = Column(JSON, server_default="{}")
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     user = relationship(
@@ -267,10 +268,10 @@ class CustomUUIDType(TypeDecorator):
 
 
 db_uri = sqla_uri()
-if "postgres" in db_uri:
+if IS_POSTGRES:
     # noinspection PyPep8Naming
     from sqlalchemy.dialects.postgresql import UUID as UUIDType
-elif "sqlite" in db_uri:
+elif IS_SQLITE:
     UUIDType = CustomUUIDType
 else:
     msg = "unsupported dialect (custom uuid?)"

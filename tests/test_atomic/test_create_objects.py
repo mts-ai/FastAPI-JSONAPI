@@ -1,4 +1,3 @@
-import logging
 from typing import Callable
 
 import pytest
@@ -25,8 +24,6 @@ from tests.schemas import (
 COLUMN_CHARACTERS_LIMIT = 50
 
 pytestmark = mark.asyncio
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 def random_sentence() -> str:

@@ -39,8 +39,6 @@ from tests.schemas import (
 
 pytestmark = mark.asyncio
 
-logging.basicConfig(level=logging.DEBUG)
-
 
 def association_key(data: dict):
     return data["type"], data["id"]

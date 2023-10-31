@@ -1,11 +1,13 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
-from typing import Any, List, Tuple, Type, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import InstrumentedAttribute, aliased
 from sqlalchemy.sql.elements import BinaryExpression
+from sqlalchemy.sql.schema import Column
+from sqlalchemy.sql.sqltypes import JSON
 
 from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
@@ -91,7 +93,16 @@ class Node:
             raise InvalidType(detail=", ".join(errors))
         return getattr(model_column, self.operator)(clear_value)
 
-    def resolve(self) -> FilterAndJoins:  # noqa: PLR0911
+    def _is_json_column(self, column_name: str) -> bool:
+        column: Optional[Column] = self.model.__table__.columns.get(column_name)
+
+        if column is None:
+            return False
+
+        return isinstance(column.type, JSON)
+
+    # TODO: refactor and remove ignore PLR0911, PLR0912
+    def resolve(self) -> FilterAndJoins:  # noqa: PLR0911, PLR0912
         """Create filter for a particular node of the filter tree"""
         if "or" in self.filter_:
             return self._create_filters(type_filter="or")
@@ -114,12 +125,22 @@ class Node:
                 operator=operator,
             )
 
+        # TODO: check if relationship or inner schema
+        # TODO: create base schema `BaseJsonModel(BaseModel)`? reuse:
+        #  https://github.com/AdCombo/combojsonapi/blob/45a43cf28c6496195c6e6762955db16f9a813b2f/combojsonapi/postgresql_jsonb/plugin.py#L103-L120
+
         if SPLIT_REL in self.filter_.get("name", ""):
+            current_rel_or_column_name, *rel_names = self.filter_["name"].split(SPLIT_REL)
             value = {
-                "name": SPLIT_REL.join(self.filter_["name"].split(SPLIT_REL)[1:]),
+                "name": SPLIT_REL.join(rel_names),
                 "op": operator,
                 "val": value,
             }
+
+            is_json_filter = self._is_json_column(current_rel_or_column_name)
+            if is_json_filter:
+                return self._json_inner_filtering(value)
+
             return self._relationship_filtering(value)
 
         if isinstance(value, dict):
@@ -159,6 +180,13 @@ class Node:
         filters, new_joins = node.resolve()
         joins.extend(new_joins)
         return filters, joins
+
+    def _json_inner_filtering(self, value):
+        # TODO!! Upgrade Node usage :thinking:
+        node = Node(self.related_model, value, self.related_schema)
+        filters, new_joins = node.resolve()
+        # joins.extend(new_joins)
+        return filters, []
 
     def _create_filters(self, type_filter: str) -> FilterAndJoins:
         """
@@ -214,6 +242,10 @@ class Node:
         field = self.name
 
         model_field = get_model_field(self.schema, field)
+
+        is_json_field = hasattr(self.model, "type") and isinstance(self.model.type, JSON)
+        if is_json_field:
+            return self.model.op("->>")(model_field)
 
         try:
             return getattr(self.model, model_field)
