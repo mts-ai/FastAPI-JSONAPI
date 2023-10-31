@@ -32,9 +32,9 @@ def get_related_model_cls(cls: Type[TypeModel], relation_name: str) -> Type[Type
     # TODO: any flags for JSON / JSONB?
     # TODO: or any plugins to add support for JSON / JSONB, etc?
     # TODO: https://github.com/AdCombo/combojsonapi/blob/45a43cf28c6496195c6e6762955db16f9a813b2f/combojsonapi/postgresql_jsonb/plugin.py#L103-L120
-    # todo: check for json[b]
-    # if isinstance(related_column.type) in (JSON, ...):  # TODO!!
-    if isinstance(related_column.type, JSON):
+
+    column_is_json = hasattr(related_column, "type") and isinstance(related_column.type, JSON)
+    if column_is_json:
         # return related_column.op("->>")
         return related_column
 
