@@ -2565,7 +2565,7 @@ class TestFilters:
         assert res.json() == {
             "data": [],
             "jsonapi": {"version": "1.0"},
-            "meta": {"count": 1, "totalPages": 1},
+            "meta": {"count": 0, "totalPages": 1},
         }
 
 
