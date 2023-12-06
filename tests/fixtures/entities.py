@@ -70,6 +70,19 @@ async def user_3(async_session: AsyncSession):
     await async_session.commit()
 
 
+@async_fixture()
+async def user_4(async_session: AsyncSession):
+    user = build_user(
+        email=None
+    )
+    async_session.add(user)
+    await async_session.commit()
+    await async_session.refresh(user)
+    yield user
+    await async_session.delete(user)
+    await async_session.commit()
+
+
 async def build_user_bio(async_session: AsyncSession, user: User, **fields):
     bio = UserBio(user=user, **fields)
     async_session.add(bio)
