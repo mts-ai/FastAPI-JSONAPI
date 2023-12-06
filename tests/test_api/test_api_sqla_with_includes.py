@@ -1751,6 +1751,34 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
+    @mark.parametrize("filter_dict, expected_email_is_null", [
+        param([{"name": "email", "op": "is_", "val": None}], True),
+        param([{"name": "email", "op": "isnot", "val": None}], False)
+    ])
+    async def test_filter_by_null(
+            self,
+            app: FastAPI,
+            client: AsyncClient,
+            user_1: User,
+            user_4: User,
+            filter_dict,
+            expected_email_is_null
+    ):
+        assert user_1.email is not None
+        assert user_4.email is None
+
+        url = app.url_path_for("get_user_list")
+        params = {"filter": dumps(filter_dict)}
+
+        response = await client.get(url, params=params)
+        assert response.status_code == 200, response.text
+
+        data = response.json()
+
+        assert len(data['data']) == 1
+        assert (data['data'][0]['attributes']['email'] is None) == expected_email_is_null
+
+
     async def test_composite_filter_by_one_field(
         self,
         app: FastAPI,
