@@ -598,6 +598,38 @@ async def test_many_to_many_load_inner_includes_to_parents(
     assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data
 
 
+@mark.parametrize(
+    "include, expected_relationships",
+    [
+        (["posts","posts.user"], ["user"]),
+        (["posts","posts.comments"], ["comments"]),
+        (["posts","posts.user", "posts.comments"], ["user", "comments"]),
+    ]
+)
+async def test_get_users_with_includes(
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        user_1_posts,
+        user_1_post_for_comments: Post,
+        user_2_comment_for_one_u1_post: PostComment,
+        include,
+        expected_relationships,
+):
+    include_param = ",".join(include)
+    url = app.url_path_for("get_user_list")
+    url = f"{url}?filter[name]={user_1.name}&include={include_param}"
+    response = await client.get(url)
+    assert response.status_code == status.HTTP_200_OK, response.text
+    response_data = response.json()
+
+    for post in [item for item in response_data.get("included", []) if item["type"] == "post"]:
+        post_relationships = set(post.get("relationships", {}).keys())
+        assert post_relationships.intersection(expected_relationships) == set(expected_relationships), \
+            f"Expected relationships {expected_relationships} not found in post {post['id']}"
+
+
 async def test_method_not_allowed(app: FastAPI, client: AsyncClient):
     url = app.url_path_for("get_user_list")
     res = await client.put(url, json={})
