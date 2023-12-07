@@ -598,6 +598,77 @@ async def test_many_to_many_load_inner_includes_to_parents(
     assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data
 
 
+@mark.parametrize(
+    "include, expected_relationships",
+    [
+        (
+            ["posts", "posts.user"],
+            ["user"],
+        ),
+        (
+            ["posts", "posts.comments"],
+            ["comments"],
+        ),
+        (
+            ["posts", "posts.user", "posts.comments"],
+            ["user", "comments"],
+        ),
+    ],
+)
+async def test_get_users_with_posts_and_inner_includes(
+    app: FastAPI,
+    client: AsyncClient,
+    user_1: User,
+    user_2: User,
+    user_1_posts: list[PostComment],
+    user_1_post_for_comments: Post,
+    user_2_comment_for_one_u1_post: PostComment,
+    include: list[str],
+    expected_relationships: list[str],
+):
+    """
+    Test if requesting `posts.user` and `posts.comments`
+    returns posts with both `user` and `comments`
+    """
+    assert user_1_posts
+    assert user_2_comment_for_one_u1_post.author_id == user_2.id
+    include_param = ",".join(include)
+    resource_type = "user"
+    url = app.url_path_for(f"get_{resource_type}_list")
+    url = f"{url}?filter[name]={user_1.name}&include={include_param}"
+    response = await client.get(url)
+    assert response.status_code == status.HTTP_200_OK, response.text
+    response_json = response.json()
+
+    result_data = response_json["data"]
+
+    assert result_data == [
+        {
+            "id": str(user_1.id),
+            "type": resource_type,
+            "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
+            "relationships": {
+                "posts": {
+                    "data": [
+                        # relationship info
+                        {"id": str(p.id), "type": "post"}
+                        # for every post
+                        for p in user_1_posts
+                    ],
+                },
+            },
+        },
+    ]
+    included_data = response_json["included"]
+
+    included_posts = [item for item in included_data if item["type"] == "post"]
+    for post in included_posts:
+        post_relationships = set(post.get("relationships", {}))
+        assert post_relationships.intersection(expected_relationships) == set(
+            expected_relationships,
+        ), f"Expected relationships {expected_relationships} not found in post {post['id']}"
+
+
 async def test_method_not_allowed(app: FastAPI, client: AsyncClient):
     url = app.url_path_for("get_user_list")
     res = await client.put(url, json={})
