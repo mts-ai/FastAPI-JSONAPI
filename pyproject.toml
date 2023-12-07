@@ -219,6 +219,7 @@ extend-ignore = [
     "RUF001",  # String contains ambiguous unicode character {confusable} (did you mean {representant}?)
     "RUF002",  # Docstring contains ambiguous unicode character {confusable} (did you mean {representant}?)
     "RUF003",  # Comment contains ambiguous unicode character {confusable} (did you mean {representant}?)
+    "PT006",  # pytest parametrize tuple args
 ]
 
 [tool.ruff.per-file-ignores]
