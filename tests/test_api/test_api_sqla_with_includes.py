@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from itertools import chain, zip_longest
 from json import dumps
 from typing import Dict, List
@@ -598,75 +599,172 @@ async def test_many_to_many_load_inner_includes_to_parents(
     assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data
 
 
-@mark.parametrize(
-    "include, expected_relationships",
-    [
-        (
-            ["posts", "posts.user"],
-            ["user"],
-        ),
-        (
-            ["posts", "posts.comments"],
-            ["comments"],
-        ),
-        (
-            ["posts", "posts.user", "posts.comments"],
-            ["user", "comments"],
-        ),
-    ],
-)
-async def test_get_users_with_posts_and_inner_includes(
-    app: FastAPI,
-    client: AsyncClient,
-    user_1: User,
-    user_2: User,
-    user_1_posts: list[PostComment],
-    user_1_post_for_comments: Post,
-    user_2_comment_for_one_u1_post: PostComment,
-    include: list[str],
-    expected_relationships: list[str],
-):
-    """
-    Test if requesting `posts.user` and `posts.comments`
-    returns posts with both `user` and `comments`
-    """
-    assert user_1_posts
-    assert user_2_comment_for_one_u1_post.author_id == user_2.id
-    include_param = ",".join(include)
-    resource_type = "user"
-    url = app.url_path_for(f"get_{resource_type}_list")
-    url = f"{url}?filter[name]={user_1.name}&include={include_param}"
-    response = await client.get(url)
-    assert response.status_code == status.HTTP_200_OK, response.text
-    response_json = response.json()
+class TestUserWithPostsWithInnerIncludes:
+    @mark.parametrize(
+        "include, expected_relationships_post, case_name",
+        [
+            (
+                ["posts", "posts.user"],
+                ["user"],
+                "",
+            ),
+            (
+                ["posts", "posts.comments"],
+                ["comments"],
+                "",
+            ),
+            (
+                ["posts", "posts.user", "posts.comments"],
+                ["user", "comments"],
+                "case_1",
+            ),
+            (
+                ["posts", "posts.user", "posts.comments", "posts.comments.author"],
+                ["user", "comments"],
+                "case_2",
+            ),
+        ],
+    )
+    async def test_get_users_with_posts_and_inner_includes(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        user_1_posts: list[PostComment],
+        user_1_post_for_comments: Post,
+        user_2_comment_for_one_u1_post: PostComment,
+        include: list[str],
+        expected_relationships_post: list[str],
+        case_name: bool,
+    ):
+        """
+        Test if requesting `posts.user` and `posts.comments`
+        returns posts with both `user` and `comments`
+        """
+        assert user_1_posts
+        assert user_2_comment_for_one_u1_post.author_id == user_2.id
+        include_param = ",".join(include)
+        resource_type = "user"
+        url = app.url_path_for(f"get_{resource_type}_list")
+        url = f"{url}?filter[name]={user_1.name}&include={include_param}"
+        response = await client.get(url)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_json = response.json()
 
-    result_data = response_json["data"]
+        result_data = response_json["data"]
 
-    assert result_data == [
-        {
-            "id": str(user_1.id),
-            "type": resource_type,
-            "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
-            "relationships": {
-                "posts": {
-                    "data": [
-                        # relationship info
-                        {"id": str(p.id), "type": "post"}
-                        # for every post
-                        for p in user_1_posts
-                    ],
+        assert result_data == [
+            {
+                "id": str(user_1.id),
+                "type": resource_type,
+                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
+                "relationships": {
+                    "posts": {
+                        "data": [
+                            # relationship info
+                            {"id": str(p.id), "type": "post"}
+                            # for every post
+                            for p in user_1_posts
+                        ],
+                    },
                 },
             },
-        },
-    ]
-    included_data = response_json["included"]
+        ]
+        included_data = response_json["included"]
 
-    included_posts = [item for item in included_data if item["type"] == "post"]
-    for post in included_posts:
-        post_relationships = set(post.get("relationships", {}))
-        assert post_relationships.intersection(expected_relationships) == set(
-            expected_relationships,
-        ), f"Expected relationships {expected_relationships} not found in post {post['id']}"
+        included_posts = [item for item in included_data if item["type"] == "post"]
+        for post in included_posts:
+            post_relationships = set(post.get("relationships", {}))
+            assert post_relationships.intersection(expected_relationships_post) == set(
+                expected_relationships_post,
+            ), f"Expected relationships {expected_relationships_post} not found in post {post['id']}"
+
+        if not case_name:
+            return
+        included_as_map, expected_includes = self.prepare_expected_includes(
+            included=included_data,
+            user_1=user_1,
+            user_2=user_2,
+            user_1_posts=user_1_posts,
+            user_2_comment_for_one_u1_post=user_2_comment_for_one_u1_post,
+        )
+
+        if case_name == "case_2":
+            assert "user" in expected_includes
+        elif case_name == "case_1":
+            expected_includes.pop("user", None)
+            for pc in expected_includes["post_comment"]:
+                pc.pop("relationships", None)
+
+        assert included_as_map == expected_includes
+
+    def prepare_expected_includes(
+        self,
+        included: list[dict],
+        user_1: User,
+        user_2: User,
+        user_1_posts: list[PostComment],
+        user_2_comment_for_one_u1_post: PostComment,
+    ):
+        included_as_map = defaultdict(list)
+        for item in included:
+            included_as_map[item["type"]].append(item)
+
+        expected_includes = {
+            "post": [
+                #
+                {
+                    "id": str(p.id),
+                    "type": "post",
+                    "attributes": PostAttributesBaseSchema.from_orm(p).dict(),
+                    "relationships": {
+                        "user": {
+                            "data": {
+                                "id": str(user_1.id),
+                                "type": "user",
+                            },
+                        },
+                        "comments": {
+                            "data": [
+                                {
+                                    "id": str(user_2_comment_for_one_u1_post.id),
+                                    "type": "post_comment",
+                                },
+                            ]
+                            if p.id == user_2_comment_for_one_u1_post.post_id
+                            else [],
+                        },
+                    },
+                }
+                #
+                for p in user_1_posts
+            ],
+            "post_comment": [
+                {
+                    "id": str(user_2_comment_for_one_u1_post.id),
+                    "type": "post_comment",
+                    "attributes": PostCommentAttributesBaseSchema.from_orm(user_2_comment_for_one_u1_post).dict(),
+                    "relationships": {
+                        "author": {
+                            "data": {
+                                "id": str(user_2.id),
+                                "type": "user",
+                            },
+                        },
+                    },
+                },
+            ],
+            "user": [
+                {
+                    "id": str(user_2.id),
+                    "type": "user",
+                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(),
+                },
+            ],
+        }
+
+        return included_as_map, expected_includes
 
 
 async def test_method_not_allowed(app: FastAPI, client: AsyncClient):
