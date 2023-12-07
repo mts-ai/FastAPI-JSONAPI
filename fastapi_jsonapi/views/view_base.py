@@ -1,10 +1,12 @@
 import inspect
 import logging
+from collections import defaultdict
 from contextvars import ContextVar
 from functools import partial
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -47,6 +49,9 @@ object_schema_ctx_var: ContextVar[Type[JSONAPIObjectSchema]] = ContextVar("objec
 included_object_schema_ctx_var: ContextVar[Type[TypeSchema]] = ContextVar("included_object_schema_ctx_var")
 relationship_info_ctx_var: ContextVar[RelationshipInfo] = ContextVar("relationship_info_ctx_var")
 
+# TODO: just change state on `self`!! (refactor)
+included_objects_ctx_var: ContextVar[Dict[Tuple[str, str], TypeSchema]] = ContextVar("included_objects_ctx_var")
+
 
 class ViewBase:
     """
@@ -54,7 +59,7 @@ class ViewBase:
     """
 
     data_layer_cls = BaseDataLayer
-    method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {}
+    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {}
 
     def __init__(self, *, request: Request, jsonapi: RoutersJSONAPI, **options):
         self.request: Request = request
@@ -240,12 +245,12 @@ class ViewBase:
     def update_related_object(
         cls,
         relationship_data: Union[Dict[str, str], List[Dict[str, str]]],
-        included_objects: Dict[Tuple[str, str], TypeSchema],
         cache_key: Tuple[str, str],
         related_field_name: str,
     ):
         relationships_schema: Type[BaseModel] = relationships_schema_ctx_var.get()
         object_schema: Type[JSONAPIObjectSchema] = object_schema_ctx_var.get()
+        included_objects: Dict[Tuple[str, str], TypeSchema] = included_objects_ctx_var.get()
 
         relationship_data_schema = get_related_schema(relationships_schema, related_field_name)
         parent_included_object = included_objects.get(cache_key)
@@ -256,12 +261,10 @@ class ViewBase:
                 existing = existing.dict()
             new_relationships.update(existing)
         new_relationships.update(
-            {
-                **{
-                    related_field_name: relationship_data_schema(
-                        data=relationship_data,
-                    ),
-                },
+            **{
+                related_field_name: relationship_data_schema(
+                    data=relationship_data,
+                ),
             },
         )
         included_objects[cache_key] = object_schema.parse_obj(
@@ -273,17 +276,19 @@ class ViewBase:
     @classmethod
     def update_known_included(
         cls,
-        included_objects: Dict[Tuple[str, str], TypeSchema],
         new_included: List[TypeSchema],
     ):
+        included_objects: Dict[Tuple[str, str], TypeSchema] = included_objects_ctx_var.get()
+
         for included in new_included:
-            included_objects[(included.id, included.type)] = included
+            key = (included.id, included.type)
+            if key not in included_objects:
+                included_objects[key] = included
 
     @classmethod
     def process_single_db_item_and_prepare_includes(
         cls,
         parent_db_item: TypeModel,
-        included_objects: Dict[Tuple[str, str], TypeSchema],
     ):
         previous_resource_type: str = previous_resource_type_ctx_var.get()
         related_field_name: str = related_field_name_ctx_var.get()
@@ -305,7 +310,6 @@ class ViewBase:
             )
 
             cls.update_known_included(
-                included_objects=included_objects,
                 new_included=new_included,
             )
             relationship_data_items.append(data_for_relationship)
@@ -317,7 +321,6 @@ class ViewBase:
 
         cls.update_related_object(
             relationship_data=relationship_data_items,
-            included_objects=included_objects,
             cache_key=cache_key,
             related_field_name=related_field_name,
         )
@@ -328,14 +331,12 @@ class ViewBase:
     def process_db_items_and_prepare_includes(
         cls,
         parent_db_items: List[TypeModel],
-        included_objects: Dict[Tuple[str, str], TypeSchema],
     ):
         next_current_db_item = []
 
         for parent_db_item in parent_db_items:
             new_next_items = cls.process_single_db_item_and_prepare_includes(
                 parent_db_item=parent_db_item,
-                included_objects=included_objects,
             )
             next_current_db_item.extend(new_next_items)
         return next_current_db_item
@@ -346,18 +347,21 @@ class ViewBase:
         current_db_item: Union[List[TypeModel], TypeModel],
         item_as_schema: TypeSchema,
         current_relation_schema: Type[TypeSchema],
+        included_objects: Dict[Tuple[str, str], TypeSchema],
+        requested_includes: Dict[str, Iterable[str]],
     ) -> Tuple[Dict[str, TypeSchema], List[JSONAPIObjectSchema]]:
         root_item_key = (item_as_schema.id, item_as_schema.type)
-        included_objects: Dict[Tuple[str, str], TypeSchema] = {
-            root_item_key: item_as_schema,
-        }
+
+        if root_item_key not in included_objects:
+            included_objects[root_item_key] = item_as_schema
         previous_resource_type = item_as_schema.type
 
+        previous_related_field_name = previous_resource_type
         for related_field_name in include.split(SPLIT_REL):
             object_schemas = self.jsonapi.schema_builder.create_jsonapi_object_schemas(
                 schema=current_relation_schema,
-                includes=[related_field_name],
-                compute_included_schemas=bool([related_field_name]),
+                includes=requested_includes[previous_related_field_name],
+                compute_included_schemas=True,
             )
             relationships_schema = object_schemas.relationships_schema
             schemas_include = object_schemas.can_be_included_schemas
@@ -379,15 +383,27 @@ class ViewBase:
             related_field_name_ctx_var.set(related_field_name)
             relationship_info_ctx_var.set(relationship_info)
             included_object_schema_ctx_var.set(included_object_schema)
+            included_objects_ctx_var.set(included_objects)
 
             current_db_item = self.process_db_items_and_prepare_includes(
                 parent_db_items=current_db_item,
-                included_objects=included_objects,
             )
 
             previous_resource_type = relationship_info.resource_type
+            previous_related_field_name = related_field_name
 
         return included_objects.pop(root_item_key), list(included_objects.values())
+
+    def prep_requested_includes(self, includes: Iterable[str]):
+        requested_includes: Dict[str, set[str]] = defaultdict(set)
+        default: str = self.jsonapi.type_
+        for include in includes:
+            prev = default
+            for related_field_name in include.split(SPLIT_REL):
+                requested_includes[prev].add(related_field_name)
+                prev = related_field_name
+
+        return requested_includes
 
     def process_db_object(
         self,
@@ -403,12 +419,17 @@ class ViewBase:
             attributes=object_schemas.attributes_schema.from_orm(item),
         )
 
+        cache_included_objects: Dict[Tuple[str, str], TypeSchema] = {}
+        requested_includes = self.prep_requested_includes(includes)
+
         for include in includes:
             item_as_schema, new_included_objects = self.process_include_with_nested(
                 include=include,
                 current_db_item=item,
                 item_as_schema=item_as_schema,
                 current_relation_schema=item_schema,
+                included_objects=cache_included_objects,
+                requested_includes=requested_includes,
             )
 
             included_objects.extend(new_included_objects)
