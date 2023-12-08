@@ -67,6 +67,12 @@ class Node:
         self.filter_ = filter_
         self.schema = schema
 
+    def _check_can_be_none(self, fields: list[ModelField]) -> bool:
+        """
+        Return True if None is possible value for target field
+        """
+        return any(field_item.allow_none for field_item in fields)
+
     def _cast_value_with_scheme(self, field_types: List[ModelField], value: Any) -> Tuple[Any, List[str]]:
         errors: List[str] = []
         casted_value = cast_failed
@@ -109,6 +115,15 @@ class Node:
             fields = list(schema_field.sub_fields)
         else:
             fields = [schema_field]
+
+        can_be_none = self._check_can_be_none(fields)
+
+        if value is None:
+            if can_be_none:
+                return getattr(model_column, self.operator)(value)
+
+            raise InvalidFilters(detail=f"The field `{schema_field.name}` can't be null")
+
         types = [i.type_ for i in fields]
         clear_value = None
         errors: List[str] = []
@@ -133,8 +148,9 @@ class Node:
                 )
 
         # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
-        if clear_value is None and not any(not i_f.required for i_f in fields):
+        if clear_value is None and not can_be_none:
             raise InvalidType(detail=", ".join(errors))
+
         return getattr(model_column, self.operator)(clear_value)
 
     def _separate_types(self, types: List[Type]) -> Tuple[List[Type], List[Type]]:

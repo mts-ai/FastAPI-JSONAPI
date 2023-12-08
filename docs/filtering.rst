@@ -119,6 +119,22 @@ You can also use boolean combination of operations:
     GET /user?filter=[{"name":"group.name","op":"ilike","val":"%admin%"},{"or":[{"not":{"name":"first_name","op":"eq","val":"John"}},{"and":[{"name":"first_name","op":"like","val":"%Jim%"},{"name":"date_create","op":"gt","val":"1990-01-01"}]}]}] HTTP/1.1
     Accept: application/vnd.api+json
 
+
+Filtering records by a field that is null
+
+.. sourcecode:: http
+
+    GET /user?filter=[{"name":"name","op":"is_","val":null}] HTTP/1.1
+    Accept: application/vnd.api+json
+
+Filtering records by a field that is not null
+
+.. sourcecode:: http
+
+    GET /user?filter=[{"name":"name","op":"isnot","val":null}] HTTP/1.1
+    Accept: application/vnd.api+json
+
+
 Common available operators:
 
 * any: used to filter on "to many" relationships
