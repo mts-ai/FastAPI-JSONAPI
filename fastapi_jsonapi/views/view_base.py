@@ -64,6 +64,7 @@ class ViewBase:
 
     def _get_data_layer(self, schema: Type[BaseModel], **dl_kwargs):
         return self.data_layer_cls(
+            request=self.request,
             schema=schema,
             model=self.jsonapi.model,
             type_=self.jsonapi.type_,

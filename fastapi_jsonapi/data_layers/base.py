@@ -4,8 +4,9 @@ If you want to create your own data layer
 you must inherit from this base class
 """
 
-import types
 from typing import Dict, List, Optional, Tuple, Type
+
+from fastapi import Request
 
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
@@ -16,31 +17,9 @@ from fastapi_jsonapi.schema_builder import FieldConfig, TransferSaveWrapper
 class BaseDataLayer:
     """Base class of a data layer"""
 
-    REWRITABLE_METHODS = (
-        "query",
-        "before_create_object",
-        "after_create_object",
-        "before_get_object",
-        "after_get_object",
-        "before_get_collection",
-        "after_get_collection",
-        "before_update_object",
-        "after_update_object",
-        "before_delete_object",
-        "after_delete_object",
-        "before_create_relationship",
-        "after_create_relationship",
-        "before_get_relationship",
-        "after_get_relationship",
-        "before_update_relationship",
-        "after_update_relationship",
-        "before_delete_relationship",
-        "after_delete_relationship",
-        "retrieve_object_query",
-    )
-
     def __init__(
         self,
+        request: Request,
         schema: Type[TypeSchema],
         model: Type[TypeModel],
         url_id_field: str,
@@ -51,7 +30,7 @@ class BaseDataLayer:
         **kwargs,
     ):
         """
-
+        :param request:
         :param schema:
         :param model:
         :param url_id_field:
@@ -61,8 +40,9 @@ class BaseDataLayer:
         :param type_: resource type
         :param kwargs:
         """
-        self.model = model
+        self.request = request
         self.schema = schema
+        self.model = model
         self.url_id_field = url_id_field
         self.id_name_field = id_name_field
         self.disable_collection_count: bool = disable_collection_count
@@ -561,13 +541,3 @@ class BaseDataLayer:
         :param view_kwargs: kwargs from the resource view
         """
         raise NotImplementedError
-
-    def bound_rewritable_methods(self, methods):
-        """
-        Bound additional methods to current instance
-
-        :param class methods: methods
-        """
-        for key, value in methods.items():
-            if key in self.REWRITABLE_METHODS:
-                setattr(self, key, types.MethodType(value, self))
