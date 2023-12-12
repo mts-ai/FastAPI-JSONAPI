@@ -83,6 +83,7 @@ class Node:
                 if isinstance(value, list):  # noqa: SIM108
                     clear_value = [i_type(item) for item in value]
                 else:
+                    # pass
                     clear_value = i_type(value)
             except (TypeError, ValueError) as ex:
                 errors.append(str(ex))
