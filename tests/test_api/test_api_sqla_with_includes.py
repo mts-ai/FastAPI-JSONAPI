@@ -1,14 +1,17 @@
+import json
 import logging
+from datetime import datetime, timezone
 from collections import defaultdict
 from itertools import chain, zip_longest
 from json import dumps
-from typing import Dict, List
+from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import BaseModel, Field
 from pytest import fixture, mark, param  # noqa PT013
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi.views.view_base import ViewBase
@@ -17,6 +20,7 @@ from tests.fixtures.entities import build_workplace, create_user
 from tests.misc.utils import fake
 from tests.models import (
     Computer,
+    ContainsTimestamp,
     IdCast,
     Post,
     PostComment,
@@ -1213,6 +1217,96 @@ class TestCreateObjects:
                 ],
                 "jsonapi": {"version": "1.0"},
                 "meta": None,
+            }
+
+    async def test_create_with_timestamp(self, async_session: AsyncSession):
+        resource_type = "contains_timestamp_model"
+
+        class ContainsTimestampAttrsSchema(BaseModel):
+            timestamp: datetime
+
+        app = build_app_custom(
+            model=ContainsTimestamp,
+            schema=ContainsTimestampAttrsSchema,
+            schema_in_post=ContainsTimestampAttrsSchema,
+            schema_in_patch=ContainsTimestampAttrsSchema,
+            resource_type=resource_type,
+        )
+
+        create_timestamp = datetime.now(tz=timezone.utc)
+        create_user_body = {
+            "data": {
+                "attributes": {
+                    "timestamp": create_timestamp.isoformat(),
+                },
+            },
+        }
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"get_{resource_type}_list")
+            res = await client.post(url, json=create_user_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+            response_json = res.json()
+
+            assert (entity_id := response_json["data"]["id"])
+            assert response_json == {
+                "meta": None,
+                "jsonapi": {"version": "1.0"},
+                "data": {
+                    "type": "contains_timestamp_model",
+                    "attributes": {"timestamp": create_timestamp.isoformat()},
+                    "id": entity_id,
+                },
+            }
+
+            stms = select(ContainsTimestamp).where(ContainsTimestamp.id == int(entity_id))
+            entity_model: Optional[ContainsTimestamp] = (await async_session.execute(stms)).scalar_one_or_none()
+            assert entity_model
+            assert entity_model.timestamp == create_timestamp
+
+            params = {
+                "filter": json.dumps(
+                    [
+                        {
+                            "name": "timestamp",
+                            "op": "eq",
+                            "val": create_timestamp.isoformat(),
+                        },
+                    ],
+                ),
+            }
+
+            # successfully filtered
+            res = await client.get(url, params=params)
+            assert res.status_code == status.HTTP_200_OK, res.text
+            assert res.json() == {
+                "meta": {"count": 1, "totalPages": 1},
+                "jsonapi": {"version": "1.0"},
+                "data": [
+                    {
+                        "type": "contains_timestamp_model",
+                        "attributes": {"timestamp": create_timestamp.isoformat()},
+                        "id": entity_id,
+                    },
+                ],
+            }
+
+            # check filter really work
+            params = {
+                "filter": [
+                    {
+                        "name": "timestamp",
+                        "op": "eq",
+                        "val": datetime.now(tz=timezone.utc).isoformat(),
+                    },
+                ],
+            }
+            res = await client.get(url, params=params)
+            assert res.status_code == status.HTTP_200_OK, res.text
+            assert res.json() == {
+                "meta": {"count": 0, "totalPages": 1},
+                "jsonapi": {"version": "1.0"},
+                "data": [],
             }
 
 

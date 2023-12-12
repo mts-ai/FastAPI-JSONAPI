@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
@@ -296,3 +296,8 @@ class SelfRelationship(Base):
     )
     # parent = relationship("SelfRelationship", back_populates="s")
     self_relationship = relationship("SelfRelationship", remote_side=[id])
+
+
+class ContainsTimestamp(Base):
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime(True), nullable=False)
