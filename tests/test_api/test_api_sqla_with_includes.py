@@ -1262,7 +1262,7 @@ class TestCreateObjects:
             stms = select(ContainsTimestamp).where(ContainsTimestamp.id == int(entity_id))
             entity_model: Optional[ContainsTimestamp] = (await async_session.execute(stms)).scalar_one_or_none()
             assert entity_model
-            assert entity_model.timestamp == create_timestamp
+            assert entity_model.timestamp.isoformat() == create_timestamp.replace(tzinfo=None).isoformat()
 
             params = {
                 "filter": json.dumps(
@@ -1285,7 +1285,7 @@ class TestCreateObjects:
                 "data": [
                     {
                         "type": "contains_timestamp_model",
-                        "attributes": {"timestamp": create_timestamp.isoformat()},
+                        "attributes": {"timestamp": create_timestamp.replace(tzinfo=None).isoformat()},
                         "id": entity_id,
                     },
                 ],
@@ -1293,13 +1293,15 @@ class TestCreateObjects:
 
             # check filter really work
             params = {
-                "filter": [
-                    {
-                        "name": "timestamp",
-                        "op": "eq",
-                        "val": datetime.now(tz=timezone.utc).isoformat(),
-                    },
-                ],
+                "filter": json.dumps(
+                    [
+                        {
+                            "name": "timestamp",
+                            "op": "eq",
+                            "val": datetime.now(tz=timezone.utc).isoformat(),
+                        },
+                    ],
+                ),
             }
             res = await client.get(url, params=params)
             assert res.status_code == status.HTTP_200_OK, res.text
