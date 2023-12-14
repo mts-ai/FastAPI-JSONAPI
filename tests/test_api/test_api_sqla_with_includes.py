@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi.views.view_base import ViewBase
+from tests.common import is_postgres_tests
 from tests.fixtures.app import build_app_custom
 from tests.fixtures.entities import build_workplace, create_user
 from tests.misc.utils import fake
@@ -1219,7 +1220,7 @@ class TestCreateObjects:
                 "meta": None,
             }
 
-    async def test_create_with_timestamp(self, async_session: AsyncSession):
+    async def test_create_with_timestamp_and_fetch(self, async_session: AsyncSession):
         resource_type = "contains_timestamp_model"
 
         class ContainsTimestampAttrsSchema(BaseModel):
@@ -1253,7 +1254,7 @@ class TestCreateObjects:
                 "meta": None,
                 "jsonapi": {"version": "1.0"},
                 "data": {
-                    "type": "contains_timestamp_model",
+                    "type": resource_type,
                     "attributes": {"timestamp": create_timestamp.isoformat()},
                     "id": entity_id,
                 },
@@ -1262,7 +1263,14 @@ class TestCreateObjects:
             stms = select(ContainsTimestamp).where(ContainsTimestamp.id == int(entity_id))
             entity_model: Optional[ContainsTimestamp] = (await async_session.execute(stms)).scalar_one_or_none()
             assert entity_model
-            assert entity_model.timestamp.isoformat() == create_timestamp.replace(tzinfo=None).isoformat()
+            assert (
+                entity_model.timestamp.replace(tzinfo=None).isoformat()
+                == create_timestamp.replace(tzinfo=None).isoformat()
+            )
+
+            expected_response_timestamp = create_timestamp.replace(tzinfo=None).isoformat()
+            if is_postgres_tests():
+                expected_response_timestamp = create_timestamp.replace().isoformat()
 
             params = {
                 "filter": json.dumps(
@@ -1284,8 +1292,8 @@ class TestCreateObjects:
                 "jsonapi": {"version": "1.0"},
                 "data": [
                     {
-                        "type": "contains_timestamp_model",
-                        "attributes": {"timestamp": create_timestamp.replace(tzinfo=None).isoformat()},
+                        "type": resource_type,
+                        "attributes": {"timestamp": expected_response_timestamp},
                         "id": entity_id,
                     },
                 ],
