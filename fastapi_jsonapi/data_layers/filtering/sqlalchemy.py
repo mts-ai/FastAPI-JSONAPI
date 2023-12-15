@@ -121,7 +121,7 @@ class Node:
 
             if clear_value is cast_failed:
                 raise InvalidType(
-                    detail=f"Can't cast filter value `{value}` to user type.",
+                    detail=f"Can't cast filter value `{value}` to arbitrary type.",
                     errors=[HTTPException(status_code=InvalidType.status_code, detail=str(err)) for err in errors],
                 )
 

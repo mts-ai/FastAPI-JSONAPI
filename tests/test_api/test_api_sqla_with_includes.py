@@ -2415,7 +2415,7 @@ class TestSQLAFilteringModule:
             )
 
         assert exc_info.value.as_dict == {
-            "detail": "Can't cast filter value `typing.Any` to user type.",
+            "detail": "Can't cast filter value `typing.Any` to arbitrary type.",
             "meta": [
                 {
                     "detail": "Cast failed",
