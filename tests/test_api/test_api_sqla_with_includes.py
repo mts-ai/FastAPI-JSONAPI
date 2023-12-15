@@ -2025,6 +2025,89 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
+    @mark.parametrize(
+        ("filter_dict", "expected_email_is_null"),
+        [
+            param([{"name": "email", "op": "is_", "val": None}], True),
+            param([{"name": "email", "op": "isnot", "val": None}], False),
+        ],
+    )
+    async def test_filter_by_null(
+        self,
+        app: FastAPI,
+        async_session: AsyncSession,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        filter_dict: dict,
+        expected_email_is_null: bool,
+    ):
+        user_2.email = None
+        await async_session.commit()
+
+        target_user = user_2 if expected_email_is_null else user_1
+
+        url = app.url_path_for("get_user_list")
+        params = {"filter": dumps(filter_dict)}
+
+        response = await client.get(url, params=params)
+        assert response.status_code == status.HTTP_200_OK, response.text
+
+        response_json = response.json()
+
+        assert len(data := response_json["data"]) == 1
+        assert data[0]["id"] == str(target_user.id)
+        assert data[0]["attributes"]["email"] == target_user.email
+
+    async def test_filter_by_null_error_when_null_is_not_possible_value(
+        self,
+        async_session: AsyncSession,
+        user_1: User,
+    ):
+        resource_type = "user_with_nullable_email"
+
+        class UserWithNotNullableEmailSchema(UserSchema):
+            email: str
+
+        app = build_app_custom(
+            model=User,
+            schema=UserWithNotNullableEmailSchema,
+            schema_in_post=UserWithNotNullableEmailSchema,
+            schema_in_patch=UserWithNotNullableEmailSchema,
+            resource_type=resource_type,
+        )
+        user_1.email = None
+        await async_session.commit()
+
+        url = app.url_path_for(f"get_{resource_type}_list")
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "email",
+                        "op": "is_",
+                        "val": None,
+                    },
+                ],
+            ),
+        }
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            response = await client.get(url, params=params)
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
+            assert response.json() == {
+                "detail": {
+                    "errors": [
+                        {
+                            "detail": "The field `email` can't be null",
+                            "source": {"parameter": "filters"},
+                            "status_code": status.HTTP_400_BAD_REQUEST,
+                            "title": "Invalid filters querystring parameter.",
+                        },
+                    ],
+                },
+            }
+
     async def test_composite_filter_by_one_field(
         self,
         app: FastAPI,
