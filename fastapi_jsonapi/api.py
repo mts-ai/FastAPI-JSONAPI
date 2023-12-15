@@ -1,4 +1,5 @@
 """JSON API router class."""
+from enum import Enum, auto
 from inspect import Parameter, Signature, signature
 from typing import (
     TYPE_CHECKING,
@@ -40,6 +41,15 @@ JSONAPIObjectSchemaType = TypeVar("JSONAPIObjectSchemaType", bound=PydanticBaseM
 not_passed = object()
 
 
+class ViewMethods(str, Enum):
+    GET_LIST = auto()
+    POST = auto()
+    DELETE_LIST = auto()
+    GET = auto()
+    DELETE = auto()
+    PATCH = auto()
+
+
 class RoutersJSONAPI:
     """
     API Router interface for JSON API endpoints in web-services.
@@ -47,6 +57,8 @@ class RoutersJSONAPI:
 
     # xxx: store in app, not in routers!
     all_jsonapi_routers: Dict[str, "RoutersJSONAPI"] = {}
+    Methods = ViewMethods
+    DEFAULT_METHODS = tuple(str(method) for method in ViewMethods)
 
     def __init__(
         self,
@@ -64,6 +76,7 @@ class RoutersJSONAPI:
         pagination_default_number: Optional[int] = 1,
         pagination_default_offset: Optional[int] = None,
         pagination_default_limit: Optional[int] = None,
+        methods: Iterable[str] = (),
     ) -> None:
         """
         Initialize router items.
@@ -101,6 +114,8 @@ class RoutersJSONAPI:
         self.schema_list: Type[BaseModel] = schema
         self.model: Type[TypeModel] = model
         self.schema_detail = schema
+        # tuple and not set, so ordering is persisted
+        self.methods = tuple(methods) or self.DEFAULT_METHODS
 
         if self.type_ in self.all_jsonapi_routers:
             msg = f"Resource type {self.type_!r} already registered"
@@ -664,10 +679,19 @@ class RoutersJSONAPI:
         :param path:
         :return:
         """
-        self._register_get_resource_list(path)
-        self._register_post_resource_list(path)
-        self._register_delete_resource_list(path)
+        methods_map: Dict[Union[str, ViewMethods], Callable[[str], None]] = {
+            ViewMethods.GET_LIST: self._register_get_resource_list,
+            ViewMethods.POST: self._register_post_resource_list,
+            ViewMethods.DELETE_LIST: self._register_delete_resource_list,
+            ViewMethods.GET: self._register_get_resource_detail,
+            ViewMethods.PATCH: self._register_patch_resource_detail,
+            ViewMethods.DELETE: self._register_delete_resource_detail,
+        }
+        # patch for Python < 3.11
+        for key, value in list(methods_map.items()):
+            methods_map[str(key)] = value
 
-        self._register_get_resource_detail(path)
-        self._register_patch_resource_detail(path)
-        self._register_delete_resource_detail(path)
+        for method in self.methods:
+            # `to str` so Python < 3.11 is supported
+            register = methods_map[str(method)]
+            register(path)

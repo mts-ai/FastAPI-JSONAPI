@@ -61,6 +61,7 @@ FastAPI-JSONAPI with FastAPI.
    minimal_api_example
    api_filtering_example
    quickstart
+   api_limited_methods_example
    routing
    atomic_operations
    view_dependencies

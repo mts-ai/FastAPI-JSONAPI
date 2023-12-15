@@ -117,6 +117,11 @@ def add_routes(app: FastAPI):
         schema=UserSchema,
         model=User,
         resource_type="user",
+        methods=[
+            RoutersJSONAPI.Methods.GET_LIST,
+            RoutersJSONAPI.Methods.POST,
+            RoutersJSONAPI.Methods.GET,
+        ],
     )
 
     app.include_router(router, prefix="")
@@ -130,7 +135,7 @@ def create_app() -> FastAPI:
     :return: app
     """
     app = FastAPI(
-        title="FastAPI and SQLAlchemy",
+        title="FastAPI app with limited methods",
         debug=True,
         openapi_url="/openapi.json",
         docs_url="/docs",
