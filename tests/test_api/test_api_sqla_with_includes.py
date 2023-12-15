@@ -1,7 +1,7 @@
 import json
 import logging
-from datetime import datetime, timezone
 from collections import defaultdict
+from datetime import datetime, timezone
 from itertools import chain, zip_longest
 from json import dumps
 from typing import Dict, List
