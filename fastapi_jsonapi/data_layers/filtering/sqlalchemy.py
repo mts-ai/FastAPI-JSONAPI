@@ -39,6 +39,8 @@ FilterAndJoins = Tuple[
 # The mapping with validators using by to cast raw value to instance of target type
 REGISTERED_PYDANTIC_TYPES: Dict[Type, List[Callable]] = dict(_VALIDATORS)
 
+cast_failed = object()
+
 
 def create_filters(model: Type[TypeModel], filter_info: Union[list, dict], schema: Type[TypeSchema]):
     """
@@ -65,7 +67,22 @@ class Node:
         self.filter_ = filter_
         self.schema = schema
 
-    def create_filter(self, schema_field: ModelField, model_column, operator, value):  # noqa: PLR0912 temporary
+    def _cast_value_with_scheme(self, field_types: List[ModelField], value: Any) -> Tuple[Any, List[str]]:
+        errors: List[str] = []
+        casted_value = cast_failed
+
+        for field_type in field_types:
+            try:
+                if isinstance(value, list):  # noqa: SIM108
+                    casted_value = [field_type(item) for item in value]
+                else:
+                    casted_value = field_type(value)
+            except (TypeError, ValueError) as ex:
+                errors.append(str(ex))
+
+        return casted_value, errors
+
+    def create_filter(self, schema_field: ModelField, model_column, operator, value):
         """
         Create sqlalchemy filter
         :param schema_field:
@@ -107,17 +124,7 @@ class Node:
         if clear_value is None and userspace_types:
             log.warning("Filtering by user type values is not properly tested yet. Use this on your own risk.")
 
-            cast_failed = object()
-            clear_value = cast_failed
-
-            for i_type in types:
-                try:
-                    if isinstance(value, list):  # noqa: SIM108
-                        clear_value = [i_type(item) for item in value]
-                    else:
-                        clear_value = i_type(value)
-                except (TypeError, ValueError) as ex:
-                    errors.append(str(ex))
+            clear_value, errors = self._cast_value_with_scheme(types, value)
 
             if clear_value is cast_failed:
                 raise InvalidType(
