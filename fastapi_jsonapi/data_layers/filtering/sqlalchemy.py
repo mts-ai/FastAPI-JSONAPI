@@ -1,4 +1,5 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
+import logging
 from typing import (
     Any,
     Callable,
@@ -23,6 +24,8 @@ from fastapi_jsonapi.exceptions import InvalidFilters, InvalidType
 from fastapi_jsonapi.schema import get_model_field, get_relationships
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
+
+log = logging.getLogger(__name__)
 
 Filter = BinaryExpression
 Join = List[Any]
@@ -61,7 +64,7 @@ class Node:
         self.filter_ = filter_
         self.schema = schema
 
-    def create_filter(self, schema_field: ModelField, model_column, operator, value):
+    def create_filter(self, schema_field: ModelField, model_column, operator, value):  # noqa: PLR0912 temporary
         """
         Create sqlalchemy filter
         :param schema_field:
@@ -101,6 +104,11 @@ class Node:
                 clear_value, errors = self._cast_value_with_pydantic(pydantic_types, value)
 
         if clear_value is None and userspace_types:
+            log.warning("Filtering by user type values is not properly tested yet. Use this on your own risk.")
+
+            cast_failed = object()
+            clear_value = cast_failed
+
             for i_type in types:
                 try:
                     if isinstance(value, list):  # noqa: SIM108
@@ -109,6 +117,9 @@ class Node:
                         clear_value = i_type(value)
                 except (TypeError, ValueError) as ex:
                     errors.append(str(ex))
+
+            if clear_value is cast_failed:
+                raise InvalidType(detail=f"Can't cast filter value `{value}` to user type. {', '.join(errors)}")
 
         # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
         if clear_value is None and not any(not i_f.required for i_f in fields):

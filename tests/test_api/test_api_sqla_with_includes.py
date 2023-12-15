@@ -4,16 +4,19 @@ from datetime import datetime, timezone
 from collections import defaultdict
 from itertools import chain, zip_longest
 from json import dumps
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
+from unittest.mock import Mock
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import BaseModel, Field
-from pytest import fixture, mark, param  # noqa PT013
+from pytest import fixture, mark, param, raises  # noqa PT013
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from fastapi_jsonapi.data_layers.filtering.sqlalchemy import Node
+from fastapi_jsonapi.exceptions.json_api import InvalidType
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
 from tests.fixtures.app import build_app_custom
@@ -1235,7 +1238,7 @@ class TestCreateObjects:
         )
 
         create_timestamp = datetime.now(tz=timezone.utc)
-        create_user_body = {
+        create_body = {
             "data": {
                 "attributes": {
                     "timestamp": create_timestamp.isoformat(),
@@ -1245,7 +1248,7 @@ class TestCreateObjects:
 
         async with AsyncClient(app=app, base_url="http://test") as client:
             url = app.url_path_for(f"get_{resource_type}_list")
-            res = await client.post(url, json=create_user_body)
+            res = await client.post(url, json=create_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
             response_json = res.json()
 
@@ -2352,6 +2355,75 @@ class TestSorts:
             ),
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 2, "totalPages": 1},
+        }
+
+
+# TODO: move to it's own test module
+class TestSQLAFilteringModule:
+    def test_user_type_cast_success(self):
+        class UserType:
+            def __init__(self, *args, **kwargs):
+                self.value = "success"
+
+        class ModelSchema(BaseModel):
+            user_type: UserType
+
+            class Config:
+                arbitrary_types_allowed = True
+
+        node = Node(
+            model=Mock(),
+            filter_={
+                "name": "user_type",
+                "op": "eq",
+                "val": Any,
+            },
+            schema=ModelSchema,
+        )
+
+        model_column_mock = Mock()
+        model_column_mock.eq = lambda clear_value: clear_value
+
+        clear_value = node.create_filter(
+            schema_field=ModelSchema.__fields__["user_type"],
+            model_column=model_column_mock,
+            operator=Mock(),
+            value=Any,
+        )
+        assert isinstance(clear_value, UserType)
+        assert clear_value.value == "success"
+
+    def test_user_type_cast_fail(self):
+        class UserType:
+            def __init__(self, *args, **kwargs):
+                msg = "Cast failed"
+                raise ValueError(msg)
+
+        class ModelSchema(BaseModel):
+            user_type: UserType
+
+            class Config:
+                arbitrary_types_allowed = True
+
+        node = Node(
+            model=Mock(),
+            filter_=Mock(),
+            schema=ModelSchema,
+        )
+
+        with raises(InvalidType) as exc_info:
+            node.create_filter(
+                schema_field=ModelSchema.__fields__["user_type"],
+                model_column=Mock(),
+                operator=Mock(),
+                value=Any,
+            )
+
+        assert exc_info.value.as_dict == {
+            "detail": "Can't cast filter value `typing.Any` to user type. Cast failed",
+            "source": {"pointer": ""},
+            "status_code": status.HTTP_409_CONFLICT,
+            "title": "Invalid type.",
         }
 
 
