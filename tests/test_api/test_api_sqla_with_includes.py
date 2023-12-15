@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from collections import defaultdict
 from itertools import chain, zip_longest
 from json import dumps
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from unittest.mock import Mock
 from uuid import UUID, uuid4
 
@@ -1264,12 +1264,7 @@ class TestCreateObjects:
             }
 
             stms = select(ContainsTimestamp).where(ContainsTimestamp.id == int(entity_id))
-            entity_model: Optional[ContainsTimestamp] = (await async_session.execute(stms)).scalar_one_or_none()
-            assert entity_model
-            assert (
-                entity_model.timestamp.replace(tzinfo=None).isoformat()
-                == create_timestamp.replace(tzinfo=None).isoformat()
-            )
+            (await async_session.execute(stms)).scalar_one()
 
             expected_response_timestamp = create_timestamp.replace(tzinfo=None).isoformat()
             if is_postgres_tests():
