@@ -122,9 +122,19 @@ class Node:
         and some other built-in types. The second are all other types for which
         the `arbitrary_types_allowed` config is applied when defining the pydantic model
         """
-        pydantic_types = filter(lambda type_: type_ in REGISTERED_PYDANTIC_TYPES, types)
-        userspace_types_types = filter(lambda type_: type_ not in REGISTERED_PYDANTIC_TYPES, types)
-        return list(pydantic_types), list(userspace_types_types)
+        pydantic_types = [
+            # skip format
+            type_
+            for type_ in types
+            if type_ in REGISTERED_PYDANTIC_TYPES
+        ]
+        userspace_types = [
+            # skip format
+            type_
+            for type_ in types
+            if type_ not in REGISTERED_PYDANTIC_TYPES
+        ]
+        return pydantic_types, userspace_types
 
     def _cast_value_with_pydantic(
         self,
