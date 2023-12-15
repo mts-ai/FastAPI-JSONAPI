@@ -21,6 +21,7 @@ from sqlalchemy.sql.elements import BinaryExpression
 from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidType
+from fastapi_jsonapi.exceptions.json_api import HTTPException
 from fastapi_jsonapi.schema import get_model_field, get_relationships
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
@@ -119,7 +120,10 @@ class Node:
                     errors.append(str(ex))
 
             if clear_value is cast_failed:
-                raise InvalidType(detail=f"Can't cast filter value `{value}` to user type. {', '.join(errors)}")
+                raise InvalidType(
+                    detail=f"Can't cast filter value `{value}` to user type.",
+                    errors=[HTTPException(status_code=InvalidType.status_code, detail=str(err)) for err in errors],
+                )
 
         # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
         if clear_value is None and not any(not i_f.required for i_f in fields):

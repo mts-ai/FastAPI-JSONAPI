@@ -2420,8 +2420,15 @@ class TestSQLAFilteringModule:
             )
 
         assert exc_info.value.as_dict == {
-            "detail": "Can't cast filter value `typing.Any` to user type. Cast failed",
-            "source": {"pointer": ""},
+            "detail": "Can't cast filter value `typing.Any` to user type.",
+            "meta": [
+                {
+                    "detail": "Cast failed",
+                    "source": {"pointer": ""},
+                    "status_code": status.HTTP_409_CONFLICT,
+                    "title": "Conflict",
+                },
+            ],
             "status_code": status.HTTP_409_CONFLICT,
             "title": "Invalid type.",
         }
