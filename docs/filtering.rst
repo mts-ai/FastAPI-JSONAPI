@@ -24,7 +24,7 @@ So this is a first example:
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"first_name","op":"eq","val":"John"}] HTTP/1.1
+    GET /users?filter=[{"name":"first_name","op":"eq","val":"John"}] HTTP/1.1
     Accept: application/vnd.api+json
 
 In this example we want to retrieve user records for people named John. So we can see that the filtering interface completely fits that of SQLAlchemy: a list a filter information.
@@ -37,7 +37,7 @@ Example with field:
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"first_name","op":"eq","field":"birth_date"}] HTTP/1.1
+    GET /users?filter=[{"name":"first_name","op":"eq","field":"birth_date"}] HTTP/1.1
     Accept: application/vnd.api+json
 
 In this example, we want to retrieve people whose name is equal to their birth_date. This example is absurd, it's just here to explain the syntax of this kind of filter.
@@ -74,7 +74,7 @@ There is a shortcut to achieve the same filtering:
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"group.name","op":"ilike","val":"%admin%"}] HTTP/1.1
+    GET /users?filter=[{"name":"group.name","op":"ilike","val":"%admin%"}] HTTP/1.1
     Accept: application/vnd.api+json
 
 You can also use boolean combination of operations:
@@ -116,7 +116,7 @@ You can also use boolean combination of operations:
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"group.name","op":"ilike","val":"%admin%"},{"or":[{"not":{"name":"first_name","op":"eq","val":"John"}},{"and":[{"name":"first_name","op":"like","val":"%Jim%"},{"name":"date_create","op":"gt","val":"1990-01-01"}]}]}] HTTP/1.1
+    GET /users?filter=[{"name":"group.name","op":"ilike","val":"%admin%"},{"or":[{"not":{"name":"first_name","op":"eq","val":"John"}},{"and":[{"name":"first_name","op":"like","val":"%Jim%"},{"name":"date_create","op":"gt","val":"1990-01-01"}]}]}] HTTP/1.1
     Accept: application/vnd.api+json
 
 
@@ -124,14 +124,14 @@ Filtering records by a field that is null
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"name","op":"is_","val":null}] HTTP/1.1
+    GET /users?filter=[{"name":"name","op":"is_","val":null}] HTTP/1.1
     Accept: application/vnd.api+json
 
 Filtering records by a field that is not null
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"name","op":"isnot","val":null}] HTTP/1.1
+    GET /users?filter=[{"name":"name","op":"isnot","val":null}] HTTP/1.1
     Accept: application/vnd.api+json
 
 
@@ -172,14 +172,14 @@ For example
 
 .. sourcecode:: http
 
-    GET /user?filter[first_name]=John HTTP/1.1
+    GET /users?filter[first_name]=John HTTP/1.1
     Accept: application/vnd.api+json
 
 equals:
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"first_name","op":"eq","val":"John"}] HTTP/1.1
+    GET /users?filter=[{"name":"first_name","op":"eq","val":"John"}] HTTP/1.1
     Accept: application/vnd.api+json
 
 
@@ -187,7 +187,7 @@ You can also use more than one simple filter in a request:
 
 .. sourcecode:: http
 
-    GET /user?filter[first_name]=John&filter[gender]=male HTTP/1.1
+    GET /users?filter[first_name]=John&filter[gender]=male HTTP/1.1
     Accept: application/vnd.api+json
 
 which is equal to:
@@ -209,17 +209,17 @@ which is equal to:
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"first_name","op":"eq","val":"John"},{"name":"gender","op":"eq","val":"male"}] HTTP/1.1
+    GET /users?filter=[{"name":"first_name","op":"eq","val":"John"},{"name":"gender","op":"eq","val":"male"}] HTTP/1.1
 
 You can also use relationship attribute in a request:
 
 .. sourcecode:: http
 
-    GET /user?filter[group_id]=1 HTTP/1.1
+    GET /users?filter[group_id]=1 HTTP/1.1
     Accept: application/vnd.api+json
 
 which is equal to:
 
 .. sourcecode:: http
 
-    GET /user?filter=[{"name":"group.id","op":"eq","val":"1"}] HTTP/1.1
+    GET /users?filter=[{"name":"group.id","op":"eq","val":"1"}] HTTP/1.1
