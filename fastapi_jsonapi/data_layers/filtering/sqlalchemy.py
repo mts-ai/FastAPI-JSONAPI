@@ -1,8 +1,19 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
-from typing import Any, List, Tuple, Type, Union
+import logging
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
-from pydantic import BaseModel
+from pydantic import BaseConfig, BaseModel
 from pydantic.fields import ModelField
+from pydantic.validators import _VALIDATORS, find_validators
 from sqlalchemy import and_, not_, or_
 from sqlalchemy.orm import InstrumentedAttribute, aliased
 from sqlalchemy.sql.elements import BinaryExpression
@@ -10,9 +21,12 @@ from sqlalchemy.sql.elements import BinaryExpression
 from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidType
+from fastapi_jsonapi.exceptions.json_api import HTTPException
 from fastapi_jsonapi.schema import get_model_field, get_relationships
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
+
+log = logging.getLogger(__name__)
 
 Filter = BinaryExpression
 Join = List[Any]
@@ -21,6 +35,11 @@ FilterAndJoins = Tuple[
     Filter,
     List[Join],
 ]
+
+# The mapping with validators using by to cast raw value to instance of target type
+REGISTERED_PYDANTIC_TYPES: Dict[Type, List[Callable]] = dict(_VALIDATORS)
+
+cast_failed = object()
 
 
 def create_filters(model: Type[TypeModel], filter_info: Union[list, dict], schema: Type[TypeSchema]):
@@ -47,6 +66,21 @@ class Node:
         self.model = model
         self.filter_ = filter_
         self.schema = schema
+
+    def _cast_value_with_scheme(self, field_types: List[ModelField], value: Any) -> Tuple[Any, List[str]]:
+        errors: List[str] = []
+        casted_value = cast_failed
+
+        for field_type in field_types:
+            try:
+                if isinstance(value, list):  # noqa: SIM108
+                    casted_value = [field_type(item) for item in value]
+                else:
+                    casted_value = field_type(value)
+            except (TypeError, ValueError) as ex:
+                errors.append(str(ex))
+
+        return casted_value, errors
 
     def create_filter(self, schema_field: ModelField, model_column, operator, value):
         """
@@ -78,18 +112,93 @@ class Node:
         types = [i.type_ for i in fields]
         clear_value = None
         errors: List[str] = []
-        for i_type in types:
-            try:
-                if isinstance(value, list):  # noqa: SIM108
-                    clear_value = [i_type(item) for item in value]
-                else:
-                    clear_value = i_type(value)
-            except (TypeError, ValueError) as ex:
-                errors.append(str(ex))
+
+        pydantic_types, userspace_types = self._separate_types(types)
+
+        if pydantic_types:
+            if isinstance(value, list):
+                clear_value, errors = self._cast_iterable_with_pydantic(pydantic_types, value)
+            else:
+                clear_value, errors = self._cast_value_with_pydantic(pydantic_types, value)
+
+        if clear_value is None and userspace_types:
+            log.warning("Filtering by user type values is not properly tested yet. Use this on your own risk.")
+
+            clear_value, errors = self._cast_value_with_scheme(types, value)
+
+            if clear_value is cast_failed:
+                raise InvalidType(
+                    detail=f"Can't cast filter value `{value}` to arbitrary type.",
+                    errors=[HTTPException(status_code=InvalidType.status_code, detail=str(err)) for err in errors],
+                )
+
         # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
         if clear_value is None and not any(not i_f.required for i_f in fields):
             raise InvalidType(detail=", ".join(errors))
         return getattr(model_column, self.operator)(clear_value)
+
+    def _separate_types(self, types: List[Type]) -> Tuple[List[Type], List[Type]]:
+        """
+        Separates the types into two kinds. The first are those for which
+        there are already validators defined by pydantic - str, int, datetime
+        and some other built-in types. The second are all other types for which
+        the `arbitrary_types_allowed` config is applied when defining the pydantic model
+        """
+        pydantic_types = [
+            # skip format
+            type_
+            for type_ in types
+            if type_ in REGISTERED_PYDANTIC_TYPES
+        ]
+        userspace_types = [
+            # skip format
+            type_
+            for type_ in types
+            if type_ not in REGISTERED_PYDANTIC_TYPES
+        ]
+        return pydantic_types, userspace_types
+
+    def _cast_value_with_pydantic(
+        self,
+        types: List[Type],
+        value: Any,
+    ) -> Tuple[Optional[Any], List[str]]:
+        result_value, errors = None, []
+
+        for type_to_cast in types:
+            for validator in find_validators(type_to_cast, BaseConfig):
+                try:
+                    result_value = validator(value)
+                    return result_value, errors
+                except Exception as ex:
+                    errors.append(str(ex))
+
+        return None, errors
+
+    def _cast_iterable_with_pydantic(self, types: List[Type], values: List) -> Tuple[List, List[str]]:
+        type_cast_failed = False
+        failed_values = []
+
+        result_values: List[Any] = []
+        errors: List[str] = []
+
+        for value in values:
+            casted_value, cast_errors = self._cast_value_with_pydantic(types, value)
+            errors.extend(cast_errors)
+
+            if casted_value is None:
+                type_cast_failed = True
+                failed_values.append(value)
+
+                continue
+
+            result_values.append(casted_value)
+
+        if type_cast_failed:
+            msg = f"Can't parse items {failed_values} of value {values}"
+            raise InvalidFilters(msg)
+
+        return result_values, errors
 
     def resolve(self) -> FilterAndJoins:  # noqa: PLR0911
         """Create filter for a particular node of the filter tree"""

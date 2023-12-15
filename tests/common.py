@@ -8,3 +8,7 @@ def sqla_uri():
         db_dir = Path(__file__).resolve().parent
         testing_db_url = f"sqlite+aiosqlite:///{db_dir}/db.sqlite3"
     return testing_db_url
+
+
+def is_postgres_tests() -> bool:
+    return "postgres" in sqla_uri()
