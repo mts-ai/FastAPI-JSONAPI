@@ -27,15 +27,15 @@ This example provides the following API:
 +----------------+--------+----------------+---------------------------------+
 | url            | method | endpoint       | action                          |
 +================+========+================+=================================+
-| /user          | GET    | user_list      | Retrieve a collection of users  |
+| /users          | GET    | user_list      | Retrieve a collection of users  |
 +----------------+--------+----------------+---------------------------------+
-| /user          | POST   | user_list      | Create a user                   |
+| /users          | POST   | user_list      | Create a user                   |
 +----------------+--------+----------------+---------------------------------+
-| /user/<int:id> | GET    | user_detail    | Retrieve details of a user      |
+| /users/<int:id> | GET    | user_detail    | Retrieve details of a user      |
 +----------------+--------+----------------+---------------------------------+
-| /user/<int:id> | PATCH  | user_detail    | Update a user                   |
+| /users/<int:id> | PATCH  | user_detail    | Update a user                   |
 +----------------+--------+----------------+---------------------------------+
-| /user/<int:id> | DELETE | user_detail    | Delete a user                   |
+| /users/<int:id> | DELETE | user_detail    | Delete a user                   |
 +----------------+--------+----------------+---------------------------------+
 
 in developing
@@ -43,11 +43,11 @@ in developing
 +-------------------------------------------+--------+------------------+------------------------------------------------------+
 | url                                       | method | endpoint         | action                                               |
 +===========================================+========+==================+======================================================+
-| /user/<int:id>/group                      | GET    | computer_list    | Retrieve a collection computers related to a user    |
+| /users/<int:id>/group                      | GET    | computer_list    | Retrieve a collection computers related to a user    |
 +-------------------------------------------+--------+------------------+------------------------------------------------------+
-| /user/<int:id>/group                      | POST   | computer_list    | Create a computer related to a user                  |
+| /users/<int:id>/group                      | POST   | computer_list    | Create a computer related to a user                  |
 +-------------------------------------------+--------+------------------+------------------------------------------------------+
-| /user/<int:id>/relationships/group        | GET    | user_computers   | Retrieve relationships between a user and computers  |
+| /users/<int:id>/relationships/group        | GET    | user_computers   | Retrieve relationships between a user and computers  |
 +-------------------------------------------+--------+------------------+------------------------------------------------------+
 | /users/<int:id>/relationships/computers   | POST   | user_computers   | Create relationships between a user and computers    |
 +-------------------------------------------+--------+------------------+------------------------------------------------------+

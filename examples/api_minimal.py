@@ -110,7 +110,7 @@ def add_routes(app: FastAPI):
     router: APIRouter = APIRouter()
     RoutersJSONAPI(
         router=router,
-        path="/user",
+        path="/users",
         tags=["User"],
         class_detail=UserDetailView,
         class_list=UserListView,

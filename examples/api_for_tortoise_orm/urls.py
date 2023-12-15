@@ -36,7 +36,7 @@ def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
     # TODO: fix example
     RoutersJSONAPI(
         router=routers,
-        path="/user",
+        path="/users",
         tags=["User"],
         class_detail=UserDetail,
         class_list=UserList,

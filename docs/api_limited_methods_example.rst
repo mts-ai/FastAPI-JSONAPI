@@ -14,7 +14,7 @@ Set ``methods`` on Routers registration:
 
     RoutersJSONAPI(
         router=router,
-        path="/user",
+        path="/users",
         tags=["User"],
         class_detail=UserDetailView,
         class_list=UserListView,
@@ -29,7 +29,18 @@ Set ``methods`` on Routers registration:
     )
 
 
-Full code example:
+This will limit generated views to:
+
+========================  ======  =============  ===========================
+URL                       method  endpoint       Usage
+========================  ======  =============  ===========================
+/users                    GET     user_list      Get a collection of users
+/users                    POST    user_list      Create a user
+/users/{user_id}          GET     user_detail    Get user details
+========================  ======  =============  ===========================
+
+
+Full code example (should run "as is"):
 
 .. literalinclude:: ../examples/api_limited_methods.py
     :language: python
