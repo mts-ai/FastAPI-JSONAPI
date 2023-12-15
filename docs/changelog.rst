@@ -1,14 +1,33 @@
 Changelog
 #########
 
+**2.4.0**
+*********
+
+Relationship loading, filtering improvements, fixes
+===================================================
+
+* pass request to data layer by `@mahenzon`_ in `#61 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/61>`_
+* fix loading multi relationships by `@mahenzon`_ in `#59 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/59>`_
+* Fix type cast in filters by `@CosmoV`_ in `#62 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/62>`_
+* Fix null value filtering by `@CosmoV`_ in `#60 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/60>`_
+* add py.typed by `@mahenzon`_ in `#64 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/64>`_
+* limit view methods by `@mahenzon`_ in `#63 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/63>`_ - (see :ref:`api example doc <api_limited_methods_example>`)
+
+Authors
+"""""""
+
+* `@CosmoV`_
+* `@mahenzon`_
+
 
 **2.3.2**
 *********
 
 Duplicated entities in response fix
-=======================================
-* fix duplicates in list response `#48 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/48>`_
+===================================
 
+* fix duplicates in list response `#48 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/48>`_
 
 Authors
 """""""
