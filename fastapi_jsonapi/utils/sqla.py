@@ -5,6 +5,7 @@ from fastapi_jsonapi.data_typing import TypeModel
 
 def get_related_model_cls(cls: Type[TypeModel], relation_name: str) -> Type[TypeModel]:
     """
+    Get related model from SQLAlchemy model
 
     SQLA Get related model class
     User.computers -> Computer

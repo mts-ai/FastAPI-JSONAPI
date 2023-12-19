@@ -395,8 +395,7 @@ class TestValidators:
 
     async def test_check_validator_for_id_field(self):
         """
-        Unusual case because of "id" field handling in
-        a different way than attributes
+        Unusual case because of "id" field handling in a different way than attributes
         """
 
         class UserSchemaWithValidator(BaseModel):

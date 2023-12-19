@@ -367,8 +367,7 @@ class TaskBaseSchema(BaseModel):
     @validator("task_ids", pre=True)
     def task_ids_validator(cls, value: Optional[list[str]]):
         """
-        return `[]`, if value is None
-        both on get and on create
+        return `[]`, if value is None both on get and on create
         """
         return value or []
 

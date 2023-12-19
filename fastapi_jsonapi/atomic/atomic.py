@@ -38,7 +38,7 @@ class AtomicOperations:
             return result
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    def _register_view(self):
+    def _register_view(self) -> None:
         self.router.add_api_route(
             path=self.url_path,
             endpoint=self.view_atomic,

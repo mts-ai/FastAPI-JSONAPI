@@ -1,5 +1,6 @@
 """
 The base class of a data layer.
+
 If you want to create your own data layer
 you must inherit from this base class
 """
@@ -30,6 +31,8 @@ class BaseDataLayer:
         **kwargs,
     ):
         """
+        Init
+
         :param request:
         :param schema:
         :param model:
@@ -70,6 +73,8 @@ class BaseDataLayer:
         model_kwargs: dict,
     ):
         """
+        Set custom id (if allowed)
+
         :param data_create: the data validated by pydantic.
         :param model_kwargs: the data validated by pydantic.
         """
@@ -101,6 +106,7 @@ class BaseDataLayer:
     def get_object_id_field_name(self):
         """
         compound key may cause errors
+
         :return:
         """
         return self.id_name_field
@@ -249,6 +255,7 @@ class BaseDataLayer:
     ):
         """
         Prepare query to get related object
+
         :param related_model:
         :param related_id_field:
         :param id_value:
@@ -264,6 +271,7 @@ class BaseDataLayer:
     ):
         """
         Prepare query to get related objects list
+
         :param related_model:
         :param related_id_field:
         :param ids:

@@ -45,6 +45,7 @@ cast_failed = object()
 def create_filters(model: Type[TypeModel], filter_info: Union[list, dict], schema: Type[TypeSchema]):
     """
     Apply filters from filters information to base query
+
     :param model: the model of the node
     :param filter_info: current node filter information
     :param schema: the resource
@@ -91,6 +92,7 @@ class Node:
     def create_filter(self, schema_field: ModelField, model_column, operator, value):
         """
         Create sqlalchemy filter
+
         :param schema_field:
         :param model_column: column sqlalchemy
         :param operator:
@@ -155,9 +157,12 @@ class Node:
 
     def _separate_types(self, types: List[Type]) -> Tuple[List[Type], List[Type]]:
         """
-        Separates the types into two kinds. The first are those for which
+        Separates the types into two kinds.
+
+        The first are those for which
         there are already validators defined by pydantic - str, int, datetime
-        and some other built-in types. The second are all other types for which
+        and some other built-in types.
+        The second are all other types for which
         the `arbitrary_types_allowed` config is applied when defining the pydantic model
         """
         pydantic_types = [
@@ -287,7 +292,8 @@ class Node:
 
     def _create_filters(self, type_filter: str) -> FilterAndJoins:
         """
-        Создаём  фильтр or или and
+        Create or / and filters
+
         :param type_filter: 'or' или 'and'
         :return:
         """

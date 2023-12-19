@@ -258,6 +258,8 @@ class TestAtomicCreateObjects:
         user_attributes: UserAttributesBaseSchema,
     ):
         """
+        Prepare test data:
+
         - create user
         - create bio for that user
 
@@ -354,6 +356,7 @@ class TestAtomicCreateObjects:
         user_attributes: UserAttributesBaseSchema,
     ):
         """
+        Prepare test data:
 
         - create user
         - create computer for this created user
@@ -451,6 +454,7 @@ class TestAtomicCreateObjects:
         user_attributes: UserAttributesBaseSchema,
     ):
         """
+        Prepare test data:
 
         - create user
         - create bio for user
@@ -578,6 +582,7 @@ class TestAtomicCreateObjects:
         user_attributes: UserAttributesBaseSchema,
     ):
         """
+        Prepare test data:
 
         - create user
         - create computer for this created user
@@ -674,6 +679,7 @@ class TestAtomicCreateObjects:
         user_attributes: UserAttributesBaseSchema,
     ):
         """
+        Prepare test data:
 
         - create user
         - create computer for this created user
@@ -921,6 +927,8 @@ class TestAtomicCreateObjects:
         async_session: AsyncSession,
     ):
         """
+        Prepare test data:
+
         - create post
         - update post relationship to have new comment
 

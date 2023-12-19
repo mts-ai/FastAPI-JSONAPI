@@ -75,6 +75,8 @@ class AtomicViewHandler:
 
     async def prepare_one_operation(self, operation: AtomicOperation):
         """
+        Prepare one atomic operation
+
         :param operation:
         :return:
         """

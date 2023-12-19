@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -57,6 +58,8 @@ class FieldConfig:
 
 class TransferSaveWrapper:
     """
+    This class helps to transfer type from one pydantic Field to another
+
     Types doesn't allowed to be passed as keywords to pydantic Field,
     so this exists to help save them
 
@@ -112,9 +115,9 @@ class SchemasInfoDTO:
 class SchemaBuilder:
     # IDK if there's a better way than global caches
     # shared between ALL RoutersJSONAPI instances
-    object_schemas_cache = {}
-    relationship_schema_cache = {}
-    base_jsonapi_object_schemas_cache = {}
+    object_schemas_cache: ClassVar = {}
+    relationship_schema_cache: ClassVar = {}
+    base_jsonapi_object_schemas_cache: ClassVar = {}
 
     def __init__(
         self,
@@ -477,7 +480,7 @@ class SchemaBuilder:
         self,
         schema: Type[BaseModel],
         includes: Iterable[str] = not_passed,
-        resource_type: str = None,
+        resource_type: Optional[str] = None,
         base_name: str = "",
         compute_included_schemas: bool = False,
         use_schema_cache: bool = True,

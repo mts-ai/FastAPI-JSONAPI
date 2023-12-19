@@ -1,4 +1,4 @@
-from typing import Dict, Literal
+from typing import ClassVar, Dict, Literal
 
 import pytest
 from fastapi import Body, Depends, FastAPI, HTTPException, status
@@ -42,6 +42,7 @@ class ValidateCustomNameEquals(ValidateCustomNameEqualsBase):
     ) -> Literal[True]:
         """
         Assert body.data.attributes[key] == value
+
         :return:
         """
         if custom_name == self.expected_value:
@@ -71,7 +72,7 @@ class UserUpdateCustomDependency(ArbitraryModelBase):
 
 
 class UserCustomListView(ListViewBaseGeneric):
-    method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -83,7 +84,7 @@ class UserCustomListView(ListViewBaseGeneric):
 
 
 class UserCustomDetailView(DetailViewBaseGeneric):
-    method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
@@ -82,7 +83,7 @@ def session_dependency_handler(view: ViewBase, dto: SessionDependency) -> dict:
 
 
 class UserDetailView(DetailViewBaseGeneric):
-    method_dependencies = {
+    method_dependencies: ClassVar = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=session_dependency_handler,
@@ -91,7 +92,7 @@ class UserDetailView(DetailViewBaseGeneric):
 
 
 class UserListView(ListViewBaseGeneric):
-    method_dependencies = {
+    method_dependencies: ClassVar = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=session_dependency_handler,

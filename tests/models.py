@@ -14,6 +14,7 @@ class Base:
     def __tablename__(cls):
         """
         Generate table name
+
         :return:
         """
         return f"{cls.__name__.lower()}s"

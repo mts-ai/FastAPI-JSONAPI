@@ -87,6 +87,8 @@ class ViewBase:
         extra_view_deps: Dict[str, Any],
     ) -> BaseDataLayer:
         """
+        Prepares data layer for detail view
+
         :param extra_view_deps:
         :return:
         """
@@ -101,6 +103,8 @@ class ViewBase:
         extra_view_deps: Dict[str, Any],
     ) -> BaseDataLayer:
         """
+        Prepares data layer for list view
+
         :param extra_view_deps:
         :return:
         """
@@ -202,6 +206,8 @@ class ViewBase:
     @classmethod
     def get_db_item_id(cls, item_from_db: TypeModel):
         """
+        just converts to str. maybe needs another approach
+
         TODO: check if id is None? raise?
         TODO: any another conversion for id to string?
         :param item_from_db:

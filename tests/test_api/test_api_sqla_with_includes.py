@@ -476,6 +476,8 @@ async def test_get_users_with_all_inner_relations(
     user_2_comment_for_one_u1_post: PostComment,
 ):
     """
+    Checks 4 levels of includes
+
     Include:
     - bio
     - posts
@@ -644,6 +646,8 @@ class TestUserWithPostsWithInnerIncludes:
         expect_user_include: bool,
     ):
         """
+        Check returned data
+
         Test if requesting `posts.user` and `posts.comments`
         returns posts with both `user` and `comments`
         """

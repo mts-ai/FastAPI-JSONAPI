@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import ClassVar, Dict
 
 from fastapi import Depends
 from pydantic import BaseModel
@@ -30,7 +30,7 @@ def common_handler(view: ViewBase, dto: SessionDependency) -> Dict:
 
 
 class DetailViewBaseGeneric(DetailViewBaseGenericHelper):
-    method_dependencies = {
+    method_dependencies: ClassVar = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -39,7 +39,7 @@ class DetailViewBaseGeneric(DetailViewBaseGenericHelper):
 
 
 class ListViewBaseGeneric(ListViewBaseGenericHelper):
-    method_dependencies = {
+    method_dependencies: ClassVar = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
