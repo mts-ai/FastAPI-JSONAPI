@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Annotated, List, Optional, Union
 
 from pydantic import BaseModel, Field, root_validator
 from starlette.datastructures import URLPath
@@ -177,10 +177,21 @@ class AtomicOperation(BaseModel):
 
 
 class AtomicOperationRequest(BaseModel):
-    operations: List[AtomicOperation] = Field(
-        alias="atomic:operations",
-        min_items=1,
-    )
+    # operations: conlist(AtomicOperation, min_length=1)
+    # operations: conlist(AtomicOperation, min_length=1)
+    operations: Annotated[
+        List[AtomicOperation],
+        Field(alias="atomic:operations"),
+    ]
+
+    # operations: conlist(AtomicOperation, min_length=1) = Field(
+    #     alias="atomic:operations",
+    # )
+    # operations: List[AtomicOperation] = Field(
+    #     alias="atomic:operations",
+    #     # TODO: how to limit?
+    #     # min_length=1,
+    # )
 
 
 class AtomicResult(BaseModel):
@@ -199,7 +210,15 @@ class AtomicResultResponse(BaseModel):
     https://jsonapi.org/ext/atomic/#auto-id-responses-4
     """
 
-    results: List[AtomicResult] = Field(
-        alias="atomic:results",
-        min_items=1,
-    )
+    results: Annotated[
+        List[AtomicResult],
+        Field(
+            alias="atomic:results",
+            # min_length=1,
+        ),
+    ]
+    # results: List[AtomicResult] = Field(
+    #     alias="atomic:results",
+    #     # TODO: how to limit?
+    #     min_length=1,
+    # )

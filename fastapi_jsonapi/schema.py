@@ -14,9 +14,8 @@ from typing import (
 
 from fastapi import FastAPI
 from pydantic import (
-    BaseConfig,
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
 )
 
@@ -25,11 +24,12 @@ if TYPE_CHECKING:
 
 
 class BaseJSONAPIRelationshipSchema(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
     id: str = Field(..., description="Related object ID")
     type: str = Field(..., description="Type of the related resource object")
-
-    class Config(BaseConfig):
-        extra = Extra.forbid
 
 
 class BaseJSONAPIRelationshipDataToOneSchema(BaseModel):
@@ -56,7 +56,7 @@ class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
 
     attributes: "TypeSchema" = Field(description="Resource object attributes")
     relationships: Optional["TypeSchema"] = Field(None, description="Resource object relationships")
-    id: Optional[str] = Field(description="Resource object ID")
+    id: Optional[str] = Field(None, description="Resource object ID")
 
 
 class BaseJSONAPIDataInSchema(BaseModel):
@@ -72,11 +72,16 @@ class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
 class JSONAPIResultListMetaSchema(BaseModel):
     """JSON:API list meta schema."""
 
-    count: Optional[int]
-    total_pages: Optional[int] = Field(alias="totalPages")
+    model_config = ConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+    )
 
-    class Config:
-        allow_population_by_field_name = True
+    count: Optional[int] = None
+    total_pages: Optional[int] = Field(
+        None,
+        serialization_alias="totalPages",
+    )
 
 
 class JSONAPIDocumentObjectSchema(BaseModel):
@@ -97,7 +102,7 @@ class BaseJSONAPIResultSchema(BaseModel):
     JSON:API Required fields schema
     """
 
-    meta: Optional[JSONAPIResultListMetaSchema] = Field(description="JSON:API metadata")
+    meta: Optional[JSONAPIResultListMetaSchema] = Field(None, description="JSON:API metadata")
     jsonapi: JSONAPIDocumentObjectSchema = JSONAPIDocumentObjectSchema()
 
 

@@ -192,7 +192,10 @@ class ViewBase:
             includes_schemas=object_schemas.included_schemas_list,
         )
         return list_jsonapi_schema(
-            meta=JSONAPIResultListMetaSchema(count=count, total_pages=total_pages),
+            meta=JSONAPIResultListMetaSchema(
+                count=count,
+                total_pages=total_pages,
+            ),
             data=result_objects,
             **extras,
         )
@@ -259,7 +262,7 @@ class ViewBase:
         if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
             existing = parent_included_object.relationships or {}
             if isinstance(existing, BaseModel):
-                existing = existing.dict()
+                existing = existing.model_dump()
             new_relationships.update(existing)
         new_relationships.update(
             **{
@@ -417,7 +420,7 @@ class ViewBase:
 
         item_as_schema = object_schemas.object_jsonapi_schema(
             id=self.get_db_item_id(item),
-            attributes=object_schemas.attributes_schema.from_orm(item),
+            attributes=object_schemas.attributes_schema.model_validate(item),
         )
 
         cache_included_objects: Dict[Tuple[str, str], TypeSchema] = {}

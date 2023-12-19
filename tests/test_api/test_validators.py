@@ -67,7 +67,7 @@ class TestTaskValidators:
             # "task_ids": None,
             "task_ids": [],
         }
-        assert attributes == TaskBaseSchema.from_orm(task_with_none_ids)
+        assert attributes == TaskBaseSchema.model_validate(task_with_none_ids)
 
     async def test_base_model_root_validator_get_list(
         self,

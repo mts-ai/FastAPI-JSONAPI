@@ -75,7 +75,7 @@ async def test_dependency_handler_call():
             errors=[
                 InternalServerError(
                     title="Check that dependency successfully passed",
-                    detail=dto.dict(),
+                    detail=dto.model_dump(),
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 ),
                 InternalServerError(
@@ -87,7 +87,7 @@ async def test_dependency_handler_call():
         )
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+        method_dependencies = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=CustomDependencies,
                 prepare_data_layer_kwargs=dependencies_handler,
@@ -171,7 +171,7 @@ async def test_dependencies_as_permissions(user_1: User):
         res = await client.get(f"/users/{user_1.id}", headers={"X-AUTH": "admin"})
         assert res.json() == {
             "data": {
-                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
+                "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
                 "id": str(user_1.id),
                 "type": resource_type,
             },
@@ -198,7 +198,7 @@ async def test_manipulate_data_layer_kwargs(
         }
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+        method_dependencies = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=GetDetailDependencies,
                 prepare_data_layer_kwargs=set_session_and_ignore_user_1,

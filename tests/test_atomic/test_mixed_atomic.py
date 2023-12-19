@@ -78,8 +78,8 @@ class TestAtomicMixedActions:
         :param user_1_bio:
         :return:
         """
-        user_data = UserAttributesBaseSchema.from_orm(user_1)
-        user_bio_data = UserBioAttributesBaseSchema.from_orm(user_1_bio)
+        user_data = UserAttributesBaseSchema.model_validate(user_1)
+        user_bio_data = UserBioAttributesBaseSchema.model_validate(user_1_bio)
         user_data.name = fake.name()
         user_bio_data.favourite_movies = fake.sentence()
         assert user_1.name != user_data.name
@@ -93,7 +93,7 @@ class TestAtomicMixedActions:
                     "op": "add",
                     "data": {
                         "type": "computer",
-                        "attributes": new_computer.dict(),
+                        "attributes": new_computer.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -109,7 +109,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "id": str(user_1_bio.id),
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                     },
                 },
                 {
@@ -117,7 +117,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "id": str(user_1.id),
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 },
             ],
@@ -138,7 +138,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(computer.id),
                     "type": "computer",
-                    "attributes": new_computer.dict(),
+                    "attributes": new_computer.model_dump(),
                 },
                 "meta": None,
             },
@@ -146,7 +146,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(user_1_bio.id),
                     "type": "user_bio",
-                    "attributes": user_bio_data.dict(),
+                    "attributes": user_bio_data.model_dump(),
                 },
                 "meta": None,
             },
@@ -154,7 +154,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(user_1.id),
                     "type": "user",
-                    "attributes": user_data.dict(),
+                    "attributes": user_data.model_dump(),
                 },
                 "meta": None,
             },
@@ -181,8 +181,8 @@ class TestAtomicMixedActions:
         :param user_1_bio:
         :return:
         """
-        user_data = UserAttributesBaseSchema.from_orm(user_1)
-        user_bio_data = UserBioAttributesBaseSchema.from_orm(user_1_bio)
+        user_data = UserAttributesBaseSchema.model_validate(user_1)
+        user_bio_data = UserBioAttributesBaseSchema.model_validate(user_1_bio)
         user_bio_data.favourite_movies = fake.sentence()
         assert user_1_bio.favourite_movies != user_bio_data.favourite_movies
         user_data.name = user_2.name
@@ -198,7 +198,7 @@ class TestAtomicMixedActions:
                     "op": "add",
                     "data": {
                         "type": "computer",
-                        "attributes": new_computer.dict(),
+                        "attributes": new_computer.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -214,7 +214,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "id": str(user_1_bio.id),
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                     },
                 },
                 {
@@ -222,7 +222,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "id": str(user_1.id),
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 },
             ],
@@ -280,8 +280,8 @@ class TestAtomicMixedActions:
         :return:
         """
         computer: Computer = await computer_factory()
-        user_data = UserAttributesBaseSchema.from_orm(user_1)
-        user_bio_data = UserBioAttributesBaseSchema.from_orm(user_1_bio)
+        user_data = UserAttributesBaseSchema.model_validate(user_1)
+        user_bio_data = UserBioAttributesBaseSchema.model_validate(user_1_bio)
         user_data.name = fake.name()
         user_bio_data.favourite_movies = fake.sentence()
         assert user_1.name != user_data.name
@@ -295,7 +295,7 @@ class TestAtomicMixedActions:
                     "op": "add",
                     "data": {
                         "type": "computer",
-                        "attributes": new_computer.dict(),
+                        "attributes": new_computer.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -311,7 +311,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "id": user_1_bio.id,
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                     },
                 },
                 {
@@ -319,7 +319,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "id": user_1.id,
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 },
                 {
@@ -350,7 +350,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(computer.id),
                     "type": "computer",
-                    "attributes": new_computer.dict(),
+                    "attributes": new_computer.model_dump(),
                 },
                 "meta": None,
             },
@@ -358,7 +358,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(user_1_bio.id),
                     "type": "user_bio",
-                    "attributes": user_bio_data.dict(),
+                    "attributes": user_bio_data.model_dump(),
                 },
                 "meta": None,
             },
@@ -366,7 +366,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(user_1.id),
                     "type": "user",
-                    "attributes": user_data.dict(),
+                    "attributes": user_data.model_dump(),
                 },
                 "meta": None,
             },
@@ -417,7 +417,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "type": "user",
                         "lid": user_lid,
-                        "attributes": user_create.dict(),
+                        "attributes": user_create.model_dump(),
                     },
                 },
                 {
@@ -425,7 +425,7 @@ class TestAtomicMixedActions:
                     "data": {
                         "id": str(computer_1.id),
                         "type": "computer",
-                        "attributes": computer_update.dict(),
+                        "attributes": computer_update.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -466,7 +466,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(user.id),
                     "type": "user",
-                    "attributes": user_create.dict(),
+                    "attributes": user_create.model_dump(),
                 },
                 "meta": None,
             },
@@ -474,7 +474,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(computer_1.id),
                     "type": "computer",
-                    "attributes": computer_update.dict(),
+                    "attributes": computer_update.model_dump(),
                 },
                 "meta": None,
             },
@@ -507,7 +507,7 @@ class TestAtomicMixedActions:
                     "op": "add",
                     "data": {
                         "type": "user",
-                        "attributes": user_create.dict(),
+                        "attributes": user_create.model_dump(),
                         "relationships": {
                             "computers": {
                                 "data": [
@@ -549,7 +549,7 @@ class TestAtomicMixedActions:
                 "data": {
                     "id": str(new_user.id),
                     "type": "user",
-                    "attributes": user_create.dict(),
+                    "attributes": user_create.model_dump(),
                 },
                 "meta": None,
             },
