@@ -1,6 +1,22 @@
 Changelog
 #########
 
+**2.4.1**
+*********
+
+Separate helper methods for relationships query
+===============================================
+
+* remove resource manager example since no resource manager exists by `@mahenzon`_ in `#66 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/66>`_
+* create separate methods for building query for fetching related objects by `@mahenzon`_ in `#67 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/67>`_
+* update ruff linter by `@mahenzon`_ in `#69 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/69>`_
+
+Authors
+"""""""
+
+* `@mahenzon`_
+
+
 **2.4.0**
 *********
 
