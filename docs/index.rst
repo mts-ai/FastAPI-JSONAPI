@@ -72,7 +72,6 @@ FastAPI-JSONAPI with FastAPI.
    custom_sql_filtering
    client_generated_id
    logical_data_abstraction
-   resource_manager
    data_layer
    relationships
    configuration
