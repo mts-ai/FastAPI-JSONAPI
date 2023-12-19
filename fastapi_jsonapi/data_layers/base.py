@@ -229,6 +229,49 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
+    def get_related_model_query_base(
+        self,
+        related_model: Type[TypeModel],
+    ):
+        """
+        Prepare query for the related model
+
+        :param related_model: Related ORM model class (not instance)
+        :return:
+        """
+        raise NotImplementedError
+
+    def get_related_object_query(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        id_value: str,
+    ):
+        """
+        Prepare query to get related object
+        :param related_model:
+        :param related_id_field:
+        :param id_value:
+        :return:
+        """
+        raise NotImplementedError
+
+    def get_related_objects_list_query(
+        self,
+        related_model: Type[TypeModel],
+        related_id_field: str,
+        ids: list[str],
+    ):
+        """
+        Prepare query to get related objects list
+        :param related_model:
+        :param related_id_field:
+        :param ids:
+        :return:
+        """
+        raise NotImplementedError
+
+    # async def get_related_object_query(self):
     async def get_related_object(
         self,
         related_model: Type[TypeModel],
