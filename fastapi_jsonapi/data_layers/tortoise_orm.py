@@ -68,6 +68,8 @@ class TortoiseDataLayer(BaseDataLayer):
 
     async def get_collection_count(self, query: QuerySet) -> int:
         """
+        Prepare query to fetch collection
+
         :param query: Tortoise query
         :param qs: QueryString
         :param view_kwargs: view kwargs

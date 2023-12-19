@@ -1,5 +1,6 @@
 """
 Base JSON:API schemas.
+
 Pydantic (for FastAPI).
 """
 from typing import (
@@ -49,7 +50,8 @@ class BaseJSONAPIItemSchema(BaseModel):
 
 class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
     """
-    post/patch
+    Schema for post/patch method
+
     TODO POST: optionally accept custom id for object https://jsonapi.org/format/#crud-creating-client-ids
     TODO PATCH: accept object id (maybe create a new separate schema)
     """
@@ -82,6 +84,7 @@ class JSONAPIResultListMetaSchema(BaseModel):
 class JSONAPIDocumentObjectSchema(BaseModel):
     """
     JSON:API Document Object Schema.
+
     https://jsonapi.org/format/#document-jsonapi-object
     """
 

@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import (
     Callable,
     Dict,
+    Optional,
     Set,
     Type,
 )
@@ -63,8 +64,8 @@ def _deduplicate_field_validators(validators: Dict) -> Dict:
 def extract_field_validators(
     model: Type[BaseModel],
     *,
-    include_for_field_names: Set[str] = None,
-    exclude_for_field_names: Set[str] = None,
+    include_for_field_names: Optional[Set[str]] = None,
+    exclude_for_field_names: Optional[Set[str]] = None,
 ):
     validators = class_validators.inherit_validators(
         class_validators.extract_validators(model.__dict__),
@@ -112,7 +113,7 @@ def extract_field_validators(
 
 def extract_validators(
     model: Type[BaseModel],
-    exclude_for_field_names: Set[str] = None,
+    exclude_for_field_names: Optional[Set[str]] = None,
 ) -> Dict[str, Callable]:
     return {
         **extract_field_validators(

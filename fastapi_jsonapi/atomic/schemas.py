@@ -39,6 +39,7 @@ OperationDataType = Union[
 
 class AtomicOperationRef(BaseModel):
     """
+    This schema represents operation ref - reference to a resource
 
     ref: an object that MUST contain one of the following combinations of members:
         type and id: to target an individual resource.
@@ -57,8 +58,7 @@ class AtomicOperationRef(BaseModel):
     @root_validator
     def validate_atomic_operation_ref(cls, values: dict):
         """
-        type is required on schema
-        so id or lid has to be present
+        type is required on schema, so id or lid has to be present
 
         :param values:
         :return:
@@ -125,6 +125,8 @@ class AtomicOperation(BaseModel):
     @classmethod
     def _validate_one_of_ref_or_href(cls, values: dict):
         """
+        Make sure ref confirms spec
+
         An operation object MAY contain either of the following members,
         but not both, to specify the target of the operation: (ref, href)
 
@@ -152,6 +154,8 @@ class AtomicOperation(BaseModel):
     @root_validator
     def validate_operation(cls, values: dict):
         """
+        Make sure atomic operation request conforms the spec
+
         :param values:
         :return:
         """

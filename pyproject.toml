@@ -105,7 +105,7 @@ asyncpg = "0.28.0"
 
 [tool.poetry.group.lint.dependencies]
 black = "^23.3.0"
-ruff = "^0.0.284"
+ruff = "^0.1.8"
 mypy = "^1.4.1"
 sqlalchemy-stubs = "^0.4"
 pre-commit = "^3.3.3"
@@ -194,7 +194,6 @@ unfixable = ["B"]
 extend-ignore = [
     "D401",
     "D403",
-    "D205",
     "D400",
     "D415",
     "D100",  # Missing docstring in public module

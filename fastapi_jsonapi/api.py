@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -56,7 +57,7 @@ class RoutersJSONAPI:
     """
 
     # xxx: store in app, not in routers!
-    all_jsonapi_routers: Dict[str, "RoutersJSONAPI"] = {}
+    all_jsonapi_routers: ClassVar[Dict[str, "RoutersJSONAPI"]] = {}
     Methods = ViewMethods
     DEFAULT_METHODS = tuple(str(method) for method in ViewMethods)
 
@@ -172,6 +173,8 @@ class RoutersJSONAPI:
         kind: Literal["list", "detail"],
     ):
         """
+        Generate view name
+
         :param action
         :param kind: list / detail
         :return:
@@ -458,6 +461,8 @@ class RoutersJSONAPI:
         method: HTTPMethod,
     ) -> Dict[str, Any]:
         """
+        Combines all dependencies (prepared) and returns them as list
+
         Consider method config is already prepared for generic views
         Reuse the same config for atomic operations
 
@@ -483,6 +488,7 @@ class RoutersJSONAPI:
     def _create_get_resource_list_view(self):
         """
         Create wrapper for GET list (get objects list)
+
         :return:
         """
 

@@ -178,6 +178,8 @@ class OperationRemove(DetailOperationBase):
         dl: BaseDataLayer,
     ) -> None:
         """
+        Calls view to delete object
+
         Todo: fix atomic delete
          Deleting Resources
            An operation that deletes a resource

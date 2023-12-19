@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import ClassVar, Dict
 
 from fastapi import Depends
 from pydantic import BaseModel
@@ -29,7 +29,7 @@ class DetailViewBase(DetailViewBaseGeneric):
 
     data_layer_cls = SqlalchemyDataLayer
 
-    method_dependencies = {
+    method_dependencies: ClassVar = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=handler,
@@ -44,7 +44,7 @@ class ListViewBase(ListViewBaseGeneric):
 
     data_layer_cls = SqlalchemyDataLayer
 
-    method_dependencies = {
+    method_dependencies: ClassVar = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=handler,

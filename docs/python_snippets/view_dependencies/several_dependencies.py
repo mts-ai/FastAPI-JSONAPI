@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from fastapi import Depends
 from pydantic import BaseModel
 
@@ -35,7 +37,7 @@ def get_handler(view: ViewBase, dto: DependencyMix):
 
 
 class DetailView(DetailViewBaseGeneric):
-    method_dependencies = {
+    method_dependencies: ClassVar = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=CommonDependency,
             prepare_data_layer_kwargs=common_handler,

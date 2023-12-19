@@ -93,8 +93,9 @@ class InternalServerError(HTTPException):
 
 class UnsupportedFeatureORM(InternalServerError):
     """
-    Unsupported feature ORM exception class customized for json_api exceptions.
     Init for invalid ORM exception.
+
+    Unsupported feature ORM exception class customized for json_api exceptions.
     """
 
     title = "Unsupported ORM"

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import ClassVar, Dict, Optional
 
 from fastapi import APIRouter, Depends, FastAPI, Header, Path, status
 from httpx import AsyncClient
@@ -87,7 +87,7 @@ async def test_dependency_handler_call():
         )
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+        method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=CustomDependencies,
                 prepare_data_layer_kwargs=dependencies_handler,
@@ -143,7 +143,7 @@ async def test_dependencies_as_permissions(user_1: User):
         return {"session": dto.session}
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+        method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
             HTTPMethod.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
             HTTPMethod.ALL: HTTPMethodConfig(
                 dependencies=DetailGenericDependency,
@@ -198,7 +198,7 @@ async def test_manipulate_data_layer_kwargs(
         }
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+        method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=GetDetailDependencies,
                 prepare_data_layer_kwargs=set_session_and_ignore_user_1,

@@ -87,8 +87,8 @@ class TestAtomicUpdateObjects:
         computer_1: Computer,
     ):
         """
+        as in doc:
 
-        # as in doc
         https://jsonapi.org/ext/atomic/#auto-id-updating-to-one-relationships
         {
           "atomic:operations": [{

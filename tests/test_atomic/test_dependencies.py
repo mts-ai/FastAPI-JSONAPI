@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import ClassVar, Dict
 
 import pytest
 from fastapi import Depends, Query, status
@@ -58,7 +58,7 @@ class UserDeleteCustomDependency(ArbitraryModelBase):
 
 
 class UserCustomListView(ListViewBaseGeneric):
-    method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -70,7 +70,7 @@ class UserCustomListView(ListViewBaseGeneric):
 
 
 class UserCustomDetailView(DetailViewBaseGeneric):
-    method_dependencies: Dict[HTTPMethod, HTTPMethodConfig] = {
+    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,

@@ -68,6 +68,8 @@ class TestAtomicMixedActions:
         user_1_bio: UserBio,
     ):
         """
+        Prepare test data:
+
         Create computer for user
         Update user's Bio
         Update user
@@ -169,6 +171,7 @@ class TestAtomicMixedActions:
         user_1_bio: UserBio,
     ):
         """
+        Prepare test data:
 
         - create computer (ok)
         - update user bio (ok)
@@ -265,6 +268,8 @@ class TestAtomicMixedActions:
         computer_factory: Callable[..., Awaitable[Computer]],
     ):
         """
+        Prepare test data:
+
         Create computer for user
         Update user's Bio
         Update user
@@ -390,6 +395,8 @@ class TestAtomicMixedActions:
         computer_1: Computer,
     ):
         """
+        Prepare data:
+
         Create user
         Update computer, link it to user
 
@@ -563,6 +570,7 @@ class TestAtomicMixedActions:
         computer_1: Computer,
     ):
         """
+        Prepare test data:
 
         - create user
         - update existing computer to be linked to this created user
@@ -601,6 +609,7 @@ class TestAtomicMixedActions:
         computer_1: Computer,
     ):
         """
+        Prepare test data:
 
         - create user
         - create bio for user

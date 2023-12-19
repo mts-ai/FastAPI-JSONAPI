@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import ClassVar, Dict
+
 from fastapi import Depends, Header
 from pydantic import BaseModel
 from sqlalchemy.engine import make_url
@@ -52,7 +54,7 @@ class SessionDependency(BaseModel):
         arbitrary_types_allowed = True
 
 
-async def common_handler(view: ViewBase, dto: BaseModel) -> dict:
+async def common_handler(view: ViewBase, dto: SessionDependency) -> dict:
     return {"session": dto.session}
 
 
@@ -66,7 +68,7 @@ class AdminOnlyPermission(BaseModel):
 
 
 class DetailView(DetailViewBaseGeneric):
-    method_dependencies: dict[HTTPMethod, HTTPMethodConfig] = {
+    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -75,7 +77,7 @@ class DetailView(DetailViewBaseGeneric):
 
 
 class ListView(ListViewBaseGeneric):
-    method_dependencies: dict[HTTPMethod, HTTPMethodConfig] = {
+    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,

@@ -116,6 +116,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
     def prepare_id_value(self, col: InstrumentedAttribute, value: Any) -> Any:
         """
         Convert value to the required python type.
+
         Type is declared on the SQLA column.
 
         :param col:
@@ -226,6 +227,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
     def get_object_id_field_name(self):
         """
         compound key may cause errors
+
         :return:
         """
         return self.id_name_field or inspect(self.model).primary_key[0].key
@@ -263,6 +265,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
     async def get_collection_count(self, query: "Select", qs: QueryStringManager, view_kwargs: dict) -> int:
         """
+        Returns number of elements for this collection
+
         :param query: SQLAlchemy query
         :param qs: QueryString
         :param view_kwargs: view kwargs
@@ -523,6 +527,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         related_model: Type[TypeModel],
     ) -> "Select":
         """
+        Prepare sql query (statement) to fetch related model
+
         :param related_model:
         :return:
         """
@@ -585,6 +591,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         ids: list[str],
     ) -> list[TypeModel]:
         """
+        Fetch related objects (many)
 
         :param related_model:
         :param related_id_field:
