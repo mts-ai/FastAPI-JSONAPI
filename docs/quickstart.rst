@@ -154,13 +154,11 @@ Response:
 Relationships
 -------------
 
-> Now let's use relationships tools.
-> First, create 3 computers named "Halo", "Nestor" and "Commodore".
->
-> Done?
-> Ok. So let's continue this tutorial.
->
-> We assume that Halo has id=2, Nestor id=3 and Commodore id=4.
+.. note::
+    Now let's use relationships tools.
+    First, create 3 computers named "Halo", "Nestor" and "Commodore".
+    We assume that Halo has id=2, Nestor id=3 and Commodore id=4.
+
 
 Create object with related object(s)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
