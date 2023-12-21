@@ -1,4 +1,5 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
+import inspect
 import logging
 from typing import (
     Any,
@@ -133,10 +134,10 @@ class Node:
         pydantic_types, userspace_types = self._separate_types(types)
 
         if pydantic_types:
+            func = self._cast_value_with_pydantic
             if isinstance(value, list):
-                clear_value, errors = self._cast_iterable_with_pydantic(pydantic_types, value)
-            else:
-                clear_value, errors = self._cast_value_with_pydantic(pydantic_types, value)
+                func = self._cast_iterable_with_pydantic
+            clear_value, errors = func(pydantic_types, value, schema_field)
 
         if clear_value is None and userspace_types:
             log.warning("Filtering by user type values is not properly tested yet. Use this on your own risk.")
@@ -151,7 +152,10 @@ class Node:
 
         # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
         if clear_value is None and not can_be_none:
-            raise InvalidType(detail=", ".join(errors))
+            raise InvalidType(
+                detail=", ".join(errors),
+                pointer=schema_field.name,
+            )
 
         return getattr(model_column, self.operator)(clear_value)
 
@@ -179,24 +183,53 @@ class Node:
         ]
         return pydantic_types, userspace_types
 
+    def _validator_requires_model_field(self, validator: Callable) -> bool:
+        """
+        Check if validator accepts the `field` param
+
+        :param validator:
+        :return:
+        """
+        signature = inspect.signature(validator)
+        parameters = signature.parameters
+
+        if "field" not in parameters:
+            return False
+
+        field_param = parameters["field"]
+        field_type = field_param.annotation
+
+        return field_type == "ModelField" or field_type is ModelField
+
     def _cast_value_with_pydantic(
         self,
         types: List[Type],
         value: Any,
+        schema_field: ModelField,
     ) -> Tuple[Optional[Any], List[str]]:
         result_value, errors = None, []
 
         for type_to_cast in types:
             for validator in find_validators(type_to_cast, BaseConfig):
+                args = [value]
+                # TODO: some other way to get all the validator's dependencies?
+                if self._validator_requires_model_field(validator):
+                    args.append(schema_field)
                 try:
-                    result_value = validator(value)
-                    return result_value, errors
+                    result_value = validator(*args)
                 except Exception as ex:
                     errors.append(str(ex))
+                else:
+                    return result_value, errors
 
         return None, errors
 
-    def _cast_iterable_with_pydantic(self, types: List[Type], values: List) -> Tuple[List, List[str]]:
+    def _cast_iterable_with_pydantic(
+        self,
+        types: List[Type],
+        values: List,
+        schema_field: ModelField,
+    ) -> Tuple[List, List[str]]:
         type_cast_failed = False
         failed_values = []
 
@@ -204,7 +237,11 @@ class Node:
         errors: List[str] = []
 
         for value in values:
-            casted_value, cast_errors = self._cast_value_with_pydantic(types, value)
+            casted_value, cast_errors = self._cast_value_with_pydantic(
+                types,
+                value,
+                schema_field,
+            )
             errors.extend(cast_errors)
 
             if casted_value is None:
@@ -217,7 +254,7 @@ class Node:
 
         if type_cast_failed:
             msg = f"Can't parse items {failed_values} of value {values}"
-            raise InvalidFilters(msg)
+            raise InvalidFilters(msg, pointer=schema_field.name)
 
         return result_values, errors
 

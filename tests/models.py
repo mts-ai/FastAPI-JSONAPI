@@ -253,6 +253,9 @@ class CustomUUIDType(TypeDecorator):
         return CHAR(32)
 
     def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+
         if not isinstance(value, UUID):
             msg = f"Incorrect type got {type(value).__name__}, expected {UUID.__name__}"
             raise Exception(msg)
@@ -260,7 +263,7 @@ class CustomUUIDType(TypeDecorator):
         return str(value)
 
     def process_result_value(self, value, dialect):
-        return UUID(value)
+        return value and UUID(value)
 
     @property
     def python_type(self):
@@ -278,8 +281,15 @@ else:
     raise ValueError(msg)
 
 
-class IdCast(Base):
+class CustomUUIDItem(Base):
+    __tablename__ = "custom_uuid_item"
     id = Column(UUIDType, primary_key=True)
+
+    extra_id = Column(
+        UUIDType,
+        nullable=True,
+        unique=True,
+    )
 
 
 class SelfRelationship(Base):

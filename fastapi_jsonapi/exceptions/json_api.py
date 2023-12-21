@@ -53,7 +53,11 @@ class HTTPException(FastApiHttpException):
         parameter = parameter or self.parameter
         if not errors:
             if pointer:
-                pointer = pointer if pointer.startswith("/") else "/data/" + pointer
+                pointer = (
+                    pointer
+                    if pointer.startswith("/")
+                    else "/data/" + (pointer if pointer == "id" else "attributes/" + pointer)
+                )
                 self.source = {"pointer": pointer}
             elif parameter:
                 self.source = {"parameter": parameter}

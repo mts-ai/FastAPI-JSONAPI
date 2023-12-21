@@ -389,7 +389,14 @@ class TaskSchema(TaskBaseSchema):
 # uuid below
 
 
-class IdCastSchema(BaseModel):
+class CustomUUIDItemAttributesSchema(BaseModel):
+    extra_id: Optional[UUID] = None
+
+    class Config:
+        orm_mode = True
+
+
+class CustomUUIDItemSchema(CustomUUIDItemAttributesSchema):
     id: UUID = Field(client_can_set_id=True)
 
 
