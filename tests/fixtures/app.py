@@ -15,6 +15,7 @@ from tests.fixtures.views import (
 from tests.models import (
     Child,
     Computer,
+    CustomUUIDItem,
     Parent,
     ParentToChildAssociation,
     Post,
@@ -30,6 +31,7 @@ from tests.schemas import (
     ComputerInSchema,
     ComputerPatchSchema,
     ComputerSchema,
+    CustomUUIDItemSchema,
     ParentPatchSchema,
     ParentSchema,
     ParentToChildAssociationSchema,
@@ -176,6 +178,17 @@ def add_routers(app_plain: FastAPI):
         resource_type="task",
         schema_in_patch=TaskPatchSchema,
         schema_in_post=TaskInSchema,
+    )
+
+    RoutersJSONAPI(
+        router=router,
+        path="/custom-uuid-item",
+        tags=["Custom UUID Item"],
+        class_detail=DetailViewBaseGeneric,
+        class_list=ListViewBaseGeneric,
+        model=CustomUUIDItem,
+        schema=CustomUUIDItemSchema,
+        resource_type="custom_uuid_item",
     )
 
     atomic = AtomicOperations()

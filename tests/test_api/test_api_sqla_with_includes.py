@@ -3,10 +3,11 @@ import logging
 from collections import defaultdict
 from datetime import datetime, timezone
 from itertools import chain, zip_longest
-from json import dumps
-from typing import Dict, List
+from json import dumps, loads
+from typing import Dict, List, Literal
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import BaseModel, Field
@@ -22,7 +23,7 @@ from tests.misc.utils import fake
 from tests.models import (
     Computer,
     ContainsTimestamp,
-    IdCast,
+    CustomUUIDItem,
     Post,
     PostComment,
     SelfRelationship,
@@ -32,7 +33,7 @@ from tests.models import (
 )
 from tests.schemas import (
     CustomUserAttributesSchema,
-    IdCastSchema,
+    CustomUUIDItemAttributesSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
     SelfRelationshipSchema,
@@ -1112,35 +1113,45 @@ class TestCreateObjects:
                 "meta": None,
             }
 
-    async def test_create_id_by_client_uuid_type(self):
-        resource_type = fake.word()
-        app = build_app_custom(
-            model=IdCast,
-            schema=IdCastSchema,
-            resource_type=resource_type,
-        )
+    async def test_create_id_by_client_uuid_type(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+    ):
+        """
+        Create id (custom)
+
+        also creates UUID field (just for testing)
+
+        :param app:
+        :param client:
+        :return:
+        """
+        resource_type = "custom_uuid_item"
 
         new_id = str(uuid4())
+        create_attributes = CustomUUIDItemAttributesSchema(
+            extra_id=uuid4(),
+        )
         create_body = {
             "data": {
-                "attributes": {},
+                "attributes": loads(create_attributes.json()),
                 "id": new_id,
             },
         }
 
-        async with AsyncClient(app=app, base_url="http://test") as client:
-            url = app.url_path_for(f"get_{resource_type}_list")
-            res = await client.post(url, json=create_body)
-            assert res.status_code == status.HTTP_201_CREATED, res.text
-            assert res.json() == {
-                "data": {
-                    "attributes": {},
-                    "id": new_id,
-                    "type": resource_type,
-                },
-                "jsonapi": {"version": "1.0"},
-                "meta": None,
-            }
+        url = app.url_path_for(f"get_{resource_type}_list")
+        res = await client.post(url, json=create_body)
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        assert res.json() == {
+            "data": {
+                "attributes": loads(create_attributes.json()),
+                "id": new_id,
+                "type": resource_type,
+            },
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
 
     async def test_create_with_relationship_to_the_same_table(self):
         resource_type = "self_relationship"
@@ -1264,6 +1275,7 @@ class TestCreateObjects:
                 },
             }
 
+            # noinspection PyTypeChecker
             stms = select(ContainsTimestamp).where(ContainsTimestamp.id == int(entity_id))
             (await async_session.execute(stms)).scalar_one()
 
@@ -2366,6 +2378,146 @@ class TestFilters:
             ],
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 1, "totalPages": 1},
+        }
+
+    async def test_sqla_filters_by_uuid_type(
+        self,
+        async_session: AsyncSession,
+    ):
+        """
+        This test checks if UUID fields allow filtering by UUID object
+
+        Make sure your UUID field allows native UUID filtering: `UUID(as_uuid=True)`
+
+        :param async_session:
+        :return:
+        """
+        new_id = uuid4()
+        extra_id = uuid4()
+        item = CustomUUIDItem(
+            id=new_id,
+            extra_id=extra_id,
+        )
+        async_session.add(item)
+        await async_session.commit()
+
+        # noinspection PyTypeChecker
+        stmt = select(CustomUUIDItem)
+        # works because we set `as_uuid=True`
+        i = await async_session.scalar(stmt.where(CustomUUIDItem.id == new_id))
+        assert i
+        # works because we set `as_uuid=True`
+        i = await async_session.scalar(stmt.where(CustomUUIDItem.extra_id == extra_id))
+        assert i
+
+    @pytest.mark.parametrize("filter_kind", ["small", "full"])
+    async def test_filter_by_field_of_uuid_type(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        async_session: AsyncSession,
+        filter_kind: Literal["small", "full"],
+    ):
+        resource_type = "custom_uuid_item"
+
+        new_id = uuid4()
+        extra_id = uuid4()
+        item = CustomUUIDItem(
+            id=new_id,
+            extra_id=extra_id,
+        )
+        another_item = CustomUUIDItem(
+            id=uuid4(),
+            extra_id=uuid4(),
+        )
+        async_session.add(item)
+        async_session.add(another_item)
+        await async_session.commit()
+
+        #
+        params = {}
+        if filter_kind == "small":
+            params.update(
+                {
+                    "filter[extra_id]": str(extra_id),
+                },
+            )
+        else:
+            params.update(
+                {
+                    "filter": dumps(
+                        [
+                            {
+                                "name": "extra_id",
+                                "op": "eq",
+                                "val": str(extra_id),
+                            },
+                        ],
+                    ),
+                },
+            )
+
+        url = app.url_path_for(f"get_{resource_type}_list")
+        res = await client.get(url, params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": loads(CustomUUIDItemAttributesSchema.from_orm(item).json()),
+                    "id": str(new_id),
+                    "type": resource_type,
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 1, "totalPages": 1},
+        }
+
+    async def test_filter_invalid_uuid(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+    ):
+        resource_type = "custom_uuid_item"
+
+        extra_id = str(uuid4())
+        params = {
+            "filter[extra_id]": str(extra_id) + "z",
+        }
+
+        url = app.url_path_for(f"get_{resource_type}_list")
+        res = await client.get(url, params=params)
+        assert res.status_code >= status.HTTP_400_BAD_REQUEST, res.text
+
+    async def test_filter_none_instead_of_uuid(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+    ):
+        resource_type = "custom_uuid_item"
+
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "id",
+                        "op": "eq",
+                        "val": None,
+                    },
+                ],
+            ),
+        }
+        url = app.url_path_for(f"get_{resource_type}_list")
+        res = await client.get(url, params=params)
+        assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
+        assert res.json() == {
+            "errors": [
+                {
+                    "detail": "The field `id` can't be null",
+                    "source": {"parameter": "filters"},
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "title": "Invalid filters querystring parameter.",
+                },
+            ],
         }
 
 
