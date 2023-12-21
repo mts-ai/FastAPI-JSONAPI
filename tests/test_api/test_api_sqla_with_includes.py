@@ -2380,6 +2380,36 @@ class TestFilters:
             "meta": {"count": 1, "totalPages": 1},
         }
 
+    async def test_sqla_filters_by_uuid_type(
+        self,
+        async_session: AsyncSession,
+    ):
+        """
+        This test checks if UUID fields allow filtering by UUID object
+
+        Make sure your UUID field allows native UUID filtering: `UUID(as_uuid=True)`
+
+        :param async_session:
+        :return:
+        """
+        new_id = uuid4()
+        extra_id = uuid4()
+        item = CustomUUIDItem(
+            id=new_id,
+            extra_id=extra_id,
+        )
+        async_session.add(item)
+        await async_session.commit()
+
+        # noinspection PyTypeChecker
+        stmt = select(CustomUUIDItem)
+        # works because we set `as_uuid=True`
+        i = await async_session.scalar(stmt.where(CustomUUIDItem.id == new_id))
+        assert i
+        # works because we set `as_uuid=True`
+        i = await async_session.scalar(stmt.where(CustomUUIDItem.extra_id == extra_id))
+        assert i
+
     @pytest.mark.parametrize("filter_kind", ["small", "full"])
     async def test_filter_by_field_of_uuid_type(
         self,

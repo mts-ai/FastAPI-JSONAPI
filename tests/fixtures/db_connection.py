@@ -51,5 +51,6 @@ async def async_session_plain(async_engine):
 
 @async_fixture(scope="class")
 async def async_session(async_session_plain):
-    async with async_session_plain() as session:
+    async with async_session_plain() as session:  # type: AsyncSession
         yield session
+        await session.rollback()

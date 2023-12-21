@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
-from tests.common import sqla_uri
+from tests.common import is_postgres_tests, sqla_uri
 
 
 class Base:
@@ -271,9 +271,9 @@ class CustomUUIDType(TypeDecorator):
 
 
 db_uri = sqla_uri()
-if "postgres" in db_uri:
+if is_postgres_tests():
     # noinspection PyPep8Naming
-    from sqlalchemy.dialects.postgresql import UUID as UUIDType
+    from sqlalchemy.dialects.postgresql.asyncpg import AsyncpgUUID as UUIDType
 elif "sqlite" in db_uri:
     UUIDType = CustomUUIDType
 else:
@@ -283,10 +283,10 @@ else:
 
 class CustomUUIDItem(Base):
     __tablename__ = "custom_uuid_item"
-    id = Column(UUIDType, primary_key=True)
+    id = Column(UUIDType(as_uuid=True), primary_key=True)
 
     extra_id = Column(
-        UUIDType,
+        UUIDType(as_uuid=True),
         nullable=True,
         unique=True,
     )
