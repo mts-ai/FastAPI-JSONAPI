@@ -1,6 +1,19 @@
 Changelog
 #########
 
+**2.4.2**
+*********
+
+Separate helper methods for relationships query
+===============================================
+
+* fix run validator: sometimes it requires model field by `@mahenzon`_ in `#70 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/70>`_
+
+Authors
+"""""""
+
+* `@mahenzon`_
+
 **2.4.1**
 *********
 
