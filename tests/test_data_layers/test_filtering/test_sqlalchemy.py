@@ -1,47 +1,41 @@
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 from fastapi import status
 from pydantic import BaseModel
 from pytest import raises  # noqa PT013
 
-from fastapi_jsonapi.data_layers.filtering.sqlalchemy import Node
-from fastapi_jsonapi.exceptions.json_api import InvalidType
+from fastapi_jsonapi.data_layers.filtering.sqlalchemy import (
+    build_filter_expression,
+)
+from fastapi_jsonapi.exceptions import InvalidType
 
 
-class TestNode:
+class TestFilteringFuncs:
     def test_user_type_cast_success(self):
         class UserType:
             def __init__(self, *args, **kwargs):
-                self.value = "success"
+                pass
 
         class ModelSchema(BaseModel):
-            user_type: UserType
+            value: UserType
 
             class Config:
                 arbitrary_types_allowed = True
 
-        node = Node(
-            model=Mock(),
-            filter_={
-                "name": "user_type",
-                "op": "eq",
-                "val": Any,
-            },
-            schema=ModelSchema,
-        )
+        model_column_mock = MagicMock()
 
-        model_column_mock = Mock()
-        model_column_mock.eq = lambda clear_value: clear_value
-
-        clear_value = node.create_filter(
-            schema_field=ModelSchema.__fields__["user_type"],
+        build_filter_expression(
+            schema_field=ModelSchema.__fields__["value"],
             model_column=model_column_mock,
-            operator=Mock(),
+            operator="__eq__",
             value=Any,
         )
-        assert isinstance(clear_value, UserType)
-        assert clear_value.value == "success"
+
+        model_column_mock.__eq__.assert_called_once()
+
+        call_arg = model_column_mock.__eq__.call_args[0]
+        isinstance(call_arg, UserType)
 
     def test_user_type_cast_fail(self):
         class UserType:
@@ -55,14 +49,8 @@ class TestNode:
             class Config:
                 arbitrary_types_allowed = True
 
-        node = Node(
-            model=Mock(),
-            filter_=Mock(),
-            schema=ModelSchema,
-        )
-
         with raises(InvalidType) as exc_info:
-            node.create_filter(
+            build_filter_expression(
                 schema_field=ModelSchema.__fields__["user_type"],
                 model_column=Mock(),
                 operator=Mock(),
