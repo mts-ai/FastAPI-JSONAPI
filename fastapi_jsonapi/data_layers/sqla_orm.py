@@ -13,7 +13,9 @@ from sqlalchemy.sql import column, distinct
 
 from fastapi_jsonapi import BadRequest
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
-from fastapi_jsonapi.data_layers.filtering.sqlalchemy import create_filters
+from fastapi_jsonapi.data_layers.filtering.sqlalchemy import (
+    create_filters_and_joins,
+)
 from fastapi_jsonapi.data_layers.sorting.sqlalchemy import create_sorts
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import (
@@ -626,10 +628,16 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return: the sorted query.
         """
         if filter_info:
-            filters, joins = create_filters(model=self.model, filter_info=filter_info, schema=self.schema)
+            filters, joins = create_filters_and_joins(
+                model=self.model,
+                filter_info=filter_info,
+                schema=self.schema,
+            )
+
             for i_join in joins:
                 query = query.join(*i_join)
-            query = query.where(*filters)
+
+            query = query.where(filters)
 
         return query
 

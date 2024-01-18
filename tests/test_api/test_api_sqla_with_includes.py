@@ -2520,6 +2520,54 @@ class TestFilters:
             ],
         }
 
+    async def test_join_by_relationships_works_correctly_with_many_filters_for_one_field(
+        self,
+        app: FastAPI,
+        async_session: AsyncSession,
+        client: AsyncClient,
+        user_1: User,
+        user_1_post: PostComment,
+    ):
+        comment_1 = PostComment(
+            text=fake.sentence(),
+            post_id=user_1_post.id,
+            author_id=user_1.id,
+        )
+        comment_2 = PostComment(
+            text=fake.sentence(),
+            post_id=user_1_post.id,
+            author_id=user_1.id,
+        )
+        assert comment_1.text != comment_2.text
+        async_session.add_all([comment_1, comment_2])
+        await async_session.commit()
+
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "posts.comments.text",
+                        "op": "eq",
+                        "val": comment_1.text,
+                    },
+                    {
+                        "name": "posts.comments.text",
+                        "op": "eq",
+                        "val": comment_2.text,
+                    },
+                ],
+            ),
+        }
+
+        url = app.url_path_for("get_user_list")
+        res = await client.get(url, params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 0, "totalPages": 1},
+        }
+
 
 ASCENDING = ""
 DESCENDING = "-"
