@@ -2,12 +2,23 @@ name: Python testing
 
 on:
   push:
-#  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/testing.yml"
+      - "fastapi_jsonapi/**"
+      - "tests/**"
+      - "codecov.yaml"
+      - "pyproject.toml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/testing.yml"
+      - "fastapi_jsonapi/**"
+      - "tests/**"
+      - "pyproject.toml"
 
-# is there a way to fix doubled pipelines?
-# only XXX
-# https://github.com/orgs/community/discussions/25654
-# https://github.com/orgs/community/discussions/26276
 
 jobs:
   lint:
@@ -16,6 +27,7 @@ jobs:
       matrix:
         python-version:
           - "3.9"
+          - "3.10"
           - "3.11"
 
     steps:
@@ -79,6 +91,17 @@ jobs:
       - name: Install dependencies
         run: poetry install --all-extras
       - name: Test with pytest
-        run: pytest -s -vv tests/
+        run: |
+          flags="-s -vv --cov=fastapi_jsonapi --cov-config .coveragerc --cov-report=xml"
+          pytest $flags tests/
         env:
           TESTING_DB_URL: ${{ matrix.db-url }}
+
+      - name: Upload coverage data to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          flags: unittests
+          name: py-${{ matrix.python-version }}-db-${{ startsWith(matrix.db-url, 'sqlite') && 'sqlite' || startsWith(matrix.db-url, 'postgres') && 'postgres' || 'unknown' }} }}
+          fail_ci_if_error: true
