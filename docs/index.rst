@@ -12,6 +12,10 @@ FastAPI-JSONAPI
    :alt: GitHub
    :target: https://github.com/mts-ai/FastAPI-JSONAPI
 
+.. image:: https://img.shields.io/codecov/c/github/mts-ai/FASTAPI-JSONAPI?style=for-the-badge
+   :alt: Codecov
+   :target: https://codecov.io/gh/mts-ai/FastAPI-JSONAPI
+
 
 **FastAPI-JSONAPI** is an extension for FastAPI that adds support for quickly building REST APIs
 with huge flexibility around the JSON:API 1.0 specification.

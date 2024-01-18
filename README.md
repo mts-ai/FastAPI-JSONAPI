@@ -4,6 +4,7 @@
 [![](https://img.shields.io/github/license/ycd/manage-fastapi?style=for-the-badge)](https://pypi.org/project/FastAPI-JSONAPI/)
 ![GitHub Actions](https://img.shields.io/github/actions/workflow/status/mts-ai/FastAPI-JSONAPI/testing.yml?style=for-the-badge)
 [![Read the Docs](https://img.shields.io/readthedocs/fastapi-jsonapi?style=for-the-badge)](https://fastapi-jsonapi.readthedocs.io/en/latest/)
+![Codecov](https://img.shields.io/codecov/c/github/mts-ai/FastAPI-JSONAPI?style=for-the-badge)
 
 [![📖 Docs (gh-pages)](https://github.com/mts-ai/FastAPI-JSONAPI/actions/workflows/documentation.yaml/badge.svg)](https://mts-ai.github.io/FastAPI-JSONAPI/)
 
