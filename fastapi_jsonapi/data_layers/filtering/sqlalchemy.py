@@ -168,6 +168,8 @@ def cast_value_with_scheme(field_types: List[Type], value: Any) -> Tuple[Any, Li
                 casted_value = field_type(value)
         except (TypeError, ValueError) as ex:
             errors.append(str(ex))
+        else:
+            return casted_value, errors
 
     return casted_value, errors
 
@@ -228,7 +230,6 @@ def build_filter_expression(
                 errors=[HTTPException(status_code=InvalidType.status_code, detail=str(err)) for err in errors],
             )
 
-    # Если None, при этом поле обязательное (среди типов в аннотации нет None, то кидаем ошибку)
     if casted_value is None and not can_be_none:
         raise InvalidType(
             detail=", ".join(errors),
@@ -256,7 +257,7 @@ def is_relationship_filter(name: str) -> bool:
     return RELATIONSHIP_SPLITTER in name
 
 
-def gather_relationship_paths(filter_item: Union[List, Dict]) -> Set[str]:
+def gather_relationship_paths(filter_item: Union[dict, list]) -> Set[str]:
     """
     Extracts relationship paths from query filter
     """

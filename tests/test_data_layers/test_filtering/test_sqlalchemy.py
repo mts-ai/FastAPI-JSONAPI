@@ -15,7 +15,7 @@ class TestFilteringFuncs:
     def test_user_type_cast_success(self):
         class UserType:
             def __init__(self, *args, **kwargs):
-                pass
+                """This method is needed to handle incoming arguments"""
 
         class ModelSchema(BaseModel):
             value: UserType
