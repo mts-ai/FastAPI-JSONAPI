@@ -11,6 +11,7 @@ from typing import (
     Callable,
     List,
     Optional,
+    Type,
     TypedDict,
     Union,
 )
@@ -64,6 +65,8 @@ def catch_exc_on_operation_handle(func: Callable[..., Awaitable]):
 
 
 class AtomicViewHandler:
+    jsonapi_routers_cls: Type[RoutersJSONAPI] = RoutersJSONAPI
+
     def __init__(
         self,
         request: Request,
@@ -82,10 +85,10 @@ class AtomicViewHandler:
         """
         operation_type = operation.ref and operation.ref.type or operation.data and operation.data.type
         assert operation_type
-        if operation_type not in RoutersJSONAPI.all_jsonapi_routers:
+        if operation_type not in self.jsonapi_routers_cls.all_jsonapi_routers:
             msg = f"Unknown resource type {operation_type!r}. Register it via RoutersJSONAPI"
             raise ValueError(msg)
-        jsonapi = RoutersJSONAPI.all_jsonapi_routers[operation_type]
+        jsonapi = self.jsonapi_routers_cls.all_jsonapi_routers[operation_type]
 
         one_operation = OperationBase.prepare(
             action=operation.op,
