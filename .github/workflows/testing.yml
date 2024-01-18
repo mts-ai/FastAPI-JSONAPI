@@ -103,5 +103,5 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
           flags: unittests
-          name: py-${{ matrix.python-version }}-db-${{ startsWith(matrix.db-url, 'sqlite') && 'sqlite' || startsWith(matrix.db-url, 'postgres') && 'postgres' || 'unknown' }} }}
+          name: py-${{ matrix.python-version }}-db-${{ startsWith(matrix.db-url, 'sqlite') && 'sqlite' || startsWith(matrix.db-url, 'postgres') && 'postgres' || 'unknown' }}
           fail_ci_if_error: true
