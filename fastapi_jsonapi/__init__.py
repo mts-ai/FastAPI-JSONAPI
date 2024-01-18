@@ -8,7 +8,7 @@ from fastapi_jsonapi.exceptions.handlers import base_exception_handler
 from fastapi_jsonapi.exceptions.json_api import HTTPException
 from fastapi_jsonapi.querystring import QueryStringManager
 
-__version__ = "2.4.2"
+__version__ = "2.5.0"
 
 __all__ = [
     "init",

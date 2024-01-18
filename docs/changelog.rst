@@ -1,6 +1,23 @@
 Changelog
 #########
 
+**2.5.0**
+*********
+
+Fix relationships filtering, refactor alchemy helpers
+=====================================================
+
+* Fix filter by relationships by `@CosmoV`_ in `#52 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/52>`_
+* Add Codecov by `@mahenzon`_ in `#72 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/72>`_
+* Set RoutersJSONAPI class on AtomicViewHandler by `@mahenzon`_ in `#7b2557f <https://github.com/mts-ai/FastAPI-JSONAPI/commit/7b2557f9e341c1210200efce0f7b47c15d4cac4e>`_
+
+Authors
+"""""""
+
+* `@CosmoV`_
+* `@mahenzon`_
+
+
 **2.4.2**
 *********
 
@@ -13,6 +30,7 @@ Authors
 """""""
 
 * `@mahenzon`_
+
 
 **2.4.1**
 *********
