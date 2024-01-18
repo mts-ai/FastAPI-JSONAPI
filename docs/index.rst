@@ -12,7 +12,7 @@ FastAPI-JSONAPI
    :alt: GitHub
    :target: https://github.com/mts-ai/FastAPI-JSONAPI
 
-.. image:: https://codecov.io/gh/mts-ai/FastAPI-JSONAPI/graph/badge.svg?token=6K39IP2L0Z
+.. image:: https://img.shields.io/codecov/c/github/mts-ai/FASTAPI-JSONAPI?style=for-the-badge
    :alt: Codecov
    :target: https://codecov.io/gh/mts-ai/FastAPI-JSONAPI
 
