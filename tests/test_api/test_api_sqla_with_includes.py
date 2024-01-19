@@ -11,9 +11,11 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import BaseModel, Field
+from pydantic.fields import ModelField
 from pytest import fixture, mark, param, raises  # noqa PT013
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
@@ -2112,16 +2114,186 @@ class TestFilters:
             response = await client.get(url, params=params)
             assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
             assert response.json() == {
-                "detail": {
-                    "errors": [
-                        {
-                            "detail": "The field `email` can't be null",
-                            "source": {"parameter": "filters"},
-                            "status_code": status.HTTP_400_BAD_REQUEST,
-                            "title": "Invalid filters querystring parameter.",
-                        },
-                    ],
-                },
+                "errors": [
+                    {
+                        "detail": "The field `email` can't be null",
+                        "source": {"parameter": "filters"},
+                        "status_code": status.HTTP_400_BAD_REQUEST,
+                        "title": "Invalid filters querystring parameter.",
+                    },
+                ],
+            }
+
+    async def test_custom_sql_filter_lower_string(
+        self,
+        async_session: AsyncSession,
+        user_1: User,
+        user_2: User,
+    ):
+        resource_type = "user_with_custom_lower_filter"
+
+        assert user_1.id != user_2.id
+
+        def lower_equals_sql_filter(
+            schema_field: ModelField,
+            model_column: InstrumentedAttribute,
+            value: str,
+            operator: str,
+        ):
+            return func.lower(model_column) == func.lower(value)
+
+        class UserWithEmailFieldSchema(UserAttributesBaseSchema):
+            email: str = Field(
+                _lower_equals_sql_filter_=lower_equals_sql_filter,
+            )
+
+        app = build_app_custom(
+            model=User,
+            schema=UserWithEmailFieldSchema,
+            resource_type=resource_type,
+        )
+
+        name, _, domain = user_1.email.partition("@")
+        user_1.email = f"{name.upper()}@{domain}"
+        await async_session.commit()
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "email",
+                        "op": "lower_equals",
+                        "val": f"{name}@{domain.upper()}",
+                    },
+                ],
+            ),
+        }
+        url = app.url_path_for(f"get_{resource_type}_list")
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            response = await client.get(url, params=params)
+            assert response.status_code == status.HTTP_200_OK, response.text
+            response_data = response.json()["data"]
+
+        assert len(response_data) == 1
+        assert response_data[0] == {
+            "id": str(user_1.id),
+            "type": resource_type,
+            "attributes": UserWithEmailFieldSchema.from_orm(user_1).dict(),
+        }
+
+    async def test_custom_sql_filter_lower_string_old_style_with_joins(
+        self,
+        caplog,
+        async_session: AsyncSession,
+        user_1: User,
+        user_2: User,
+    ):
+        resource_type = "user_with_custom_lower_filter_old_style_joins"
+
+        assert user_1.id != user_2.id
+
+        def lower_equals_sql_filter(
+            schema_field: ModelField,
+            model_column: InstrumentedAttribute,
+            value: str,
+            operator: str,
+        ):
+            return func.lower(model_column) == func.lower(value), []
+
+        class UserWithEmailFieldFilterSchema(UserAttributesBaseSchema):
+            email: str = Field(
+                _lower_equals_sql_filter_=lower_equals_sql_filter,
+            )
+
+        app = build_app_custom(
+            model=User,
+            schema=UserWithEmailFieldFilterSchema,
+            resource_type=resource_type,
+        )
+
+        name, _, domain = user_1.email.partition("@")
+        user_1.email = f"{name.upper()}@{domain}"
+        await async_session.commit()
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "email",
+                        "op": "lower_equals",
+                        "val": f"{name}@{domain.upper()}",
+                    },
+                ],
+            ),
+        }
+        url = app.url_path_for(f"get_{resource_type}_list")
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            response = await client.get(url, params=params)
+            assert response.status_code == status.HTTP_200_OK, response.text
+            response_data = response.json()["data"]
+
+        assert len(response_data) == 1
+        assert response_data[0] == {
+            "id": str(user_1.id),
+            "type": resource_type,
+            "attributes": UserWithEmailFieldFilterSchema.from_orm(user_1).dict(),
+        }
+        assert any(
+            # str from logs
+            "Please return only filter expression from now on" in record.msg
+            # check all records
+            for record in caplog.records
+        )
+
+    async def test_custom_sql_filter_invalid_result(
+        self,
+        caplog,
+        async_session: AsyncSession,
+        user_1: User,
+    ):
+        resource_type = "user_with_custom_invalid_sql_filter"
+
+        def returns_invalid_number_of_params_filter(
+            schema_field: ModelField,
+            model_column: InstrumentedAttribute,
+            value: str,
+            operator: str,
+        ):
+            return 1, 2, 3
+
+        class UserWithInvalidEmailFieldFilterSchema(UserAttributesBaseSchema):
+            email: str = Field(
+                _custom_broken_filter_sql_filter_=returns_invalid_number_of_params_filter,
+            )
+
+        app = build_app_custom(
+            model=User,
+            schema=UserWithInvalidEmailFieldFilterSchema,
+            resource_type=resource_type,
+        )
+
+        params = {
+            "filter": dumps(
+                [
+                    {
+                        "name": "email",
+                        "op": "custom_broken_filter",
+                        "val": "qwerty",
+                    },
+                ],
+            ),
+        }
+        url = app.url_path_for(f"get_{resource_type}_list")
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            response = await client.get(url, params=params)
+            assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
+            assert response.json() == {
+                "errors": [
+                    {
+                        "detail": "Custom sql filter backend error.",
+                        "source": {"parameter": "filters"},
+                        "status_code": status.HTTP_400_BAD_REQUEST,
+                        "title": "Invalid filters querystring parameter.",
+                    },
+                ],
             }
 
     async def test_composite_filter_by_one_field(

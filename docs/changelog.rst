@@ -1,6 +1,21 @@
 Changelog
 #########
 
+**2.5.1**
+*********
+
+Fix custom sql filtering, bring back backward compatibility
+===========================================================
+
+* Fix custom sql filtering support: bring back backward compatibility by `@mahenzon`_ in `#74 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/74>`_
+* Read version from file by `@mahenzon`_ in `#74 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/74>`_
+
+Authors
+"""""""
+
+* `@mahenzon`_
+
+
 **2.5.0**
 *********
 

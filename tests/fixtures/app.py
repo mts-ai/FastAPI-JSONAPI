@@ -243,4 +243,5 @@ def build_app_custom(
 
     atomic = AtomicOperations()
     app.include_router(atomic.router, prefix="")
+    init(app)
     return app

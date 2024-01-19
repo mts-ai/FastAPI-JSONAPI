@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Union
 
 from pydantic.fields import Field, ModelField
 from sqlalchemy.orm import InstrumentedAttribute
+from sqlalchemy.sql.elements import BinaryExpression, BooleanClauseList
 
 from fastapi_jsonapi.schema_base import BaseModel
 
@@ -11,7 +12,7 @@ def jsonb_contains_sql_filter(
     model_column: InstrumentedAttribute,
     value: dict[Any, Any],
     operator: str,
-) -> tuple[Any, list[Any]]:
+) -> Union[BinaryExpression, BooleanClauseList]:
     """
     Any SQLA (or Tortoise) magic here
 
@@ -19,10 +20,9 @@ def jsonb_contains_sql_filter(
     :param model_column:
     :param value: any dict
     :param operator: value 'jsonb_contains'
-    :return: one sqla filter and list of joins
+    :return: one sqla filter expression
     """
-    filter_sqla = model_column.op("@>")(value)
-    return filter_sqla, []
+    return model_column.op("@>")(value)
 
 
 class PictureSchema(BaseModel):
