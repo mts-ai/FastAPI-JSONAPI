@@ -1,4 +1,5 @@
 """JSON API utils package."""
+from pathlib import Path
 
 from fastapi import FastAPI
 
@@ -8,7 +9,7 @@ from fastapi_jsonapi.exceptions.handlers import base_exception_handler
 from fastapi_jsonapi.exceptions.json_api import HTTPException
 from fastapi_jsonapi.querystring import QueryStringManager
 
-__version__ = "2.5.0"
+__version__ = Path(__file__).parent.joinpath("VERSION").read_text().strip()
 
 __all__ = [
     "init",
