@@ -57,7 +57,8 @@ Documentation = "https://fastapi-jsonapi.readthedocs.io/"
 Source = "https://github.com/mts-ai/FastAPI-JSONAPI"
 
 [tool.hatch.version]
-path = "fastapi_jsonapi/__init__.py"
+path = "fastapi_jsonapi/VERSION"
+pattern = "(?P<version>[^']+)"
 
 [tool.hatch.build.targets.sdist]
 include = [
