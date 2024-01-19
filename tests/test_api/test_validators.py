@@ -190,16 +190,14 @@ class TestValidators:
             res = await client.post(url, json=body)
             assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
             assert res.json() == {
-                "detail": {
-                    "errors": [
-                        {
-                            "detail": expected_detail,
-                            "source": {"pointer": ""},
-                            "status_code": status.HTTP_400_BAD_REQUEST,
-                            "title": "Bad Request",
-                        },
-                    ],
-                },
+                "errors": [
+                    {
+                        "detail": expected_detail,
+                        "source": {"pointer": ""},
+                        "status_code": status.HTTP_400_BAD_REQUEST,
+                        "title": "Bad Request",
+                    },
+                ],
             }
 
     async def execute_request_twice_and_check_response(

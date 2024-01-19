@@ -1,6 +1,7 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
 import inspect
 import logging
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
@@ -16,7 +17,7 @@ from typing import (
 from pydantic import BaseConfig, BaseModel
 from pydantic.fields import ModelField
 from pydantic.validators import _VALIDATORS, find_validators
-from sqlalchemy import and_, not_, or_
+from sqlalchemy import and_, false, not_, or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.util import AliasedClass
@@ -396,11 +397,83 @@ def prepare_relationships_info(
     )
 
 
-def build_filter_expressions(
-    filter_item: Union[dict, list],
+def build_terminal_node_filter_expressions(
+    filter_item: Dict,
     target_schema: Type[TypeSchema],
     target_model: Type[TypeModel],
-    relationships_info: dict[RelationshipPath, RelationshipFilteringInfo],
+    relationships_info: Dict[RelationshipPath, RelationshipFilteringInfo],
+):
+    name: str = filter_item["name"]
+    if is_relationship_filter(name):
+        *relationship_path, field_name = name.split(RELATIONSHIP_SPLITTER)
+        relationship_info: RelationshipFilteringInfo = relationships_info[
+            RELATIONSHIP_SPLITTER.join(relationship_path)
+        ]
+        model_column = get_model_column(
+            model=relationship_info.aliased_model,
+            schema=relationship_info.target_schema,
+            field_name=field_name,
+        )
+        target_schema = relationship_info.target_schema
+    else:
+        field_name = name
+        model_column = get_model_column(
+            model=target_model,
+            schema=target_schema,
+            field_name=field_name,
+        )
+
+    schema_field = target_schema.__fields__[field_name]
+
+    filter_operator = filter_item["op"]
+    custom_filter_expression: Callable = get_custom_filter_expression_callable(
+        schema_field=schema_field,
+        operator=filter_operator,
+    )
+    if custom_filter_expression is None:
+        return build_filter_expression(
+            schema_field=schema_field,
+            model_column=model_column,
+            operator=get_operator(
+                model_column=model_column,
+                operator_name=filter_operator,
+            ),
+            value=filter_item["val"],
+        )
+
+    custom_call_result = custom_filter_expression(
+        schema_field=schema_field,
+        model_column=model_column,
+        value=filter_item["val"],
+        operator=filter_operator,
+    )
+    if isinstance(custom_call_result, Sequence):
+        expected_len = 2
+        if len(custom_call_result) != expected_len:
+            log.error(
+                "Invalid filter, returned sequence length is not %s: %s, len=%s",
+                expected_len,
+                custom_call_result,
+                len(custom_call_result),
+            )
+            raise InvalidFilters(detail="Custom sql filter backend error.")
+        log.warning(
+            "Custom filter result of `[expr, [joins]]` is deprecated."
+            " Please return only filter expression from now on. "
+            "(triggered on schema field %s for filter operator %s on column %s)",
+            schema_field,
+            filter_operator,
+            model_column,
+        )
+        custom_call_result = custom_call_result[0]
+    return custom_call_result
+
+
+def build_filter_expressions(
+    filter_item: Dict,
+    target_schema: Type[TypeSchema],
+    target_model: Type[TypeModel],
+    relationships_info: Dict[RelationshipPath, RelationshipFilteringInfo],
 ) -> Union[BinaryExpression, BooleanClauseList]:
     """
     Return sqla expressions.
@@ -409,93 +482,59 @@ def build_filter_expressions(
     in where condition: query(Model).where(build_filter_expressions(...))
     """
     if is_terminal_node(filter_item):
-        name = filter_item["name"]
-
-        if is_relationship_filter(name):
-            *relationship_path, field_name = name.split(RELATIONSHIP_SPLITTER)
-            relationship_info: RelationshipFilteringInfo = relationships_info[
-                RELATIONSHIP_SPLITTER.join(relationship_path)
-            ]
-            model_column = get_model_column(
-                model=relationship_info.aliased_model,
-                schema=relationship_info.target_schema,
-                field_name=field_name,
-            )
-            target_schema = relationship_info.target_schema
-        else:
-            field_name = name
-            model_column = get_model_column(
-                model=target_model,
-                schema=target_schema,
-                field_name=field_name,
-            )
-
-        schema_field = target_schema.__fields__[field_name]
-
-        custom_filter_expression = get_custom_filter_expression_callable(
-            schema_field=schema_field,
-            operator=filter_item["op"],
+        return build_terminal_node_filter_expressions(
+            filter_item=filter_item,
+            target_schema=target_schema,
+            target_model=target_model,
+            relationships_info=relationships_info,
         )
-        if custom_filter_expression:
-            return custom_filter_expression(
-                schema_field=schema_field,
-                model_column=model_column,
-                value=filter_item["val"],
-                operator=filter_item["op"],
-            )
-        else:
-            return build_filter_expression(
-                schema_field=schema_field,
-                model_column=model_column,
-                operator=get_operator(
-                    model_column=model_column,
-                    operator_name=filter_item["op"],
-                ),
-                value=filter_item["val"],
-            )
 
-    if isinstance(filter_item, dict):
-        sqla_logic_operators = {
-            "or": or_,
-            "and": and_,
-            "not": not_,
-        }
+    if not isinstance(filter_item, dict):
+        log.warning("Could not build filtering expressions %s", locals())
+        # dirty. refactor.
+        return not_(false())
 
-        if len(logic_operators := set(filter_item.keys())) > 1:
-            msg = (
-                f"In each logic node expected one of operators: {set(sqla_logic_operators.keys())} "
-                f"but got {len(logic_operators)}: {logic_operators}"
-            )
-            raise InvalidFilters(msg)
+    sqla_logic_operators = {
+        "or": or_,
+        "and": and_,
+        "not": not_,
+    }
 
-        if (logic_operator := logic_operators.pop()) not in set(sqla_logic_operators.keys()):
-            msg = f"Not found logic operator {logic_operator} expected one of {set(sqla_logic_operators.keys())}"
-            raise InvalidFilters(msg)
+    if len(logic_operators := set(filter_item.keys())) > 1:
+        msg = (
+            f"In each logic node expected one of operators: {set(sqla_logic_operators.keys())} "
+            f"but got {len(logic_operators)}: {logic_operators}"
+        )
+        raise InvalidFilters(msg)
 
-        op = sqla_logic_operators[logic_operator]
+    if (logic_operator := logic_operators.pop()) not in set(sqla_logic_operators.keys()):
+        msg = f"Not found logic operator {logic_operator} expected one of {set(sqla_logic_operators.keys())}"
+        raise InvalidFilters(msg)
 
-        if logic_operator == "not":
-            return op(
-                build_filter_expressions(
-                    filter_item=filter_item[logic_operator],
-                    target_schema=target_schema,
-                    target_model=target_model,
-                    relationships_info=relationships_info,
-                ),
-            )
+    op = sqla_logic_operators[logic_operator]
 
-        expressions = []
-        for filter_sub_item in filter_item[logic_operator]:
-            expressions.append(
-                build_filter_expressions(
-                    filter_item=filter_sub_item,
-                    target_schema=target_schema,
-                    target_model=target_model,
-                    relationships_info=relationships_info,
-                ),
-            )
+    if logic_operator == "not":
+        return op(
+            build_filter_expressions(
+                filter_item=filter_item[logic_operator],
+                target_schema=target_schema,
+                target_model=target_model,
+                relationships_info=relationships_info,
+            ),
+        )
 
-        return op(*expressions)
+    expressions = []
+    for filter_sub_item in filter_item[logic_operator]:
+        expressions.append(
+            build_filter_expressions(
+                filter_item=filter_sub_item,
+                target_schema=target_schema,
+                target_model=target_model,
+                relationships_info=relationships_info,
+            ),
+        )
+
+    return op(*expressions)
 
 
 def create_filters_and_joins(
