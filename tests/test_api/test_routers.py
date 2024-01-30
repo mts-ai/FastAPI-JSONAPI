@@ -2,7 +2,7 @@ from typing import ClassVar, Dict, Optional
 
 from fastapi import APIRouter, Depends, FastAPI, Header, Path, status
 from httpx import AsyncClient
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 from pytest import mark  # noqa
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,7 +75,7 @@ async def test_dependency_handler_call():
             errors=[
                 InternalServerError(
                     title="Check that dependency successfully passed",
-                    detail=dto.dict(),
+                    detail=dto.model_dump(),
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 ),
                 InternalServerError(
@@ -171,7 +171,7 @@ async def test_dependencies_as_permissions(user_1: User):
         res = await client.get(f"/users/{user_1.id}", headers={"X-AUTH": "admin"})
         assert res.json() == {
             "data": {
-                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
+                "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
                 "id": str(user_1.id),
                 "type": resource_type,
             },
@@ -185,9 +185,7 @@ async def test_manipulate_data_layer_kwargs(
 ):
     class GetDetailDependencies(BaseModel):
         session: AsyncSession = Depends(async_session_dependency)
-
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
     async def set_session_and_ignore_user_1(view_base: ViewBase, dto: GetDetailDependencies) -> Dict:
         query = select(User).where(User.id != user_1.id)

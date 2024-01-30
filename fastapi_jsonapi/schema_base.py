@@ -1,3 +1,5 @@
+from pydantic import ConfigDict
+
 __all__ = (
     "Field",
     "BaseModel",
@@ -9,7 +11,7 @@ from typing import Dict
 
 from pydantic import BaseModel as BaseModelGeneric
 from pydantic import Field
-from pydantic.main import ModelMetaclass
+from pydantic._internal._model_construction import ModelMetaclass
 
 
 class Registry:
@@ -50,6 +52,4 @@ class RelationshipInfo(BaseModel):
     resource_id_example: str = "1"
     id_field_name: str = "id"
 
-    # TODO: Pydantic V2 use model_config
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)

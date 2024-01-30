@@ -389,18 +389,20 @@ class RoutersJSONAPI:
 
         return sig.replace(parameters=params + include_params + list(additional_dependency_params) + tail_params)
 
-    def _create_dependency_params_from_pydantic_model(self, model_class: Type[BaseModel]) -> List[Parameter]:
+    @staticmethod
+    def _create_dependency_params_from_pydantic_model(model_class: Type[BaseModel]) -> List[Parameter]:
         return [
             Parameter(
                 name=field_name,
                 kind=Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=field_info.outer_type_,
+                annotation=field_info.annotation,
                 default=field_info.default,
             )
-            for field_name, field_info in model_class.__fields__.items()
+            for field_name, field_info in model_class.model_fields.items()
         ]
 
-    def _update_method_config(self, view: Type["ViewBase"], method: HTTPMethod) -> HTTPMethodConfig:
+    @staticmethod
+    def _update_method_config(view: Type["ViewBase"], method: HTTPMethod) -> HTTPMethodConfig:
         target_config = view.method_dependencies.get(method) or HTTPMethodConfig()
         common_config = view.method_dependencies.get(HTTPMethod.ALL) or HTTPMethodConfig()
 

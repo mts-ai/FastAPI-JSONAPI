@@ -4,11 +4,11 @@ from typing import Any, ClassVar, Dict
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
+from pydantic import ConfigDict
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
@@ -34,17 +34,16 @@ class User(Base):
 class UserAttributesBaseSchema(BaseModel):
     name: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserSchema(UserAttributesBaseSchema):
     """User base schema."""
 
 
-def async_session() -> sessionmaker:
+def async_session() -> async_sessionmaker:
     engine = create_async_engine(url=make_url(DB_URL))
-    _async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    _async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     return _async_session
 
 
@@ -146,6 +145,6 @@ app = create_app()
 if __name__ == "__main__":
     uvicorn.run(
         app,
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=8080,
     )

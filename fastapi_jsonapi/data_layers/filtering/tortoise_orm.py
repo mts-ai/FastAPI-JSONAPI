@@ -102,7 +102,7 @@ class FilterTortoiseORM:
             name_field: str = model_fields[0]
             if len(model_fields) > 1:
                 result = self.filter_converter(
-                    schema.__fields__[name_field].type_,
+                    schema.model_fields[name_field].annotation,
                     [
                         {
                             "name": ".".join(model_fields[1:]),
@@ -114,8 +114,8 @@ class FilterTortoiseORM:
                 converted_filters.append(result)
             else:
                 val: Union[List[Any], Any]
-                field: ModelField = schema.__fields__[name_field]
-                if isinstance(i_filter["val"], list) and field.type_ is not list:
+                field: ModelField = schema.model_fields[name_field]
+                if isinstance(i_filter["val"], list) and field.annotation is not list:
                     val = self._validate(i_filter, field)
                 else:
                     val, errors = field.validate(i_filter["val"], {}, loc=field.alias)

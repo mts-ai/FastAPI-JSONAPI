@@ -15,7 +15,7 @@ from typing import (
 
 from fastapi import FastAPI
 from pydantic import (
-    BaseConfig,
+    ConfigDict,
     BaseModel,
     Extra,
     Field,
@@ -29,8 +29,7 @@ class BaseJSONAPIRelationshipSchema(BaseModel):
     id: str = Field(..., description="Related object ID")
     type: str = Field(..., description="Type of the related resource object")
 
-    class Config(BaseConfig):
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class BaseJSONAPIRelationshipDataToOneSchema(BaseModel):
@@ -58,7 +57,7 @@ class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
 
     attributes: "TypeSchema" = Field(description="Resource object attributes")
     relationships: Optional["TypeSchema"] = Field(None, description="Resource object relationships")
-    id: Optional[str] = Field(description="Resource object ID")
+    id: Optional[str] = Field(None, description="Resource object ID")
 
 
 class BaseJSONAPIDataInSchema(BaseModel):
@@ -74,11 +73,12 @@ class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
 class JSONAPIResultListMetaSchema(BaseModel):
     """JSON:API list meta schema."""
 
-    count: Optional[int]
-    total_pages: Optional[int] = Field(alias="totalPages")
-
-    class Config:
-        allow_population_by_field_name = True
+    count: Optional[int] = None
+    total_pages: Optional[int] = Field(None, alias="totalPages")
+    model_config = ConfigDict(
+        extra="forbid",
+        populate_by_name=True,
+    )
 
 
 class JSONAPIDocumentObjectSchema(BaseModel):
@@ -100,7 +100,7 @@ class BaseJSONAPIResultSchema(BaseModel):
     JSON:API Required fields schema
     """
 
-    meta: Optional[JSONAPIResultListMetaSchema] = Field(description="JSON:API metadata")
+    meta: Optional[JSONAPIResultListMetaSchema] = Field(None, description="JSON:API metadata")
     jsonapi: JSONAPIDocumentObjectSchema = JSONAPIDocumentObjectSchema()
 
 
@@ -140,7 +140,7 @@ def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
     :return: the name of the field in the model
     :raises Exception: if the schema from parameter has no attribute for parameter.
     """
-    if schema.__fields__.get(field) is None:
+    if schema.model_fields.get(field) is None:
         msg = "{schema} has no attribute {field}".format(
             schema=schema.__name__,
             field=field,
@@ -157,9 +157,9 @@ def get_relationships(schema: Type["TypeSchema"], model_field: bool = False) -> 
     :param model_field: list of relationship fields of a schema
     """
     relationships: List[str] = []
-    for i_name, i_type in schema.__fields__.items():
+    for i_name, i_type in schema.model_fields.items():
         try:
-            if issubclass(i_type.type_, BaseModel):
+            if issubclass(i_type.annotation, BaseModel):
                 relationships.append(i_name)
         except TypeError:
             pass
@@ -195,4 +195,4 @@ def get_related_schema(schema: Type["TypeSchema"], field: str) -> Type["TypeSche
     :params field: the relationship field
     :return: the related schema
     """
-    return schema.__fields__[field].type_
+    return schema.model_fields[field].annotation

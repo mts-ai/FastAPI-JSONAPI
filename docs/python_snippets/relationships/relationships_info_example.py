@@ -1,13 +1,12 @@
 from typing import Optional
 
-from pydantic import BaseModel as PydanticBaseModel
+from pydantic import BaseModel as PydanticBaseModel, ConfigDict
 
 from fastapi_jsonapi.schema_base import Field, RelationshipInfo
 
 
 class BaseModel(PydanticBaseModel):
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBaseSchema(BaseModel):
