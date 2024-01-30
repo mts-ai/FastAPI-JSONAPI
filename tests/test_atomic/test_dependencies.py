@@ -136,7 +136,7 @@ class TestDependenciesResolver:
                     "op": "add",
                     "data": {
                         "type": resource_type,
-                        "attributes": user.dict(),
+                        "attributes": user.model_dump(),
                     },
                 },
             ],
@@ -175,7 +175,7 @@ class TestDependenciesResolver:
                     "id": user_1.id,
                     "data": {
                         "type": resource_type,
-                        "attributes": user.dict(),
+                        "attributes": user.model_dump(),
                     },
                 },
             ],

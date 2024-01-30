@@ -273,7 +273,7 @@ class QueryStringManager:
             for sort_field in sort_q.split(","):
                 field = sort_field.replace("-", "")
                 if SPLIT_REL not in field:
-                    if field not in schema.__fields__:
+                    if field not in schema.model_fields:
                         msg = "{schema} has no attribute {field}".format(
                             schema=schema.__name__,
                             field=field,

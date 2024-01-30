@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from uuid import UUID
 
-from pydantic import validator
+from pydantic import field_validator, ConfigDict
 
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -10,11 +10,7 @@ class UserAttributesBaseSchema(BaseModel):
     name: str
     age: Optional[int] = None
     email: Optional[str] = None
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBaseSchema(UserAttributesBaseSchema):
@@ -60,11 +56,7 @@ class UserInSchemaAllowIdOnPost(UserBaseSchema):
 
 class UserSchema(UserInSchema):
     """User item schema."""
-
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
 
@@ -74,11 +66,7 @@ class UserSchema(UserInSchema):
 
 class UserBioAttributesBaseSchema(BaseModel):
     """UserBio base schema."""
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     birth_city: str
     favourite_movies: str
@@ -102,11 +90,7 @@ class UserBioSchema(UserBioAttributesBaseSchema):
 class PostAttributesBaseSchema(BaseModel):
     title: str
     body: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostBaseSchema(PostAttributesBaseSchema):
@@ -144,11 +128,7 @@ class PostSchema(PostInSchema):
 
 class PostCommentAttributesBaseSchema(BaseModel):
     text: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostCommentBaseSchema(PostCommentAttributesBaseSchema):
@@ -180,9 +160,7 @@ class PostCommentSchema(PostCommentBaseSchema):
 
 class ParentToChildAssociationAttributesSchema(BaseModel):
     extra_data: str
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ParentToChildAssociationSchema(ParentToChildAssociationAttributesSchema):
@@ -204,11 +182,7 @@ class ParentToChildAssociationSchema(ParentToChildAssociationAttributesSchema):
 
 class ParentAttributesSchema(BaseModel):
     name: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ParentBaseSchema(ParentAttributesSchema):
@@ -242,11 +216,7 @@ class ParentSchema(ParentInSchema):
 
 class ChildAttributesSchema(BaseModel):
     name: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ChildBaseSchema(ChildAttributesSchema):
@@ -276,10 +246,7 @@ class ChildSchema(ChildInSchema):
 
 
 class ComputerAttributesBaseSchema(BaseModel):
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     name: str
 
@@ -304,11 +271,7 @@ class ComputerInSchema(ComputerBaseSchema):
 
 class ComputerSchema(ComputerInSchema):
     """Computer item schema."""
-
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
 
@@ -323,11 +286,7 @@ class ComputerSchema(ComputerInSchema):
 
 class WorkplaceBaseSchema(BaseModel):
     """Workplace base schema."""
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     name: str
     user: Optional["UserSchema"] = Field(
@@ -347,24 +306,20 @@ class WorkplaceInSchema(ComputerBaseSchema):
 
 class WorkplaceSchema(ComputerInSchema):
     """Workplace item schema."""
-
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
 
 
 # task
 class TaskBaseSchema(BaseModel):
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     task_ids: Optional[list[str]] = None
 
     # noinspection PyMethodParameters
-    @validator("task_ids", pre=True)
+    @field_validator("task_ids", mode="before")
+    @classmethod
     def task_ids_validator(cls, value: Optional[list[str]]):
         """
         return `[]`, if value is None both on get and on create
@@ -391,9 +346,7 @@ class TaskSchema(TaskBaseSchema):
 
 class CustomUUIDItemAttributesSchema(BaseModel):
     extra_id: Optional[UUID] = None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CustomUUIDItemSchema(CustomUUIDItemAttributesSchema):

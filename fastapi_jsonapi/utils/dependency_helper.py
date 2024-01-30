@@ -1,4 +1,5 @@
 import inspect
+from contextlib import AsyncExitStack
 from typing import (
     Any,
     Awaitable,
@@ -32,11 +33,13 @@ class DependencyHelper:
     async def solve_dependencies_and_run(self, dependant: Dependant) -> ReturnType:
         body_data = await self.request.body() or None
         body = body_data and (await self.request.json())
-        values, errors, *_ = await solve_dependencies(  # WPS110
-            request=self.request,
-            dependant=dependant,
-            body=body,
-        )
+        async with AsyncExitStack() as async_exit_stack:
+            values, errors, *_ = await solve_dependencies(
+                request=self.request,
+                dependant=dependant,
+                body=body,
+                async_exit_stack=async_exit_stack,
+            )
 
         if errors:
             raise RequestValidationError(errors, body=body)

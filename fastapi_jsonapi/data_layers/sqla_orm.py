@@ -225,7 +225,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if relationships is None:
             return
 
-        schema_fields = self.schema.__fields__ or {}
+        schema_fields = self.schema.model_fields or {}
         for relation_name, relationship_in in relationships:
             if relationship_in is None:
                 continue
@@ -265,8 +265,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return:
         """
         log.debug("Create object with data %s", data_create)
-        # todo: pydantic v2 model_dump()
-        model_kwargs = data_create.attributes.dict()
+        model_kwargs = data_create.attributes.model_dump()
         model_kwargs = self._apply_client_generated_id(data_create, model_kwargs=model_kwargs)
         await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
 
@@ -395,7 +394,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
-        new_data = data_update.attributes.dict(exclude_unset=True)
+        new_data = data_update.attributes.model_dump(exclude_unset=True)
 
         await self.apply_relationships(obj, data_update, action_trigger="update")
 

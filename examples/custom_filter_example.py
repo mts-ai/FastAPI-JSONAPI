@@ -1,6 +1,6 @@
 from typing import Any, Union
 
-from pydantic.fields import Field, ModelField
+from pydantic.fields import Field, FieldInfo
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.sql.elements import BinaryExpression, BooleanClauseList
 
@@ -8,7 +8,7 @@ from fastapi_jsonapi.schema_base import BaseModel
 
 
 def jsonb_contains_sql_filter(
-    schema_field: ModelField,
+    schema_field: FieldInfo,
     model_column: InstrumentedAttribute,
     value: dict[Any, Any],
     operator: str,

@@ -3,8 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, root_validator
-from starlette.datastructures import URLPath
+from pydantic import BaseModel, Field, model_validator
 
 
 class OperationRelationshipSchema(BaseModel):
@@ -55,7 +54,7 @@ class AtomicOperationRef(BaseModel):
     lid: Optional[str] = Field(default=None)
     relationship: Optional[str] = Field(default=None)
 
-    @root_validator
+    @model_validator(mode='before')
     def validate_atomic_operation_ref(cls, values: dict):
         """
         type is required on schema, so id or lid has to be present
@@ -107,7 +106,7 @@ class AtomicOperation(BaseModel):
         description="an operation code, expressed as a string, that indicates the type of operation to perform.",
     )
     ref: Optional[AtomicOperationRef] = Field(default=None)
-    href: Optional[URLPath] = Field(
+    href: Optional[str] = Field(
         default=None,
         description="a string that contains a URI-reference that identifies the target of the operation.",
     )
@@ -151,7 +150,7 @@ class AtomicOperation(BaseModel):
         # TODO: pydantic V2
         raise ValueError(msg)
 
-    @root_validator
+    @model_validator(mode='before')
     def validate_operation(cls, values: dict):
         """
         Make sure atomic operation request conforms the spec
@@ -183,7 +182,7 @@ class AtomicOperation(BaseModel):
 class AtomicOperationRequest(BaseModel):
     operations: List[AtomicOperation] = Field(
         alias="atomic:operations",
-        min_items=1,
+        min_length=1,
     )
 
 
@@ -205,5 +204,5 @@ class AtomicResultResponse(BaseModel):
 
     results: List[AtomicResult] = Field(
         alias="atomic:results",
-        min_items=1,
+        min_length=1,
     )

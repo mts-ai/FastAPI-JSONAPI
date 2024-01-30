@@ -65,7 +65,7 @@ def get_validated_attribute_from_body(data: dict):
     # validated_data = CustomNameAttributesJSONAPI.parse_obj(data)
     # return validated_data.attributes.custom_name
 
-    validated_data = AttributesTopLevelBody.parse_obj({"body": {"data": data}})
+    validated_data = AttributesTopLevelBody.model_validate({"body": {"data": data}})
 
     # or
     # return get_custom_name_from_body_only_on_generic(data=validated_data)
@@ -85,7 +85,7 @@ async def get_custom_name_from_body_universal(
         # dep_helper = DependencyHelper(request=request)
         # return await dep_helper.run(get_custom_name_from_body_only_on_generic)
 
-    return get_validated_attribute_from_body(atomic_operation.data.dict())
+    return get_validated_attribute_from_body(atomic_operation.data.model_dump())
 
 
 class ValidateCustomNameEquals(ValidateCustomNameEqualsBase):
@@ -277,7 +277,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         resource_type: str,
         user_attributes: UserAttributesBaseSchema,
     ):
-        user_attributes_data = user_attributes.dict()
+        user_attributes_data = user_attributes.model_dump()
         assert self.FIELD_CUSTOM_NAME not in user_attributes_data
         data_atomic_request = {
             "atomic:operations": [
@@ -300,7 +300,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         user_attributes: UserAttributesBaseSchema,
         user_1: User,
     ):
-        attributes_data = user_attributes.dict()
+        attributes_data = user_attributes.model_dump()
         assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_update = {
             "id": user_1.id,
@@ -324,7 +324,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         resource_type: str,
         user_attributes: UserAttributesBaseSchema,
     ):
-        user_attributes_data = user_attributes.dict()
+        user_attributes_data = user_attributes.model_dump()
         user_attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
         assert user_attributes_data[self.FIELD_CUSTOM_NAME] != self.validator_create.expected_value
         data_atomic_request = {
@@ -348,7 +348,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         user_attributes: UserAttributesBaseSchema,
         user_1: User,
     ):
-        attributes_data = user_attributes.dict()
+        attributes_data = user_attributes.model_dump()
         attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
         data_user_update = {
             "id": user_1.id,

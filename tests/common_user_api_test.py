@@ -42,7 +42,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         user_attributes: UserAttributesBaseSchema,
         resource_type: str,
     ):
-        data_user_attributes = user_attributes.dict()
+        data_user_attributes = user_attributes.model_dump()
         data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_create.expected_value
         data_user_create = {
             "type": resource_type,
@@ -59,7 +59,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         for field_name, value in user_attributes:
             assert getattr(user, field_name) != value
 
-        data_user_attributes = user_attributes.dict()
+        data_user_attributes = user_attributes.model_dump()
         data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_update.expected_value
         data_user_update = {
             "id": user.id,
@@ -98,7 +98,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         resource_type: str,
         user_attributes: UserAttributesBaseSchema,
     ):
-        attributes_data = user_attributes.dict()
+        attributes_data = user_attributes.model_dump()
         assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_create = {
             "data": {
@@ -117,7 +117,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         resource_type: str,
         user_attributes: UserAttributesBaseSchema,
     ):
-        attributes_data = user_attributes.dict()
+        attributes_data = user_attributes.model_dump()
         attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
         assert attributes_data[self.FIELD_CUSTOM_NAME] != self.validator_create.expected_value
         data_user_create = {
@@ -138,7 +138,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         resource_type: str,
         user_attributes: UserAttributesBaseSchema,
     ):
-        attributes_data = user_attributes.dict()
+        attributes_data = user_attributes.model_dump()
         assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_update = {
             "data": {
@@ -159,7 +159,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         resource_type: str,
         user_attributes: UserAttributesBaseSchema,
     ):
-        attributes_data = user_attributes.dict()
+        attributes_data = user_attributes.model_dump()
         attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
         assert attributes_data[self.FIELD_CUSTOM_NAME] != self.validator_update.expected_value
         data_user_update = {
@@ -192,9 +192,9 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         )
         assert isinstance(user, User)
         assert user_created_data["id"] == str(user.id)
-        assert user_created_data["attributes"] == user_attributes.dict()
+        assert user_created_data["attributes"] == user_attributes.model_dump()
         assert user_created_data["type"] == resource_type
-        assert user_attributes == UserAttributesBaseSchema.from_orm(user)
+        assert user_attributes == UserAttributesBaseSchema.model_validate(user)
 
     async def validate_generic_user_create_works(
         self,
@@ -230,9 +230,9 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
     ):
         await async_session.refresh(user)
         assert user_updated_data["id"] == str(user.id)
-        assert user_updated_data["attributes"] == user_attributes.dict()
+        assert user_updated_data["attributes"] == user_attributes.model_dump()
         assert user_updated_data["type"] == resource_type
-        assert user_attributes == UserAttributesBaseSchema.from_orm(user)
+        assert user_attributes == UserAttributesBaseSchema.model_validate(user)
 
     async def validate_generic_user_update_works(
         self,

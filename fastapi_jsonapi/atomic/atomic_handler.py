@@ -47,7 +47,7 @@ def catch_exc_on_operation_handle(func: Callable[..., Awaitable]):
             errors_details = {
                 "message": f"Validation error on operation {operation.op_type}",
                 "ref": operation.ref,
-                "data": operation.data.dict(),
+                "data": operation.data.model_dump(),
             }
             if isinstance(ex, ValidationError):
                 errors_details.update(errors=ex.errors())

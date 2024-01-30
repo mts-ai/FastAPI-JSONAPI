@@ -4,6 +4,7 @@ from typing import ClassVar
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
+from pydantic import ConfigDict
 from fastapi_jsonapi.schema_base import Field, BaseModel as PydanticBaseModel
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
@@ -32,8 +33,7 @@ class User(Base):
 
 
 class BaseModel(PydanticBaseModel):
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserAttributesBaseSchema(BaseModel):

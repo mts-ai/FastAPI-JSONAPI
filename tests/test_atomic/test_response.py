@@ -60,5 +60,5 @@ class TestAtomicResultResponse:
         ],
     )
     def test_response_data(self, operation_response: dict):
-        validated = AtomicResultResponse.parse_obj(operation_response)
-        assert validated.dict(exclude_unset=True, by_alias=True) == operation_response
+        validated = AtomicResultResponse.model_validate(operation_response)
+        assert validated.model_dump(exclude_unset=True, by_alias=True) == operation_response

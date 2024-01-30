@@ -4,6 +4,7 @@ from typing import Any, ClassVar, Dict
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
+from pydantic import ConfigDict
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -34,8 +35,7 @@ class User(Base):
 class UserAttributesBaseSchema(BaseModel):
     name: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserSchema(UserAttributesBaseSchema):
