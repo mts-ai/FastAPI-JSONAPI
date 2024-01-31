@@ -43,8 +43,9 @@ class HTTPMethod(Enum):
     PATCH = "patch"
     DELETE = "delete"
 
+    @staticmethod
     @cache
-    def names(self) -> Set[str]:
+    def names() -> Set[str]:
         return {item.name for item in HTTPMethod}
 
 
