@@ -32,7 +32,7 @@ from fastapi_jsonapi.schema import (
     JSONAPIResultListSchema,
     RelationshipInfoSchema,
 )
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo, registry
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.validation_utils import (
     extract_field_validators,
@@ -307,7 +307,7 @@ class SchemaBuilder:
 
                 # todo: support for union types?
                 #  support custom cast func
-                resource_id_field = (str, Field(**field.default.extra), field.annotation, id_validators)
+                resource_id_field = (str, Field(**field.default), field.annotation, id_validators)
             else:
                 attributes_schema_fields[name] = (field.annotation, field.default)
         ConfigOrmMode = ConfigDict(from_attributes=True)
