@@ -466,6 +466,7 @@ class GammaSchema(BaseModel):
 
 
 class DeltaSchema(BaseModel):
+    name: str
     gammas: Optional["GammaSchema"] = Field(
         None,
         relationship=RelationshipInfo(

@@ -19,13 +19,17 @@ from sqlalchemy.orm import InstrumentedAttribute
 
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
-from tests.fixtures.app import build_app_custom
+from tests.fixtures.app import ResourceInfoDTO, build_app_custom, build_custom_app_by_schemas
 from tests.fixtures.entities import build_workplace, create_user
 from tests.misc.utils import fake
 from tests.models import (
+    Alpha,
+    Beta,
     Computer,
     ContainsTimestamp,
     CustomUUIDItem,
+    Delta,
+    Gamma,
     Post,
     PostComment,
     SelfRelationship,
@@ -34,8 +38,12 @@ from tests.models import (
     Workplace,
 )
 from tests.schemas import (
+    AlphaSchema,
+    BetaSchema,
     CustomUserAttributesSchema,
     CustomUUIDItemAttributesSchema,
+    DeltaSchema,
+    GammaSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
     SelfRelationshipSchema,
@@ -2739,6 +2747,99 @@ class TestFilters:
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 0, "totalPages": 1},
         }
+
+    async def test_join_by_relationships_for_one_model_by_different_join_chains(
+        self,
+        async_session: AsyncSession,
+    ):
+        app = build_custom_app_by_schemas(
+            [
+                ResourceInfoDTO(
+                    path="/alpha",
+                    resource_type="alpha",
+                    model=Alpha,
+                    schema_=AlphaSchema,
+                ),
+                ResourceInfoDTO(
+                    path="/beta",
+                    resource_type="beta",
+                    model=Beta,
+                    schema_=BetaSchema,
+                ),
+                ResourceInfoDTO(
+                    path="/gamma",
+                    resource_type="gamma",
+                    model=Gamma,
+                    schema_=GammaSchema,
+                ),
+                ResourceInfoDTO(
+                    path="/delta",
+                    resource_type="delta",
+                    model=Delta,
+                    schema_=DeltaSchema,
+                ),
+            ],
+        )
+
+        # acc_1 = Account(name="account-1")
+        # role_1 = Role(delta=acc_1)
+        # user_1 = User()
+
+        delta_1 = Delta(name="delta_1")
+        beta_1, beta_2 = Beta(), Beta()
+
+        gamma_1 = Gamma(delta=delta_1)
+        gamma_1.betas = [beta_1]
+        gamma_2 = Gamma(delta=delta_1)
+        gamma_2.betas = [beta_2]
+        delta_1.betas = [beta_1, beta_2]
+
+        delta_2 = Delta(name="delta_2")
+        beta_3 = Beta()
+        beta_4 = Beta()
+        gamma_3 = Gamma(delta=delta_2)
+        gamma_3.betas = [beta_3]
+        gamma_4 = Gamma(delta=delta_2)
+        gamma_4.betas = [beta_4]
+        delta_2.betas = [beta_3, beta_4]
+
+        alpha_1 = Alpha(beta=beta_1, gamma=gamma_3)
+        alpha_2 = Alpha(beta=beta_3, gamma=gamma_3)
+
+        async_session.add_all(
+            [
+                delta_1,
+                delta_2,
+                gamma_1,
+                gamma_2,
+                gamma_3,
+                gamma_4,
+                alpha_1,
+                alpha_2,
+            ],
+        )
+        await async_session.commit()
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            params = {
+                "filter": json.dumps(
+                    [
+                        {"name": "beta.gammas.delta.name", "op": "ilike", "val": delta_1.name},
+                        {"name": "gamma.delta.name", "op": "ilike", "val": delta_2.name},
+                    ],
+                ),
+            }
+
+            resource_type = "alpha"
+            url = app.url_path_for(f"get_{resource_type}_list")
+            response = await client.get(url, params=params)
+
+            assert response.status_code == status.HTTP_200_OK, response.text
+            assert response.json() == {
+                "data": [{"attributes": {}, "id": str(alpha_1.id), "type": "alpha"}],
+                "jsonapi": {"version": "1.0"},
+                "meta": {"count": 1, "totalPages": 1},
+            }
 
 
 ASCENDING = ""

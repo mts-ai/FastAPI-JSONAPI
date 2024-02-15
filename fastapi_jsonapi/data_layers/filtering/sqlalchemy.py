@@ -26,7 +26,7 @@ from sqlalchemy.sql.elements import BinaryExpression, BooleanClauseList
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidType
 from fastapi_jsonapi.exceptions.json_api import HTTPException
-from fastapi_jsonapi.schema import get_model_field, get_relationships
+from fastapi_jsonapi.schema import JSONAPISchemaIntrospectionError, get_model_field, get_relationships
 
 log = logging.getLogger(__name__)
 
@@ -288,7 +288,10 @@ def get_model_column(
     schema: Type[TypeSchema],
     field_name: str,
 ) -> InstrumentedAttribute:
-    model_field = get_model_field(schema, field_name)
+    try:
+        model_field = get_model_field(schema, field_name)
+    except JSONAPISchemaIntrospectionError as e:
+        raise InvalidFilters(str(e))
 
     try:
         return getattr(model, model_field)

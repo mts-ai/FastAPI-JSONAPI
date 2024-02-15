@@ -387,5 +387,6 @@ class Delta(Base):
     __tablename__ = "delta"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
     gammas: List["Gamma"] = relationship("Gamma", back_populates="delta", lazy="noload")
     betas: List["Beta"] = relationship("Beta", secondary="beta_delta_binding", back_populates="deltas", lazy="noload")
