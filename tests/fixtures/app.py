@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Type
+from typing import Optional, Type
 
 import pytest
 from fastapi import APIRouter, FastAPI
+from pydantic import BaseModel
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.atomic import AtomicOperations
+from fastapi_jsonapi.data_typing import TypeModel
 from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.list_view import ListViewBase
 from tests.fixtures.views import (
@@ -237,6 +239,46 @@ def build_app_custom(
         schema_in_post=schema_in_post,
         model=model,
     )
+
+    app = build_app_plain()
+    app.include_router(router, prefix="")
+
+    atomic = AtomicOperations()
+    app.include_router(atomic.router, prefix="")
+    init(app)
+    return app
+
+
+class ResourceInfoDTO(BaseModel):
+    path: str
+    resource_type: str
+    model: Type[TypeModel]
+    schema_: Type[BaseModel]
+    schema_in_patch: Optional[BaseModel] = None
+    schema_in_post: Optional[BaseModel] = None
+    class_list: Type[ListViewBase] = ListViewBaseGeneric
+    class_detail: Type[DetailViewBase] = DetailViewBaseGeneric
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+def build_custom_app_by_schemas(resources_info: list[ResourceInfoDTO]):
+    router: APIRouter = APIRouter()
+
+    for info in resources_info:
+        RoutersJSONAPI(
+            router=router,
+            path=info.path,
+            tags=["Misc"],
+            class_list=info.class_list,
+            class_detail=info.class_detail,
+            schema=info.schema_,
+            resource_type=info.resource_type,
+            schema_in_patch=info.schema_in_patch,
+            schema_in_post=info.schema_in_post,
+            model=info.model,
+        )
 
     app = build_app_plain()
     app.include_router(router, prefix="")

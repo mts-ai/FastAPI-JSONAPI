@@ -412,3 +412,71 @@ class SelfRelationshipSchema(BaseModel):
 class CustomUserAttributesSchema(UserBaseSchema):
     spam: str
     eggs: str
+
+
+class AlphaSchema(BaseModel):
+    beta: Optional["BetaSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="beta",
+        ),
+    )
+    gamma: Optional["GammaSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="gamma",
+        ),
+    )
+
+
+class BetaSchema(BaseModel):
+    alphas: Optional["AlphaSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="alpha",
+        ),
+    )
+    gammas: Optional["GammaSchema"] = Field(
+        None,
+        relationship=RelationshipInfo(
+            resource_type="gamma",
+            many=True,
+        ),
+    )
+    deltas: Optional["DeltaSchema"] = Field(
+        None,
+        relationship=RelationshipInfo(
+            resource_type="delta",
+            many=True,
+        ),
+    )
+
+
+class GammaSchema(BaseModel):
+    betas: Optional["BetaSchema"] = Field(
+        None,
+        relationship=RelationshipInfo(
+            resource_type="beta",
+            many=True,
+        ),
+    )
+    delta: Optional["DeltaSchema"] = Field(
+        None,
+        relationship=RelationshipInfo(
+            resource_type="Delta",
+        ),
+    )
+
+
+class DeltaSchema(BaseModel):
+    gammas: Optional["GammaSchema"] = Field(
+        None,
+        relationship=RelationshipInfo(
+            resource_type="gamma",
+            many=True,
+        ),
+    )
+    betas: Optional["BetaSchema"] = Field(
+        None,
+        relationship=RelationshipInfo(
+            resource_type="beta",
+            many=True,
+        ),
+    )
