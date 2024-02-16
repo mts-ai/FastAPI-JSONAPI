@@ -2871,4 +2871,36 @@ class TestSorts:
         }
 
 
+class TestFilteringErrors:
+    async def test_incorrect_field_name(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+    ):
+        url = app.url_path_for("get_user_list")
+        params = {
+            "filter": json.dumps(
+                [
+                    {
+                        "name": "fake_field_name",
+                        "op": "eq",
+                        "val": "",
+                    },
+                ],
+            ),
+        }
+        response = await client.get(url, params=params)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
+        assert response.json() == {
+            "errors": [
+                {
+                    "detail": "UserSchema has no attribute fake_field_name",
+                    "source": {"parameter": "filters"},
+                    "status_code": 400,
+                    "title": "Invalid filters querystring parameter.",
+                },
+            ],
+        }
+
+
 # todo: test errors
