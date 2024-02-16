@@ -19,13 +19,17 @@ from sqlalchemy.orm import InstrumentedAttribute
 
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
-from tests.fixtures.app import build_app_custom
+from tests.fixtures.app import build_alphabet_app, build_app_custom
 from tests.fixtures.entities import build_workplace, create_user
 from tests.misc.utils import fake
 from tests.models import (
+    Alpha,
+    Beta,
     Computer,
     ContainsTimestamp,
     CustomUUIDItem,
+    Delta,
+    Gamma,
     Post,
     PostComment,
     SelfRelationship,
@@ -2740,6 +2744,64 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
+    async def test_join_by_relationships_for_one_model_by_different_join_chains(
+        self,
+        async_session: AsyncSession,
+    ):
+        app = build_alphabet_app()
+
+        delta_1 = Delta(name="delta_1")
+        delta_1.betas = [beta_1 := Beta()]
+
+        gamma_1 = Gamma(delta=delta_1)
+        gamma_1.betas = [beta_1]
+
+        delta_2 = Delta(name="delta_2")
+        gamma_2 = Gamma(delta=delta_2)
+
+        alpha_1 = Alpha(beta=beta_1, gamma=gamma_2)
+
+        async_session.add_all(
+            [
+                delta_1,
+                delta_2,
+                beta_1,
+                gamma_1,
+                gamma_2,
+                alpha_1,
+            ],
+        )
+        await async_session.commit()
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            params = {
+                "filter": json.dumps(
+                    [
+                        {
+                            "name": "beta.gammas.delta.name",
+                            "op": "eq",
+                            "val": delta_1.name,
+                        },
+                        {
+                            "name": "gamma.delta.name",
+                            "op": "eq",
+                            "val": delta_2.name,
+                        },
+                    ],
+                ),
+            }
+
+            resource_type = "alpha"
+            url = app.url_path_for(f"get_{resource_type}_list")
+            response = await client.get(url, params=params)
+
+            assert response.status_code == status.HTTP_200_OK, response.text
+            assert response.json() == {
+                "data": [{"attributes": {}, "id": str(alpha_1.id), "type": "alpha"}],
+                "jsonapi": {"version": "1.0"},
+                "meta": {"count": 1, "totalPages": 1},
+            }
+
 
 ASCENDING = ""
 DESCENDING = "-"
@@ -2806,6 +2868,38 @@ class TestSorts:
             ),
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 2, "totalPages": 1},
+        }
+
+
+class TestFilteringErrors:
+    async def test_incorrect_field_name(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+    ):
+        url = app.url_path_for("get_user_list")
+        params = {
+            "filter": json.dumps(
+                [
+                    {
+                        "name": "fake_field_name",
+                        "op": "eq",
+                        "val": "",
+                    },
+                ],
+            ),
+        }
+        response = await client.get(url, params=params)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
+        assert response.json() == {
+            "errors": [
+                {
+                    "detail": "UserSchema has no attribute fake_field_name",
+                    "source": {"parameter": "filters"},
+                    "status_code": 400,
+                    "title": "Invalid filters querystring parameter.",
+                },
+            ],
         }
 
 

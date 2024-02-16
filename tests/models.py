@@ -312,3 +312,81 @@ class SelfRelationship(Base):
 class ContainsTimestamp(Base):
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime(True), nullable=False)
+
+
+class Alpha(Base):
+    __tablename__ = "alpha"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    beta_id = Column(
+        Integer,
+        ForeignKey("beta.id"),
+        nullable=False,
+        index=True,
+    )
+    beta = relationship("Beta", back_populates="alphas")
+    gamma_id = Column(Integer, ForeignKey("gamma.id"), nullable=False)
+    gamma: "Gamma" = relationship("Gamma")
+
+
+class BetaGammaBinding(Base):
+    __tablename__ = "beta_gamma_binding"
+
+    id: int = Column(Integer, primary_key=True)
+    beta_id: int = Column(ForeignKey("beta.id", ondelete="CASCADE"), nullable=False)
+    gamma_id: int = Column(ForeignKey("gamma.id", ondelete="CASCADE"), nullable=False)
+
+
+class Beta(Base):
+    __tablename__ = "beta"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    gammas: List["Gamma"] = relationship(
+        "Gamma",
+        secondary="beta_gamma_binding",
+        back_populates="betas",
+        lazy="noload",
+    )
+    alphas = relationship("Alpha")
+    deltas: List["Delta"] = relationship(
+        "Delta",
+        secondary="beta_delta_binding",
+        lazy="noload",
+    )
+
+
+class Gamma(Base):
+    __tablename__ = "gamma"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    betas: List["Beta"] = relationship(
+        "Beta",
+        secondary="beta_gamma_binding",
+        back_populates="gammas",
+        lazy="raise",
+    )
+    delta_id: int = Column(
+        Integer,
+        ForeignKey("delta.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    alpha = relationship("Alpha")
+    delta: "Delta" = relationship("Delta")
+
+
+class BetaDeltaBinding(Base):
+    __tablename__ = "beta_delta_binding"
+
+    id: int = Column(Integer, primary_key=True)
+    beta_id: int = Column(ForeignKey("beta.id", ondelete="CASCADE"), nullable=False)
+    delta_id: int = Column(ForeignKey("delta.id", ondelete="CASCADE"), nullable=False)
+
+
+class Delta(Base):
+    __tablename__ = "delta"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    gammas: List["Gamma"] = relationship("Gamma", back_populates="delta", lazy="noload")
+    betas: List["Beta"] = relationship("Beta", secondary="beta_delta_binding", back_populates="deltas", lazy="noload")

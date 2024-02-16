@@ -26,7 +26,7 @@ from sqlalchemy.sql.elements import BinaryExpression, BooleanClauseList
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidType
 from fastapi_jsonapi.exceptions.json_api import HTTPException
-from fastapi_jsonapi.schema import get_model_field, get_relationships
+from fastapi_jsonapi.schema import JSONAPISchemaIntrospectionError, get_model_field, get_relationships
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class RelationshipFilteringInfo(BaseModel):
     target_schema: Type[TypeSchema]
     model: Type[TypeModel]
     aliased_model: AliasedClass
-    column: InstrumentedAttribute
+    join_column: InstrumentedAttribute
 
     class Config:
         arbitrary_types_allowed = True
@@ -288,7 +288,10 @@ def get_model_column(
     schema: Type[TypeSchema],
     field_name: str,
 ) -> InstrumentedAttribute:
-    model_field = get_model_field(schema, field_name)
+    try:
+        model_field = get_model_field(schema, field_name)
+    except JSONAPISchemaIntrospectionError as e:
+        raise InvalidFilters(str(e))
 
     try:
         return getattr(model, model_field)
@@ -327,8 +330,9 @@ def gather_relationships_info(
     model: Type[TypeModel],
     schema: Type[TypeSchema],
     relationship_path: List[str],
-    collected_info: dict,
+    collected_info: dict[RelationshipPath, RelationshipFilteringInfo],
     target_relationship_idx: int = 0,
+    prev_aliased_model: Optional[Any] = None,
 ) -> dict[RelationshipPath, RelationshipFilteringInfo]:
     is_last_relationship = target_relationship_idx == len(relationship_path) - 1
     target_relationship_path = RELATIONSHIP_SPLITTER.join(
@@ -342,25 +346,36 @@ def gather_relationships_info(
 
     target_schema = schema.__fields__[target_relationship_name].type_
     target_model = getattr(model, target_relationship_name).property.mapper.class_
-    target_column = get_model_column(
-        model,
-        schema,
-        target_relationship_name,
-    )
+
+    if prev_aliased_model:
+        join_column = get_model_column(
+            model=prev_aliased_model,
+            schema=schema,
+            field_name=target_relationship_name,
+        )
+    else:
+        join_column = get_model_column(
+            model,
+            schema,
+            target_relationship_name,
+        )
+
+    aliased_model = aliased(target_model)
     collected_info[target_relationship_path] = RelationshipFilteringInfo(
         target_schema=target_schema,
         model=target_model,
-        aliased_model=aliased(target_model),
-        column=target_column,
+        aliased_model=aliased_model,
+        join_column=join_column,
     )
 
     if not is_last_relationship:
         return gather_relationships_info(
-            target_model,
-            target_schema,
-            relationship_path,
-            collected_info,
-            target_relationship_idx + 1,
+            model=target_model,
+            schema=target_schema,
+            relationship_path=relationship_path,
+            collected_info=collected_info,
+            target_relationship_idx=target_relationship_idx + 1,
+            prev_aliased_model=aliased_model,
         )
 
     return collected_info
@@ -553,5 +568,5 @@ def create_filters_and_joins(
         target_schema=schema,
         relationships_info=relationships_info,
     )
-    joins = [(info.aliased_model, info.column) for info in relationships_info.values()]
+    joins = [(info.aliased_model, info.join_column) for info in relationships_info.values()]
     return expressions, joins

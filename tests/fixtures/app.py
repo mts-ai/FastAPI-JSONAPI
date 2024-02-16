@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Type
+from typing import Optional, Type
 
 import pytest
 from fastapi import APIRouter, FastAPI
+from pydantic import BaseModel
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.atomic import AtomicOperations
+from fastapi_jsonapi.data_typing import TypeModel
 from fastapi_jsonapi.views.detail_view import DetailViewBase
 from fastapi_jsonapi.views.list_view import ListViewBase
 from tests.fixtures.views import (
@@ -13,9 +15,13 @@ from tests.fixtures.views import (
     ListViewBaseGeneric,
 )
 from tests.models import (
+    Alpha,
+    Beta,
     Child,
     Computer,
     CustomUUIDItem,
+    Delta,
+    Gamma,
     Parent,
     ParentToChildAssociation,
     Post,
@@ -25,6 +31,8 @@ from tests.models import (
     UserBio,
 )
 from tests.schemas import (
+    AlphaSchema,
+    BetaSchema,
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
@@ -32,6 +40,8 @@ from tests.schemas import (
     ComputerPatchSchema,
     ComputerSchema,
     CustomUUIDItemSchema,
+    DeltaSchema,
+    GammaSchema,
     ParentPatchSchema,
     ParentSchema,
     ParentToChildAssociationSchema,
@@ -237,6 +247,77 @@ def build_app_custom(
         schema_in_post=schema_in_post,
         model=model,
     )
+
+    app = build_app_plain()
+    app.include_router(router, prefix="")
+
+    atomic = AtomicOperations()
+    app.include_router(atomic.router, prefix="")
+    init(app)
+    return app
+
+
+def build_alphabet_app() -> FastAPI:
+    return build_custom_app_by_schemas(
+        [
+            ResourceInfoDTO(
+                path="/alpha",
+                resource_type="alpha",
+                model=Alpha,
+                schema_=AlphaSchema,
+            ),
+            ResourceInfoDTO(
+                path="/beta",
+                resource_type="beta",
+                model=Beta,
+                schema_=BetaSchema,
+            ),
+            ResourceInfoDTO(
+                path="/gamma",
+                resource_type="gamma",
+                model=Gamma,
+                schema_=GammaSchema,
+            ),
+            ResourceInfoDTO(
+                path="/delta",
+                resource_type="delta",
+                model=Delta,
+                schema_=DeltaSchema,
+            ),
+        ],
+    )
+
+
+class ResourceInfoDTO(BaseModel):
+    path: str
+    resource_type: str
+    model: Type[TypeModel]
+    schema_: Type[BaseModel]
+    schema_in_patch: Optional[BaseModel] = None
+    schema_in_post: Optional[BaseModel] = None
+    class_list: Type[ListViewBase] = ListViewBaseGeneric
+    class_detail: Type[DetailViewBase] = DetailViewBaseGeneric
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+def build_custom_app_by_schemas(resources_info: list[ResourceInfoDTO]):
+    router: APIRouter = APIRouter()
+
+    for info in resources_info:
+        RoutersJSONAPI(
+            router=router,
+            path=info.path,
+            tags=["Misc"],
+            class_list=info.class_list,
+            class_detail=info.class_detail,
+            schema=info.schema_,
+            resource_type=info.resource_type,
+            schema_in_patch=info.schema_in_patch,
+            schema_in_post=info.schema_in_post,
+            model=info.model,
+        )
 
     app = build_app_plain()
     app.include_router(router, prefix="")
