@@ -1,6 +1,20 @@
 Changelog
 #########
 
+**2.6.0**
+*********
+
+Fix JOINS by relationships
+==========================
+
+* Fix JOINS by relationships `@CosmoV`_ in `#78 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/78>`_
+
+Authors
+"""""""
+
+* `@CosmoV`_
+
+
 **2.5.1**
 *********
 

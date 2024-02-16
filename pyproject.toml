@@ -73,7 +73,7 @@ packages = [
 
 [tool.poetry]
 name = "fastapi-jsonapi"
-version = "2.5.1"
+version = "2.6.0"
 description = "FastAPI extension to create REST web api according to JSON:API specification"
 authors = [
     "Aleksei Nekrasov <nekrasov.aleks@mail.ru>",
