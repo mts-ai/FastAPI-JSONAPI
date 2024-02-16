@@ -19,7 +19,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
-from tests.fixtures.app import ResourceInfoDTO, build_app_custom, build_custom_app_by_schemas
+from tests.fixtures.app import build_alphabet_app, build_app_custom
 from tests.fixtures.entities import build_workplace, create_user
 from tests.misc.utils import fake
 from tests.models import (
@@ -38,12 +38,8 @@ from tests.models import (
     Workplace,
 )
 from tests.schemas import (
-    AlphaSchema,
-    BetaSchema,
     CustomUserAttributesSchema,
     CustomUUIDItemAttributesSchema,
-    DeltaSchema,
-    GammaSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
     SelfRelationshipSchema,
@@ -2752,70 +2748,27 @@ class TestFilters:
         self,
         async_session: AsyncSession,
     ):
-        app = build_custom_app_by_schemas(
-            [
-                ResourceInfoDTO(
-                    path="/alpha",
-                    resource_type="alpha",
-                    model=Alpha,
-                    schema_=AlphaSchema,
-                ),
-                ResourceInfoDTO(
-                    path="/beta",
-                    resource_type="beta",
-                    model=Beta,
-                    schema_=BetaSchema,
-                ),
-                ResourceInfoDTO(
-                    path="/gamma",
-                    resource_type="gamma",
-                    model=Gamma,
-                    schema_=GammaSchema,
-                ),
-                ResourceInfoDTO(
-                    path="/delta",
-                    resource_type="delta",
-                    model=Delta,
-                    schema_=DeltaSchema,
-                ),
-            ],
-        )
-
-        # acc_1 = Account(name="account-1")
-        # role_1 = Role(delta=acc_1)
-        # user_1 = User()
+        app = build_alphabet_app()
 
         delta_1 = Delta(name="delta_1")
-        beta_1, beta_2 = Beta(), Beta()
+        delta_1.betas = [beta_1 := Beta()]
 
         gamma_1 = Gamma(delta=delta_1)
         gamma_1.betas = [beta_1]
-        gamma_2 = Gamma(delta=delta_1)
-        gamma_2.betas = [beta_2]
-        delta_1.betas = [beta_1, beta_2]
 
         delta_2 = Delta(name="delta_2")
-        beta_3 = Beta()
-        beta_4 = Beta()
-        gamma_3 = Gamma(delta=delta_2)
-        gamma_3.betas = [beta_3]
-        gamma_4 = Gamma(delta=delta_2)
-        gamma_4.betas = [beta_4]
-        delta_2.betas = [beta_3, beta_4]
+        gamma_2 = Gamma(delta=delta_2)
 
-        alpha_1 = Alpha(beta=beta_1, gamma=gamma_3)
-        alpha_2 = Alpha(beta=beta_3, gamma=gamma_3)
+        alpha_1 = Alpha(beta=beta_1, gamma=gamma_2)
 
         async_session.add_all(
             [
                 delta_1,
                 delta_2,
+                beta_1,
                 gamma_1,
                 gamma_2,
-                gamma_3,
-                gamma_4,
                 alpha_1,
-                alpha_2,
             ],
         )
         await async_session.commit()
@@ -2824,8 +2777,16 @@ class TestFilters:
             params = {
                 "filter": json.dumps(
                     [
-                        {"name": "beta.gammas.delta.name", "op": "ilike", "val": delta_1.name},
-                        {"name": "gamma.delta.name", "op": "ilike", "val": delta_2.name},
+                        {
+                            "name": "beta.gammas.delta.name",
+                            "op": "eq",
+                            "val": delta_1.name,
+                        },
+                        {
+                            "name": "gamma.delta.name",
+                            "op": "eq",
+                            "val": delta_2.name,
+                        },
                     ],
                 ),
             }

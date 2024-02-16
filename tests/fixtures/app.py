@@ -15,9 +15,13 @@ from tests.fixtures.views import (
     ListViewBaseGeneric,
 )
 from tests.models import (
+    Alpha,
+    Beta,
     Child,
     Computer,
     CustomUUIDItem,
+    Delta,
+    Gamma,
     Parent,
     ParentToChildAssociation,
     Post,
@@ -27,6 +31,8 @@ from tests.models import (
     UserBio,
 )
 from tests.schemas import (
+    AlphaSchema,
+    BetaSchema,
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
@@ -34,6 +40,8 @@ from tests.schemas import (
     ComputerPatchSchema,
     ComputerSchema,
     CustomUUIDItemSchema,
+    DeltaSchema,
+    GammaSchema,
     ParentPatchSchema,
     ParentSchema,
     ParentToChildAssociationSchema,
@@ -247,6 +255,37 @@ def build_app_custom(
     app.include_router(atomic.router, prefix="")
     init(app)
     return app
+
+
+def build_alphabet_app() -> FastAPI:
+    return build_custom_app_by_schemas(
+        [
+            ResourceInfoDTO(
+                path="/alpha",
+                resource_type="alpha",
+                model=Alpha,
+                schema_=AlphaSchema,
+            ),
+            ResourceInfoDTO(
+                path="/beta",
+                resource_type="beta",
+                model=Beta,
+                schema_=BetaSchema,
+            ),
+            ResourceInfoDTO(
+                path="/gamma",
+                resource_type="gamma",
+                model=Gamma,
+                schema_=GammaSchema,
+            ),
+            ResourceInfoDTO(
+                path="/delta",
+                resource_type="delta",
+                model=Delta,
+                schema_=DeltaSchema,
+            ),
+        ],
+    )
 
 
 class ResourceInfoDTO(BaseModel):
