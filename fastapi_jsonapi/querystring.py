@@ -1,4 +1,5 @@
 """Helper to deal with querystring parameters according to jsonapi specification."""
+from collections import defaultdict
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -22,9 +23,9 @@ from pydantic import (
 )
 from starlette.datastructures import QueryParams
 
+from fastapi_jsonapi.api import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import (
     BadRequest,
-    InvalidField,
     InvalidFilters,
     InvalidInclude,
     InvalidSort,
@@ -32,7 +33,6 @@ from fastapi_jsonapi.exceptions import (
 from fastapi_jsonapi.schema import (
     get_model_field,
     get_relationships,
-    get_schema_from_type,
 )
 from fastapi_jsonapi.splitter import SPLIT_REL
 
@@ -97,7 +97,7 @@ class QueryStringManager:
         :return: a dict of key / values items
         :raises BadRequest: if an error occurred while parsing the querystring.
         """
-        results: Dict[str, Union[List[str], str]] = {}
+        results = defaultdict(set)
 
         for raw_key, value in self.qs.multi_items():
             key = unquote(raw_key)
@@ -109,10 +109,7 @@ class QueryStringManager:
                 key_end = key.index("]")
                 item_key = key[key_start:key_end]
 
-                if "," in value:
-                    results.update({item_key: value.split(",")})
-                else:
-                    results.update({item_key: value})
+                results[item_key].update(value.split(","))
             except Exception:
                 msg = "Parse error"
                 raise BadRequest(msg, parameter=key)
@@ -216,26 +213,27 @@ class QueryStringManager:
 
         :raises InvalidField: if result field not in schema.
         """
-        if self.request.method != "GET":
-            msg = "attribute 'fields' allowed only for GET-method"
-            raise InvalidField(msg)
         fields = self._get_key_values("fields")
-        for key, value in fields.items():
-            if not isinstance(value, list):
-                value = [value]  # noqa: PLW2901
-                fields[key] = value
+        for resource_type, field_names in fields.items():
             # TODO: we have registry for models (BaseModel)
             # TODO: create `type to schemas` registry
-            schema: Type[BaseModel] = get_schema_from_type(key, self.app)
-            for field in value:
-                if field not in schema.__fields__:
-                    msg = "{schema} has no attribute {field}".format(
-                        schema=schema.__name__,
-                        field=field,
-                    )
-                    raise InvalidField(msg)
+
+            # schema: Type[BaseModel] = get_schema_from_type(key, self.app)
+            self._get_schema(resource_type)
+
+            # for field_name in field_names:
+            #     if field_name not in schema.__fields__:
+            #         msg = "{schema} has no attribute {field}".format(
+            #             schema=schema.__name__,
+            #             field=field_name,
+            #         )
+            #         raise InvalidField(msg)
 
         return fields
+
+    def _get_schema(self, resource_type: str) -> Type[BaseModel]:
+        target_router = RoutersJSONAPI.all_jsonapi_routers[resource_type]
+        return target_router.detail_response_schema
 
     def get_sorts(self, schema: Type["TypeSchema"]) -> List[Dict[str, str]]:
         """

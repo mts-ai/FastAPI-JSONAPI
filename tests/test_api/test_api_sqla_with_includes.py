@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from itertools import chain, zip_longest
 from json import dumps, loads
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Set, Tuple
 from uuid import UUID, uuid4
 
 import pytest
@@ -16,6 +16,7 @@ from pytest import fixture, mark, param, raises  # noqa PT013
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
+from starlette.datastructures import QueryParams
 
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
@@ -149,6 +150,59 @@ class TestGetUsersList:
             ],
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 2, "totalPages": 2},
+        }
+
+    @mark.parametrize(
+        "fields, expected_include",
+        [
+            param(
+                [
+                    ("fields[user]", "name,age"),
+                ],
+                {"name", "age"},
+            ),
+            param(
+                [
+                    ("fields[user]", "name,age"),
+                    ("fields[user]", "email"),
+                ],
+                {"name", "age", "email"},
+            ),
+        ],
+    )
+    async def test_select_custom_fields(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+        fields: List[Tuple[str, str]],
+        expected_include: Set[str],
+    ):
+        url = app.url_path_for("get_user_list")
+        user_1, user_2 = sorted((user_1, user_2), key=lambda x: x.id)
+
+        params = QueryParams(fields)
+        response = await client.get(url, params=str(params))
+
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+
+        assert response_data == {
+            "data": [
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include=expected_include),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(include=expected_include),
+                    "id": str(user_2.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "total_pages": 1},
         }
 
 

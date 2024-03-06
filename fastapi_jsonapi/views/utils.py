@@ -1,6 +1,7 @@
+from collections import defaultdict
 from enum import Enum
 from functools import cache
-from typing import Callable, Coroutine, Optional, Set, Type, Union
+from typing import Callable, Coroutine, Dict, List, Optional, Set, Type, Union
 
 from pydantic import BaseModel
 
@@ -27,3 +28,12 @@ class HTTPMethodConfig(BaseModel):
     @property
     def handler(self) -> Optional[Union[Callable, Coroutine]]:
         return self.prepare_data_layer_kwargs
+
+
+def get_includes_indexes_by_type(included: List[Dict]) -> Dict[str, List[int]]:
+    result = defaultdict(list)
+
+    for idx, item in enumerate(included, 1):
+        result[item["type"]].append(idx)
+
+    return result
