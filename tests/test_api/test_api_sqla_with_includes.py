@@ -232,7 +232,7 @@ class TestGetUsersList:
                 ("fields[user]", "name"),
                 ("fields[post]", "title"),
                 # empty str means ignore all fields
-                ("fields[comment]", ""),
+                ("fields[post_comment]", ""),
                 ("include", "posts,posts.comments"),
                 ("sort", "id"),
             ],
@@ -284,7 +284,14 @@ class TestGetUsersList:
                         "attributes": PostAttributesBaseSchema.from_orm(user_2_post).dict(include={"title"}),
                         "id": str(user_2_post.id),
                         "relationships": {
-                            "comments": {"data": [{"id": str(user_1_comment.id), "type": "post_comment"}]},
+                            "comments": {
+                                "data": [
+                                    {
+                                        "id": str(user_1_comment.id),
+                                        "type": "post_comment",
+                                    },
+                                ],
+                            },
                         },
                         "type": "post",
                     },
@@ -298,12 +305,12 @@ class TestGetUsersList:
                     },
                     {
                         "attributes": {},
-                        "id": "1",
+                        "id": str(user_1_comment.id),
                         "type": "post_comment",
                     },
                     {
                         "attributes": {},
-                        "id": "2",
+                        "id": str(user_2_comment.id),
                         "type": "post_comment",
                     },
                 ],
@@ -426,7 +433,7 @@ class TestCreatePostAndComments:
         user_2: User,
         user_1_post: Post,
     ):
-        url = app.url_path_for("get_comment_list")
+        url = app.url_path_for("get_post_comment_list")
         url = f"{url}?include=author,post,post.user"
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
@@ -457,7 +464,7 @@ class TestCreatePostAndComments:
         comment_id = comment_data.pop("id")
         assert comment_id
         assert comment_data == {
-            "type": "comment",
+            "type": "post_comment",
             "attributes": comment_attributes,
             "relationships": {
                 "post": {
@@ -515,7 +522,7 @@ class TestCreatePostAndComments:
         :param user_1_post:
         :return:
         """
-        url = app.url_path_for("get_comment_list")
+        url = app.url_path_for("get_post_comment_list")
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).dict()
@@ -556,7 +563,7 @@ class TestCreatePostAndComments:
         app: FastAPI,
         client: AsyncClient,
     ):
-        url = app.url_path_for("get_comment_list")
+        url = app.url_path_for("get_post_comment_list")
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).dict()
@@ -602,7 +609,7 @@ class TestCreatePostAndComments:
         app: FastAPI,
         client: AsyncClient,
     ):
-        url = app.url_path_for("get_comment_list")
+        url = app.url_path_for("get_post_comment_list")
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).dict()

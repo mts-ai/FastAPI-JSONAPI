@@ -242,6 +242,9 @@ class QueryStringManager:
             self._get_schema(resource_type)
 
             for field_name in field_names:
+                if field_name == "":
+                    continue
+
                 if field_name not in schema.__fields__:
                     msg = "{schema} has no attribute {field}".format(
                         schema=schema.__name__,

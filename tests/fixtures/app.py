@@ -112,7 +112,7 @@ def add_routers(app_plain: FastAPI):
         class_detail=DetailViewBaseGeneric,
         class_list=ListViewBaseGeneric,
         schema=PostCommentSchema,
-        resource_type="comment",
+        resource_type="post_comment",
         model=PostComment,
     )
 
