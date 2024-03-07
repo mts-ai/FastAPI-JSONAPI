@@ -8,7 +8,6 @@ from typing import (
     List,
     Optional,
     Type,
-    Union,
 )
 from urllib.parse import unquote
 
@@ -26,9 +25,11 @@ from starlette.datastructures import QueryParams
 from fastapi_jsonapi.api import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import (
     BadRequest,
+    InvalidField,
     InvalidFilters,
     InvalidInclude,
     InvalidSort,
+    InvalidType,
 )
 from fastapi_jsonapi.schema import (
     get_model_field,
@@ -89,7 +90,16 @@ class QueryStringManager:
         self.MAX_INCLUDE_DEPTH: int = self.config.get("MAX_INCLUDE_DEPTH", 3)
         self.headers: HeadersQueryStringManager = HeadersQueryStringManager(**dict(self.request.headers))
 
-    def _get_key_values(self, name: str) -> Dict[str, Union[List[str], str]]:
+    def _extract_item_key(self, key: str) -> str:
+        try:
+            key_start = key.index("[") + 1
+            key_end = key.index("]")
+            return key[key_start:key_end]
+        except Exception:
+            msg = "Parse error"
+            raise BadRequest(msg, parameter=key)
+
+    def _get_unique_key_values(self, name: str) -> Dict[str, str]:
         """
         Return a dict containing key / values items for a given key, used for items like filters, page, etc.
 
@@ -97,22 +107,28 @@ class QueryStringManager:
         :return: a dict of key / values items
         :raises BadRequest: if an error occurred while parsing the querystring.
         """
-        results = defaultdict(set)
+        results = {}
 
         for raw_key, value in self.qs.multi_items():
             key = unquote(raw_key)
-            try:
-                if not key.startswith(name):
-                    continue
+            if not key.startswith(name):
+                continue
 
-                key_start = key.index("[") + 1
-                key_end = key.index("]")
-                item_key = key[key_start:key_end]
+            item_key = self._extract_item_key(key)
+            results[item_key] = value
 
-                results[item_key].update(value.split(","))
-            except Exception:
-                msg = "Parse error"
-                raise BadRequest(msg, parameter=key)
+        return results
+
+    def _get_multiple_key_values(self, name: str) -> Dict[str, List]:
+        results = defaultdict(list)
+
+        for raw_key, value in self.qs.multi_items():
+            key = unquote(raw_key)
+            if not key.startswith(name):
+                continue
+
+            item_key = self._extract_item_key(key)
+            results[item_key].extend(value.split(","))
 
         return results
 
@@ -131,7 +147,7 @@ class QueryStringManager:
         return {
             key: value
             for (key, value) in self.qs.multi_items()
-            if key.startswith(self.managed_keys) or self._get_key_values("filter[")
+            if key.startswith(self.managed_keys) or self._get_unique_key_values("filter[")
         }
 
     @property
@@ -156,8 +172,8 @@ class QueryStringManager:
                 raise InvalidFilters(msg)
 
             results.extend(loaded_filters)
-        if self._get_key_values("filter["):
-            results.extend(self._simple_filters(self._get_key_values("filter[")))
+        if filter_key_values := self._get_unique_key_values("filter["):
+            results.extend(self._simple_filters(filter_key_values))
         return results
 
     @cached_property
@@ -183,7 +199,7 @@ class QueryStringManager:
         :raises BadRequest: if the client is not allowed to disable pagination.
         """
         # check values type
-        pagination_data: Dict[str, Union[List[str], str]] = self._get_key_values("page")
+        pagination_data: Dict[str, str] = self._get_unique_key_values("page")
         pagination = PaginationQueryStringManager(**pagination_data)
         if pagination_data.get("size") is None:
             pagination.size = None
@@ -213,23 +229,27 @@ class QueryStringManager:
 
         :raises InvalidField: if result field not in schema.
         """
-        fields = self._get_key_values("fields")
+        fields = self._get_multiple_key_values("fields")
         for resource_type, field_names in fields.items():
             # TODO: we have registry for models (BaseModel)
             # TODO: create `type to schemas` registry
 
-            # schema: Type[BaseModel] = get_schema_from_type(key, self.app)
+            if resource_type not in RoutersJSONAPI.all_jsonapi_routers:
+                msg = f"Application has no resource with type {resource_type!r}"
+                raise InvalidType(msg)
+
+            schema: Type[BaseModel] = RoutersJSONAPI.all_jsonapi_routers[resource_type]._schema
             self._get_schema(resource_type)
 
-            # for field_name in field_names:
-            #     if field_name not in schema.__fields__:
-            #         msg = "{schema} has no attribute {field}".format(
-            #             schema=schema.__name__,
-            #             field=field_name,
-            #         )
-            #         raise InvalidField(msg)
+            for field_name in field_names:
+                if field_name not in schema.__fields__:
+                    msg = "{schema} has no attribute {field}".format(
+                        schema=schema.__name__,
+                        field=field_name,
+                    )
+                    raise InvalidField(msg)
 
-        return fields
+        return {resource_type: set(field_names) for resource_type, field_names in fields.items()}
 
     def _get_schema(self, resource_type: str) -> Type[BaseModel]:
         target_router = RoutersJSONAPI.all_jsonapi_routers[resource_type]

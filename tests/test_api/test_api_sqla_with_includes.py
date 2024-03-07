@@ -21,7 +21,12 @@ from starlette.datastructures import QueryParams
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
 from tests.fixtures.app import build_alphabet_app, build_app_custom
-from tests.fixtures.entities import build_workplace, create_user
+from tests.fixtures.entities import (
+    build_post,
+    build_post_comment,
+    build_workplace,
+    create_user,
+)
 from tests.misc.utils import fake
 from tests.models import (
     Alpha,
@@ -203,6 +208,107 @@ class TestGetUsersList:
             ],
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 2, "total_pages": 1},
+        }
+
+    async def test_select_custom_fields_with_includes(
+        self,
+        app: FastAPI,
+        async_session: AsyncSession,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+    ):
+        url = app.url_path_for("get_user_list")
+        user_1, user_2 = sorted((user_1, user_2), key=lambda x: x.id)
+
+        user_2_post = await build_post(async_session, user_2)
+        user_1_post = await build_post(async_session, user_1)
+
+        user_1_comment = await build_post_comment(async_session, user_1, user_2_post)
+        user_2_comment = await build_post_comment(async_session, user_2, user_1_post)
+
+        params = QueryParams(
+            [
+                ("fields[user]", "name"),
+                ("fields[post]", "title"),
+                # empty str means ignore all fields
+                ("fields[comment]", ""),
+                ("include", "posts,posts.comments"),
+                ("sort", "id"),
+            ],
+        )
+        response = await client.get(url, params=str(params))
+
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+        response_data["included"] = sorted(response_data["included"], key=lambda x: (x["type"], x["id"]))
+
+        assert response_data == {
+            "data": [
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include={"name"}),
+                    "relationships": {
+                        "posts": {
+                            "data": [
+                                {
+                                    "id": str(user_1_post.id),
+                                    "type": "post",
+                                },
+                            ],
+                        },
+                    },
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(include={"name"}),
+                    "relationships": {
+                        "posts": {
+                            "data": [
+                                {
+                                    "id": str(user_2_post.id),
+                                    "type": "post",
+                                },
+                            ],
+                        },
+                    },
+                    "id": str(user_2.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "total_pages": 1},
+            "included": sorted(
+                [
+                    {
+                        "attributes": PostAttributesBaseSchema.from_orm(user_2_post).dict(include={"title"}),
+                        "id": str(user_2_post.id),
+                        "relationships": {
+                            "comments": {"data": [{"id": str(user_1_comment.id), "type": "post_comment"}]},
+                        },
+                        "type": "post",
+                    },
+                    {
+                        "attributes": PostAttributesBaseSchema.from_orm(user_1_post).dict(include={"title"}),
+                        "id": str(user_1_post.id),
+                        "relationships": {
+                            "comments": {"data": [{"id": str(user_2_comment.id), "type": "post_comment"}]},
+                        },
+                        "type": "post",
+                    },
+                    {
+                        "attributes": {},
+                        "id": "1",
+                        "type": "post_comment",
+                    },
+                    {
+                        "attributes": {},
+                        "id": "2",
+                        "type": "post_comment",
+                    },
+                ],
+                key=lambda x: (x["type"], x["id"]),
+            ),
         }
 
 
