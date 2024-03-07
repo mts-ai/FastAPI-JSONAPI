@@ -6,7 +6,7 @@ from fastapi_jsonapi.schema import (
     JSONAPIResultDetailSchema,
     JSONAPIResultListSchema,
 )
-from fastapi_jsonapi.views.utils import handle_fields
+from fastapi_jsonapi.views.utils import handle_jsonapi_fields
 from fastapi_jsonapi.views.view_base import ViewBase
 
 if TYPE_CHECKING:
@@ -42,15 +42,16 @@ class ListViewBase(ViewBase):
         total_pages = self._calculate_total_pages(count)
 
         response = self._build_list_response(items_from_db, count, total_pages)
-        return handle_fields(response, query_params, self.jsonapi)
+        return handle_jsonapi_fields(response, query_params, self.jsonapi)
 
     async def handle_post_resource_list(
         self,
         data_create: BaseJSONAPIItemInSchema,
         **extra_view_deps,
-    ) -> JSONAPIResultDetailSchema:
+    ) -> Union[JSONAPIResultDetailSchema, Dict]:
         dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
-        return await self.process_create_object(dl=dl, data_create=data_create)
+        response = await self.process_create_object(dl=dl, data_create=data_create)
+        return handle_jsonapi_fields(response, self.query_params, self.jsonapi)
 
     async def process_create_object(self, dl: "BaseDataLayer", data_create: BaseJSONAPIItemInSchema):
         created_object = await dl.create_object(data_create=data_create, view_kwargs={})
@@ -70,4 +71,5 @@ class ListViewBase(ViewBase):
 
         await dl.delete_objects(items_from_db, {})
 
-        return self._build_list_response(items_from_db, count, total_pages)
+        response = self._build_list_response(items_from_db, count, total_pages)
+        return handle_jsonapi_fields(response, self.query_params, self.jsonapi)

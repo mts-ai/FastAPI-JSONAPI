@@ -140,7 +140,7 @@ def _calculate_exclude_fields(
     return exclude_params
 
 
-def handle_fields(
+def handle_jsonapi_fields(
     response: JSONAPIResponse,
     query_params: QueryStringManager,
     jsonapi: RoutersJSONAPI,
@@ -151,6 +151,6 @@ def handle_fields(
     exclude_params = _calculate_exclude_fields(response, query_params, jsonapi)
 
     if exclude_params:
-        return response.dict(exclude=exclude_params)
+        return response.dict(exclude=exclude_params, by_alias=True)
 
     return response

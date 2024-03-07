@@ -207,7 +207,7 @@ class TestGetUsersList:
                 },
             ],
             "jsonapi": {"version": "1.0"},
-            "meta": {"count": 2, "total_pages": 1},
+            "meta": {"count": 2, "totalPages": 1},
         }
 
     async def test_select_custom_fields_with_includes(
@@ -277,7 +277,7 @@ class TestGetUsersList:
                 },
             ],
             "jsonapi": {"version": "1.0"},
-            "meta": {"count": 2, "total_pages": 1},
+            "meta": {"count": 2, "totalPages": 1},
             "included": sorted(
                 [
                     {
@@ -778,6 +778,32 @@ async def test_many_to_many_load_inner_includes_to_parents(
             assert p_to_c_assoc_data["attributes"]["extra_data"] == assoc.extra_data
 
     assert ("child", ViewBase.get_db_item_id(child_4)) not in included_data
+
+
+class TestGetUserDetail:
+    def get_url(self, app: FastAPI, user_id: int) -> str:
+        return app.url_path_for("get_user_detail", obj_id=user_id)
+
+    async def test_select_custom_fields(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+    ):
+        url = self.get_url(app, user_1.id)
+        params = QueryParams([("fields[user]", "name,age")])
+        response = await client.get(url, params=params)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {
+            "data": {
+                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include={"name", "age"}),
+                "id": str(user_1.id),
+                "type": "user",
+            },
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
 
 
 class TestUserWithPostsWithInnerIncludes:
@@ -1503,6 +1529,34 @@ class TestCreateObjects:
                 "data": [],
             }
 
+    async def test_select_custom_fields(self, app: FastAPI, client: AsyncClient):
+        user_attrs_schema = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        )
+        create_user_body = {
+            "data": {
+                "attributes": user_attrs_schema.dict(),
+            },
+        }
+        params = QueryParams([("fields[user]", "name")])
+        url = app.url_path_for("get_user_list")
+        res = await client.post(url, json=create_user_body, params=params)
+        assert res.status_code == status.HTTP_201_CREATED, res.text
+        response_data: dict = res.json()
+
+        assert "data" in response_data
+        assert response_data["data"].pop("id")
+        assert response_data == {
+            "data": {
+                "attributes": user_attrs_schema.dict(include={"name"}),
+                "type": "user",
+            },
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
+
 
 class TestPatchObjects:
     async def test_patch_object(
@@ -1614,6 +1668,39 @@ class TestPatchObjects:
             sorted([f"No field {name!r}" for name in ("spam", "eggs")]),
         ):
             assert expected in log_message
+
+    async def test_select_custom_fields(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+    ):
+        new_attrs = UserAttributesBaseSchema(
+            name=fake.name(),
+            age=fake.pyint(),
+            email=fake.email(),
+        )
+
+        patch_user_body = {
+            "data": {
+                "id": user_1.id,
+                "attributes": new_attrs.dict(),
+            },
+        }
+        params = QueryParams([("fields[user]", "name")])
+        url = app.url_path_for("get_user_detail", obj_id=user_1.id)
+        res = await client.patch(url, params=params, json=patch_user_body)
+
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": {
+                "attributes": new_attrs.dict(include={"name"}),
+                "id": str(user_1.id),
+                "type": "user",
+            },
+            "jsonapi": {"version": "1.0"},
+            "meta": None,
+        }
 
 
 class TestPatchObjectRelationshipsToOne:
@@ -2083,6 +2170,34 @@ class TestDeleteObjects:
             ],
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 1, "totalPages": 1},
+        }
+
+    async def test_select_custom_fields(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+    ):
+        params = QueryParams([("fields[user]", "name")])
+        url = app.url_path_for("get_user_list")
+        res = await client.delete(url, params=params)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json() == {
+            "data": [
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include={"name"}),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(include={"name"}),
+                    "id": str(user_2.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "totalPages": 1},
         }
 
 
