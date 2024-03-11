@@ -762,7 +762,9 @@ class TestUserWithPostsWithInnerIncludes:
                 {
                     "id": str(user_2_comment_for_one_u1_post.id),
                     "type": "post_comment",
-                    "attributes": PostCommentAttributesBaseSchema.model_validate(user_2_comment_for_one_u1_post).model_dump(),
+                    "attributes": PostCommentAttributesBaseSchema.model_validate(
+                        user_2_comment_for_one_u1_post,
+                    ).model_dump(),
                     "relationships": {
                         "author": {
                             "data": {

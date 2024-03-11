@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from pydantic import ConfigDict, BaseConfig, BaseModel
+from pydantic import BaseConfig, BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
 from sqlalchemy import and_, false, not_, or_
 from sqlalchemy.orm import aliased
@@ -191,7 +191,7 @@ def build_filter_expression(
     fields = [schema_field]
 
     # for Union annotations
-    if hasattr(schema_field, 'fields') and schema_field.fields:
+    if hasattr(schema_field, "fields") and schema_field.fields:
         fields.extend(schema_field.fields)
 
     can_be_none = check_can_be_none(fields)

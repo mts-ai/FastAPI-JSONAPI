@@ -1,7 +1,7 @@
 from typing import ClassVar, Dict
 
 from fastapi import Depends
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from pytest import fixture  # noqa
 from sqlalchemy.ext.asyncio import AsyncSession
 

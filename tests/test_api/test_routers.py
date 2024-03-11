@@ -2,7 +2,7 @@ from typing import ClassVar, Dict, Optional
 
 from fastapi import APIRouter, Depends, FastAPI, Header, Path, status
 from httpx import AsyncClient
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from pytest import mark  # noqa
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

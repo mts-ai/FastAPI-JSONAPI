@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from uuid import UUID
 
-from pydantic import field_validator, ConfigDict
+from pydantic import ConfigDict, field_validator
 
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -56,6 +56,7 @@ class UserInSchemaAllowIdOnPost(UserBaseSchema):
 
 class UserSchema(UserInSchema):
     """User item schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -66,6 +67,7 @@ class UserSchema(UserInSchema):
 
 class UserBioAttributesBaseSchema(BaseModel):
     """UserBio base schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     birth_city: str
@@ -271,6 +273,7 @@ class ComputerInSchema(ComputerBaseSchema):
 
 class ComputerSchema(ComputerInSchema):
     """Computer item schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -286,6 +289,7 @@ class ComputerSchema(ComputerInSchema):
 
 class WorkplaceBaseSchema(BaseModel):
     """Workplace base schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     name: str
@@ -306,6 +310,7 @@ class WorkplaceInSchema(ComputerBaseSchema):
 
 class WorkplaceSchema(ComputerInSchema):
     """Workplace item schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int

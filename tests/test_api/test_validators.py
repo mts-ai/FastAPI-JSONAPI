@@ -4,8 +4,7 @@ from typing import Dict, List, Optional, Set, Type
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field
-from pydantic.v1 import validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pytest import mark, param  # noqa: PT013
 from pytest_asyncio import fixture
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +26,7 @@ pytestmark = pytest.mark.asyncio
 
 @fixture()
 async def task_with_none_ids(
-        async_session: AsyncSession,
+    async_session: AsyncSession,
 ) -> Task:
     task = Task(task_ids=None)
     async_session.add(task)
@@ -43,11 +42,11 @@ def resource_type():
 
 class TestTaskValidators:
     async def test_base_model_validator_pre_true_get_one(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            resource_type: str,
-            task_with_none_ids: Task,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        resource_type: str,
+        task_with_none_ids: Task,
     ):
         assert task_with_none_ids.task_ids is None
         url = app.url_path_for(f"get_{resource_type}_detail", obj_id=task_with_none_ids.id)
@@ -71,11 +70,11 @@ class TestTaskValidators:
         assert attributes == TaskBaseSchema.model_validate(task_with_none_ids)
 
     async def test_base_model_root_validator_get_list(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            resource_type: str,
-            task_with_none_ids: Task,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        resource_type: str,
+        task_with_none_ids: Task,
     ):
         assert task_with_none_ids.task_ids is None
         url = app.url_path_for(f"get_{resource_type}_list")
@@ -104,11 +103,11 @@ class TestTaskValidators:
         }
 
     async def test_base_model_root_validator_create(
-            self,
-            app: FastAPI,
-            client: AsyncClient,
-            resource_type: str,
-            async_session: AsyncSession,
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        resource_type: str,
+        async_session: AsyncSession,
     ):
         task_data = {
             # should be converted to [] by schema on create
@@ -179,11 +178,11 @@ class TestValidators:
         return InheritedSchema
 
     async def execute_request_and_check_response(
-            self,
-            app: FastAPI,
-            body: Dict,
-            expected_detail: str,
-            resource_type: Optional[str] = None,
+        self,
+        app: FastAPI,
+        body: Dict,
+        expected_detail: str,
+        resource_type: Optional[str] = None,
     ):
         resource_type = resource_type or self.resource_type
         async with AsyncClient(app=app, base_url="http://test") as client:
@@ -202,10 +201,10 @@ class TestValidators:
             }
 
     async def execute_request_twice_and_check_response(
-            self,
-            schema: Type[BaseModel],
-            body: Dict,
-            expected_detail: str,
+        self,
+        schema: Type[BaseModel],
+        body: Dict,
+        expected_detail: str,
     ):
         """
         Makes two requests for check schema inheritance
@@ -231,8 +230,8 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @field_validator("name")
             @classmethod
+            @field_validator("name")
             def validate_name(cls, v):
                 # checks that cls arg is not bound to the origin class
                 assert cls is not UserSchemaWithValidator
@@ -254,11 +253,12 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             names: List[str]
 
-            @field_validator("names", mode='before')
             @classmethod
+            @field_validator("names")
             def validate_name(cls, v):
-                if v == "bad_name":
-                    raise BadRequest(detail="Bad name not allowed")
+                for item in v:
+                    if item == "bad_name":
+                        raise BadRequest(detail="Bad name not allowed")
 
             model_config = ConfigDict(from_attributes=True)
 
@@ -275,13 +275,13 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: List[str]
 
-            @field_validator("name", mode="before")
             @classmethod
+            @field_validator("name", mode="before")
             def validate_name_pre(cls, v):
                 raise BadRequest(detail="Pre validator called")
 
-            @field_validator("name")
             @classmethod
+            @field_validator("name")
             def validate_name(cls, v):
                 raise BadRequest(detail="Not pre validator called")
 
@@ -664,22 +664,22 @@ class TestValidationUtils:
         ],
     )
     def test_extract_field_validators_args(
-            self,
-            include: Set[str],
-            exclude: Set[str],
-            expected: Set[str],
+        self,
+        include: Set[str],
+        exclude: Set[str],
+        expected: Set[str],
     ):
         class ValidationSchema(BaseModel):
             item_1: str
             item_2: str
 
             @classmethod
-            @validator("item_1")
+            @field_validator("item_1")
             def item_1_validator(cls, v):
                 return v
 
             @classmethod
-            @validator("item_2")
+            @field_validator("item_2")
             def item_2_validator(cls, v):
                 return v
 
@@ -691,5 +691,5 @@ class TestValidationUtils:
         validator_func_names = {
             validator_item.__validator_config__[1].func.__name__ for validator_item in validators.values()
         }
-        print(validators)
+
         assert expected == validator_func_names

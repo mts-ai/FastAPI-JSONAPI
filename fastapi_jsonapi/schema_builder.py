@@ -15,8 +15,8 @@ from typing import (
 )
 
 import pydantic
-from pydantic import ConfigDict
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ConfigDict
 from pydantic.fields import FieldInfo
 
 from fastapi_jsonapi.data_typing import TypeSchema

@@ -2,7 +2,7 @@ from enum import Enum
 from functools import cache
 from typing import Callable, Coroutine, Optional, Set, Type, Union
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class HTTPMethod(Enum):

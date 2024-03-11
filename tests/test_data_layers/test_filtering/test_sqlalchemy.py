@@ -2,7 +2,7 @@ from typing import Any
 from unittest.mock import MagicMock, Mock
 
 from fastapi import status
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from pytest import raises  # noqa PT013
 
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import (
