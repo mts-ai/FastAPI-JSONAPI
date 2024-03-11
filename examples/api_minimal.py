@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from pydantic import ConfigDict
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
 from fastapi_jsonapi import RoutersJSONAPI, init

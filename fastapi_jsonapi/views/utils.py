@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic.fields import ModelField
 
 from fastapi_jsonapi.data_typing import TypeSchema

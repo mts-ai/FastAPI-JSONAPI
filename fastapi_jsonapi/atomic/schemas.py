@@ -54,7 +54,7 @@ class AtomicOperationRef(BaseModel):
     lid: Optional[str] = Field(default=None)
     relationship: Optional[str] = Field(default=None)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     def validate_atomic_operation_ref(cls, values: dict):
         """
         type is required on schema, so id or lid has to be present
@@ -150,7 +150,7 @@ class AtomicOperation(BaseModel):
         # TODO: pydantic V2
         raise ValueError(msg)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     def validate_operation(cls, values: dict):
         """
         Make sure atomic operation request conforms the spec

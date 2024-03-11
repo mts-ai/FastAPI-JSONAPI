@@ -15,9 +15,8 @@ from typing import (
 
 from fastapi import FastAPI
 from pydantic import (
-    ConfigDict,
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
 )
 

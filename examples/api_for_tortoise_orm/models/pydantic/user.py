@@ -5,7 +5,8 @@ from typing import Optional
 
 from pydantic import (
     BaseModel,
-    Field, ConfigDict,
+    Field,
+    ConfigDict,
 )
 
 from examples.api_for_tortoise_orm.models.enums import UserStatusEnum
@@ -36,6 +37,7 @@ class UserInSchema(UserBaseSchema):
 
 class UserSchema(UserInSchema):
     """User item schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int

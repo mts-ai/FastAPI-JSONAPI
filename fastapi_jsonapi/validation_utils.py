@@ -1,25 +1,23 @@
 from copy import deepcopy
-from typing import Type, Callable, Optional, Set, Dict
+from typing import Callable, Dict, Optional, Set, Type
 
-from pydantic import model_validator, field_validator
+from pydantic import field_validator, model_validator
 from pydantic._internal._decorators import DecoratorInfos
 
 from fastapi_jsonapi.schema_base import BaseModel
 
 
 def extract_root_validators(model: Type[BaseModel]) -> Dict[str, Callable]:
-    pre_root_validators = getattr(model, '__pre_root_validators__', [])
-    post_root_validators = getattr(model, '__post_root_validators__', [])
+    pre_root_validators = getattr(model, "__pre_root_validators__", [])
+    post_root_validators = getattr(model, "__post_root_validators__", [])
     result_validators = {}
 
     for validator_func in pre_root_validators:
-        result_validators[validator_func.__name__] = model_validator(
-            mode='before'
-        )
+        result_validators[validator_func.__name__] = model_validator(mode="before")
 
     for validator_func in post_root_validators:
         result_validators[validator_func.__name__] = model_validator(
-            mode='before',
+            mode="before",
         )
 
     return result_validators
@@ -41,9 +39,9 @@ def _deduplicate_field_validators(validators: DecoratorInfos) -> Dict:
 
 
 def extract_field_validators(
-        model: Type[BaseModel],
-        include_for_field_names: Optional[Set[str]] = None,
-        exclude_for_field_names: Optional[Set[str]] = None,
+    model: Type[BaseModel],
+    include_for_field_names: Optional[Set[str]] = None,
+    exclude_for_field_names: Optional[Set[str]] = None,
 ):
     validators = _deduplicate_field_validators(deepcopy(model.__pydantic_decorators__))
 
@@ -71,8 +69,8 @@ def extract_field_validators(
 
 
 def extract_validators(
-        model: Type[BaseModel],
-        exclude_for_field_names: Optional[Set[str]] = None,
+    model: Type[BaseModel],
+    exclude_for_field_names: Optional[Set[str]] = None,
 ) -> Dict[str, Callable]:
     return {
         **extract_field_validators(

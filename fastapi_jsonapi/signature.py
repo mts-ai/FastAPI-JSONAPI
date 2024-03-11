@@ -23,10 +23,14 @@ log = logging.getLogger(__name__)
 
 
 def create_filter_parameter(name: str, field: FieldInfo) -> Parameter:
-    if hasattr(field, 'sub_fields') and field.sub_fields:
+    if hasattr(field, "sub_fields") and field.sub_fields:
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
         type_field = field.annotation
-    elif inspect.isclass(field.annotation) and issubclass(field.annotation, Enum) and hasattr(field.annotation, "values"):
+    elif (
+        inspect.isclass(field.annotation)
+        and issubclass(field.annotation, Enum)
+        and hasattr(field.annotation, "values")
+    ):
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=field.annotation.values())
         type_field = str
     else:
