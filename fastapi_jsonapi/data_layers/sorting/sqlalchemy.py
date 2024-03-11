@@ -1,7 +1,7 @@
 """Helper to create sqlalchemy sortings according to filter querystring parameter"""
 from typing import Any, List, Tuple, Type, Union
 
-from pydantic.fields import ModelField
+from pydantic.fields import FieldInfo
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, aliased
 from sqlalchemy.sql.elements import BinaryExpression
 
@@ -48,7 +48,7 @@ class Node(object):
         self.schema = schema
 
     @classmethod
-    def create_sort(cls, schema_field: ModelField, model_column, order: str):
+    def create_sort(cls, schema_field: FieldInfo, model_column, order: str):
         """
         Create sqlalchemy sort.
 
@@ -95,7 +95,7 @@ class Node(object):
 
         return (
             self.create_sort(
-                schema_field=self.schema.__fields__[self.name].type_,
+                schema_field=self.schema.model_fields[self.name].annotation,
                 model_column=self.column,
                 order=self.sort_["order"],
             ),
@@ -118,7 +118,7 @@ class Node(object):
         if SPLIT_REL in name:
             name = name.split(SPLIT_REL)[0]
 
-        if name not in self.schema.__fields__:
+        if name not in self.schema.model_fields:
             msg = "{} has no attribute {}".format(self.schema.__name__, name)
             raise InvalidFilters(msg)
 
@@ -169,4 +169,4 @@ class Node(object):
             msg = "{} has no relationship attribute {}".format(self.schema.__name__, relationship_field)
             raise InvalidFilters(msg)
 
-        return self.schema.__fields__[relationship_field].type_
+        return self.schema.model_fields[relationship_field].annotation

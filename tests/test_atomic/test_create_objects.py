@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from typing import Callable, Sequence
 
 import pytest
 from httpx import AsyncClient
@@ -65,7 +65,7 @@ class TestAtomicCreateObjects:
                     "op": "add",
                     "data": {
                         "type": "user",
-                        "attributes": user.dict(),
+                        "attributes": user.model_dump(),
                     },
                 },
             ],
@@ -87,7 +87,7 @@ class TestAtomicCreateObjects:
         assert result.pop("meta") is None
         assert result == {
             "data": {
-                "attributes": UserAttributesBaseSchema.from_orm(user_obj).dict(),
+                "attributes": UserAttributesBaseSchema.model_validate(user_obj).model_dump(),
                 "id": str(user_obj.id),
                 "type": "user",
             },
@@ -108,7 +108,7 @@ class TestAtomicCreateObjects:
                     "op": "add",
                     "data": {
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 }
                 for user_data in users_data
@@ -131,13 +131,13 @@ class TestAtomicCreateObjects:
             ),
         )
         db_result: Result = await async_session.execute(stmt)
-        users: list[User] = db_result.scalars().all()
+        users: Sequence[User] = db_result.scalars().all()
         assert len(users) == len(results)
         for result, user in zip(results, users):
             assert result.pop("meta") is None
             assert result == {
                 "data": {
-                    "attributes": UserAttributesBaseSchema.from_orm(user).dict(),
+                    "attributes": UserAttributesBaseSchema.model_validate(user).model_dump(),
                     "id": str(user.id),
                     "type": "user",
                 },
@@ -171,7 +171,7 @@ class TestAtomicCreateObjects:
                     "op": "add",
                     "data": {
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 }
                 for user_data in users_data
@@ -219,7 +219,7 @@ class TestAtomicCreateObjects:
                     "op": "add",
                     "data": {
                         "type": "user_bio",
-                        "attributes": user_bio.dict(),
+                        "attributes": user_bio.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -241,10 +241,10 @@ class TestAtomicCreateObjects:
         result_bio_data = results[0]
         res: Result = await async_session.execute(stmt_bio)
         user_bio_created: UserBio = res.scalar_one()
-        assert user_bio == UserBioAttributesBaseSchema.from_orm(user_bio_created)
+        assert user_bio == UserBioAttributesBaseSchema.model_validate(user_bio_created)
         assert result_bio_data == {
             "data": {
-                "attributes": user_bio.dict(),
+                "attributes": user_bio.model_dump(),
                 "type": "user_bio",
                 "id": str(user_bio_created.id),
             },
@@ -301,14 +301,14 @@ class TestAtomicCreateObjects:
                     "data": {
                         "type": "user",
                         "lid": user_lid,
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 },
                 {
                     "op": "add",
                     "data": {
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -334,7 +334,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "id": str(user.id),
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                     "meta": None,
                 },
@@ -342,7 +342,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "id": str(user.bio.id),
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                     },
                     "meta": None,
                 },
@@ -398,14 +398,14 @@ class TestAtomicCreateObjects:
                     "data": {
                         "type": "user",
                         "lid": user_lid,
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 },
                 {
                     "op": "add",
                     "data": {
                         "type": "computer",
-                        "attributes": computer_data.dict(),
+                        "attributes": computer_data.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -432,7 +432,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "id": str(user.id),
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                     "meta": None,
                 },
@@ -440,7 +440,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "id": str(user.computers[0].id),
                         "type": "computer",
-                        "attributes": computer_data.dict(),
+                        "attributes": computer_data.model_dump(),
                     },
                     "meta": None,
                 },
@@ -502,14 +502,14 @@ class TestAtomicCreateObjects:
                     "data": {
                         "type": "user",
                         "lid": user_lid,
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 },
                 {
                     "op": "add",
                     "data": {
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -524,7 +524,7 @@ class TestAtomicCreateObjects:
                     "op": "add",
                     "data": {
                         "type": "computer",
-                        "attributes": computer_data.dict(),
+                        "attributes": computer_data.model_dump(),
                         "relationships": {
                             "user": {
                                 "data": {
@@ -552,7 +552,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "id": str(user.id),
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                     "meta": None,
                 },
@@ -560,7 +560,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "id": str(user.bio.id),
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                     },
                     "meta": None,
                 },
@@ -568,7 +568,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "id": str(user.computers[0].id),
                         "type": "computer",
-                        "attributes": computer_data.dict(),
+                        "attributes": computer_data.model_dump(),
                     },
                     "meta": None,
                 },
@@ -627,14 +627,14 @@ class TestAtomicCreateObjects:
             "op": "add",
             "data": {
                 "type": "user",
-                "attributes": user_data.dict(),
+                "attributes": user_data.model_dump(),
             },
         }
         action_2 = {
             "op": "add",
             "data": {
                 "type": "computer",
-                "attributes": computer_data.dict(),
+                "attributes": computer_data.model_dump(),
                 "relationships": {
                     "user": {
                         "data": relationship_info,
@@ -726,14 +726,14 @@ class TestAtomicCreateObjects:
             "data": {
                 "type": "user",
                 "lid": user_lid,
-                "attributes": user_data.dict(),
+                "attributes": user_data.model_dump(),
             },
         }
         action_2 = {
             "op": "add",
             "data": {
                 "type": "computer",
-                "attributes": computer_data.dict(),
+                "attributes": computer_data.model_dump(),
                 "relationships": {
                     "user": {
                         "data": relationship_info,
@@ -787,7 +787,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "lid": "new-parent",
                         "type": "parent",
-                        "attributes": parent_data.dict(),
+                        "attributes": parent_data.model_dump(),
                     },
                 },
                 # create child
@@ -796,7 +796,7 @@ class TestAtomicCreateObjects:
                     "data": {
                         "lid": "new-child",
                         "type": "child",
-                        "attributes": child_data.dict(),
+                        "attributes": child_data.model_dump(),
                     },
                 },
                 # create parent-to-child association
@@ -854,7 +854,7 @@ class TestAtomicCreateObjects:
             "atomic:results": [
                 {
                     "data": {
-                        "attributes": ParentAttributesSchema.from_orm(assoc.parent).dict(),
+                        "attributes": ParentAttributesSchema.model_validate(assoc.parent).model_dump(),
                         "id": str(assoc.parent.id),
                         "type": "parent",
                     },
@@ -862,7 +862,7 @@ class TestAtomicCreateObjects:
                 },
                 {
                     "data": {
-                        "attributes": ChildAttributesSchema.from_orm(assoc.child).dict(),
+                        "attributes": ChildAttributesSchema.model_validate(assoc.child).model_dump(),
                         "id": str(assoc.child.id),
                         "type": "child",
                     },
@@ -870,7 +870,7 @@ class TestAtomicCreateObjects:
                 },
                 {
                     "data": {
-                        "attributes": ParentToChildAssociationAttributesSchema.from_orm(assoc).dict(),
+                        "attributes": ParentToChildAssociationAttributesSchema.model_validate(assoc).model_dump(),
                         "id": str(assoc.id),
                         "type": "parent-to-child-association",
                     },

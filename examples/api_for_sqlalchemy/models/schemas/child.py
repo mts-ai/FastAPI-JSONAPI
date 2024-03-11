@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, List
 
+from pydantic import ConfigDict
+
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
@@ -9,8 +11,7 @@ if TYPE_CHECKING:
 class ChildBaseSchema(BaseModel):
     """Child base schema."""
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     name: str
 

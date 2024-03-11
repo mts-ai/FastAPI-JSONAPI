@@ -6,6 +6,7 @@ from typing import Optional
 from pydantic import (
     BaseModel,
     Field,
+    ConfigDict,
 )
 
 from examples.api_for_tortoise_orm.models.enums import UserStatusEnum
@@ -14,10 +15,7 @@ from examples.api_for_tortoise_orm.models.enums import UserStatusEnum
 class UserBaseSchema(BaseModel):
     """User base schema."""
 
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     class Enum:
         """User enums."""
@@ -40,11 +38,7 @@ class UserInSchema(UserBaseSchema):
 class UserSchema(UserInSchema):
     """User item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
-        model = "users"
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     created_at: datetime = Field(description="Время создания данных")

@@ -2,7 +2,7 @@ from enum import Enum
 from functools import cache
 from typing import Callable, Coroutine, Optional, Set, Type, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class HTTPMethod(Enum):
@@ -12,6 +12,7 @@ class HTTPMethod(Enum):
     PATCH = "patch"
     DELETE = "delete"
 
+    @staticmethod
     @cache
     def names() -> Set[str]:
         return {item.name for item in HTTPMethod}
@@ -19,10 +20,8 @@ class HTTPMethod(Enum):
 
 class HTTPMethodConfig(BaseModel):
     dependencies: Optional[Type[BaseModel]] = None
-    prepare_data_layer_kwargs: Optional[Union[Callable, Coroutine]] = None
-
-    class Config:
-        arbitrary_types_allowed = True
+    prepare_data_layer_kwargs: Optional[Callable] = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def handler(self) -> Optional[Union[Callable, Coroutine]]:

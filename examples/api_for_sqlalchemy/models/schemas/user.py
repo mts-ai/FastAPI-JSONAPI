@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
+from pydantic import ConfigDict
+
 from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -16,10 +18,7 @@ if TYPE_CHECKING:
 class UserBaseSchema(BaseModel):
     """User base schema."""
 
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     class Enum:
         """User enums."""
@@ -64,10 +63,7 @@ class UserInSchema(UserBaseSchema):
 class UserSchema(UserInSchema):
     """User item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     created_at: datetime = Field(description="Create datetime")

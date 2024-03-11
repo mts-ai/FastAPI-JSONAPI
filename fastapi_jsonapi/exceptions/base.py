@@ -24,7 +24,7 @@ class ExceptionSchema(BaseModel):
     status: str
     source: Optional[ExceptionSourceSchema] = None
     title: str
-    detail: Any
+    detail: Any = None
 
 
 class ExceptionResponseSchema(BaseModel):

@@ -48,7 +48,7 @@ class UserDetail:
     @classmethod
     async def get(cls, obj_id: int, query_params: QueryStringManager) -> UserSchema:
         user: User = await cls.get_user(user_id=obj_id, query_params=query_params)
-        return UserSchema.from_orm(user)
+        return UserSchema.model_validate(user)
 
     @classmethod
     async def patch(cls, obj_id: int, data: UserPatchSchema, query_params: QueryStringManager) -> UserSchema:
@@ -56,7 +56,7 @@ class UserDetail:
         try:
             user_obj = await UpdateUser.update(
                 obj_id,
-                data.dict(exclude_unset=True),
+                data.model_dump(exclude_unset=True),
                 query_params.headers,
             )
         except ErrorUpdateUserObject as ex:
@@ -64,7 +64,7 @@ class UserDetail:
         except ObjectNotFound as ex:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ex.description)
 
-        user = UserSchema.from_orm(user_obj)
+        user = UserSchema.model_validate(user_obj)
         return user
 
 
@@ -75,22 +75,22 @@ class UserList:
         dl = TortoiseDataLayer(query=user_query, schema=UserSchema, model=User)
         count, users_db = await dl.get_collection(qs=query_params)
         total_pages = count // query_params.pagination.size + (count % query_params.pagination.size and 1)
-        users: List[UserSchema] = [UserSchema.from_orm(i_user) for i_user in users_db]
+        users: List[UserSchema] = [UserSchema.model_validate(i_user) for i_user in users_db]
         return JSONAPIResultListSchema(
             meta={"count": count, "totalPages": total_pages},
-            data=[{"id": i_obj.id, "attributes": i_obj.dict(), "type": "user"} for i_obj in users],
+            data=[{"id": i_obj.id, "attributes": i_obj.model_dump(), "type": "user"} for i_obj in users],
         )
 
     @classmethod
     async def post(cls, data: UserInSchema, query_params: QueryStringManager) -> UserSchema:
         try:
             user_obj = await UserFactory.create(
-                data=data.dict(),
+                data=data.model_dump(),
                 mode=FactoryUseMode.production,
                 header=query_params.headers,
             )
         except ErrorCreateUserObject as ex:
             raise BadRequest(ex.description, ex.field)
 
-        user = UserSchema.from_orm(user_obj)
+        user = UserSchema.model_validate(user_obj)
         return user

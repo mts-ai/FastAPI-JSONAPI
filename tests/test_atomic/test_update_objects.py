@@ -22,8 +22,8 @@ class TestAtomicUpdateObjects:
         user_1: User,
         user_1_bio: UserBio,
     ):
-        user_data = UserAttributesBaseSchema.from_orm(user_1)
-        user_bio_data = UserBioAttributesBaseSchema.from_orm(user_1_bio)
+        user_data = UserAttributesBaseSchema.model_validate(user_1)
+        user_bio_data = UserBioAttributesBaseSchema.model_validate(user_1_bio)
         user_data.name = fake.name()
         user_bio_data.favourite_movies = fake.sentence()
         assert user_1.name != user_data.name
@@ -35,7 +35,7 @@ class TestAtomicUpdateObjects:
                     "data": {
                         "id": str(user_1.id),
                         "type": "user",
-                        "attributes": user_data.dict(),
+                        "attributes": user_data.model_dump(),
                     },
                 },
                 {
@@ -43,7 +43,7 @@ class TestAtomicUpdateObjects:
                     "data": {
                         "id": str(user_1_bio.id),
                         "type": "user_bio",
-                        "attributes": user_bio_data.dict(),
+                        "attributes": user_bio_data.model_dump(),
                     },
                 },
             ],
@@ -62,7 +62,7 @@ class TestAtomicUpdateObjects:
         assert results == [
             {
                 "data": {
-                    "attributes": user_data.dict(),
+                    "attributes": user_data.model_dump(),
                     "id": str(user_1.id),
                     "type": "user",
                 },
@@ -70,7 +70,7 @@ class TestAtomicUpdateObjects:
             },
             {
                 "data": {
-                    "attributes": user_bio_data.dict(),
+                    "attributes": user_bio_data.model_dump(),
                     "id": str(user_1_bio.id),
                     "type": "user_bio",
                 },

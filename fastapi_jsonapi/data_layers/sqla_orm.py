@@ -146,7 +146,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         if relationships is None:
             return
 
-        schema_fields = self.schema.__fields__ or {}
+        schema_fields = self.schema.model_fields or {}
         for relation_name, relationship_in in relationships:
             if relationship_in is None:
                 continue
@@ -158,7 +158,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 log.warning("field for %s in schema %s not found", relation_name, self.schema.__name__)
                 continue
 
-            if "relationship" not in field.field_info.extra:
+            if "relationship" not in field.default.extra:
                 log.warning(
                     "relationship info for %s in schema %s extra not found",
                     relation_name,
@@ -166,7 +166,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 )
                 continue
 
-            relationship_info: RelationshipInfo = field.field_info.extra["relationship"]
+            relationship_info: RelationshipInfo = field.default.extra["relationship"]
 
             # ...
             related_model = get_related_model_cls(type(obj), relation_name)
@@ -197,8 +197,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return:
         """
         log.debug("Create object with data %s", data_create)
-        # todo: pydantic v2 model_dump()
-        model_kwargs = data_create.attributes.dict()
+        model_kwargs = data_create.attributes.model_dump()
         model_kwargs = self._apply_client_generated_id(data_create, model_kwargs=model_kwargs)
         await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
 
@@ -327,7 +326,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return: True if object have changed else False.
         """
-        new_data = data_update.attributes.dict(exclude_unset=True)
+        new_data = data_update.attributes.model_dump(exclude_unset=True)
 
         await self.apply_relationships(obj, data_update)
 
