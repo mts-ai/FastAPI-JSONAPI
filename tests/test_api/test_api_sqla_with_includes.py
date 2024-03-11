@@ -318,6 +318,32 @@ class TestGetUsersList:
             ),
         }
 
+    async def test_select_custom_fields_for_includes_without_requesting_includes(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        user_1: User,
+    ):
+        url = app.url_path_for("get_user_list")
+
+        params = QueryParams([("fields[post]", "title")])
+        response = await client.get(url, params=str(params))
+
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+
+        assert response_data == {
+            "data": [
+                {
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1),
+                    "id": str(user_1.id),
+                    "type": "user",
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 1, "totalPages": 1},
+        }
+
 
 class TestCreatePostAndComments:
     async def test_get_posts_with_users(

@@ -212,8 +212,6 @@ class QueryStringManager:
 
         return pagination
 
-    # TODO: finally use this! upgrade Sqlachemy Data Layer
-    #  and add to all views (get list/detail, create, patch)
     @property
     def fields(self) -> Dict[str, List[str]]:
         """
@@ -238,8 +236,7 @@ class QueryStringManager:
                 msg = f"Application has no resource with type {resource_type!r}"
                 raise InvalidType(msg)
 
-            schema: Type[BaseModel] = RoutersJSONAPI.all_jsonapi_routers[resource_type]._schema
-            self._get_schema(resource_type)
+            schema: Type[BaseModel] = self._get_schema(resource_type)
 
             for field_name in field_names:
                 if field_name == "":
@@ -255,8 +252,7 @@ class QueryStringManager:
         return {resource_type: set(field_names) for resource_type, field_names in fields.items()}
 
     def _get_schema(self, resource_type: str) -> Type[BaseModel]:
-        target_router = RoutersJSONAPI.all_jsonapi_routers[resource_type]
-        return target_router.detail_response_schema
+        return RoutersJSONAPI.all_jsonapi_routers[resource_type]._schema
 
     def get_sorts(self, schema: Type["TypeSchema"]) -> List[Dict[str, str]]:
         """
