@@ -227,10 +227,13 @@ class TestGetUsersList:
         user_1_comment = await build_post_comment(async_session, user_1, user_2_post)
         user_2_comment = await build_post_comment(async_session, user_2, user_1_post)
 
+        queried_user_fields = "name"
+        queried_post_fields = "title"
+
         params = QueryParams(
             [
-                ("fields[user]", "name"),
-                ("fields[post]", "title"),
+                ("fields[user]", queried_user_fields),
+                ("fields[post]", queried_post_fields),
                 # empty str means ignore all fields
                 ("fields[post_comment]", ""),
                 ("include", "posts,posts.comments"),
@@ -246,7 +249,9 @@ class TestGetUsersList:
         assert response_data == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include={"name"}),
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(
+                        include=set(queried_user_fields.split(",")),
+                    ),
                     "relationships": {
                         "posts": {
                             "data": [
@@ -261,7 +266,9 @@ class TestGetUsersList:
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(include={"name"}),
+                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(
+                        include=set(queried_user_fields.split(",")),
+                    ),
                     "relationships": {
                         "posts": {
                             "data": [
@@ -281,7 +288,9 @@ class TestGetUsersList:
             "included": sorted(
                 [
                     {
-                        "attributes": PostAttributesBaseSchema.from_orm(user_2_post).dict(include={"title"}),
+                        "attributes": PostAttributesBaseSchema.from_orm(user_2_post).dict(
+                            include=set(queried_post_fields.split(",")),
+                        ),
                         "id": str(user_2_post.id),
                         "relationships": {
                             "comments": {
@@ -296,7 +305,9 @@ class TestGetUsersList:
                         "type": "post",
                     },
                     {
-                        "attributes": PostAttributesBaseSchema.from_orm(user_1_post).dict(include={"title"}),
+                        "attributes": PostAttributesBaseSchema.from_orm(user_1_post).dict(
+                            include=set(queried_post_fields.split(",")),
+                        ),
                         "id": str(user_1_post.id),
                         "relationships": {
                             "comments": {"data": [{"id": str(user_2_comment.id), "type": "post_comment"}]},
@@ -817,13 +828,16 @@ class TestGetUserDetail:
         user_1: User,
     ):
         url = self.get_url(app, user_1.id)
-        params = QueryParams([("fields[user]", "name,age")])
+        queried_user_fields = "name,age"
+        params = QueryParams([("fields[user]", queried_user_fields)])
         response = await client.get(url, params=params)
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
             "data": {
-                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include={"name", "age"}),
+                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(
+                    include=set(queried_user_fields.split(",")),
+                ),
                 "id": str(user_1.id),
                 "type": "user",
             },
@@ -1566,7 +1580,8 @@ class TestCreateObjects:
                 "attributes": user_attrs_schema.dict(),
             },
         }
-        params = QueryParams([("fields[user]", "name")])
+        queried_user_fields = "name"
+        params = QueryParams([("fields[user]", queried_user_fields)])
         url = app.url_path_for("get_user_list")
         res = await client.post(url, json=create_user_body, params=params)
         assert res.status_code == status.HTTP_201_CREATED, res.text
@@ -1576,7 +1591,7 @@ class TestCreateObjects:
         assert response_data["data"].pop("id")
         assert response_data == {
             "data": {
-                "attributes": user_attrs_schema.dict(include={"name"}),
+                "attributes": user_attrs_schema.dict(include=set(queried_user_fields.split(","))),
                 "type": "user",
             },
             "jsonapi": {"version": "1.0"},
@@ -1713,14 +1728,15 @@ class TestPatchObjects:
                 "attributes": new_attrs.dict(),
             },
         }
-        params = QueryParams([("fields[user]", "name")])
+        queried_user_fields = "name"
+        params = QueryParams([("fields[user]", queried_user_fields)])
         url = app.url_path_for("get_user_detail", obj_id=user_1.id)
         res = await client.patch(url, params=params, json=patch_user_body)
 
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": {
-                "attributes": new_attrs.dict(include={"name"}),
+                "attributes": new_attrs.dict(include=set(queried_user_fields.split(","))),
                 "id": str(user_1.id),
                 "type": "user",
             },
@@ -2205,19 +2221,24 @@ class TestDeleteObjects:
         user_1: User,
         user_2: User,
     ):
-        params = QueryParams([("fields[user]", "name")])
+        queried_user_fields = "name"
+        params = QueryParams([("fields[user]", queried_user_fields)])
         url = app.url_path_for("get_user_list")
         res = await client.delete(url, params=params)
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include={"name"}),
+                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(
+                        include=set(queried_user_fields.split(",")),
+                    ),
                     "id": str(user_1.id),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(include={"name"}),
+                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(
+                        include=set(queried_user_fields.split(",")),
+                    ),
                     "id": str(user_2.id),
                     "type": "user",
                 },

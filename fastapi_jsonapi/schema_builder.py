@@ -484,7 +484,6 @@ class SchemaBuilder:
         base_name: str = "",
         compute_included_schemas: bool = False,
         use_schema_cache: bool = True,
-        exclude_attributes: Optional[List[str]] = None,
     ) -> JSONAPIObjectSchemas:
         if use_schema_cache and schema in self.object_schemas_cache and includes is not_passed:
             return self.object_schemas_cache[schema]
