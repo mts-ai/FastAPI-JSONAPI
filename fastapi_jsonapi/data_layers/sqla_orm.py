@@ -386,8 +386,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
         await self.before_delete_object(obj, view_kwargs)
+        stmt = delete(self.model).where(self.model.id == obj.id)
+
         try:
-            await self.session.delete(obj)
+            await self.session.execute(stmt)
             await self.save()
         except DBAPIError as e:
             await self.session.rollback()

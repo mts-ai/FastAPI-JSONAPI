@@ -409,6 +409,21 @@ class SelfRelationshipSchema(BaseModel):
     )
 
 
+class CascadeCaseSchema(BaseModel):
+    name: str
+    parent_item: Optional["CascadeCaseSchema"] = Field(
+        relationship=RelationshipInfo(
+            resource_type="cascade_case",
+        ),
+    )
+    sub_items: Optional[list["CascadeCaseSchema"]] = Field(
+        relationship=RelationshipInfo(
+            resource_type="cascade_case",
+            many=True,
+        ),
+    )
+
+
 class CustomUserAttributesSchema(UserBaseSchema):
     spam: str
     eggs: str

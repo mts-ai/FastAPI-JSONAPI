@@ -31,6 +31,7 @@ from tests.misc.utils import fake
 from tests.models import (
     Alpha,
     Beta,
+    CascadeCase,
     Computer,
     ContainsTimestamp,
     CustomUUIDItem,
@@ -1473,6 +1474,43 @@ class TestCreateObjects:
                 "jsonapi": {"version": "1.0"},
                 "meta": None,
             }
+
+    async def test_cascade_delete(self, async_session: AsyncSession):
+        resource_type = "cascade_case"
+        app = build_app_custom(
+            model=CascadeCase,
+            schema=SelfRelationshipSchema,
+            resource_type=resource_type,
+        )
+
+        top_item = CascadeCase()
+        sub_item_1 = CascadeCase(parent_item=top_item)
+        sub_item_2 = CascadeCase(parent_item=top_item)
+        async_session.add_all(
+            [
+                top_item,
+                sub_item_1,
+                sub_item_2,
+            ],
+        )
+        await async_session.commit()
+
+        assert sub_item_1.parent_item_id == top_item.id
+        assert sub_item_2.parent_item_id == top_item.id
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"delete_{resource_type}_detail", obj_id=top_item.id)
+
+            res = await client.delete(url)
+            assert res.status_code == status.HTTP_204_NO_CONTENT, res.text
+
+            top_item_stmt = select(CascadeCase).where(CascadeCase.id == top_item.id)
+            top_item = (await async_session.execute(top_item_stmt)).one_or_none()
+            assert top_item is None
+
+            sub_items_stmt = select(CascadeCase).where(CascadeCase.id.in_([sub_item_1.id, sub_item_2.id]))
+            sub_items = (await async_session.execute(sub_items_stmt)).all()
+            assert sub_items == []
 
     async def test_create_with_timestamp_and_fetch(self, async_session: AsyncSession):
         resource_type = "contains_timestamp_model"
