@@ -410,7 +410,6 @@ class SelfRelationshipSchema(BaseModel):
 
 
 class CascadeCaseSchema(BaseModel):
-    name: str
     parent_item: Optional["CascadeCaseSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="cascade_case",

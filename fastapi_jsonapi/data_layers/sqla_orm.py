@@ -3,7 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.exc import DBAPIError, IntegrityError, NoResultFound
+from sqlalchemy.exc import DBAPIError, IntegrityError, MissingGreenlet, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
@@ -185,6 +185,18 @@ class SqlalchemyDataLayer(BaseDataLayer):
                     related_id_field=relationship_info.id_field_name,
                     id_value=relationship_in.data.id,
                 )
+
+            try:
+                hasattr(obj, relation_name)
+            except MissingGreenlet:
+                raise InternalServerError(
+                    detail=(
+                        f"Error of loading the {relation_name!r} relationship. "
+                        f"Please add this relationship to include query parameter explicitly."
+                    ),
+                    parameter="include",
+                )
+
             # todo: relation name may be different?
             setattr(obj, relation_name, related_data)
 
