@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import declared_attr, relationship
+from sqlalchemy.orm import backref, declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
 from tests.common import is_postgres_tests, sqla_uri
@@ -390,3 +390,25 @@ class Delta(Base):
     name = Column(String)
     gammas: List["Gamma"] = relationship("Gamma", back_populates="delta", lazy="noload")
     betas: List["Beta"] = relationship("Beta", secondary="beta_delta_binding", back_populates="deltas", lazy="noload")
+
+
+class CascadeCase(Base):
+    __tablename__ = "cascade_case"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    parent_item_id = Column(
+        Integer,
+        ForeignKey(
+            "cascade_case.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=True,
+    )
+    sub_items = relationship(
+        "CascadeCase",
+        backref=backref("parent_item", remote_side=[id]),
+    )
+
+    if TYPE_CHECKING:
+        parent_item: Optional["CascadeCase"]

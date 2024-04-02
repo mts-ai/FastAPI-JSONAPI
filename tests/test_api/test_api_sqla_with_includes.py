@@ -1,6 +1,7 @@
 import json
 import logging
 from collections import defaultdict
+from contextlib import suppress
 from datetime import datetime, timezone
 from itertools import chain, zip_longest
 from json import dumps, loads
@@ -18,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 from starlette.datastructures import QueryParams
 
+from fastapi_jsonapi.api import RoutersJSONAPI
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
 from tests.fixtures.app import build_alphabet_app, build_app_custom
@@ -31,6 +33,7 @@ from tests.misc.utils import fake
 from tests.models import (
     Alpha,
     Beta,
+    CascadeCase,
     Computer,
     ContainsTimestamp,
     CustomUUIDItem,
@@ -44,6 +47,7 @@ from tests.models import (
     Workplace,
 )
 from tests.schemas import (
+    CascadeCaseSchema,
     CustomUserAttributesSchema,
     CustomUUIDItemAttributesSchema,
     PostAttributesBaseSchema,
@@ -1744,6 +1748,87 @@ class TestPatchObjects:
             "meta": None,
         }
 
+    @mark.parametrize("check_type", ["ok", "fail"])
+    async def test_update_to_many_relationships(self, async_session: AsyncSession, check_type: Literal["ok", "fail"]):
+        resource_type = "cascade_case"
+        with suppress(KeyError):
+            RoutersJSONAPI.all_jsonapi_routers.pop(resource_type)
+
+        app = build_app_custom(
+            model=CascadeCase,
+            schema=CascadeCaseSchema,
+            resource_type=resource_type,
+        )
+
+        top_item = CascadeCase()
+        new_top_item = CascadeCase()
+        sub_item_1 = CascadeCase(parent_item=top_item)
+        sub_item_2 = CascadeCase(parent_item=top_item)
+        async_session.add_all(
+            [
+                top_item,
+                new_top_item,
+                sub_item_1,
+                sub_item_2,
+            ],
+        )
+        await async_session.commit()
+
+        assert sub_item_1.parent_item_id == top_item.id
+        assert sub_item_2.parent_item_id == top_item.id
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            params = None
+            if check_type == "ok":
+                params = {"include": "sub_items"}
+
+            update_body = {
+                "type": resource_type,
+                "data": {
+                    "id": new_top_item.id,
+                    "attributes": {},
+                    "relationships": {
+                        "sub_items": {
+                            "data": [
+                                {
+                                    "type": resource_type,
+                                    "id": sub_item_1.id,
+                                },
+                                {
+                                    "type": resource_type,
+                                    "id": sub_item_2.id,
+                                },
+                            ],
+                        },
+                    },
+                },
+            }
+            url = app.url_path_for(f"update_{resource_type}_detail", obj_id=new_top_item.id)
+
+            res = await client.patch(url, params=params, json=update_body)
+
+            if check_type == "ok":
+                assert res.status_code == status.HTTP_200_OK, res.text
+
+                await async_session.refresh(sub_item_1)
+                await async_session.refresh(sub_item_2)
+                await async_session.refresh(top_item)
+                assert sub_item_1.parent_item_id == new_top_item.id
+                assert sub_item_1.parent_item_id == new_top_item.id
+            else:
+                assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
+                assert res.json() == {
+                    "errors": [
+                        {
+                            "detail": "Error of loading the 'sub_items' relationship. "
+                            "Please add this relationship to include query parameter explicitly.",
+                            "source": {"parameter": "include"},
+                            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            "title": "Internal Server Error",
+                        },
+                    ],
+                }
+
 
 class TestPatchObjectRelationshipsToOne:
     async def test_ok_when_foreign_key_of_related_object_is_nullable(
@@ -2246,6 +2331,46 @@ class TestDeleteObjects:
             "jsonapi": {"version": "1.0"},
             "meta": {"count": 2, "totalPages": 1},
         }
+
+    async def test_cascade_delete(self, async_session: AsyncSession):
+        resource_type = "cascade_case"
+        with suppress(KeyError):
+            RoutersJSONAPI.all_jsonapi_routers.pop(resource_type)
+
+        app = build_app_custom(
+            model=CascadeCase,
+            schema=CascadeCaseSchema,
+            resource_type=resource_type,
+        )
+
+        top_item = CascadeCase()
+        sub_item_1 = CascadeCase(parent_item=top_item)
+        sub_item_2 = CascadeCase(parent_item=top_item)
+        async_session.add_all(
+            [
+                top_item,
+                sub_item_1,
+                sub_item_2,
+            ],
+        )
+        await async_session.commit()
+
+        assert sub_item_1.parent_item_id == top_item.id
+        assert sub_item_2.parent_item_id == top_item.id
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"delete_{resource_type}_detail", obj_id=top_item.id)
+
+            res = await client.delete(url)
+            assert res.status_code == status.HTTP_204_NO_CONTENT, res.text
+
+            top_item_stmt = select(CascadeCase).where(CascadeCase.id == top_item.id)
+            top_item = (await async_session.execute(top_item_stmt)).one_or_none()
+            assert top_item is None
+
+            sub_items_stmt = select(CascadeCase).where(CascadeCase.id.in_([sub_item_1.id, sub_item_2.id]))
+            sub_items = (await async_session.execute(sub_items_stmt)).all()
+            assert sub_items == []
 
 
 class TestOpenApi:
