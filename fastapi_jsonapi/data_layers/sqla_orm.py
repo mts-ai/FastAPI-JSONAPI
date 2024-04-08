@@ -173,11 +173,14 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
             if relationship_info.many:
                 assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToManySchema)
-                related_data = await self.get_related_objects_list(
-                    related_model=related_model,
-                    related_id_field=relationship_info.id_field_name,
-                    ids=[r.id for r in relationship_in.data],
-                )
+
+                related_data = []
+                if relationship_in.data:
+                    related_data = await self.get_related_objects_list(
+                        related_model=related_model,
+                        related_id_field=relationship_info.id_field_name,
+                        ids=[r.id for r in relationship_in.data],
+                    )
             else:
                 assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToOneSchema)
 

@@ -1438,7 +1438,7 @@ class TestCreateObjects:
                         "name": "child",
                     },
                     "relationships": {
-                        "self_relationship": {
+                        "parent_object": {
                             "data": {
                                 "type": resource_type,
                                 "id": parent_object_id,
@@ -1447,7 +1447,7 @@ class TestCreateObjects:
                     },
                 },
             }
-            url = f"{url}?include=self_relationship"
+            url = f"{url}?include=parent_object"
             res = await client.post(url, json=create_with_relationship_body)
             assert res.status_code == status.HTTP_201_CREATED, res.text
 
@@ -1459,7 +1459,7 @@ class TestCreateObjects:
                     "attributes": {"name": "child"},
                     "id": child_object_id,
                     "relationships": {
-                        "self_relationship": {
+                        "parent_object": {
                             "data": {
                                 "id": parent_object_id,
                                 "type": "self_relationship",
@@ -1830,57 +1830,6 @@ class TestPatchObjects:
                     ],
                 }
 
-    async def test_remove_to_one_relationship_using_by_update(self, async_session: AsyncSession):
-        resource_type = "self_relationship"
-        app = build_app_custom(
-            model=SelfRelationship,
-            schema=SelfRelationshipSchema,
-            resource_type=resource_type,
-        )
-
-        parent_obj = SelfRelationship(name=fake.name())
-        child_obj = SelfRelationship(name=fake.name(), self_relationship=parent_obj)
-        async_session.add_all([parent_obj, child_obj])
-        await async_session.commit()
-
-        assert child_obj.self_relationship_id == parent_obj.id
-
-        async with AsyncClient(app=app, base_url="http://test") as client:
-            expected_name = fake.name()
-            update_body = {
-                "data": {
-                    "id": str(child_obj.id),
-                    "attributes": {
-                        "name": expected_name,
-                    },
-                    "relationships": {
-                        "self_relationship": {
-                            "data": None,
-                        },
-                    },
-                },
-            }
-            params = {
-                "include": "self_relationship",
-            }
-            url = app.url_path_for(f"update_{resource_type}_detail", obj_id=child_obj.id)
-            res = await client.patch(url, params=params, json=update_body)
-            assert res.status_code == status.HTTP_200_OK, res.text
-            assert res.json() == {
-                "data": {
-                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).dict(),
-                    "id": str(child_obj.id),
-                    "relationships": {"self_relationship": {"data": None}},
-                    "type": "self_relationship",
-                },
-                "included": [],
-                "jsonapi": {"version": "1.0"},
-                "meta": None,
-            }
-
-            await async_session.refresh(child_obj)
-            assert child_obj.self_relationship_id is None
-
 
 class TestPatchObjectRelationshipsToOne:
     async def test_ok_when_foreign_key_of_related_object_is_nullable(
@@ -2094,6 +2043,60 @@ class TestPatchObjectRelationshipsToOne:
             ],
         }
 
+    async def test_remove_to_one_relationship_using_by_update(self, async_session: AsyncSession):
+        resource_type = "self_relationship"
+        with suppress(KeyError):
+            RoutersJSONAPI.all_jsonapi_routers.pop(resource_type)
+
+        app = build_app_custom(
+            model=SelfRelationship,
+            schema=SelfRelationshipSchema,
+            resource_type=resource_type,
+        )
+
+        parent_obj = SelfRelationship(name=fake.name())
+        child_obj = SelfRelationship(name=fake.name(), parent_object=parent_obj)
+        async_session.add_all([parent_obj, child_obj])
+        await async_session.commit()
+
+        assert child_obj.self_relationship_id == parent_obj.id
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            expected_name = fake.name()
+            update_body = {
+                "data": {
+                    "id": str(child_obj.id),
+                    "attributes": {
+                        "name": expected_name,
+                    },
+                    "relationships": {
+                        "parent_object": {
+                            "data": None,
+                        },
+                    },
+                },
+            }
+            params = {
+                "include": "parent_object",
+            }
+            url = app.url_path_for(f"update_{resource_type}_detail", obj_id=child_obj.id)
+            res = await client.patch(url, params=params, json=update_body)
+            assert res.status_code == status.HTTP_200_OK, res.text
+            assert res.json() == {
+                "data": {
+                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).dict(),
+                    "id": str(child_obj.id),
+                    "relationships": {"parent_object": {"data": None}},
+                    "type": "self_relationship",
+                },
+                "included": [],
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
+
+            await async_session.refresh(child_obj)
+            assert child_obj.self_relationship_id is None
+
 
 class TestPatchRelationshipsToMany:
     async def test_ok(
@@ -2268,6 +2271,65 @@ class TestPatchRelationshipsToMany:
                 },
             ],
         }
+
+    async def test_remove_to_many_relationship_using_by_update(self, async_session: AsyncSession):
+        resource_type = "self_relationship"
+        with suppress(KeyError):
+            RoutersJSONAPI.all_jsonapi_routers.pop(resource_type)
+
+        app = build_app_custom(
+            model=SelfRelationship,
+            schema=SelfRelationshipSchema,
+            resource_type=resource_type,
+        )
+
+        parent_obj = SelfRelationship(name=fake.name())
+        child_obj_1 = SelfRelationship(name=fake.name(), parent_object=parent_obj)
+        child_obj_2 = SelfRelationship(name=fake.name(), parent_object=parent_obj)
+        async_session.add_all([parent_obj, child_obj_1, child_obj_2])
+        await async_session.commit()
+
+        assert child_obj_1.self_relationship_id == parent_obj.id
+        assert child_obj_2.self_relationship_id == parent_obj.id
+        assert len(parent_obj.children_objects) == 2  # noqa PLR2004
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            expected_name = fake.name()
+            update_body = {
+                "data": {
+                    "id": str(parent_obj.id),
+                    "attributes": {
+                        "name": expected_name,
+                    },
+                    "relationships": {
+                        "children_objects": {
+                            "data": None,
+                        },
+                    },
+                },
+            }
+            params = {
+                "include": "children_objects",
+            }
+            url = app.url_path_for(f"update_{resource_type}_detail", obj_id=parent_obj.id)
+            res = await client.patch(url, params=params, json=update_body)
+            assert res.status_code == status.HTTP_200_OK, res.text
+            assert res.json() == {
+                "data": {
+                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).dict(),
+                    "id": str(parent_obj.id),
+                    "relationships": {"children_objects": {"data": []}},
+                    "type": "self_relationship",
+                },
+                "included": [],
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
+
+            await async_session.refresh(child_obj_1)
+            await async_session.refresh(child_obj_2)
+            assert child_obj_1.self_relationship_id is None
+            assert child_obj_2.self_relationship_id is None
 
 
 class TestDeleteObjects:

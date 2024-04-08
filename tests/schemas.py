@@ -408,9 +408,15 @@ class SelfRelationshipAttributesSchema(BaseModel):
 
 
 class SelfRelationshipSchema(SelfRelationshipAttributesSchema):
-    self_relationship: Optional["SelfRelationshipSchema"] = Field(
+    parent_object: Optional["SelfRelationshipSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="self_relationship",
+        ),
+    )
+    children_objects: Optional[list["SelfRelationshipSchema"]] = Field(
+        relationship=RelationshipInfo(
+            resource_type="self_relatiosnhip",
+            many=True,
         ),
     )
 
