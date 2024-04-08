@@ -400,8 +400,14 @@ class CustomUUIDItemSchema(CustomUUIDItemAttributesSchema):
     id: UUID = Field(client_can_set_id=True)
 
 
-class SelfRelationshipSchema(BaseModel):
+class SelfRelationshipAttributesSchema(BaseModel):
     name: str
+
+    class Config:
+        orm_mode = True
+
+
+class SelfRelationshipSchema(SelfRelationshipAttributesSchema):
     self_relationship: Optional["SelfRelationshipSchema"] = Field(
         relationship=RelationshipInfo(
             resource_type="self_relationship",

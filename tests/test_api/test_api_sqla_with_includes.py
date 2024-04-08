@@ -52,6 +52,7 @@ from tests.schemas import (
     CustomUUIDItemAttributesSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
+    SelfRelationshipAttributesSchema,
     SelfRelationshipSchema,
     UserAttributesBaseSchema,
     UserBioAttributesBaseSchema,
@@ -1845,10 +1846,12 @@ class TestPatchObjects:
         assert child_obj.self_relationship_id == parent_obj.id
 
         async with AsyncClient(app=app, base_url="http://test") as client:
+            expected_name = fake.name()
             update_body = {
                 "data": {
+                    "id": str(child_obj.id),
                     "attributes": {
-                        "name": fake.name(),
+                        "name": expected_name,
                     },
                     "relationships": {
                         "self_relationship": {
@@ -1857,9 +1860,23 @@ class TestPatchObjects:
                     },
                 },
             }
+            params = {
+                "include": "self_relationship",
+            }
             url = app.url_path_for(f"update_{resource_type}_detail", obj_id=child_obj.id)
-            res = await client.patch(url, json=update_body)
+            res = await client.patch(url, params=params, json=update_body)
             assert res.status_code == status.HTTP_200_OK, res.text
+            assert res.json() == {
+                "data": {
+                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).dict(),
+                    "id": str(child_obj.id),
+                    "relationships": {"self_relationship": {"data": None}},
+                    "type": "self_relationship",
+                },
+                "included": [],
+                "jsonapi": {"version": "1.0"},
+                "meta": None,
+            }
 
             await async_session.refresh(child_obj)
             assert child_obj.self_relationship_id is None

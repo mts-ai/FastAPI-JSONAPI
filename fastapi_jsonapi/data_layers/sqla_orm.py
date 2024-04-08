@@ -180,12 +180,16 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 )
             else:
                 assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToOneSchema)
-                related_data = await self.get_related_object(
-                    related_model=related_model,
-                    related_id_field=relationship_info.id_field_name,
-                    id_value=relationship_in.data.id,
-                )
 
+                if relationship_in.data:
+                    related_data = await self.get_related_object(
+                        related_model=related_model,
+                        related_id_field=relationship_info.id_field_name,
+                        id_value=relationship_in.data.id,
+                    )
+                else:
+                    setattr(obj, relation_name, None)
+                    continue
             try:
                 hasattr(obj, relation_name)
             except MissingGreenlet:
