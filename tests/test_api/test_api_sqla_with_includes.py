@@ -1829,6 +1829,41 @@ class TestPatchObjects:
                     ],
                 }
 
+    async def test_remove_to_one_relationship_using_by_update(self, async_session: AsyncSession):
+        resource_type = "self_relationship"
+        app = build_app_custom(
+            model=SelfRelationship,
+            schema=SelfRelationshipSchema,
+            resource_type=resource_type,
+        )
+
+        parent_obj = SelfRelationship(name=fake.name())
+        child_obj = SelfRelationship(name=fake.name(), self_relationship=parent_obj)
+        async_session.add_all([parent_obj, child_obj])
+        await async_session.commit()
+
+        assert child_obj.self_relationship_id == parent_obj.id
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            update_body = {
+                "data": {
+                    "attributes": {
+                        "name": fake.name(),
+                    },
+                    "relationships": {
+                        "self_relationship": {
+                            "data": None,
+                        },
+                    },
+                },
+            }
+            url = app.url_path_for(f"update_{resource_type}_detail", obj_id=child_obj.id)
+            res = await client.patch(url, json=update_body)
+            assert res.status_code == status.HTTP_200_OK, res.text
+
+            await async_session.refresh(child_obj)
+            assert child_obj.self_relationship_id is None
+
 
 class TestPatchObjectRelationshipsToOne:
     async def test_ok_when_foreign_key_of_related_object_is_nullable(
