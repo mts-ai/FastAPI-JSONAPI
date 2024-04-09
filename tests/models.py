@@ -305,8 +305,13 @@ class SelfRelationship(Base):
         ),
         nullable=True,
     )
-    # parent = relationship("SelfRelationship", back_populates="s")
-    self_relationship = relationship("SelfRelationship", remote_side=[id])
+    children_objects = relationship(
+        "SelfRelationship",
+        backref=backref("parent_object", remote_side=[id]),
+    )
+
+    if TYPE_CHECKING:
+        parent_object: Optional["SelfRelationship"]
 
 
 class ContainsTimestamp(Base):
