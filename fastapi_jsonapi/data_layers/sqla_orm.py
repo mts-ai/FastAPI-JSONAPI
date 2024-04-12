@@ -1,6 +1,6 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Literal, Optional, Tuple, Type, Union
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import DBAPIError, IntegrityError, MissingGreenlet, NoResultFound
@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 ModelTypeOneOrMany = Union[TypeModel, list[TypeModel]]
+ActionTrigger = Literal["create", "update"]
 
 
 class SqlalchemyDataLayer(BaseDataLayer):
@@ -141,6 +142,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         obj: TypeModel,
         relation_name: str,
         related_data: Optional[ModelTypeOneOrMany],
+        action_trigger: ActionTrigger,
     ):
         """
         Links target object with relationship object or objects
@@ -148,6 +150,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param obj:
         :param relation_name:
         :param related_data:
+        :param action_trigger: indicates which one operation triggered relationships applying
         """
         # todo: relation name may be different?
         setattr(obj, relation_name, related_data)
@@ -204,12 +207,18 @@ class SqlalchemyDataLayer(BaseDataLayer):
             id_value=relationship_in.data.id,
         )
 
-    async def apply_relationships(self, obj: TypeModel, data_create: BaseJSONAPIItemInSchema) -> None:
+    async def apply_relationships(
+        self,
+        obj: TypeModel,
+        data_create: BaseJSONAPIItemInSchema,
+        action_trigger: ActionTrigger,
+    ) -> None:
         """
         Handles relationships passed in request
 
         :param obj:
         :param data_create:
+        :param action_trigger: indicates which one operation triggered relationships applying
         :return:
         """
         relationships: "PydanticBaseModel" = data_create.relationships
@@ -245,7 +254,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             )
 
             await self.check_object_has_relationship_or_raise(obj, relation_name)
-            await self.link_relationship_object(obj, relation_name, related_data)
+            await self.link_relationship_object(obj, relation_name, related_data, action_trigger)
 
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
@@ -262,7 +271,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         await self.before_create_object(model_kwargs=model_kwargs, view_kwargs=view_kwargs)
 
         obj = self.model(**model_kwargs)
-        await self.apply_relationships(obj, data_create)
+        await self.apply_relationships(obj, data_create, action_trigger="create")
 
         self.session.add(obj)
         try:
@@ -388,7 +397,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         new_data = data_update.attributes.dict(exclude_unset=True)
 
-        await self.apply_relationships(obj, data_update)
+        await self.apply_relationships(obj, data_update, action_trigger="update")
 
         await self.before_update_object(obj, model_kwargs=new_data, view_kwargs=view_kwargs)
 
