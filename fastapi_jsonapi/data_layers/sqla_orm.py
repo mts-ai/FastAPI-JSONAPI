@@ -190,7 +190,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param relationship_in:
         """
         if not relationship_in.data:
-            return {True: [], False: None}[relationship_info.many]
+            return [] if relationship_info.many else None
 
         if relationship_info.many:
             assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToManySchema)
