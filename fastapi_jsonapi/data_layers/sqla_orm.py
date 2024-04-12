@@ -1,6 +1,6 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, Union
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import DBAPIError, IntegrityError, MissingGreenlet, NoResultFound
@@ -43,6 +43,8 @@ if TYPE_CHECKING:
     from sqlalchemy.sql import Select
 
 log = logging.getLogger(__name__)
+
+ModelTypeOneOrMany = Union[TypeModel, list[TypeModel]]
 
 
 class SqlalchemyDataLayer(BaseDataLayer):
@@ -134,9 +136,77 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return value
 
+    async def link_relationship_object(
+        self,
+        obj: TypeModel,
+        relation_name: str,
+        related_data: Optional[ModelTypeOneOrMany],
+    ):
+        """
+        Links target object with relationship object or objects
+
+        :param obj:
+        :param relation_name:
+        :param related_data:
+        """
+        # todo: relation name may be different?
+        setattr(obj, relation_name, related_data)
+
+    async def check_object_has_relationship_or_raise(self, obj: TypeModel, relation_name: str):
+        """
+        Checks that there is relationship with relation_name in obj
+
+        :param obj:
+        :param relation_name:
+        """
+        try:
+            hasattr(obj, relation_name)
+        except MissingGreenlet:
+            raise InternalServerError(
+                detail=(
+                    f"Error of loading the {relation_name!r} relationship. "
+                    f"Please add this relationship to include query parameter explicitly."
+                ),
+                parameter="include",
+            )
+
+    async def get_related_data_to_link(
+        self,
+        related_model: TypeModel,
+        relationship_info: RelationshipInfo,
+        relationship_in: Union[
+            BaseJSONAPIRelationshipDataToOneSchema,
+            BaseJSONAPIRelationshipDataToManySchema,
+        ],
+    ) -> Optional[ModelTypeOneOrMany]:
+        """
+        Retrieves object or objects to link from database
+
+        :param related_model:
+        :param relationship_info:
+        :param relationship_in:
+        """
+        if not relationship_in.data:
+            return {True: [], False: None}[relationship_info.many]
+
+        if relationship_info.many:
+            assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToManySchema)
+            return await self.get_related_objects_list(
+                related_model=related_model,
+                related_id_field=relationship_info.id_field_name,
+                ids=[r.id for r in relationship_in.data],
+            )
+
+        assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToOneSchema)
+        return await self.get_related_object(
+            related_model=related_model,
+            related_id_field=relationship_info.id_field_name,
+            id_value=relationship_in.data.id,
+        )
+
     async def apply_relationships(self, obj: TypeModel, data_create: BaseJSONAPIItemInSchema) -> None:
         """
-        TODO: move generic code to another method
+        Handles relationships passed in request
 
         :param obj:
         :param data_create:
@@ -167,45 +237,15 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 continue
 
             relationship_info: RelationshipInfo = field.field_info.extra["relationship"]
-
-            # ...
             related_model = get_related_model_cls(type(obj), relation_name)
+            related_data = await self.get_related_data_to_link(
+                related_model=related_model,
+                relationship_info=relationship_info,
+                relationship_in=relationship_in,
+            )
 
-            if relationship_info.many:
-                assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToManySchema)
-
-                related_data = []
-                if relationship_in.data:
-                    related_data = await self.get_related_objects_list(
-                        related_model=related_model,
-                        related_id_field=relationship_info.id_field_name,
-                        ids=[r.id for r in relationship_in.data],
-                    )
-            else:
-                assert isinstance(relationship_in, BaseJSONAPIRelationshipDataToOneSchema)
-
-                if relationship_in.data:
-                    related_data = await self.get_related_object(
-                        related_model=related_model,
-                        related_id_field=relationship_info.id_field_name,
-                        id_value=relationship_in.data.id,
-                    )
-                else:
-                    setattr(obj, relation_name, None)
-                    continue
-            try:
-                hasattr(obj, relation_name)
-            except MissingGreenlet:
-                raise InternalServerError(
-                    detail=(
-                        f"Error of loading the {relation_name!r} relationship. "
-                        f"Please add this relationship to include query parameter explicitly."
-                    ),
-                    parameter="include",
-                )
-
-            # todo: relation name may be different?
-            setattr(obj, relation_name, related_data)
+            await self.check_object_has_relationship_or_raise(obj, relation_name)
+            await self.link_relationship_object(obj, relation_name, related_data)
 
     async def create_object(self, data_create: BaseJSONAPIItemInSchema, view_kwargs: dict) -> TypeModel:
         """
