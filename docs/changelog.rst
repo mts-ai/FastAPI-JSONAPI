@@ -1,6 +1,23 @@
 Changelog
 #########
 
+**2.7.0**
+*********
+
+Refactoring and relationships update fixes
+==========================================
+
+* Feature/customizable request attributes by `@CosmoV`_ in `#80 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/80>`_
+* Fix cascade changes by `@CosmoV`_ in `#81 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/81>`_
+* Fix update relationship by `@CosmoV`_ in `#82 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/82>`_
+* SQLAlchemy Data Layer refactor by `@CosmoV`_ in `#83 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/83>`_
+
+Authors
+"""""""
+
+* `@CosmoV`_
+
+
 **2.6.0**
 *********
 
