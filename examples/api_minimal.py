@@ -8,7 +8,7 @@ from pydantic import ConfigDict
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
@@ -22,7 +22,9 @@ PROJECT_DIR = CURRENT_DIR.parent.parent
 DB_URL = f"sqlite+aiosqlite:///{CURRENT_DIR}/db.sqlite3"
 sys.path.append(str(PROJECT_DIR))
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class User(Base):
