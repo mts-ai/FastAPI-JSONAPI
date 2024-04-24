@@ -11,7 +11,6 @@ from typing import Dict
 
 from pydantic import BaseModel as BaseModelGeneric
 from pydantic import Field
-from pydantic._internal._model_construction import ModelMetaclass
 
 
 class Registry:
@@ -32,15 +31,13 @@ class Registry:
 registry = Registry()
 
 
-class RegistryMeta(ModelMetaclass):
-    def __new__(mcs, *args, **kwargs):
-        # any other way to get all known schemas?
-        schema = super().__new__(mcs, *args, **kwargs)
-        registry.add(schema)
-        return schema
+class RegistryMeta(BaseModelGeneric):
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        registry.add(cls)
 
 
-class BaseModel(BaseModelGeneric, metaclass=RegistryMeta):
+class BaseModel(RegistryMeta):
     pass
 
 
