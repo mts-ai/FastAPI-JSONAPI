@@ -1,17 +1,18 @@
 from copy import deepcopy
-from typing import Callable, Dict, Optional, Set, Type
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Set, Type
 
 from pydantic import field_validator, model_validator
-from pydantic._internal._decorators import DecoratorInfos
 
 from fastapi_jsonapi.schema_base import BaseModel
+
+if TYPE_CHECKING:
+    from pydantic._internal._decorators import DecoratorInfos
 
 
 def extract_root_validators(model: Type[BaseModel]) -> Dict[str, Callable]:
     pre_root_validators = getattr(model, "__pre_root_validators__", [])
     post_root_validators = getattr(model, "__post_root_validators__", [])
     result_validators = {}
-
     for validator_func in pre_root_validators:
         result_validators[validator_func.__name__] = model_validator(mode="before")
 
@@ -23,7 +24,7 @@ def extract_root_validators(model: Type[BaseModel]) -> Dict[str, Callable]:
     return result_validators
 
 
-def _deduplicate_field_validators(validators: DecoratorInfos) -> Dict:
+def _deduplicate_field_validators(validators: "DecoratorInfos") -> Dict:
     result_validators = {}
     field_validators = validators.field_validators
     model_validators = validators.model_validators
@@ -46,7 +47,6 @@ def extract_field_validators(
     validators = _deduplicate_field_validators(deepcopy(model.__pydantic_decorators__))
 
     exclude_for_field_names = exclude_for_field_names or set()
-
     if include_for_field_names and exclude_for_field_names:
         include_for_field_names = include_for_field_names.difference(
             exclude_for_field_names,
@@ -63,7 +63,7 @@ def extract_field_validators(
         validator_name = f"{field_name}_{field_validator.__name__}_validator"
         result_validators[validator_name] = field_validator(
             field_name,
-        )
+        )(field_validators.func)
 
     return result_validators
 
@@ -74,7 +74,7 @@ def extract_validators(
 ) -> Dict[str, Callable]:
     return {
         **extract_field_validators(
-            model,
+            model=model,
             exclude_for_field_names=exclude_for_field_names,
         ),
         **extract_root_validators(model),
