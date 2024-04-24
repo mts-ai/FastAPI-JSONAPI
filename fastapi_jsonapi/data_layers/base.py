@@ -80,7 +80,7 @@ class BaseDataLayer:
         """
         if data_create.id is None:
             return model_kwargs
-        extra = data_create.model_fields["id"].default
+        extra = data_create.model_fields["id"].json_schema_extra
         if extra is not None and extra.get("client_can_set_id"):
             id_value = data_create.id
             field_config = self._unwrap_field_config(extra)

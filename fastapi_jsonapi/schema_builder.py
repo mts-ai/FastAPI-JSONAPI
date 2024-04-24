@@ -278,7 +278,7 @@ class SchemaBuilder:
                 elif name not in includes:
                     # if includes are passed, skip this if name not present!
                     continue
-                relationship: RelationshipInfo = field.default.extra["relationship"]
+                relationship: RelationshipInfo = field.json_schema_extra["relationship"]
                 relationship_schema = self.create_relationship_data_schema(
                     field_name=name,
                     base_name=base_name,
@@ -302,12 +302,12 @@ class SchemaBuilder:
                 )
                 resource_id_field = (*(resource_id_field[:-1]), id_validators)
 
-                # if not field.default.extra.get("client_can_set_id"):
-                #     continue
+                if field.json_schema_extra and not field.json_schema_extra.get("client_can_set_id", False):
+                    continue
 
                 # todo: support for union types?
                 #  support custom cast func
-                resource_id_field = (str, Field(**field.default), field.annotation, id_validators)
+                resource_id_field = (str, Field(default=field.default), field.annotation, id_validators)
             else:
                 attributes_schema_fields[name] = (field.annotation, field.default)
         ConfigOrmMode = ConfigDict(from_attributes=True)
@@ -401,19 +401,22 @@ class SchemaBuilder:
             return self.base_jsonapi_object_schemas_cache[base_name]
 
         field_type, field_info, id_cast_func, id_validators = resource_id_field
-        # FIXME:
-        # id_field_kw = {
-        #     **field_info.extra,
-        # }
-        # if id_cast_func:
-        #     id_field_kw.update(
-        #         field_config=TransferSaveWrapper(field_config=FieldConfig(cast_type=id_cast_func)),
-        #     )
+        # FIXME: Почему-то сюда прилетает NoneType и из-за этого не запускаются примеры
+        try:
+            id_field_kw = {
+                **field_info.json_schema_extra,
+            }
+        except TypeError:
+            id_field_kw = {}
+        if id_cast_func:
+            id_field_kw.update(
+                field_config=TransferSaveWrapper(field_config=FieldConfig(cast_type=id_cast_func)),
+            )
 
         object_jsonapi_schema_fields = {
             "attributes": (attributes_schema, ...),
-            # "id": (str, Field(... if id_field_required else None, **id_field_kw)),
-            "id": (str, Field(... if id_field_required else None)),
+            "id": (str, Field(... if id_field_required else None, **id_field_kw)),
+            # "id": (str, Field(... if id_field_required else None)),
         }
         if includes:
             object_jsonapi_schema_fields.update(

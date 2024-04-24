@@ -65,7 +65,7 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
                     continue
             # process inner models, find relationships
             if inspect.isclass(field.annotation) and issubclass(field.annotation, (BaseModel, BaseModelOriginal)):
-                if field.default.extra.get("relationship"):
+                if field.json_schema_extra.get("relationship"):
                     available_includes_names.append(name)
                 else:
                     log.warning(

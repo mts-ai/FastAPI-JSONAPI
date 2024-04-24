@@ -17,28 +17,32 @@ class UserBaseSchema(UserAttributesBaseSchema):
     """User base schema."""
 
     posts: Optional[List["PostSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="post",
+                many=True,
+            ),
+        },
     )
 
     bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user_bio",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user_bio",
+            ),
+        },
     )
 
     computers: Optional[List["ComputerSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="computer",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="computer",
+                many=True,
+            ),
+        },
     )
     workplace: Optional["WorkplaceSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="workplace",
-        ),
+        json_schema_extra={"relationship": RelationshipInfo(resource_type="workplace")},
     )
 
 
@@ -51,7 +55,7 @@ class UserInSchema(UserBaseSchema):
 
 
 class UserInSchemaAllowIdOnPost(UserBaseSchema):
-    id: str = Field(client_can_set_id=True)
+    id: str = Field(json_schema_extra={"client_can_set_id": True})
 
 
 class UserSchema(UserInSchema):
@@ -80,9 +84,11 @@ class UserBioSchema(UserBioAttributesBaseSchema):
 
     id: int
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -99,15 +105,19 @@ class PostBaseSchema(PostAttributesBaseSchema):
     """Post base schema."""
 
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
     comments: Optional[List["PostCommentSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post_comment",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="post_comment",
+                many=True,
+            ),
+        },
     )
 
 
@@ -137,14 +147,18 @@ class PostCommentBaseSchema(PostCommentAttributesBaseSchema):
     """PostComment base schema."""
 
     post: "PostSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="post",
+            ),
+        },
     )
     author: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -167,15 +181,19 @@ class ParentToChildAssociationAttributesSchema(BaseModel):
 
 class ParentToChildAssociationSchema(ParentToChildAssociationAttributesSchema):
     parent: "ParentSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="parent",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="parent",
+            ),
+        },
     )
 
     child: "ChildSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="child",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="child",
+            ),
+        },
     )
 
 
@@ -192,10 +210,12 @@ class ParentBaseSchema(ParentAttributesSchema):
 
     children: List["ParentToChildAssociationSchema"] = Field(
         default=None,
-        relationship=RelationshipInfo(
-            resource_type="parent_child_association",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="parent_child_association",
+                many=True,
+            ),
+        },
     )
 
 
@@ -226,10 +246,12 @@ class ChildBaseSchema(ChildAttributesSchema):
 
     parents: List["ParentToChildAssociationSchema"] = Field(
         default=None,
-        relationship=RelationshipInfo(
-            resource_type="parent_child_association",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="parent_child_association",
+                many=True,
+            ),
+        },
     )
 
 
@@ -257,9 +279,11 @@ class ComputerBaseSchema(ComputerAttributesBaseSchema):
     """Computer base schema."""
 
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -281,9 +305,11 @@ class ComputerSchema(ComputerInSchema):
     # TODO: rename
     # owner: Optional["UserSchema"] = Field(
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -294,9 +320,11 @@ class WorkplaceBaseSchema(BaseModel):
 
     name: str
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -355,15 +383,17 @@ class CustomUUIDItemAttributesSchema(BaseModel):
 
 
 class CustomUUIDItemSchema(CustomUUIDItemAttributesSchema):
-    id: UUID = Field(client_can_set_id=True)
+    id: UUID = Field(json_schema_extra={"client_can_set_id": True})
 
 
 class SelfRelationshipSchema(BaseModel):
     name: str
     self_relationship: Optional["SelfRelationshipSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="self_relationship",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="self_relationship",
+            ),
+        },
     )
 
 

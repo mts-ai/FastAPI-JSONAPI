@@ -166,12 +166,12 @@ class AtomicOperation(BaseModel):
                 msg = f"ref should be present for action {op.value!r}"
                 raise ValueError(msg)
             # when updating / removing item, ref [l]id has to be present
-            if not (ref.get("id") or ref.get("lid")):
+            if not (ref.id or ref.lid):
                 msg = f"id or local id has to be present for action {op.value!r}"
                 raise ValueError(msg)
 
         data: OperationDataType = values.get("data")
-        operation_type = ref and ref.get("type") or data and data.get("type", None)
+        operation_type = ref and ref.type or data and data.get("type", None)
         if not operation_type:
             msg = "Operation has to be in ref or in data"
             raise ValueError(msg)

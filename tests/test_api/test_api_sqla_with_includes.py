@@ -1930,7 +1930,7 @@ class TestOpenApi:
 
     async def test_openapi_for_client_can_set_id(self):
         class Schema(BaseModel):
-            id: UUID = Field(client_can_set_id=True)
+            id: UUID = Field(json_schema_extra={"client_can_set_id": True})
 
         app = build_app_custom(
             model=User,

@@ -158,7 +158,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 log.warning("field for %s in schema %s not found", relation_name, self.schema.__name__)
                 continue
 
-            if "relationship" not in field.default.extra:
+            if "relationship" not in field.json_schema_extra:
                 log.warning(
                     "relationship info for %s in schema %s extra not found",
                     relation_name,
@@ -166,7 +166,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 )
                 continue
 
-            relationship_info: RelationshipInfo = field.default.extra["relationship"]
+            relationship_info: RelationshipInfo = field.json_schema_extra["relationship"]
 
             # ...
             related_model = get_related_model_cls(type(obj), relation_name)

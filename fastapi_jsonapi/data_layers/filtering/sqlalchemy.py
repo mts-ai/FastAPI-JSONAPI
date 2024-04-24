@@ -312,7 +312,7 @@ def get_operator(model_column: InstrumentedAttribute, operator_name: str) -> str
 
 
 def get_custom_filter_expression_callable(schema_field, operator: str) -> Callable:
-    return schema_field.default.extra.get(
+    return schema_field.json_schema_extra.get(
         f"_{operator}_sql_filter_",
     )
 
