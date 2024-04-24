@@ -2,14 +2,13 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import declared_attr, relationship
+from sqlalchemy.orm import DeclarativeBase, declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
 from tests.common import is_postgres_tests, sqla_uri
 
 
-class Base:
+class Base(DeclarativeBase):
     @declared_attr
     def __tablename__(cls):
         """
@@ -24,9 +23,6 @@ class AutoIdMixin:
     @declared_attr
     def id(cls):
         return Column(Integer, primary_key=True, autoincrement=True)
-
-
-Base = declarative_base(cls=Base)
 
 
 class User(AutoIdMixin, Base):
