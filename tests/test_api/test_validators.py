@@ -230,8 +230,8 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @classmethod
             @field_validator("name")
+            @classmethod
             def validate_name(cls, v):
                 # checks that cls arg is not bound to the origin class
                 assert cls is not UserSchemaWithValidator
@@ -253,8 +253,8 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             names: List[str]
 
-            @classmethod
             @field_validator("names")
+            @classmethod
             def validate_name(cls, v):
                 for item in v:
                     if item == "bad_name":
@@ -275,13 +275,13 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: List[str]
 
-            @classmethod
             @field_validator("name", mode="before")
+            @classmethod
             def validate_name_pre(cls, v):
                 raise BadRequest(detail="Pre validator called")
 
-            @classmethod
             @field_validator("name")
+            @classmethod
             def validate_name(cls, v):
                 raise BadRequest(detail="Not pre validator called")
 
@@ -400,7 +400,7 @@ class TestValidators:
         """
 
         class UserSchemaWithValidator(BaseModel):
-            id: int = Field(client_can_set_id=True)
+            id: int = Field(json_schema_extra={"client_can_set_id": True})
 
             @field_validator("id")
             @classmethod
@@ -531,8 +531,8 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @classmethod
             @model_validator(mode="after")
+            @classmethod
             def fix_title(cls, v):
                 v["name"] = v["name"].title()
                 return v
@@ -673,13 +673,13 @@ class TestValidationUtils:
             item_1: str
             item_2: str
 
-            @classmethod
             @field_validator("item_1")
+            @classmethod
             def item_1_validator(cls, v):
                 return v
 
-            @classmethod
             @field_validator("item_2")
+            @classmethod
             def item_2_validator(cls, v):
                 return v
 
