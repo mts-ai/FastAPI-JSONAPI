@@ -232,10 +232,11 @@ def build_app_custom(
     resource_type: str = "misc",
     class_list: Type[ListViewBase] = ListViewBaseGeneric,
     class_detail: Type[DetailViewBase] = DetailViewBaseGeneric,
+    max_cache_size: int = 0,
 ) -> FastAPI:
     router: APIRouter = APIRouter()
 
-    RoutersJSONAPI(
+    jsonapi_routers = RoutersJSONAPI(
         router=router,
         path=path,
         tags=["Misc"],
@@ -246,6 +247,7 @@ def build_app_custom(
         schema_in_patch=schema_in_patch,
         schema_in_post=schema_in_post,
         model=model,
+        max_cache_size=max_cache_size,
     )
 
     app = build_app_plain()
@@ -254,6 +256,9 @@ def build_app_custom(
     atomic = AtomicOperations()
     app.include_router(atomic.router, prefix="")
     init(app)
+
+    app.jsonapi_routers = jsonapi_routers
+
     return app
 
 

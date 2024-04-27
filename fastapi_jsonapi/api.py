@@ -78,6 +78,7 @@ class RoutersJSONAPI:
         pagination_default_offset: Optional[int] = None,
         pagination_default_limit: Optional[int] = None,
         methods: Iterable[str] = (),
+        max_cache_size: int = 0,
     ) -> None:
         """
         Initialize router items.
@@ -127,7 +128,7 @@ class RoutersJSONAPI:
         self.pagination_default_number: Optional[int] = pagination_default_number
         self.pagination_default_offset: Optional[int] = pagination_default_offset
         self.pagination_default_limit: Optional[int] = pagination_default_limit
-        self.schema_builder = SchemaBuilder(resource_type=resource_type)
+        self.schema_builder = SchemaBuilder(resource_type=resource_type, max_cache_size=max_cache_size)
 
         dto = self.schema_builder.create_schemas(
             schema=schema,

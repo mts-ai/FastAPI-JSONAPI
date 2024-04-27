@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from itertools import chain, zip_longest
 from json import dumps, loads
 from typing import Dict, List, Literal, Set, Tuple
+from unittest.mock import call, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,6 +21,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 from starlette.datastructures import QueryParams
 
 from fastapi_jsonapi.api import RoutersJSONAPI
+from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
 from tests.fixtures.app import build_alphabet_app, build_app_custom
@@ -52,6 +54,8 @@ from tests.schemas import (
     CustomUUIDItemAttributesSchema,
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
+    PostCommentSchema,
+    PostSchema,
     SelfRelationshipAttributesSchema,
     SelfRelationshipSchema,
     UserAttributesBaseSchema,
@@ -360,6 +364,215 @@ class TestGetUsersList:
             "meta": {"count": 1, "totalPages": 1},
         }
 
+    def _get_clear_mock_calls(self, mock_obj) -> list[call]:
+        mock_calls = mock_obj.mock_calls
+        return [call_ for call_ in mock_calls if call_ not in [call.__len__(), call.__str__()]]
+
+    def _prepare_info_schema_calls_to_assert(self, mock_calls) -> list[call]:
+        calls_to_check = []
+        for wrapper_call in mock_calls:
+            kwargs = wrapper_call.kwargs
+            kwargs["includes"] = sorted(kwargs["includes"], key=lambda x: x)
+
+            calls_to_check.append(
+                call(
+                    *wrapper_call.args,
+                    **kwargs,
+                ),
+            )
+
+        return sorted(
+            calls_to_check,
+            key=lambda x: (x.kwargs["base_name"], x.kwargs["includes"]),
+        )
+
+    async def test_check_get_info_schema_cache(
+        self,
+        user_1: User,
+    ):
+        resource_type = "user_with_cache"
+        with suppress(KeyError):
+            RoutersJSONAPI.all_jsonapi_routers.pop(resource_type)
+
+        app_with_cache = build_app_custom(
+            model=User,
+            schema=UserSchema,
+            schema_in_post=UserInSchemaAllowIdOnPost,
+            schema_in_patch=UserPatchSchema,
+            resource_type=resource_type,
+            # set cache size to enable caching
+            max_cache_size=128,
+        )
+
+        target_func_name = "_get_info_from_schema_for_building"
+        url = app_with_cache.url_path_for(f"get_{resource_type}_list")
+        params = {
+            "include": "posts,posts.comments",
+        }
+
+        expected_len_with_cache = 6
+        expected_len_without_cache = 10
+
+        with patch.object(
+            SchemaBuilder,
+            target_func_name,
+            wraps=app_with_cache.jsonapi_routers.schema_builder._get_info_from_schema_for_building,
+        ) as wrapped_func:
+            async with AsyncClient(app=app_with_cache, base_url="http://test") as client:
+                response = await client.get(url, params=params)
+                assert response.status_code == status.HTTP_200_OK, response.text
+
+                calls_to_check = self._prepare_info_schema_calls_to_assert(self._get_clear_mock_calls(wrapped_func))
+
+                # there are no duplicated calls
+                assert calls_to_check == sorted(
+                    [
+                        call(
+                            base_name="UserSchema",
+                            schema=UserSchema,
+                            includes=["posts"],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="UserSchema",
+                            schema=UserSchema,
+                            includes=["posts", "posts.comments"],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostSchema",
+                            schema=PostSchema,
+                            includes=[],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostSchema",
+                            schema=PostSchema,
+                            includes=["comments"],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostCommentSchema",
+                            schema=PostCommentSchema,
+                            includes=[],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostCommentSchema",
+                            schema=PostCommentSchema,
+                            includes=["posts"],
+                            non_optional_relationships=False,
+                        ),
+                    ],
+                    key=lambda x: (x.kwargs["base_name"], x.kwargs["includes"]),
+                )
+                assert wrapped_func.call_count == expected_len_with_cache
+
+                response = await client.get(url, params=params)
+                assert response.status_code == status.HTTP_200_OK, response.text
+
+                # there are no new calls
+                assert wrapped_func.call_count == expected_len_with_cache
+
+        resource_type = "user_without_cache"
+        with suppress(KeyError):
+            RoutersJSONAPI.all_jsonapi_routers.pop(resource_type)
+
+        app_without_cache = build_app_custom(
+            model=User,
+            schema=UserSchema,
+            schema_in_post=UserInSchemaAllowIdOnPost,
+            schema_in_patch=UserPatchSchema,
+            resource_type=resource_type,
+            max_cache_size=0,
+        )
+
+        with patch.object(
+            SchemaBuilder,
+            target_func_name,
+            wraps=app_without_cache.jsonapi_routers.schema_builder._get_info_from_schema_for_building,
+        ) as wrapped_func:
+            async with AsyncClient(app=app_without_cache, base_url="http://test") as client:
+                response = await client.get(url, params=params)
+                assert response.status_code == status.HTTP_200_OK, response.text
+
+                calls_to_check = self._prepare_info_schema_calls_to_assert(self._get_clear_mock_calls(wrapped_func))
+
+                # there are duplicated calls
+                assert calls_to_check == sorted(
+                    [
+                        call(
+                            base_name="UserSchema",
+                            schema=UserSchema,
+                            includes=["posts"],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="UserSchema",
+                            schema=UserSchema,
+                            includes=["posts"],
+                            non_optional_relationships=False,
+                        ),  # duplicate
+                        call(
+                            base_name="UserSchema",
+                            schema=UserSchema,
+                            includes=["posts", "posts.comments"],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostSchema",
+                            schema=PostSchema,
+                            includes=[],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostSchema",
+                            schema=PostSchema,
+                            includes=[],
+                            non_optional_relationships=False,
+                        ),  # duplicate
+                        call(
+                            base_name="PostSchema",
+                            schema=PostSchema,
+                            includes=[],
+                            non_optional_relationships=False,
+                        ),  # duplicate
+                        call(
+                            base_name="PostSchema",
+                            schema=PostSchema,
+                            includes=["comments"],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostSchema",
+                            schema=PostSchema,
+                            includes=["comments"],
+                            non_optional_relationships=False,
+                        ),  # duplicate
+                        call(
+                            base_name="PostCommentSchema",
+                            schema=PostCommentSchema,
+                            includes=[],
+                            non_optional_relationships=False,
+                        ),
+                        call(
+                            base_name="PostCommentSchema",
+                            schema=PostCommentSchema,
+                            includes=["posts"],
+                            non_optional_relationships=False,
+                        ),  # duplicate
+                    ],
+                    key=lambda x: (x.kwargs["base_name"], x.kwargs["includes"]),
+                )
+
+                assert wrapped_func.call_count == expected_len_without_cache
+
+                response = await client.get(url, params=params)
+                assert response.status_code == status.HTTP_200_OK, response.text
+
+                # there are new calls
+                assert wrapped_func.call_count == expected_len_without_cache * 2
+
 
 class TestCreatePostAndComments:
     async def test_get_posts_with_users(
@@ -371,6 +584,13 @@ class TestCreatePostAndComments:
         user_1_posts: List[Post],
         user_2_posts: List[Post],
     ):
+        call(
+            base_name="UserSchema",
+            schema=UserSchema,
+            includes=["posts"],
+            non_optional_relationships=False,
+            on_optional_relationships=False,
+        )
         url = app.url_path_for("get_post_list")
         url = f"{url}?include=user"
         response = await client.get(url)
