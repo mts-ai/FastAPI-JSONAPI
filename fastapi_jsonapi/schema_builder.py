@@ -1,5 +1,6 @@
 """JSON API schemas builder class."""
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import (
     Any,
     Callable,
@@ -122,8 +123,16 @@ class SchemaBuilder:
     def __init__(
         self,
         resource_type: str,
+        max_cache_size: int = 0,
     ):
         self._resource_type = resource_type
+        self._init_cache(max_cache_size)
+
+    def _init_cache(self, max_cache_size: int):
+        # TODO: remove crutch
+        self._get_info_from_schema_for_building_cached = lru_cache(maxsize=max_cache_size)(
+            self._get_info_from_schema_for_building_cached,
+        )
 
     def _create_schemas_objects_list(self, schema: Type[BaseModel]) -> Type[JSONAPIResultListSchema]:
         object_jsonapi_list_schema, list_jsonapi_schema = self.build_list_schemas(schema)
@@ -187,7 +196,7 @@ class SchemaBuilder:
     ) -> Tuple[Type[BaseJSONAPIDataInSchema], Type[BaseJSONAPIItemInSchema]]:
         base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
-        dto = self._get_info_from_schema_for_building(
+        dto = self._get_info_from_schema_for_building_wrapper(
             base_name=base_schema_name,
             schema=schema_in,
             non_optional_relationships=non_optional_relationships,
@@ -256,6 +265,40 @@ class SchemaBuilder:
             schema=schema,
             builder=self.build_schema_for_list_result,
             includes=includes,
+        )
+
+    def _get_info_from_schema_for_building_cached(
+        self,
+        base_name: str,
+        schema: Type[BaseModel],
+        includes: Iterable[str],
+        non_optional_relationships: bool,
+    ):
+        return self._get_info_from_schema_for_building(
+            base_name=base_name,
+            schema=schema,
+            includes=includes,
+            non_optional_relationships=non_optional_relationships,
+        )
+
+    def _get_info_from_schema_for_building_wrapper(
+        self,
+        base_name: str,
+        schema: Type[BaseModel],
+        includes: Iterable[str] = not_passed,
+        non_optional_relationships: bool = False,
+    ):
+        """
+        Wrapper function for return cached schema result
+        """
+        if includes is not not_passed:
+            includes = tuple(includes)
+
+        return self._get_info_from_schema_for_building_cached(
+            base_name=base_name,
+            schema=schema,
+            includes=includes,
+            non_optional_relationships=non_optional_relationships,
         )
 
     def _get_info_from_schema_for_building(
@@ -494,7 +537,7 @@ class SchemaBuilder:
         if includes is not not_passed:
             includes = set(includes)
 
-        dto = self._get_info_from_schema_for_building(
+        dto = self._get_info_from_schema_for_building_wrapper(
             base_name=base_name,
             schema=schema,
             includes=includes,
