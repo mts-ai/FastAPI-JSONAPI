@@ -120,7 +120,11 @@ class SchemaBuilder:
     relationship_schema_cache: ClassVar = {}
     base_jsonapi_object_schemas_cache: ClassVar = {}
 
-    def __init__(self, resource_type: str, max_cache_size: int = 0):
+    def __init__(
+        self,
+        resource_type: str,
+        max_cache_size: int = 0,
+    ):
         self._resource_type = resource_type
         self._init_cache(max_cache_size)
 
