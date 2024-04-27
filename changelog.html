@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog &mdash; FastAPI-JSONAPI 2.8.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=69ff2ef9"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Package fastapi_jsonapi index" href="fastapi-jsonapi.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            FastAPI-JSONAPI
+          </a>
+              <div class="version">
+                2.8
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="minimal_api_example.html">A minimal API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_filtering_example.html">Filtering API example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_limited_methods_example.html">Limit API methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="routing.html">Routing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomic_operations.html">Atomic Operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="view_dependencies.html">View Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filtering.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updated_includes_example.html">Create and include related objects (updated example)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="include_related_objects.html">Include related objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="include_many_to_many.html">Include nested and related, Many-to-Many</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_sql_filtering.html">Custom SQL filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_generated_id.html">Client generated id</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logical_data_abstraction.html">Logical data abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_layer.html">Data layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="relationships.html">Define relationships</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sparse_fieldsets.html">Sparse fieldsets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pagination.html">Pagination</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sorting.html">Sorting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="permission.html">Permission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oauth.html">OAuth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastapi-jsonapi.html">Package fastapi_jsonapi index</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1"><strong>2.8.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#performance-improvements">Performance improvements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#authors">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id3"><strong>2.7.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#refactoring-and-relationships-update-fixes">Refactoring and relationships update fixes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id8">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id9"><strong>2.6.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fix-joins-by-relationships">Fix JOINS by relationships</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id11">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id12"><strong>2.5.1</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fix-custom-sql-filtering-bring-back-backward-compatibility">Fix custom sql filtering, bring back backward compatibility</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id15">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id16"><strong>2.5.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fix-relationships-filtering-refactor-alchemy-helpers">Fix relationships filtering, refactor alchemy helpers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id19">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id20"><strong>2.4.2</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#separate-helper-methods-for-relationships-query">Separate helper methods for relationships query</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id22">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id23"><strong>2.4.1</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id24">Separate helper methods for relationships query</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id28">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id29"><strong>2.4.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#relationship-loading-filtering-improvements-fixes">Relationship loading, filtering improvements, fixes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id36">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id37"><strong>2.3.2</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#duplicated-entities-in-response-fix">Duplicated entities in response fix</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id39">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id40"><strong>2.3.1</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pydantic-validators-inheritance-fix">Pydantic validators inheritance fix</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id42">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id43"><strong>2.3.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#current-atomic-operation-context-var">Current Atomic Operation context var</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id45">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id46"><strong>2.2.2</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#atomic-operation-dependency-resolution-fixes">Atomic Operation dependency resolution fixes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id48">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id49"><strong>2.2.1</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#openapi-generation-fixes">OpenAPI generation fixes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id51">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id52"><strong>2.2.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#support-for-pydantic-validators">Support for pydantic validators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id53">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id54"><strong>2.1.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#atomic-operations">Atomic Operations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id55">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id56"><strong>2.0.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#generic-views-process-relationships">Generic views, process relationships</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id60">Authors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id61"><strong>1.1.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#generic-views">Generic views</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id63"><strong>1.0.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#backward-incompatible-changes-improvements-bug-fixes">Backward-incompatible changes, improvements, bug fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id64"><strong>0.2.1</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#enhancements-and-bug-fixes">Enhancements and bug fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id65"><strong>0.2.0</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id66">Enhancements and bug fixes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">FastAPI-JSONAPI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Changelog</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
+<section id="id1">
+<h2><strong>2.8.0</strong><a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<section id="performance-improvements">
+<h3>Performance improvements<a class="headerlink" href="#performance-improvements" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>added simple cache to SchemaBuilder by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/87">#87</a></p></li>
+</ul>
+<section id="authors">
+<h4>Authors<a class="headerlink" href="#authors" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id3">
+<h2><strong>2.7.0</strong><a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<section id="refactoring-and-relationships-update-fixes">
+<h3>Refactoring and relationships update fixes<a class="headerlink" href="#refactoring-and-relationships-update-fixes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Feature/customizable request attributes by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/80">#80</a></p></li>
+<li><p>Fix cascade changes by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/81">#81</a></p></li>
+<li><p>Fix update relationship by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/82">#82</a></p></li>
+<li><p>SQLAlchemy Data Layer refactor by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/83">#83</a></p></li>
+</ul>
+<section id="id8">
+<h4>Authors<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id9">
+<h2><strong>2.6.0</strong><a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
+<section id="fix-joins-by-relationships">
+<h3>Fix JOINS by relationships<a class="headerlink" href="#fix-joins-by-relationships" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix JOINS by relationships <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/78">#78</a></p></li>
+</ul>
+<section id="id11">
+<h4>Authors<a class="headerlink" href="#id11" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id12">
+<h2><strong>2.5.1</strong><a class="headerlink" href="#id12" title="Link to this heading"></a></h2>
+<section id="fix-custom-sql-filtering-bring-back-backward-compatibility">
+<h3>Fix custom sql filtering, bring back backward compatibility<a class="headerlink" href="#fix-custom-sql-filtering-bring-back-backward-compatibility" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix custom sql filtering support: bring back backward compatibility by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/74">#74</a></p></li>
+<li><p>Read version from file by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/74">#74</a></p></li>
+</ul>
+<section id="id15">
+<h4>Authors<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id16">
+<h2><strong>2.5.0</strong><a class="headerlink" href="#id16" title="Link to this heading"></a></h2>
+<section id="fix-relationships-filtering-refactor-alchemy-helpers">
+<h3>Fix relationships filtering, refactor alchemy helpers<a class="headerlink" href="#fix-relationships-filtering-refactor-alchemy-helpers" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix filter by relationships by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/52">#52</a></p></li>
+<li><p>Add Codecov by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/72">#72</a></p></li>
+<li><p>Set RoutersJSONAPI class on AtomicViewHandler by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/commit/7b2557f9e341c1210200efce0f7b47c15d4cac4e">#7b2557f</a></p></li>
+</ul>
+<section id="id19">
+<h4>Authors<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id20">
+<h2><strong>2.4.2</strong><a class="headerlink" href="#id20" title="Link to this heading"></a></h2>
+<section id="separate-helper-methods-for-relationships-query">
+<h3>Separate helper methods for relationships query<a class="headerlink" href="#separate-helper-methods-for-relationships-query" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>fix run validator: sometimes it requires model field by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/70">#70</a></p></li>
+</ul>
+<section id="id22">
+<h4>Authors<a class="headerlink" href="#id22" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id23">
+<h2><strong>2.4.1</strong><a class="headerlink" href="#id23" title="Link to this heading"></a></h2>
+<section id="id24">
+<h3>Separate helper methods for relationships query<a class="headerlink" href="#id24" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>remove resource manager example since no resource manager exists by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/66">#66</a></p></li>
+<li><p>create separate methods for building query for fetching related objects by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/67">#67</a></p></li>
+<li><p>update ruff linter by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/69">#69</a></p></li>
+</ul>
+<section id="id28">
+<h4>Authors<a class="headerlink" href="#id28" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id29">
+<h2><strong>2.4.0</strong><a class="headerlink" href="#id29" title="Link to this heading"></a></h2>
+<section id="relationship-loading-filtering-improvements-fixes">
+<h3>Relationship loading, filtering improvements, fixes<a class="headerlink" href="#relationship-loading-filtering-improvements-fixes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>pass request to data layer by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/61">#61</a></p></li>
+<li><p>fix loading multi relationships by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/59">#59</a></p></li>
+<li><p>Fix type cast in filters by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/62">#62</a></p></li>
+<li><p>Fix null value filtering by <a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/60">#60</a></p></li>
+<li><p>add py.typed by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/64">#64</a></p></li>
+<li><p>limit view methods by <a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a> in <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/63">#63</a> - (see <a class="reference internal" href="api_limited_methods_example.html#api-limited-methods-example"><span class="std std-ref">api example doc</span></a>)</p></li>
+</ul>
+<section id="id36">
+<h4>Authors<a class="headerlink" href="#id36" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id37">
+<h2><strong>2.3.2</strong><a class="headerlink" href="#id37" title="Link to this heading"></a></h2>
+<section id="duplicated-entities-in-response-fix">
+<h3>Duplicated entities in response fix<a class="headerlink" href="#duplicated-entities-in-response-fix" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>fix duplicates in list response <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/48">#48</a></p></li>
+</ul>
+<section id="id39">
+<h4>Authors<a class="headerlink" href="#id39" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id40">
+<h2><strong>2.3.1</strong><a class="headerlink" href="#id40" title="Link to this heading"></a></h2>
+<section id="pydantic-validators-inheritance-fix">
+<h3>Pydantic validators inheritance fix<a class="headerlink" href="#pydantic-validators-inheritance-fix" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>fix schema validators passthrough <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/45">#45</a></p></li>
+<li><p>fix doc build</p></li>
+</ul>
+<section id="id42">
+<h4>Authors<a class="headerlink" href="#id42" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id43">
+<h2><strong>2.3.0</strong><a class="headerlink" href="#id43" title="Link to this heading"></a></h2>
+<section id="current-atomic-operation-context-var">
+<h3>Current Atomic Operation context var<a class="headerlink" href="#current-atomic-operation-context-var" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>create context var for current atomic operation <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/46">#46</a></p></li>
+<li><p>create example and coverage for universal dependency both for generic views and atomic operations</p></li>
+<li><p>tests refactoring</p></li>
+</ul>
+<section id="id45">
+<h4>Authors<a class="headerlink" href="#id45" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id46">
+<h2><strong>2.2.2</strong><a class="headerlink" href="#id46" title="Link to this heading"></a></h2>
+<section id="atomic-operation-dependency-resolution-fixes">
+<h3>Atomic Operation dependency resolution fixes<a class="headerlink" href="#atomic-operation-dependency-resolution-fixes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>fixed Atomic Operation dependency resolution <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/43">#43</a></p></li>
+</ul>
+<section id="id48">
+<h4>Authors<a class="headerlink" href="#id48" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id49">
+<h2><strong>2.2.1</strong><a class="headerlink" href="#id49" title="Link to this heading"></a></h2>
+<section id="openapi-generation-fixes">
+<h3>OpenAPI generation fixes<a class="headerlink" href="#openapi-generation-fixes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>fixed openapi generation for custom id type <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/40">#40</a></p></li>
+</ul>
+<section id="id51">
+<h4>Authors<a class="headerlink" href="#id51" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id52">
+<h2><strong>2.2.0</strong><a class="headerlink" href="#id52" title="Link to this heading"></a></h2>
+<section id="support-for-pydantic-validators">
+<h3>Support for pydantic validators<a class="headerlink" href="#support-for-pydantic-validators" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Pydantic validators are applied to generated schemas now</p></li>
+</ul>
+<section id="id53">
+<h4>Authors<a class="headerlink" href="#id53" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id54">
+<h2><strong>2.1.0</strong><a class="headerlink" href="#id54" title="Link to this heading"></a></h2>
+<section id="atomic-operations">
+<h3>Atomic Operations<a class="headerlink" href="#atomic-operations" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Atomic Operations (see <a class="reference internal" href="atomic_operations.html#atomic-operations"><span class="std std-ref">example</span></a>, <a class="reference external" href="https://jsonapi.org/ext/atomic/">JSON:API doc</a>)</p></li>
+<li><p>Create view now accepts <code class="docutils literal notranslate"><span class="pre">BaseJSONAPIItemInSchema</span></code> as update view does</p></li>
+</ul>
+<section id="id55">
+<h4>Authors<a class="headerlink" href="#id55" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id56">
+<h2><strong>2.0.0</strong><a class="headerlink" href="#id56" title="Link to this heading"></a></h2>
+<section id="generic-views-process-relationships">
+<h3>Generic views, process relationships<a class="headerlink" href="#generic-views-process-relationships" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Backward-incompatible changes</p>
+</div>
+<ul class="simple">
+<li><p>Automatically create all CRUD views based on schemas (see <a class="reference internal" href="minimal_api_example.html#minimal-api-example"><span class="std std-ref">example</span></a>)</p></li>
+<li><p>Allow to pass Client-Generated IDs (see <a class="reference internal" href="client_generated_id.html#client-generated-id"><span class="std std-ref">example</span></a>, <a class="reference external" href="https://jsonapi.org/format/#crud-creating-client-ids">JSON:API doc</a>)</p></li>
+<li><p>Process relationships on create / update (see <a class="reference internal" href="relationships.html#relationships"><span class="std std-ref">example</span></a>, <a class="reference external" href="https://jsonapi.org/format/#crud-updating-resource-relationships">JSON:API doc</a>)</p></li>
+<li><p>Accept pydantic model with any dependencies on it (see <a class="reference internal" href="view_dependencies.html#view-dependencies"><span class="std std-ref">example</span></a>)</p></li>
+<li><p>handle exceptions (return errors, <a class="reference external" href="https://jsonapi.org/format/#errors">JSON:API doc</a>)</p></li>
+<li><p>refactor data layers</p></li>
+<li><p>tests coverage</p></li>
+</ul>
+<section id="id60">
+<h4>Authors<a class="headerlink" href="#id60" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p></li>
+<li><p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p></li>
+<li><p><a class="reference external" href="https://github.com/tpynio">&#64;tpynio</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="id61">
+<h2><strong>1.1.0</strong><a class="headerlink" href="#id61" title="Link to this heading"></a></h2>
+<section id="generic-views">
+<h3>Generic views<a class="headerlink" href="#generic-views" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Create generic view classes <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/pull/28">#28</a></p></li>
+</ul>
+<p><a class="reference external" href="https://github.com/CosmoV">&#64;CosmoV</a></p>
+</section>
+</section>
+<section id="id63">
+<h2><strong>1.0.0</strong><a class="headerlink" href="#id63" title="Link to this heading"></a></h2>
+<section id="backward-incompatible-changes-improvements-bug-fixes">
+<h3>Backward-incompatible changes, improvements, bug fixes<a class="headerlink" href="#backward-incompatible-changes-improvements-bug-fixes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Includes (see <a class="reference internal" href="include_many_to_many.html#include-many-to-many"><span class="std std-ref">example with many-to-many</span></a>) - any level of includes is now supported (tested with 4);</p></li>
+<li><p>View Classes generics (Detail View and List View);</p></li>
+<li><p>View Classes now use instance-level methods (breaking change, previously <code class="docutils literal notranslate"><span class="pre">classmethods</span></code> were used);</p></li>
+<li><p>Pydantic schemas now have to be inherited from custom BaseModel methods (breaking change, previously all schemas were supported). It uses custom <a class="reference external" href="https://github.com/mts-ai/FastAPI-JSONAPI/blob/188093e967bb80b7a1f0a86e754a52e47f252044/fastapi_jsonapi/schema_base.py#L33">registry class</a>, so we can collect and resolve all schemas. Maybe there’s some workaround to collect all known schemas;</p></li>
+<li><p>Improved interactive docs, request and response examples now have more info, more schemas appear in docs;</p></li>
+<li><p>Reworked schemas resolving and building;</p></li>
+<li><p>Fixed filtering (schemas resolving fix);</p></li>
+<li><p>Create custom sql filters <a class="reference internal" href="custom_sql_filtering.html#custom-sql-filtering"><span class="std std-ref">example</span></a>;</p></li>
+<li><p>Add linters: black, ruff;</p></li>
+<li><p>Add pre-commit;</p></li>
+<li><p>Add autotests with pytest;</p></li>
+<li><p>Add poetry, configure dependencies groups;</p></li>
+<li><p>Add GitHub Action with linting and testing;</p></li>
+<li><p>Upgrade examples;</p></li>
+<li><p>Update docs.</p></li>
+</ul>
+<p><a class="reference external" href="https://github.com/mahenzon">&#64;mahenzon</a></p>
+</section>
+</section>
+<section id="id64">
+<h2><strong>0.2.1</strong><a class="headerlink" href="#id64" title="Link to this heading"></a></h2>
+<section id="enhancements-and-bug-fixes">
+<h3>Enhancements and bug fixes<a class="headerlink" href="#enhancements-and-bug-fixes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix setup.py for docs in PYPI - <a class="reference external" href="https://github.com/znbiz">&#64;znbiz</a></p></li>
+</ul>
+</section>
+</section>
+<section id="id65">
+<h2><strong>0.2.0</strong><a class="headerlink" href="#id65" title="Link to this heading"></a></h2>
+<section id="id66">
+<h3>Enhancements and bug fixes<a class="headerlink" href="#id66" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Rename <cite>from fastapi_rest_jsonapi import…</cite> to <cite>from fastapi_jsonapi import …</cite> - <a class="reference external" href="https://github.com/znbiz">&#64;znbiz</a></p></li>
+<li><p>Add documentation - <a class="reference external" href="https://github.com/znbiz">&#64;znbiz</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fastapi-jsonapi.html" class="btn btn-neutral float-left" title="Package fastapi_jsonapi index" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, MTS AI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

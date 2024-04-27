@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FastAPI-JSONAPI &mdash; FastAPI-JSONAPI 2.8.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=69ff2ef9"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            FastAPI-JSONAPI
+          </a>
+              <div class="version">
+                2.8
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="minimal_api_example.html">A minimal API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_filtering_example.html">Filtering API example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_limited_methods_example.html">Limit API methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="routing.html">Routing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomic_operations.html">Atomic Operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="view_dependencies.html">View Dependencies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filtering.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updated_includes_example.html">Create and include related objects (updated example)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="include_related_objects.html">Include related objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="include_many_to_many.html">Include nested and related, Many-to-Many</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_sql_filtering.html">Custom SQL filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_generated_id.html">Client generated id</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logical_data_abstraction.html">Logical data abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_layer.html">Data layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="relationships.html">Define relationships</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sparse_fieldsets.html">Sparse fieldsets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pagination.html">Pagination</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sorting.html">Sorting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="permission.html">Permission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oauth.html">OAuth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastapi-jsonapi.html">Package fastapi_jsonapi index</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">FastAPI-JSONAPI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">FastAPI-JSONAPI</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fastapi-jsonapi">
+<h1>FastAPI-JSONAPI<a class="headerlink" href="#fastapi-jsonapi" title="Link to this heading"></a></h1>
+<a class="reference external image-reference" href="http://pypi.org/p/fastapi-jsonapi"><img alt="PyPI" src="https://img.shields.io/pypi/v/fastapi-jsonapi?style=for-the-badge" /></a>
+<a class="reference external image-reference" href="http://pypi.org/p/fastapi-jsonapi"><img alt="Python Version" src="https://img.shields.io/pypi/pyversions/fastapi-jsonapi?style=for-the-badge" /></a>
+<a class="reference external image-reference" href="https://github.com/mts-ai/FastAPI-JSONAPI"><img alt="GitHub" src="https://img.shields.io/github/license/mts-ai/FastAPI-JSONAPI?style=for-the-badge" /></a>
+<a class="reference external image-reference" href="https://codecov.io/gh/mts-ai/FastAPI-JSONAPI"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/mts-ai/FASTAPI-JSONAPI?style=for-the-badge" /></a>
+<p><strong>FastAPI-JSONAPI</strong> is an extension for FastAPI that adds support for quickly building REST APIs
+with huge flexibility around the JSON:API 1.0 specification.
+It is designed to fit the complexity of real life environments
+so FastAPI-JSONAPI helps you to create a logical abstraction of your data
+called “resource”. It can interface any kind of ORMs or data storage
+through the concept of data layers.</p>
+<section id="main-concepts">
+<h2>Main concepts<a class="headerlink" href="#main-concepts" title="Link to this heading"></a></h2>
+<a class="reference internal image-reference" href="_images/schema.png"><img alt="Architecture" src="_images/schema.png" style="width: 900px;" /></a>
+<div class="line-block">
+<div class="line">* <a class="reference external" href="http://jsonapi.org/">JSON:API 1.0 specification</a>: this is a very popular specification for client-server interactions through a JSON-based REST API. It helps you work in a team because it is very precise and sharable. Thanks to this specification your API can offer a lot of features such as a strong structure of request and response, filtering, pagination, sparse fieldsets, including related objects, great error formatting, etc.</div>
+<div class="line"><br /></div>
+<div class="line">* <strong>Logical data abstraction</strong>: you usually need to expose resources to clients that don’t fit your data table architecture. For example sometimes you don’t want to expose all attributes of a table, compute additional attributes or create a resource that uses data from multiple data storages.</div>
+<div class="line"><br /></div>
+<div class="line">* <strong>Data layer</strong>: the data layer is a CRUD interface between your resource manager and your data. Thanks to this you can use any data storage or ORM. There is an already full-featured data layer that uses the SQLAlchemy ORM but you can create and use your own custom data layer to use data from your data storage. You can even create a data layer that uses multiple data storage systems and ORMs, send notifications or perform custom actions during CRUD operations.</div>
+</div>
+</section>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<p>FastAPI-JSONAPI has many features:</p>
+<ul class="simple">
+<li><p>Relationship management - in developing</p></li>
+<li><p>Powerful filtering</p></li>
+<li><p>Include related objects - in developing</p></li>
+<li><p>Sparse fieldsets - in developing</p></li>
+<li><p>Pagination</p></li>
+<li><p>Sorting</p></li>
+<li><p>Permission management - in developing</p></li>
+<li><p>OAuth support - in developing</p></li>
+</ul>
+</section>
+<section id="user-s-guide">
+<h2>User’s Guide<a class="headerlink" href="#user-s-guide" title="Link to this heading"></a></h2>
+<p>This part of the documentation will show you how to get started using
+FastAPI-JSONAPI with FastAPI.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="minimal_api_example.html">A minimal API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_filtering_example.html">Filtering API example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api_filtering_example.html#other-examples">Other examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#advanced-example">Advanced example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#classical-crud-operations">Classical CRUD operations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#create-object">Create object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#list-objects">List objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#update-object">Update object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#delete-object">Delete object</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#relationships">Relationships</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#create-object-with-related-object-s">Create object with related object(s)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#update-object-and-his-relationships">Update object and his relationships</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#create-relationship">Create relationship</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#load-user-with-all-the-related-computers">Load user with all the related computers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#check-user-s-computers-without-loading-actual-user">Check user’s computers without loading actual user</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quickstart.html#delete-relationship">Delete relationship</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api_limited_methods_example.html">Limit API methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="routing.html">Routing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomic_operations.html">Atomic Operations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#what-can-i-do">What can I do?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#create-some-objects">Create some objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#update-object">Update object</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="atomic_operations.html#update-details">Update details</a></li>
+<li class="toctree-l3"><a class="reference internal" href="atomic_operations.html#update-details-and-relationships">Update details and relationships</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#remove-object">Remove object</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="atomic_operations.html#operations-include-remove-object-action">Operations include remove object action</a></li>
+<li class="toctree-l3"><a class="reference internal" href="atomic_operations.html#all-operations-remove-objects">All operations remove objects</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#local-identifier">Local identifier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#many-to-many-with-local-identifier">Many to many with local identifier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#errors">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="atomic_operations.html#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="view_dependencies.html">View Dependencies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="view_dependencies.html#handlers">Handlers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="filtering.html">Filtering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="filtering.html#sqlalchemy">SQLAlchemy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filtering.html#simple-filters">Simple filters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="updated_includes_example.html">Create and include related objects (updated example)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="updated_includes_example.html#example">Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="updated_includes_example.html#create-user">Create user</a></li>
+<li class="toctree-l3"><a class="reference internal" href="updated_includes_example.html#create-computer-for-user-and-fetch-related-user">Create computer for user and fetch related user</a></li>
+<li class="toctree-l3"><a class="reference internal" href="updated_includes_example.html#get-user">Get user</a></li>
+<li class="toctree-l3"><a class="reference internal" href="updated_includes_example.html#get-user-with-related-computers">Get user with related computers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="updated_includes_example.html#get-users">Get users</a></li>
+<li class="toctree-l3"><a class="reference internal" href="updated_includes_example.html#get-users-with-related-computers">Get users with related computers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="include_related_objects.html">Include related objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="include_many_to_many.html">Include nested and related, Many-to-Many</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="include_many_to_many.html#prepare-models-and-schemas">Prepare models and schemas</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="include_many_to_many.html#define-sqlalchemy-models">Define SQLAlchemy models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="include_many_to_many.html#define-pydantic-schemas">Define pydantic schemas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="include_many_to_many.html#define-view-classes">Define view classes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="include_many_to_many.html#list-parent-objects-with-children-through-an-association-object">List Parent objects with Children through an Association object</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="custom_sql_filtering.html">Custom SQL filtering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="custom_sql_filtering.html#prepare-pydantic-schema-which-is-used-in-routersjsonapi-as-schema">Prepare pydantic schema which is used in RoutersJSONAPI as schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom_sql_filtering.html#search-for-objects">Search for objects</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="client_generated_id.html">Client generated id</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logical_data_abstraction.html">Logical data abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_layer.html">Data layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="relationships.html">Define relationships</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sparse_fieldsets.html">Sparse fieldsets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pagination.html">Pagination</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pagination.html#size">Size</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pagination.html#number">Number</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pagination.html#size-number">Size + Number</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pagination.html#disable-pagination">Disable pagination</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sorting.html">Sorting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sorting.html#multiple-sort">Multiple sort</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sorting.html#descending-sort">Descending sort</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sorting.html#multiple-sort-descending-sort">Multiple sort + Descending sort</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="permission.html">Permission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oauth.html">OAuth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastapi-jsonapi.html">Package fastapi_jsonapi index</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.fields.enum">fastapi_jsonapi.data_layers.fields.enum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.fields.mixins">fastapi_jsonapi.data_layers.fields.mixins module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.filtering.sqlalchemy">fastapi_jsonapi.data_layers.filtering.sqlalchemy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.filtering.tortoise_operation">fastapi_jsonapi.data_layers.filtering.tortoise_operation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.filtering.tortoise_orm">fastapi_jsonapi.data_layers.filtering.tortoise_orm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.sorting.sqlalchemy">fastapi_jsonapi.data_layers.sorting.sqlalchemy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.sorting.tortoise_orm">fastapi_jsonapi.data_layers.sorting.tortoise_orm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.base">fastapi_jsonapi.data_layers.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_typing">fastapi_jsonapi.data_typing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.orm">fastapi_jsonapi.data_layers.orm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.shared">fastapi_jsonapi.data_layers.shared module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.sqla_orm">fastapi_jsonapi.data_layers.sqla_orm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.data_layers.tortoise_orm">fastapi_jsonapi.data_layers.tortoise_orm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.api">fastapi_jsonapi.api module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.jsonapi_typing">fastapi_jsonapi.jsonapi_typing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.querystring">fastapi_jsonapi.querystring module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.schema">fastapi_jsonapi.schema module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.signature">fastapi_jsonapi.signature module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fastapi-jsonapi.html#module-fastapi_jsonapi.splitter">fastapi_jsonapi.splitter module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id1"><strong>2.8.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id3"><strong>2.7.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id9"><strong>2.6.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id12"><strong>2.5.1</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id16"><strong>2.5.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id20"><strong>2.4.2</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id23"><strong>2.4.1</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id29"><strong>2.4.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id37"><strong>2.3.2</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id40"><strong>2.3.1</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id43"><strong>2.3.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id46"><strong>2.2.2</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id49"><strong>2.2.1</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id52"><strong>2.2.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id54"><strong>2.1.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id56"><strong>2.0.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id61"><strong>1.1.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id63"><strong>1.0.0</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id64"><strong>0.2.1</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id65"><strong>0.2.0</strong></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+<section id="a-minimal-api">
+<span id="minimal-api-example"></span><h1>A minimal API<a class="headerlink" href="#a-minimal-api" title="Link to this heading"></a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="kn">import</span> <span class="nn">uvicorn</span>
+<span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">FastAPI</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">Text</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.engine</span> <span class="kn">import</span> <span class="n">make_url</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.asyncio</span> <span class="kn">import</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">create_async_engine</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">sessionmaker</span>
+
+<span class="kn">from</span> <span class="nn">fastapi_jsonapi</span> <span class="kn">import</span> <span class="n">RoutersJSONAPI</span><span class="p">,</span> <span class="n">init</span>
+<span class="kn">from</span> <span class="nn">fastapi_jsonapi.misc.sqla.generics.base</span> <span class="kn">import</span> <span class="n">DetailViewBaseGeneric</span><span class="p">,</span> <span class="n">ListViewBaseGeneric</span>
+<span class="kn">from</span> <span class="nn">fastapi_jsonapi.schema_base</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">fastapi_jsonapi.views.utils</span> <span class="kn">import</span> <span class="n">HTTPMethod</span><span class="p">,</span> <span class="n">HTTPMethodConfig</span>
+<span class="kn">from</span> <span class="nn">fastapi_jsonapi.views.view_base</span> <span class="kn">import</span> <span class="n">ViewBase</span>
+
+<span class="n">CURRENT_FILE</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+<span class="n">CURRENT_DIR</span> <span class="o">=</span> <span class="n">CURRENT_FILE</span><span class="o">.</span><span class="n">parent</span>
+<span class="n">PROJECT_DIR</span> <span class="o">=</span> <span class="n">CURRENT_DIR</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+<span class="n">DB_URL</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sqlite+aiosqlite:///</span><span class="si">{</span><span class="n">CURRENT_DIR</span><span class="si">}</span><span class="s2">/db.sqlite3&quot;</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">PROJECT_DIR</span><span class="p">))</span>
+
+<span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;users&quot;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">UserAttributesBaseSchema</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">orm_mode</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+<span class="k">class</span> <span class="nc">UserSchema</span><span class="p">(</span><span class="n">UserAttributesBaseSchema</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User base schema.&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">async_session</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">sessionmaker</span><span class="p">:</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_async_engine</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">make_url</span><span class="p">(</span><span class="n">DB_URL</span><span class="p">))</span>
+    <span class="n">_async_session</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">,</span> <span class="n">class_</span><span class="o">=</span><span class="n">AsyncSession</span><span class="p">,</span> <span class="n">expire_on_commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_async_session</span>
+
+
+<span class="k">class</span> <span class="nc">Connector</span><span class="p">:</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_session</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get session as dependency</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sess</span> <span class="o">=</span> <span class="n">async_session</span><span class="p">()</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">sess</span><span class="p">()</span> <span class="k">as</span> <span class="n">db_session</span><span class="p">:</span>  <span class="c1"># type: AsyncSession</span>
+            <span class="k">yield</span> <span class="n">db_session</span>
+            <span class="k">await</span> <span class="n">db_session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">sqlalchemy_init</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_async_engine</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">make_url</span><span class="p">(</span><span class="n">DB_URL</span><span class="p">))</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+        <span class="k">await</span> <span class="n">conn</span><span class="o">.</span><span class="n">run_sync</span><span class="p">(</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SessionDependency</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">Connector</span><span class="o">.</span><span class="n">get_session</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">arbitrary_types_allowed</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+<span class="k">def</span> <span class="nf">session_dependency_handler</span><span class="p">(</span><span class="n">view</span><span class="p">:</span> <span class="n">ViewBase</span><span class="p">,</span> <span class="n">dto</span><span class="p">:</span> <span class="n">SessionDependency</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;session&quot;</span><span class="p">:</span> <span class="n">dto</span><span class="o">.</span><span class="n">session</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">UserDetailView</span><span class="p">(</span><span class="n">DetailViewBaseGeneric</span><span class="p">):</span>
+    <span class="n">method_dependencies</span><span class="p">:</span> <span class="n">ClassVar</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">HTTPMethod</span><span class="o">.</span><span class="n">ALL</span><span class="p">:</span> <span class="n">HTTPMethodConfig</span><span class="p">(</span>
+            <span class="n">dependencies</span><span class="o">=</span><span class="n">SessionDependency</span><span class="p">,</span>
+            <span class="n">prepare_data_layer_kwargs</span><span class="o">=</span><span class="n">session_dependency_handler</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">UserListView</span><span class="p">(</span><span class="n">ListViewBaseGeneric</span><span class="p">):</span>
+    <span class="n">method_dependencies</span><span class="p">:</span> <span class="n">ClassVar</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">HTTPMethod</span><span class="o">.</span><span class="n">ALL</span><span class="p">:</span> <span class="n">HTTPMethodConfig</span><span class="p">(</span>
+            <span class="n">dependencies</span><span class="o">=</span><span class="n">SessionDependency</span><span class="p">,</span>
+            <span class="n">prepare_data_layer_kwargs</span><span class="o">=</span><span class="n">session_dependency_handler</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">add_routes</span><span class="p">(</span><span class="n">app</span><span class="p">:</span> <span class="n">FastAPI</span><span class="p">):</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;User&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="n">router</span><span class="p">:</span> <span class="n">APIRouter</span> <span class="o">=</span> <span class="n">APIRouter</span><span class="p">()</span>
+    <span class="n">RoutersJSONAPI</span><span class="p">(</span>
+        <span class="n">router</span><span class="o">=</span><span class="n">router</span><span class="p">,</span>
+        <span class="n">path</span><span class="o">=</span><span class="s2">&quot;/users&quot;</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;User&quot;</span><span class="p">],</span>
+        <span class="n">class_detail</span><span class="o">=</span><span class="n">UserDetailView</span><span class="p">,</span>
+        <span class="n">class_list</span><span class="o">=</span><span class="n">UserListView</span><span class="p">,</span>
+        <span class="n">schema</span><span class="o">=</span><span class="n">UserSchema</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">User</span><span class="p">,</span>
+        <span class="n">resource_type</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tags</span>
+
+
+<span class="k">def</span> <span class="nf">create_app</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">FastAPI</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create app factory.</span>
+
+<span class="sd">    :return: app</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;FastAPI and SQLAlchemy&quot;</span><span class="p">,</span>
+        <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">openapi_url</span><span class="o">=</span><span class="s2">&quot;/openapi.json&quot;</span><span class="p">,</span>
+        <span class="n">docs_url</span><span class="o">=</span><span class="s2">&quot;/docs&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">add_routes</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="s2">&quot;startup&quot;</span><span class="p">)(</span><span class="n">sqlalchemy_init</span><span class="p">)</span>
+    <span class="n">init</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">app</span>
+
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">create_app</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">uvicorn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="n">app</span><span class="p">,</span>
+        <span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span>
+        <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>This example provides the following API structure:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>URL</p></th>
+<th class="head"><p>method</p></th>
+<th class="head"><p>endpoint</p></th>
+<th class="head"><p>Usage</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>/users</p></td>
+<td><p>GET</p></td>
+<td><p>user_list</p></td>
+<td><p>Get a collection of users</p></td>
+</tr>
+<tr class="row-odd"><td><p>/users</p></td>
+<td><p>POST</p></td>
+<td><p>user_list</p></td>
+<td><p>Create a user</p></td>
+</tr>
+<tr class="row-even"><td><p>/users</p></td>
+<td><p>DELETE</p></td>
+<td><p>user_list</p></td>
+<td><p>Delete users</p></td>
+</tr>
+<tr class="row-odd"><td><p>/users/{user_id}</p></td>
+<td><p>GET</p></td>
+<td><p>user_detail</p></td>
+<td><p>Get user details</p></td>
+</tr>
+<tr class="row-even"><td><p>/users/{user_id}</p></td>
+<td><p>PATCH</p></td>
+<td><p>user_detail</p></td>
+<td><p>Update a user</p></td>
+</tr>
+<tr class="row-odd"><td><p>/users/{user_id}</p></td>
+<td><p>DELETE</p></td>
+<td><p>user_detail</p></td>
+<td><p>Delete a user</p></td>
+</tr>
+</tbody>
+</table>
+<p>Request:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/users</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">201</span> <span class="ne">Created</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/users/1&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;jsonapi&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/users/1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Request:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users/1</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/users/1&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;jsonapi&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/users/1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Request:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/users/1&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;jsonapi&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:5000/users&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;meta&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Request:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="nf">PATCH</span> <span class="nn">/users/1</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sam&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sam&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/users/1&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;jsonapi&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;links&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;self&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/users/1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Request:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="nf">DELETE</span> <span class="nn">/users/1</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-HTTP notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;jsonapi&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;meta&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Object successfully deleted&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h2>
+<p>If you are looking for information on a specific function, class or
+method, this part of the documentation is for you.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, MTS AI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filtering &mdash; FastAPI-JSONAPI 2.8.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=69ff2ef9"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Create and include related objects (updated example)" href="updated_includes_example.html" />
+    <link rel="prev" title="View Dependencies" href="view_dependencies.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            FastAPI-JSONAPI
+          </a>
+              <div class="version">
+                2.8
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="minimal_api_example.html">A minimal API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_filtering_example.html">Filtering API example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_limited_methods_example.html">Limit API methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="routing.html">Routing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomic_operations.html">Atomic Operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="view_dependencies.html">View Dependencies</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Filtering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sqlalchemy">SQLAlchemy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simple-filters">Simple filters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="updated_includes_example.html">Create and include related objects (updated example)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="include_related_objects.html">Include related objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="include_many_to_many.html">Include nested and related, Many-to-Many</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_sql_filtering.html">Custom SQL filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_generated_id.html">Client generated id</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logical_data_abstraction.html">Logical data abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_layer.html">Data layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="relationships.html">Define relationships</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sparse_fieldsets.html">Sparse fieldsets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pagination.html">Pagination</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sorting.html">Sorting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="permission.html">Permission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oauth.html">OAuth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fastapi-jsonapi.html">Package fastapi_jsonapi index</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">FastAPI-JSONAPI</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Filtering</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/filtering.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="filtering">
+<span id="id1"></span><h1>Filtering<a class="headerlink" href="#filtering" title="Link to this heading"></a></h1>
+<p>FastAPI-JSONAPI has a very flexible filtering system.
+The filtering system is directly attached to the data layer used by the ResourceList manager.
+These examples show the filtering interface for SQLAlchemy’s data layer
+but you can use the same interface for your custom data layer’s filtering implementation as well.
+The only requirement is that you have to use the “filter” query string parameter
+to filter according to the JSON:API 1.0 specification.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Examples are not urlencoded for a better readability</p>
+</div>
+<section id="sqlalchemy">
+<h2>SQLAlchemy<a class="headerlink" href="#sqlalchemy" title="Link to this heading"></a></h2>
+<p>The filtering system of SQLAlchemy’s data layer has exactly the same interface as the one used in <a class="reference external" href="https://flask-restless.readthedocs.io/en/stable/searchformat.html#query-format">Flask-Restless</a>.
+So this is a first example:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;first_name&quot;,&quot;op&quot;:&quot;eq&quot;,&quot;val&quot;:&quot;John&quot;}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>In this example we want to retrieve user records for people named John. So we can see that the filtering interface completely fits that of SQLAlchemy: a list a filter information.</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">name<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the name of the field you want to filter on</p>
+</dd>
+<dt class="field-even">op<span class="colon">:</span></dt>
+<dd class="field-even"><p>the operation you want to use (all SQLAlchemy operations are available)</p>
+</dd>
+<dt class="field-odd">val<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the value that you want to compare. You can replace this by “field” if you want to compare against the value of another field</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>Example with field:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;first_name&quot;,&quot;op&quot;:&quot;eq&quot;,&quot;field&quot;:&quot;birth_date&quot;}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>In this example, we want to retrieve people whose name is equal to their birth_date. This example is absurd, it’s just here to explain the syntax of this kind of filter.</p>
+<p>If you want to filter through relationships you can do that:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;any&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ilike&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;%admin%&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">[{&quot;name&quot;:&quot;group&quot;,&quot;op&quot;:&quot;any&quot;,&quot;val&quot;:{&quot;name&quot;:&quot;name&quot;,&quot;op&quot;:&quot;ilike&quot;,&quot;val&quot;:&quot;%admin%&quot;}}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When you filter on relationships use the “any” operator for “to many” relationships and the “has” operator for “to one” relationships.</p>
+</div>
+<p>There is a shortcut to achieve the same filtering:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;group.name&quot;,&quot;op&quot;:&quot;ilike&quot;,&quot;val&quot;:&quot;%admin%&quot;}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>You can also use boolean combination of operations:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="s2">&quot;group.name&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="s2">&quot;ilike&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="s2">&quot;%admin%&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;or&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;not&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;first_name&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eq&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;and&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;first_name&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;like&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;%Jim%&quot;</span>
+<span class="w">          </span><span class="p">},</span>
+<span class="w">          </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date_create&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gt&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1990-01-01&quot;</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;group.name&quot;,&quot;op&quot;:&quot;ilike&quot;,&quot;val&quot;:&quot;%admin%&quot;},{&quot;or&quot;:[{&quot;not&quot;:{&quot;name&quot;:&quot;first_name&quot;,&quot;op&quot;:&quot;eq&quot;,&quot;val&quot;:&quot;John&quot;}},{&quot;and&quot;:[{&quot;name&quot;:&quot;first_name&quot;,&quot;op&quot;:&quot;like&quot;,&quot;val&quot;:&quot;%Jim%&quot;},{&quot;name&quot;:&quot;date_create&quot;,&quot;op&quot;:&quot;gt&quot;,&quot;val&quot;:&quot;1990-01-01&quot;}]}]}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>Filtering records by a field that is null</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;name&quot;,&quot;op&quot;:&quot;is_&quot;,&quot;val&quot;:null}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>Filtering records by a field that is not null</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;name&quot;,&quot;op&quot;:&quot;isnot&quot;,&quot;val&quot;:null}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>Common available operators:</p>
+<ul class="simple">
+<li><p>any: used to filter on “to many” relationships</p></li>
+<li><p>between: used to filter a field between two values</p></li>
+<li><p>endswith: checks if field ends with a string</p></li>
+<li><p>eq: checks if field is equal to something</p></li>
+<li><p>ge: checks if field is greater than or equal to something</p></li>
+<li><p>gt: checks if field is greater than something</p></li>
+<li><p>has: used to filter on “to one” relationships</p></li>
+<li><p>ilike: checks if field contains a string (case insensitive)</p></li>
+<li><p>in_: checks if field is in a list of values</p></li>
+<li><p>is_: checks if field is a value</p></li>
+<li><p>isnot: checks if field is not a value</p></li>
+<li><p>like: checks if field contains a string</p></li>
+<li><p>le: checks if field is less than or equal to something</p></li>
+<li><p>lt: checks if field is less than something</p></li>
+<li><p>match: checks if field matches against a string or pattern</p></li>
+<li><p>ne: checks if field is not equal to something</p></li>
+<li><p>notilike: checks if field does not contain a string (case insensitive)</p></li>
+<li><p>notin_: checks if field is not in a list of values</p></li>
+<li><p>notlike: checks if field does not contain a string</p></li>
+<li><p>startswith: checks if field starts with a string</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Available operators depend on the field type in your model</p>
+</div>
+</section>
+<section id="simple-filters">
+<h2>Simple filters<a class="headerlink" href="#simple-filters" title="Link to this heading"></a></h2>
+<p>Simple filters add support for a simplified form of filters and support only the <em>eq</em> operator.
+Each simple filter is transformed into a full filter and appended to the list of filters.</p>
+<p>For example</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter[first_name]=John</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>equals:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;first_name&quot;,&quot;op&quot;:&quot;eq&quot;,&quot;val&quot;:&quot;John&quot;}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>You can also use more than one simple filter in a request:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter[first_name]=John&amp;filter[gender]=male</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>which is equal to:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">   </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="s2">&quot;first_name&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="s2">&quot;eq&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="s2">&quot;John&quot;</span>
+<span class="w">   </span><span class="p">},</span>
+<span class="w">   </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="s2">&quot;gender&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="s2">&quot;eq&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;val&quot;</span><span class="p">:</span><span class="s2">&quot;male&quot;</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;first_name&quot;,&quot;op&quot;:&quot;eq&quot;,&quot;val&quot;:&quot;John&quot;},{&quot;name&quot;:&quot;gender&quot;,&quot;op&quot;:&quot;eq&quot;,&quot;val&quot;:&quot;male&quot;}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+</pre></div>
+</div>
+<p>You can also use relationship attribute in a request:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter[group_id]=1</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/vnd.api+json</span>
+</pre></div>
+</div>
+<p>which is equal to:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/users?filter=[{&quot;name&quot;:&quot;group.id&quot;,&quot;op&quot;:&quot;eq&quot;,&quot;val&quot;:&quot;1&quot;}]</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="view_dependencies.html" class="btn btn-neutral float-left" title="View Dependencies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="updated_includes_example.html" class="btn btn-neutral float-right" title="Create and include related objects (updated example)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, MTS AI.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

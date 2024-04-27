@@ -1,0 +1,177 @@
+.. _include_related_objects:
+
+Include related objects
+=======================
+
+.. currentmodule:: fastapi_jsonapi
+
+You can include related object(s) details in responses with the query string parameter named "include". You can use the "include" parameter on any kind of route (classical CRUD route or relationships route) and any kind of HTTP methods as long as the method returns data.
+
+This feature will add an additional key in the result named "included"
+
+Example:
+
+Request:
+
+.. sourcecode:: http
+
+    GET /users/1?include=computers HTTP/1.1
+    Accept: application/vnd.api+json
+
+Response:
+
+.. sourcecode:: http
+
+    HTTP/1.1 200 OK
+    Content-Type: application/vnd.api+json
+
+    {
+      "data": {
+        "type": "user",
+        "id": "1",
+        "attributes": {
+          "display_name": "JEAN <jean@gmail.com>",
+          "birth_date": "1990-10-10"
+        },
+        "relationships": {
+          "computers": {
+            "data": [
+              {
+                "type": "computer",
+                "id": "1"
+              }
+            ],
+            "links": {
+              "related": "/users/1/computers",
+              "self": "/users/1/relationships/computers"
+            }
+          }
+        },
+        "links": {
+          "self": "/users/1"
+        }
+      },
+      "included": [
+        {
+          "type": "computer",
+          "id": "1",
+          "attributes": {
+            "serial": "Amstrad"
+          },
+          "relationships": {
+            "owner": {
+              "links": {
+                "related": "/computers/1/owner",
+                "self": "/computers/1/relationships/owner"
+              }
+            }
+          },
+          "links": {
+            "self": "/computers/1"
+          }
+        }
+      ],
+      "links": {
+        "self": "/users/1"
+      },
+      "jsonapi": {
+        "version": "1.0"
+      }
+    }
+
+You can even follow relationships with include
+
+Example:
+
+Request:
+
+.. sourcecode:: http
+
+    GET /users/1?include=computers.owner HTTP/1.1
+    Accept: application/vnd.api+json
+
+Response:
+
+.. sourcecode:: http
+
+    HTTP/1.1 200 OK
+    Content-Type: application/vnd.api+json
+
+    {
+      "data": {
+        "type": "user",
+        "id": "1",
+        "attributes": {
+          "display_name": "JEAN <jean@gmail.com>",
+          "birth_date": "1990-10-10"
+        },
+        "relationships": {
+          "computers": {
+            "data": [
+              {
+                "type": "computer",
+                "id": "1"
+              }
+            ],
+            "links": {
+              "related": "/users/1/computers",
+              "self": "/users/1/relationships/computers"
+            }
+          }
+        },
+        "links": {
+          "self": "/users/1"
+        }
+      },
+      "included": [
+        {
+          "type": "computer",
+          "id": "1",
+          "attributes": {
+            "serial": "Amstrad"
+          },
+          "relationships": {
+            "owner": {
+              "data": {
+                "type": "user",
+                "id": "1"
+              },
+              "links": {
+                "related": "/computers/1/owner",
+                "self": "/computers/1/relationships/owner"
+              }
+            }
+          },
+          "links": {
+            "self": "/computers/1"
+          }
+        },
+        {
+          "type": "user",
+          "id": "1",
+          "attributes": {
+            "display_name": "JEAN <jean@gmail.com>",
+            "birth_date": "1990-10-10"
+          },
+          "relationships": {
+            "computers": {
+              "links": {
+                "related": "/users/1/computers",
+                "self": "/users/1/relationships/computers"
+              }
+            }
+          },
+          "links": {
+            "self": "/users/1"
+          }
+        }
+      ],
+      "links": {
+        "self": "/users/1"
+      },
+      "jsonapi": {
+        "version": "1.0"
+      }
+    }
+
+It's an absurd example because it will include details of the related user's computers and details of the user that is already in the response. But it is just for demonstration.
