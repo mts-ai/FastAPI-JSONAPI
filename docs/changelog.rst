@@ -1,6 +1,20 @@
 Changelog
 #########
 
+**2.8.0**
+*********
+
+Performance improvements
+========================
+
+* added simple cache to SchemaBuilder by `@CosmoV`_ in `#87 <https://github.com/mts-ai/FastAPI-JSONAPI/pull/87>`_
+
+Authors
+"""""""
+
+* `@CosmoV`_
+
+
 **2.7.0**
 *********
 
