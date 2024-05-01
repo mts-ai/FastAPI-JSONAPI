@@ -30,6 +30,7 @@ from fastapi_jsonapi.data_typing import (
 from fastapi_jsonapi.schema import (
     JSONAPIObjectSchema,
     JSONAPIResultListMetaSchema,
+    JSONAPIResultListSchema,
     get_related_schema,
 )
 from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
@@ -185,7 +186,12 @@ class ViewBase:
 
         return detail_jsonapi_schema(data=result_object, **extras)
 
-    def _build_list_response(self, items_from_db: List[TypeModel], count: int, total_pages: int):
+    def _build_list_response(
+        self,
+        items_from_db: List[TypeModel],
+        count: int,
+        total_pages: int,
+    ) -> JSONAPIResultListSchema:
         result_objects, object_schemas, extras = self._build_response(items_from_db, self.jsonapi.schema_list)
 
         # we need to build a new schema here

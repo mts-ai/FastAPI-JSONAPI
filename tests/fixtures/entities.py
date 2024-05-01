@@ -99,20 +99,31 @@ async def user_2_bio(async_session: AsyncSession, user_2: User) -> UserBio:
     )
 
 
+async def build_post(async_session: AsyncSession, user: User, **fields) -> Post:
+    fields = {"title": fake.name(), "body": fake.sentence(), **fields}
+    post = Post(user=user, **fields)
+    async_session.add(post)
+    await async_session.commit()
+    return post
+
+
 @async_fixture()
-async def user_1_posts(async_session: AsyncSession, user_1: User):
-    posts = [Post(title=f"post_u1_{i}", user=user_1) for i in range(1, 4)]
+async def user_1_posts(async_session: AsyncSession, user_1: User) -> List[Post]:
+    posts = [
+        Post(
+            title=f"post_u1_{i}",
+            user=user_1,
+            body=fake.sentence(),
+        )
+        for i in range(1, 4)
+    ]
     async_session.add_all(posts)
     await async_session.commit()
 
     for post in posts:
         await async_session.refresh(post)
 
-    yield posts
-
-    for post in posts:
-        await async_session.delete(post)
-    await async_session.commit()
+    return posts
 
 
 @async_fixture()
@@ -130,19 +141,22 @@ async def user_1_post(async_session: AsyncSession, user_1: User):
 
 
 @async_fixture()
-async def user_2_posts(async_session: AsyncSession, user_2: User):
-    posts = [Post(title=f"post_u2_{i}", user=user_2) for i in range(1, 5)]
+async def user_2_posts(async_session: AsyncSession, user_2: User) -> List[Post]:
+    posts = [
+        Post(
+            title=f"post_u2_{i}",
+            user=user_2,
+            body=fake.sentence(),
+        )
+        for i in range(1, 5)
+    ]
     async_session.add_all(posts)
     await async_session.commit()
 
     for post in posts:
         await async_session.refresh(post)
 
-    yield posts
-
-    for post in posts:
-        await async_session.delete(post)
-    await async_session.commit()
+    return posts
 
 
 @async_fixture()
@@ -211,6 +225,23 @@ async def computer_factory(async_session: AsyncSession) -> Callable[[str | None]
         return computer
 
     return factory
+
+
+async def build_post_comment(
+    async_session: AsyncSession,
+    user: User,
+    post: Post,
+    **fields,
+) -> PostComment:
+    fields = {"text": fake.sentence(), **fields}
+    post_comment = PostComment(
+        author=user,
+        post=post,
+        **fields,
+    )
+    async_session.add(post_comment)
+    await async_session.commit()
+    return post_comment
 
 
 @async_fixture()

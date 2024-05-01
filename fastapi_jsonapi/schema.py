@@ -121,6 +121,10 @@ RelationshipInfoSchema = Union[
 ]
 
 
+class JSONAPISchemaIntrospectionError(Exception):
+    pass
+
+
 def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
     """
     Get the model field of a schema field.
@@ -144,7 +148,7 @@ def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
             schema=schema.__name__,
             field=field,
         )
-        raise Exception(msg)
+        raise JSONAPISchemaIntrospectionError(msg)
     return field
 
 

@@ -11,6 +11,7 @@ license = "MIT"
 authors = [
     { name = "Aleksey Nekrasov", email = "a.nekrasov@mts.ai" },
     { name = "Suren Khorenyan", email = "s.khorenyan@mts.ai" },
+    { name = "German Bernadskiy", email = "german11235813@gmail.com" },
 ]
 keywords = [
     "fastapi",
@@ -72,16 +73,7 @@ packages = [
 ]
 
 [tool.poetry]
-name = "fastapi-jsonapi"
-version = "2.5.1"
-description = "FastAPI extension to create REST web api according to JSON:API specification"
-authors = [
-    "Aleksei Nekrasov <nekrasov.aleks@mail.ru>",
-    "Suren Khorenyan <surenkhorenyan@gmail.com>",
-    "German Bernadskiy <german11235813@gmail.com>",
-]
-license = "MIT"
-readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.9"
