@@ -213,7 +213,7 @@ class QueryStringManager:
         return pagination
 
     @property
-    def fields(self) -> Dict[str, List[str]]:
+    def fields(self) -> dict[str, set[Any]]:
         """
         Return fields wanted by client.
 
@@ -231,9 +231,18 @@ class QueryStringManager:
         for resource_type, field_names in fields.items():
             # TODO: we have registry for models (BaseModel)
             # TODO: create `type to schemas` registry
-            schema: Type[BaseModel] = get_schema_from_type(key, self.app)
-            for field in value:
-                if field not in schema.model_fields:
+
+            if resource_type not in RoutersJSONAPI.all_jsonapi_routers:
+                msg = f"Application has no resource with type {resource_type!r}"
+                raise InvalidType(msg)
+
+            schema: Type[BaseModel] = self._get_schema(resource_type)
+
+            for field_name in field_names:
+                if field_name == "":
+                    continue
+
+                if field_name not in schema.__fields__:
                     msg = "{schema} has no attribute {field}".format(
                         schema=schema.__name__,
                         field=field_name,

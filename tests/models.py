@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.orm import DeclarativeBase, declared_attr, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, backref, declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
 from tests.common import is_postgres_tests, sqla_uri
@@ -327,7 +327,7 @@ class Alpha(Base):
     )
     beta = relationship("Beta", back_populates="alphas")
     gamma_id = Column(Integer, ForeignKey("gamma.id"), nullable=False)
-    gamma: "Gamma" = relationship("Gamma")
+    gamma: Mapped["Gamma"] = relationship("Gamma")
 
 
 class BetaGammaBinding(Base):
@@ -342,14 +342,14 @@ class Beta(Base):
     __tablename__ = "beta"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    gammas: List["Gamma"] = relationship(
+    gammas: Mapped[List["Gamma"]] = relationship(
         "Gamma",
         secondary="beta_gamma_binding",
         back_populates="betas",
         lazy="noload",
     )
     alphas = relationship("Alpha")
-    deltas: List["Delta"] = relationship(
+    deltas: Mapped[List["Delta"]] = relationship(
         "Delta",
         secondary="beta_delta_binding",
         lazy="noload",
@@ -360,7 +360,7 @@ class Gamma(Base):
     __tablename__ = "gamma"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    betas: List["Beta"] = relationship(
+    betas: Mapped[List["Beta"]] = relationship(
         "Beta",
         secondary="beta_gamma_binding",
         back_populates="gammas",
@@ -373,7 +373,7 @@ class Gamma(Base):
         index=True,
     )
     alpha = relationship("Alpha")
-    delta: "Delta" = relationship("Delta")
+    delta: Mapped["Delta"] = relationship("Delta")
 
 
 class BetaDeltaBinding(Base):
@@ -389,8 +389,13 @@ class Delta(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
-    gammas: List["Gamma"] = relationship("Gamma", back_populates="delta", lazy="noload")
-    betas: List["Beta"] = relationship("Beta", secondary="beta_delta_binding", back_populates="deltas", lazy="noload")
+    gammas: Mapped[List["Gamma"]] = relationship("Gamma", back_populates="delta", lazy="noload")
+    betas: Mapped[List["Beta"]] = relationship(
+        "Beta",
+        secondary="beta_delta_binding",
+        back_populates="deltas",
+        lazy="noload",
+    )
 
 
 class CascadeCase(Base):
@@ -412,4 +417,4 @@ class CascadeCase(Base):
     )
 
     if TYPE_CHECKING:
-        parent_item: Optional["CascadeCase"]
+        parent_item: Mapped[Optional["CascadeCase"]]

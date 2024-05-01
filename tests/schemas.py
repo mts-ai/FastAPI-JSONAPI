@@ -388,14 +388,14 @@ class CustomUUIDItemSchema(CustomUUIDItemAttributesSchema):
 
 class SelfRelationshipAttributesSchema(BaseModel):
     name: str
-    self_relationship: Optional["SelfRelationshipSchema"] = Field(
+    self_relationship: Optional["SelfRelationshipAttributesSchema"] = Field(
         json_schema_extra={
             "relationship": RelationshipInfo(
                 resource_type="self_relationship",
             ),
         },
     )
-    children_objects: Optional[list["SelfRelationshipSchema"]] = Field(
+    children_objects: Optional[list["SelfRelationshipAttributesSchema"]] = Field(
         relationship=RelationshipInfo(
             resource_type="self_relatiosnhip",
             many=True,

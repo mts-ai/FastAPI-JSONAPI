@@ -17,9 +17,8 @@ from typing import (
     Union,
 )
 
-
 from pydantic import BaseModel, ConfigDict
-from pydantic.fields import ModelField
+from pydantic_core.core_schema import ModelField
 
 from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import JSONAPIObjectSchema
@@ -71,7 +70,7 @@ def _get_includes_indexes_by_type(included: List[JSONAPIObjectSchema]) -> Dict[s
 
 # TODO: move to schema builder?
 def _is_relationship_field(field: ModelField) -> bool:
-    return "relationship" in field.field_info.extra
+    return "relationship" in field.json_schema_extra
 
 
 def _get_schema_field_names(schema: Type[TypeSchema]) -> Set[str]:
