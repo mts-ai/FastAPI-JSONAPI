@@ -1,10 +1,12 @@
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from examples.api_for_sqlalchemy import config
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 def async_session() -> sessionmaker:

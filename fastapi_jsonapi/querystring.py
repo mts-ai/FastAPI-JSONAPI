@@ -213,7 +213,7 @@ class QueryStringManager:
         return pagination
 
     @property
-    def fields(self) -> Dict[str, List[str]]:
+    def fields(self) -> dict[str, set[Any]]:
         """
         Return fields wanted by client.
 
