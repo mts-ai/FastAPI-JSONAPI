@@ -75,8 +75,7 @@ async def sqlalchemy_init() -> None:
 class SessionDependency(BaseModel):
     session: AsyncSession = Depends(get_session)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def session_dependency_handler(view: ViewBase, dto: SessionDependency) -> dict:
