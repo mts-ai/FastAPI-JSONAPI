@@ -268,8 +268,9 @@ class CustomUUIDType(TypeDecorator):
 
 db_uri = sqla_uri()
 if is_postgres_tests():
+    # from sqlalchemy.dialects.postgresql.asyncpg import AsyncpgUUID as UUIDType
     # noinspection PyPep8Naming
-    from sqlalchemy.dialects.postgresql.asyncpg import AsyncpgUUID as UUIDType
+    from sqlalchemy.dialects.postgresql import UUID as UUIDType
 elif "sqlite" in db_uri:
     UUIDType = CustomUUIDType
 else:
