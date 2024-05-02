@@ -53,7 +53,6 @@ from tests.schemas import (
     PostAttributesBaseSchema,
     PostCommentAttributesBaseSchema,
     SelfRelationshipAttributesSchema,
-    SelfRelationshipSchema,
     UserAttributesBaseSchema,
     UserBioAttributesBaseSchema,
     UserInSchemaAllowIdOnPost,
@@ -1403,7 +1402,7 @@ class TestCreateObjects:
         resource_type = "self_relationship"
         app = build_app_custom(
             model=SelfRelationship,
-            schema=SelfRelationshipSchema,
+            schema=SelfRelationshipAttributesSchema,
             resource_type=resource_type,
         )
 
@@ -2052,7 +2051,7 @@ class TestPatchObjectRelationshipsToOne:
 
         app = build_app_custom(
             model=SelfRelationship,
-            schema=SelfRelationshipSchema,
+            schema=SelfRelationshipAttributesSchema,
             resource_type=resource_type,
         )
 
@@ -2281,7 +2280,7 @@ class TestPatchRelationshipsToMany:
 
         app = build_app_custom(
             model=SelfRelationship,
-            schema=SelfRelationshipSchema,
+            schema=SelfRelationshipAttributesSchema,
             resource_type=resource_type,
         )
 
