@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -150,6 +150,15 @@ class AtomicOperation(BaseModel):
         # TODO: pydantic V2
         raise ValueError(msg)
 
+    @classmethod
+    def _get_value_from_dict_or_obj(cls, obj: Any, key: str):
+        if hasattr(obj, key):
+            return getattr(obj, key)
+        elif isinstance(obj, dict) and key in obj:
+            return obj[key]
+        else:
+            return None
+
     @model_validator(mode="before")
     def validate_operation(cls, values: dict):
         """
@@ -166,12 +175,15 @@ class AtomicOperation(BaseModel):
                 msg = f"ref should be present for action {op.value!r}"
                 raise ValueError(msg)
             # when updating / removing item, ref [l]id has to be present
-            if not (ref.id or ref.lid):
+            id_value = cls._get_value_from_dict_or_obj(ref, "id")
+            lid_value = cls._get_value_from_dict_or_obj(ref, "lid")
+
+            if not id_value and not lid_value:
                 msg = f"id or local id has to be present for action {op.value!r}"
                 raise ValueError(msg)
 
         data: OperationDataType = values.get("data")
-        operation_type = ref and ref.type or data and data.get("type", None)
+        operation_type = cls._get_value_from_dict_or_obj(ref, "type") or cls._get_value_from_dict_or_obj(data, "type")
         if not operation_type:
             msg = "Operation has to be in ref or in data"
             raise ValueError(msg)
