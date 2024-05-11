@@ -3,21 +3,15 @@ import inspect
 import logging
 from enum import Enum
 from inspect import Parameter
-from types import GenericAlias
 from typing import (
-    Dict,
-    List,
     Optional,
-    Set,
-    Tuple,
     Type,
 )
 
 from fastapi import Query
-from pydantic import BaseModel as BaseModelOriginal
 from pydantic.fields import FieldInfo
 
-from fastapi_jsonapi.schema_base import BaseModel
+from fastapi_jsonapi.schema_base import BaseModel, registry
 
 log = logging.getLogger(__name__)
 
@@ -54,26 +48,21 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
     available_includes_names = []
 
     # TODO! ?
-    # schema.update_forward_refs(**registry.schemas)
+    schema.model_rebuild(_types_namespace=registry.schemas)
     for name, field in (schema.model_fields or {}).items():
         try:
-            # skip collections
-            if inspect.isclass(field.annotation):
-                if type(field.annotation) is GenericAlias:
-                    continue
-                if issubclass(field.annotation, (dict, list, tuple, set, Dict, List, Tuple, Set)):
-                    continue
-            # process inner models, find relationships
-            if inspect.isclass(field.annotation) and issubclass(field.annotation, (BaseModel, BaseModelOriginal)):
+            try:
                 if field.json_schema_extra.get("relationship"):
                     available_includes_names.append(name)
+                    continue
                 else:
                     log.warning(
                         "found nested schema %s for field %r. Consider marking it as relationship",
                         field,
                         name,
                     )
-                continue
+            except AttributeError:
+                pass
 
             # create filter params
             parameter = create_filter_parameter(
