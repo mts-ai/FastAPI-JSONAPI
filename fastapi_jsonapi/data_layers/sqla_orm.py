@@ -245,7 +245,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 )
                 continue
             relationship_info: RelationshipInfo = field.json_schema_extra["relationship"]
-            # ...
             related_model = get_related_model_cls(type(obj), relation_name)
             related_data = await self.get_related_data_to_link(
                 related_model=related_model,
