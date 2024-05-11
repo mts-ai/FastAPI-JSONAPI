@@ -21,9 +21,11 @@ class UserBioBaseSchema(BaseModel):
     keys_to_ids_list: Dict[str, List[int]] = None
 
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 

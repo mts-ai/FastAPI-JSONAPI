@@ -2717,7 +2717,9 @@ class TestFilters:
 
         class UserWithEmailFieldSchema(UserAttributesBaseSchema):
             email: str = Field(
-                _lower_equals_sql_filter_=lower_equals_sql_filter,
+                json_schema_extra={
+                    "_lower_equals_sql_filter_": lower_equals_sql_filter,
+                },
             )
 
         app = build_app_custom(
@@ -2774,7 +2776,9 @@ class TestFilters:
 
         class UserWithEmailFieldFilterSchema(UserAttributesBaseSchema):
             email: str = Field(
-                _lower_equals_sql_filter_=lower_equals_sql_filter,
+                json_schema_extra={
+                    "_lower_equals_sql_filter_": lower_equals_sql_filter,
+                },
             )
 
         app = build_app_custom(
@@ -2834,7 +2838,9 @@ class TestFilters:
 
         class UserWithInvalidEmailFieldFilterSchema(UserAttributesBaseSchema):
             email: str = Field(
-                _custom_broken_filter_sql_filter_=returns_invalid_number_of_params_filter,
+                json_schema_extra={
+                    "_custom_broken_filter_sql_filter_": returns_invalid_number_of_params_filter,
+                },
             )
 
         app = build_app_custom(

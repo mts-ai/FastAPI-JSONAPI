@@ -14,13 +14,14 @@ class ChildBaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
-
     parents: List["ParentToChildAssociationSchema"] = Field(
         default=None,
-        relationship=RelationshipInfo(
-            resource_type="parent_child_association",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="parent_child_association",
+                many=True,
+            ),
+        },
     )
 
 
