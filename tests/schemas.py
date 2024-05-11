@@ -395,25 +395,31 @@ class SelfRelationshipAttributesSchema(BaseModel):
             ),
         },
     )
-    children_objects: Optional[list["SelfRelationshipAttributesSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="self_relatiosnhip",
-            many=True,
-        ),
+    children_objects: Optional["SelfRelationshipAttributesSchema"] = Field(
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="self_relationship",
+                many=True,
+            ),
+        },
     )
 
 
 class CascadeCaseSchema(BaseModel):
     parent_item: Optional["CascadeCaseSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="cascade_case",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="cascade_case",
+            ),
+        },
     )
     sub_items: Optional[list["CascadeCaseSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="cascade_case",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="cascade_case",
+                many=True,
+            ),
+        },
     )
 
 
@@ -424,68 +430,86 @@ class CustomUserAttributesSchema(UserBaseSchema):
 
 class AlphaSchema(BaseModel):
     beta: Optional["BetaSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="beta",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="beta",
+            ),
+        },
     )
-    gamma: Optional["GammaSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="gamma",
-        ),
+    gamma: Optional["BetaSchema"] = Field(
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="gamma",
+            ),
+        },
     )
 
 
 class BetaSchema(BaseModel):
     alphas: Optional["AlphaSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="alpha",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="alpha",
+            ),
+        },
     )
     gammas: Optional["GammaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="gamma",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="gamma",
+                many=True,
+            ),
+        },
     )
     deltas: Optional["DeltaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="delta",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="delta",
+                many=True,
+            ),
+        },
     )
 
 
 class GammaSchema(BaseModel):
     betas: Optional["BetaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="beta",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="beta",
+                many=True,
+            ),
+        },
     )
     delta: Optional["DeltaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="Delta",
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="Delta",
+            ),
+        },
     )
 
 
 class DeltaSchema(BaseModel):
     name: str
     gammas: Optional["GammaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="gamma",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="gamma",
+                many=True,
+            ),
+        },
     )
     betas: Optional["BetaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="beta",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="beta",
+                many=True,
+            ),
+        },
     )

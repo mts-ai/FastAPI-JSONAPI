@@ -17,9 +17,11 @@ class ComputerBaseSchema(BaseModel):
 
     name: str
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 

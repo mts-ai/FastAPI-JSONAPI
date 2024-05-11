@@ -13,15 +13,19 @@ class UserBaseSchema(BaseModel):
     id: int
     name: str
     bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user_bio",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user_bio",
+            ),
+        },
     )
     computers: Optional["ComputerSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="computer",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="computer",
+                many=True,
+            ),
+        },
     )
 
 
@@ -36,9 +40,11 @@ class UserBioBaseSchema(BaseModel):
     keys_to_ids_list: dict[str, list[int]] = None
 
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -46,7 +52,9 @@ class ComputerBaseSchema(BaseModel):
     id: int
     name: str
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
