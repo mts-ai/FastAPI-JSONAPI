@@ -154,10 +154,9 @@ class AtomicOperation(BaseModel):
     def _get_value_from_dict_or_obj(cls, obj: Any, key: str):
         if hasattr(obj, key):
             return getattr(obj, key)
-        elif isinstance(obj, dict) and key in obj:
+        if isinstance(obj, dict) and key in obj:
             return obj[key]
-        else:
-            return None
+        return None
 
     @model_validator(mode="before")
     def validate_operation(cls, values: dict):
