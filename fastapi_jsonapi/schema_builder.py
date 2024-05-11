@@ -32,7 +32,7 @@ from fastapi_jsonapi.schema import (
     JSONAPIResultListSchema,
     RelationshipInfoSchema,
 )
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo, registry
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.validation_utils import (
     extract_field_validators,
@@ -490,7 +490,7 @@ class SchemaBuilder:
         if use_schema_cache and schema in self.object_schemas_cache and includes is not_passed:
             return self.object_schemas_cache[schema]
 
-        # schema.model_rebuild(**registry.schemas)
+        schema.model_rebuild(_types_namespace=registry.schemas)
         base_name = base_name or schema.__name__
 
         if includes is not not_passed:
