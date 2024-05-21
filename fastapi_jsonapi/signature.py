@@ -9,14 +9,14 @@ from typing import (
 )
 
 from fastapi import Query
-from pydantic.fields import FieldInfo
+from pydantic import Field
 
 from fastapi_jsonapi.schema_base import BaseModel, registry
 
 log = logging.getLogger(__name__)
 
 
-def create_filter_parameter(name: str, field: FieldInfo) -> Parameter:
+def create_filter_parameter(name: str, field: Field) -> Parameter:
     if hasattr(field, "sub_fields") and field.sub_fields:
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
         type_field = field.annotation
@@ -25,7 +25,7 @@ def create_filter_parameter(name: str, field: FieldInfo) -> Parameter:
         and issubclass(field.annotation, Enum)
         and hasattr(field.annotation, "values")
     ):
-        default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=field.annotation.values())
+        default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=list(field.annotation))
         type_field = str
     else:
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
@@ -57,7 +57,7 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
                     continue
                 else:
                     log.warning(
-                        "found nested schema %s for field %r. Consider marking it as relationship",
+                        " found nested schema %s for field %r. Consider marking it as relationship",
                         field,
                         name,
                     )

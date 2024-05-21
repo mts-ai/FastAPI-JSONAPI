@@ -6,7 +6,7 @@ from pydantic import field_validator, model_validator
 from fastapi_jsonapi.schema_base import BaseModel
 
 if TYPE_CHECKING:
-    from pydantic._internal._decorators import DecoratorInfos
+    from pydantic._internal._decorators import Decorator, DecoratorInfos
 
 
 def extract_root_validators(model: Type[BaseModel]) -> Dict[str, Callable]:
@@ -54,15 +54,20 @@ def extract_field_validators(
 
     result_validators = {}
     for field_name, field_validators in validators.items():
+        field_validators: Decorator
         if field_name in exclude_for_field_names:
             continue
 
         if include_for_field_names and field_name not in include_for_field_names:
             continue
-
-        validator_name = f"{field_name}_{field_validator.__name__}_validator"
+        validator_params = {
+            "mode": field_validators.info.mode,
+            "check_fields": field_validators.info.check_fields,
+        }
+        validator_name = f"{field_name}"
         result_validators[validator_name] = field_validator(
             field_name,
+            **validator_params,
         )(field_validators.func)
 
     return result_validators
