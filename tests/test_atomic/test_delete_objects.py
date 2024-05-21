@@ -82,8 +82,10 @@ class TestAtomicDeleteObjects:
             # TODO: json:api exception
             "detail": [
                 {
-                    "loc": ["body", "atomic:operations", 0, "__root__"],
-                    "msg": f"ref should be present for action {AtomicOperationAction.remove.value!r}",
+                    'ctx': {'error': {}},
+                    'input': {'data': {'id': '0', 'type': 'computer'}, 'op': 'remove'},
+                    "loc": ["body", "atomic:operations", 0],
+                    "msg": f"Value error, ref should be present for action {AtomicOperationAction.remove.value!r}",
                     "type": "value_error",
                 },
             ],

@@ -171,14 +171,14 @@ class AtomicOperation(BaseModel):
         ref: Optional[AtomicOperationRef] = values.get("ref")
         if op == AtomicOperationAction.remove:
             if not ref:
-                msg = f"ref should be present for action {op.value!r}"
+                msg = f"ref should be present for action {op!r}"
                 raise ValueError(msg)
             # when updating / removing item, ref [l]id has to be present
             id_value = cls._get_value_from_dict_or_obj(ref, "id")
             lid_value = cls._get_value_from_dict_or_obj(ref, "lid")
 
             if not id_value and not lid_value:
-                msg = f"id or local id has to be present for action {op.value!r}"
+                msg = f"id or local id has to be present for action {op!r}"
                 raise ValueError(msg)
 
         data: OperationDataType = values.get("data")
