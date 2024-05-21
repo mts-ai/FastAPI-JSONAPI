@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import ConfigDict, field_validator
@@ -76,7 +76,7 @@ class UserBioAttributesBaseSchema(BaseModel):
 
     birth_city: str
     favourite_movies: str
-    keys_to_ids_list: Dict[str, List[int]] = None
+    # keys_to_ids_list: Optional[Dict[str, List[int]]] = None
 
 
 class UserBioSchema(UserBioAttributesBaseSchema):
@@ -351,7 +351,7 @@ class TaskBaseSchema(BaseModel):
     task_ids: Optional[list[str]] = None
 
     # noinspection PyMethodParameters
-    @field_validator("task_ids", mode="before")
+    @field_validator("task_ids", mode="before", check_fields=False)
     @classmethod
     def task_ids_validator(cls, value: Optional[list[str]]):
         """

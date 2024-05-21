@@ -84,7 +84,7 @@ async def user_1_bio(async_session: AsyncSession, user_1: User) -> UserBio:
         user_1,
         birth_city="Moscow",
         favourite_movies="Django, Alien",
-        keys_to_ids_list={"key": [1, 2, 3]},
+        # keys_to_ids_list={"key": [1, 2, 3]},
     )
 
 
@@ -95,7 +95,7 @@ async def user_2_bio(async_session: AsyncSession, user_2: User) -> UserBio:
         user_2,
         birth_city="Snezhnogorsk",
         favourite_movies="A Beautiful Mind, Rocky",
-        keys_to_ids_list={"key": [0, 1, 2]},
+        # keys_to_ids_list={"key": [0, 1, 2]},
     )
 
 

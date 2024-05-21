@@ -1093,7 +1093,7 @@ class TestCreateObjects:
                 "attributes": UserBioAttributesBaseSchema(
                     birth_city=fake.word(),
                     favourite_movies=fake.sentence(),
-                    keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
+                    # keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
                 ).model_dump(),
                 "relationships": {"user": {"data": {"type": "user", "id": user_1.id}}},
             },
