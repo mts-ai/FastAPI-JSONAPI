@@ -1,7 +1,7 @@
 """User Bio schemas module."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 from pydantic import ConfigDict
 
@@ -18,7 +18,7 @@ class UserBioBaseSchema(BaseModel):
 
     birth_city: str
     favourite_movies: str
-    keys_to_ids_list: Dict[str, List[int]] = None
+    # keys_to_ids_list: Optional[Dict[str, List[int]]] = None
 
     user: "UserSchema" = Field(
         json_schema_extra={

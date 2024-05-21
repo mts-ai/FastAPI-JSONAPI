@@ -37,7 +37,7 @@ class UserSchema(BaseModel):
 class UserBioBaseSchema(BaseModel):
     birth_city: str
     favourite_movies: str
-    keys_to_ids_list: dict[str, list[int]] = None
+    # keys_to_ids_list: Optional[dict[str, list[int]]] = None
 
     user: "UserSchema" = Field(
         json_schema_extra={

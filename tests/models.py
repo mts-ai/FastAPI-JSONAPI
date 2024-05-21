@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
@@ -70,7 +70,7 @@ class User(AutoIdMixin, Base):
 class UserBio(AutoIdMixin, Base):
     birth_city: str = Column(String, nullable=False, default="", server_default="")
     favourite_movies: str = Column(String, nullable=False, default="", server_default="")
-    keys_to_ids_list: Dict[str, List[int]] = Column(JSON)
+    # keys_to_ids_list: Dict[str, List[int]] = Column(JSON)
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     user = relationship(
