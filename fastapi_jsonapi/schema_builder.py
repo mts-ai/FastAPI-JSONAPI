@@ -272,13 +272,13 @@ class SchemaBuilder:
         resource_id_field = (str, Field(None), None, {})
 
         for name, field in (schema.model_fields or {}).items():
-            if isinstance(field.default, RelationshipInfo):
+            if field.json_schema_extra and isinstance(field.json_schema_extra.get("relationship"), RelationshipInfo):
                 if includes is not_passed:
                     pass
                 elif name not in includes:
                     # if includes are passed, skip this if name not present!
                     continue
-                relationship: RelationshipInfo = field.json_schema_extra["relationship"]
+                relationship: RelationshipInfo = field.json_schema_extra.get("relationship")
                 relationship_schema = self.create_relationship_data_schema(
                     field_name=name,
                     base_name=base_name,
@@ -295,7 +295,7 @@ class SchemaBuilder:
                 relationships_schema_fields[name] = (relationship_schema, relationship_field)
                 # works both for to-one and to-many
                 included_schemas.append((name, field.annotation, relationship.resource_type))
-            elif name == "id":
+            elif field.json_schema_extra and name == "id":
                 id_validators = extract_field_validators(
                     schema,
                     include_for_field_names={"id"},
@@ -307,7 +307,7 @@ class SchemaBuilder:
 
                 # todo: support for union types?
                 #  support custom cast func
-                resource_id_field = (str, Field(default=field.default), field.annotation, id_validators)
+                resource_id_field = (str, Field(**field.json_schema_extra), field.annotation, id_validators)
             else:
                 attributes_schema_fields[name] = (field.annotation, field.default)
         ConfigOrmMode = ConfigDict(from_attributes=True)
@@ -478,6 +478,17 @@ class SchemaBuilder:
 
         return can_be_included_schemas
 
+    @staticmethod
+    def string_to_schema(schema) -> Type[BaseModel]:
+        import importlib
+
+        module_class_str = (str(schema).strip("[]").split("["))[-1]
+        module_name, class_name = module_class_str.rsplit(".", 1)
+        module = importlib.import_module(module_name)
+        class_obj = getattr(module, class_name)
+        schema = class_obj
+        return schema
+
     def create_jsonapi_object_schemas(
         self,
         schema: Type[BaseModel],
@@ -490,6 +501,7 @@ class SchemaBuilder:
         if use_schema_cache and schema in self.object_schemas_cache and includes is not_passed:
             return self.object_schemas_cache[schema]
 
+        schema = self.string_to_schema(schema) if not hasattr(schema, "model_rebuild") else schema
         schema.model_rebuild(_types_namespace=registry.schemas)
         base_name = base_name or schema.__name__
 
