@@ -7,6 +7,7 @@ from fastapi import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.atomic.schemas import AtomicOperationAction, AtomicOperationRef, OperationDataType
+from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.views.utils import HTTPMethod
 
 if TYPE_CHECKING:
@@ -74,7 +75,7 @@ class OperationBase:
         )
         return await self.view.get_data_layer(data_layer_view_dependencies)
 
-    async def handle(self, dl: BaseDataLayer):
+    async def handle(self, dl: BaseDataLayer) -> TypeSchema | None:
         raise NotImplementedError
 
     @classmethod
@@ -87,7 +88,7 @@ class OperationBase:
         :return:
         """
         missing = object()
-        lid = relationship_info.get("lid", missing)
+        lid: str | Type[missing] = relationship_info.get("lid", missing)
         if lid is missing:
             return
 
@@ -136,11 +137,11 @@ class DetailOperationBase(OperationBase):
 class OperationAdd(ListOperationBase):
     http_method = HTTPMethod.POST
 
-    async def handle(self, dl: BaseDataLayer):
+    async def handle(self, dl: BaseDataLayer) -> TypeSchema:
         # use outer schema wrapper because we need this error path:
         # `{'loc': ['data', 'attributes', 'name']`
         # and not `{'loc': ['attributes', 'name']`
-        data_in = self.jsonapi.schema_in_post(data=self.data)
+        data_in = self.jsonapi.schema_in_post(data=self.data.model_dump(exclude_unset=True))
         response = await self.view.process_create_object(
             dl=dl,
             data_create=data_in.data,
@@ -151,7 +152,7 @@ class OperationAdd(ListOperationBase):
 class OperationUpdate(DetailOperationBase):
     http_method = HTTPMethod.PATCH
 
-    async def handle(self, dl: BaseDataLayer):
+    async def handle(self, dl: BaseDataLayer) -> TypeSchema:
         if self.data is None:
             # TODO: clear to-one relationships
             pass
@@ -160,7 +161,7 @@ class OperationUpdate(DetailOperationBase):
         # use outer schema wrapper because we need this error path:
         # `{'loc': ['data', 'attributes', 'name']`
         # and not `{'loc': ['attributes', 'name']`
-        data_in = self.jsonapi.schema_in_patch(data=self.data)
+        data_in = self.jsonapi.schema_in_patch(data=self.data.model_dump(exclude_unset=True))
         obj_id = self.ref and self.ref.id or self.data and self.data.id
         response = await self.view.process_update_object(
             dl=dl,
