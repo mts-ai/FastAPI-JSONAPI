@@ -10,14 +10,15 @@ from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
 )
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.app import build_app_custom
 from tests.fixtures.views import ArbitraryModelBase, SessionDependency, common_handler
 from tests.misc.utils import fake
 from tests.models import User
 from tests.schemas import (
     UserAttributesBaseSchema,
-    UserInSchema,
     UserPatchSchema,
+    UserInSchema,
     UserSchema,
 )
 
@@ -145,9 +146,10 @@ class TestDependenciesResolver:
         expected_response_data = {
             "detail": [
                 {
+                    "input": None,
                     "loc": ["query", CustomDependencyForCreate.KEY],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -183,11 +185,12 @@ class TestDependenciesResolver:
         expected_response_data = {
             "detail": [
                 {
+                    "input": None,
                     "loc": ["query", CustomDependencyForUpdate.KEY],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
-            ],
+                    "msg": "Field required",
+                    "type": "missing",
+                }
+            ]
         }
         await self.send_and_validate_atomic(
             client=client,
@@ -216,11 +219,12 @@ class TestDependenciesResolver:
         expected_response_data = {
             "detail": [
                 {
+                    "input": None,
                     "loc": ["query", CustomDependencyForDelete.KEY],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
-            ],
+                    "msg": "Field required",
+                    "type": "missing",
+                }
+            ]
         }
         await self.send_and_validate_atomic(
             client=client,
