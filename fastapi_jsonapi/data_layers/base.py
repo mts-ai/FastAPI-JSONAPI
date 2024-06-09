@@ -122,7 +122,7 @@ class BaseDataLayer:
         except AttributeError:
             msg = f"{self.model.__name__} has no attribute {id_name_field}"
             # TODO: any custom exception type?
-            raise Exception(msg)
+            raise Exception(msg)  # noqa: TRY002
 
     def get_object_id(self, obj: TypeModel):
         return getattr(obj, self.get_object_id_field_name())
