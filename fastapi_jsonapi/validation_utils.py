@@ -44,7 +44,8 @@ def extract_field_validators(
     include_for_field_names: Optional[Set[str]] = None,
     exclude_for_field_names: Optional[Set[str]] = None,
 ):
-    validators = _deduplicate_field_validators(deepcopy(model.__pydantic_decorators__))
+    # TODO: refactor?
+    validators: dict[str, Decorator] = _deduplicate_field_validators(deepcopy(model.__pydantic_decorators__))
 
     exclude_for_field_names = exclude_for_field_names or set()
     if include_for_field_names and exclude_for_field_names:
@@ -54,7 +55,6 @@ def extract_field_validators(
 
     result_validators = {}
     for field_name, field_validators in validators.items():
-        field_validators: Decorator
         if field_name in exclude_for_field_names:
             continue
 
