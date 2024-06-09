@@ -32,10 +32,15 @@ from fastapi_jsonapi.schema import (
     JSONAPIResultListMetaSchema,
     JSONAPIResultListSchema,
     get_related_schema,
+    get_schema_from_field_annotation,
 )
-from fastapi_jsonapi.schema_base import BaseModel, RelationshipInfo
-from fastapi_jsonapi.schema_builder import JSONAPIObjectSchemas
+from fastapi_jsonapi.schema_base import BaseModel
+from fastapi_jsonapi.types_metadata import RelationshipInfo
+from fastapi_jsonapi.schema_builder import (
+    JSONAPIObjectSchemas,
+)
 from fastapi_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
 from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
@@ -173,8 +178,11 @@ class ViewBase:
             item_schema=item_schema,
         )
 
-    def _build_detail_response(self, db_item: TypeModel):
-        result_objects, object_schemas, extras = self._build_response([db_item], self.jsonapi.schema_detail)
+    def _build_detail_response(self, db_item: TypeModel) -> TypeSchema:
+        result_objects, object_schemas, extras = self._build_response(
+            items_from_db=[db_item],
+            item_schema=self.jsonapi.schema_detail,
+        )
         # is it ok to do through list?
         result_object = result_objects[0]
 
@@ -184,7 +192,11 @@ class ViewBase:
             includes_schemas=object_schemas.included_schemas_list,
         )
 
-        return detail_jsonapi_schema(data=result_object, **extras)
+        return detail_jsonapi_schema(
+            # TODO: non-strict models? read from pydantic model
+            data=result_object.model_dump(),
+            **extras,
+        )
 
     def _build_list_response(
         self,
@@ -203,7 +215,8 @@ class ViewBase:
         )
         return list_jsonapi_schema(
             meta=JSONAPIResultListMetaSchema(count=count, total_pages=total_pages),
-            data=result_objects,
+            # TODO: non-strict models? read from pydantic model
+            data=[obj.model_dump() for obj in result_objects],
             **extras,
         )
 
@@ -271,8 +284,11 @@ class ViewBase:
         if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
             existing = parent_included_object.relationships or {}
             if isinstance(existing, BaseModel):
-                existing = existing.model_dump()
+                existing = existing.dict()
             new_relationships.update(existing)
+        if relationship_data_schema is None:
+            # TODO?
+            print()
         new_relationships.update(
             **{
                 related_field_name: relationship_data_schema(
@@ -280,9 +296,18 @@ class ViewBase:
                 ),
             },
         )
+        # ?
+        # TODO: Expected `UserSchemaRelationshipsJSONAPI` but got `dict` - serialized value may not be as expected
+        """
+        pydantic/main.py:362: UserWarning: Pydantic serializer warnings:
+          Expected `UserSchemaRelationshipsJSONAPI` but got `dict` - serialized value may not be as expected
+          return self.__pydantic_serializer__.to_python(
+        """
         included_objects[cache_key] = object_schema.model_validate(
-            parent_included_object,
-        ).model_copy(
+            obj=parent_included_object.model_dump(
+                exclude={"relationships"} if getattr(parent_included_object, "relationships", None) is None else None
+            )
+        ).copy(
             update={"relationships": new_relationships},
         )
 
@@ -379,10 +404,13 @@ class ViewBase:
             relationships_schema = object_schemas.relationships_schema
             schemas_include = object_schemas.can_be_included_schemas
 
-            current_relation_field: FieldInfo = current_relation_schema.model_fields[related_field_name]
-            current_relation_schema: Type[TypeSchema] = current_relation_field.annotation
+            current_relation_field: FieldInfo = current_relation_schema.__fields__[related_field_name]
+            current_relation_schema: Type[TypeSchema] = get_schema_from_field_annotation(current_relation_field)
+            # TODO: check and raise, get rid of assert
+            assert current_relation_schema
 
-            relationship_info: RelationshipInfo = current_relation_field.description.extra["relationship"]
+            # TODO: check for None and raise
+            relationship_info: RelationshipInfo = get_relationship_info_from_field_metadata(current_relation_field)
             included_object_schema: Type[JSONAPIObjectSchema] = schemas_include[related_field_name]
 
             if not isinstance(current_db_item, Iterable):
