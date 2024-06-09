@@ -26,6 +26,7 @@ __all__ = (
     "PostInSchema",
     "PostCommentSchema",
     "PostCommentAttributesBaseSchema",
+    "SelfRelationshipAttributesSchema",
     "TaskSchema",
     "TaskPatchSchema",
     "TaskInSchema",
