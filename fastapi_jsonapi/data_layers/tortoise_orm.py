@@ -1,6 +1,7 @@
 """This module is a CRUD interface between resource managers and the Tortoise ORM"""
 
-from typing import Any, Iterable, Optional, Tuple, Type
+from collections.abc import Iterable
+from typing import Any
 
 from fastapi import Request
 from tortoise.queryset import QuerySet

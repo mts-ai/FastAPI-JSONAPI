@@ -7,8 +7,6 @@ you must inherit from this base class
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, Type
-
 from fastapi import Request
 from pydantic import TypeAdapter
 

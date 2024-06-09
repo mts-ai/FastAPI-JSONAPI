@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, ClassVar
+from typing import Annotated, ClassVar
 
 import pytest
 from fastapi import APIRouter, Depends, FastAPI, Header, Path, status
 from httpx import AsyncClient
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.exceptions import Forbidden, InternalServerError
@@ -15,6 +16,7 @@ from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
 )
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
 from tests.fixtures.views import SessionDependency
 from tests.misc.utils import fake
@@ -25,9 +27,6 @@ from tests.schemas import (
     UserPatchSchema,
     UserSchema,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from fastapi_jsonapi.views.view_base import ViewBase
 
 pytestmark = pytest.mark.asyncio
 

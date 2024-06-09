@@ -14,12 +14,12 @@ from typing import (
 from pydantic import BaseModel, ConfigDict
 
 from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
+from fastapi_jsonapi.data_typing import TypeSchema
+from fastapi_jsonapi.schema import JSONAPIObjectSchema
 from fastapi_jsonapi.schema_builder import (
     JSONAPIResultDetailSchema,
     JSONAPIResultListSchema,
 )
-from fastapi_jsonapi.data_typing import TypeSchema
-from fastapi_jsonapi.schema import JSONAPIObjectSchema
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.api import RoutersJSONAPI

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 from fastapi import APIRouter, FastAPI
@@ -9,6 +8,9 @@ from pydantic import BaseModel, ConfigDict
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.atomic import AtomicOperations
+from fastapi_jsonapi.data_typing import TypeModel
+from fastapi_jsonapi.views.detail_view import DetailViewBase
+from fastapi_jsonapi.views.list_view import ListViewBase
 from tests.fixtures.views import (
     DetailViewBaseGeneric,
     ListViewBaseGeneric,
@@ -56,10 +58,6 @@ from tests.schemas import (
     UserPatchSchema,
     UserSchema,
 )
-
-from fastapi_jsonapi.data_typing import TypeModel
-from fastapi_jsonapi.views.detail_view import DetailViewBase
-from fastapi_jsonapi.views.list_view import ListViewBase
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent

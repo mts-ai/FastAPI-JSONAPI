@@ -8,8 +8,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    TypedDict,
     NoReturn,
+    TypedDict,
 )
 
 from fastapi import HTTPException, status
