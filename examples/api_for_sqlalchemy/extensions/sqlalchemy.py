@@ -1,12 +1,17 @@
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    sessionmaker,
+    mapped_column,
+    Mapped,
+)
 
 from examples.api_for_sqlalchemy import config
 
 
 class Base(DeclarativeBase):
-    pass
+    id: Mapped[int] = mapped_column(primary_key=True)
 
 
 def async_session() -> sessionmaker:

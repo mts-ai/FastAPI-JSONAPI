@@ -4,10 +4,11 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
-from examples.api_for_sqlalchemy.utils.sqlalchemy.base_model_mixin import BaseModelMixin
+from examples.api_for_sqlalchemy.utils.sqlalchemy.timestamps_mixin import TimestampsMixin
 
 
-class UserBio(Base, BaseModelMixin):
+
+class UserBio(Base, TimestampsMixin):
     __tablename__ = "user_bio"
     id = Column(Integer, primary_key=True, autoincrement=True)
     birth_city: str = Column(String, nullable=False, default="", server_default="")

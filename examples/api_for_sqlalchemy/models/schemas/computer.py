@@ -1,10 +1,14 @@
-"""Computer schemas module."""
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+)
 
 from pydantic import ConfigDict
 
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from fastapi_jsonapi.schema_base import BaseModel
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
     from .user import UserSchema
@@ -16,13 +20,12 @@ class ComputerBaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     name: str
-    user: Optional["UserSchema"] = Field(
-        json_schema_extra={
-            "relationship": RelationshipInfo(
-                resource_type="user",
-            ),
-        },
-    )
+    user: Annotated[
+        UserSchema | None,
+        RelationshipInfo(
+            resource_type="user",
+        ),
+    ] = None
 
 
 class ComputerPatchSchema(ComputerBaseSchema):

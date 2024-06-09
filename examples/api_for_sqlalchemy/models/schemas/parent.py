@@ -1,8 +1,16 @@
-from typing import TYPE_CHECKING, List
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+)
 
 from pydantic import ConfigDict
 
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from fastapi_jsonapi.schema_base import (
+    BaseModel,
+)
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
     from .parent_child_association import ParentToChildAssociationSchema
@@ -15,13 +23,13 @@ class ParentBaseSchema(BaseModel):
 
     name: str
 
-    children: List["ParentToChildAssociationSchema"] = Field(
-        default=None,
-        relationship=RelationshipInfo(
+    children: Annotated[
+        list[ParentToChildAssociationSchema] | None,
+        RelationshipInfo(
             resource_type="parent_child_association",
             many=True,
         ),
-    )
+    ] = None
 
 
 class ParentPatchSchema(ParentBaseSchema):
