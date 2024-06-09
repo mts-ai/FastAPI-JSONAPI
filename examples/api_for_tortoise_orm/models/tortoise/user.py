@@ -1,6 +1,5 @@
 """User model."""
 
-
 from tortoise import (
     fields,
     models,

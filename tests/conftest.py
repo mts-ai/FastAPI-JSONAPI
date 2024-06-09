@@ -13,8 +13,8 @@ from tests.fixtures.app import (  # noqa
 )
 from tests.fixtures.db_connection import (  # noqa
     async_engine,
-    refresh_db,
     async_session,
+    refresh_db,
 )
 from tests.fixtures.entities import (  # noqa
     child_1,
@@ -54,7 +54,6 @@ from tests.fixtures.views import (  # noqa
     DetailViewBaseGeneric,
     ListViewBaseGeneric,
 )
-from tests.models import Base
 
 
 def configure_logging():

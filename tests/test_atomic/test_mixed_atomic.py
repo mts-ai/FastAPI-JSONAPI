@@ -14,10 +14,7 @@ from starlette import status
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Computer, User, UserBio
-from tests.schemas import ComputerAttributesBaseSchema
-from tests.schemas import UserBioAttributesBaseSchema
-from tests.schemas import UserAttributesBaseSchema
-from tests.test_atomic.conftest import options_as_pydantic_choices_string
+from tests.schemas import ComputerAttributesBaseSchema, UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
 pytestmark = mark.asyncio
 
@@ -60,8 +57,8 @@ class TestAtomicMixedActions:
                     "loc": ["body", "atomic:operations", 0, "op"],
                     "msg": f"Input should be {atomic_operation_actions_as_str}",
                     "type": "enum",
-                }
-            ]
+                },
+            ],
         }
 
     async def test_create_and_update_atomic_success(

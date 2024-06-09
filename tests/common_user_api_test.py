@@ -2,13 +2,12 @@ from typing import Literal
 
 from fastapi import FastAPI
 from httpx import AsyncClient
-
-from fastapi_jsonapi.views.view_base import ViewBase
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import User
 from tests.schemas import UserAttributesBaseSchema
@@ -80,7 +79,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         response_data = response.json()
         assert len(response_data["detail"]) == 1
         detail = response_data["detail"][0]
-        url = detail.pop("url", None)
+        detail.pop("url", None)
         assert detail == {
             "input": input_data,
             "loc": ["body", "data", "attributes", self.FIELD_CUSTOM_NAME],

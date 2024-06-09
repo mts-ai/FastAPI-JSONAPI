@@ -17,8 +17,8 @@ from tests.misc.utils import fake
 from tests.models import User
 from tests.schemas import (
     UserAttributesBaseSchema,
-    UserPatchSchema,
     UserInSchema,
+    UserPatchSchema,
     UserSchema,
 )
 
@@ -189,8 +189,8 @@ class TestDependenciesResolver:
                     "loc": ["query", CustomDependencyForUpdate.KEY],
                     "msg": "Field required",
                     "type": "missing",
-                }
-            ]
+                },
+            ],
         }
         await self.send_and_validate_atomic(
             client=client,
@@ -223,8 +223,8 @@ class TestDependenciesResolver:
                     "loc": ["query", CustomDependencyForDelete.KEY],
                     "msg": "Field required",
                     "type": "missing",
-                }
-            ]
+                },
+            ],
         }
         await self.send_and_validate_atomic(
             client=client,

@@ -1,6 +1,6 @@
 from typing import (
-    get_args,
     TYPE_CHECKING,
+    get_args,
 )
 
 # noinspection PyProtectedMember

@@ -10,22 +10,20 @@ from typing import (
     Awaitable,
     Callable,
     List,
-    Optional,
     Type,
     TypedDict,
     Union,
 )
 
 from fastapi import HTTPException, status
-
-from fastapi_jsonapi.data_typing import TypeSchema
-from pydantic import ValidationError
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ValidationError
 from starlette.requests import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.atomic.prepared_atomic_operation import LocalIdsType, OperationBase
 from fastapi_jsonapi.atomic.schemas import AtomicOperation, AtomicOperationRequest, AtomicResultResponse
+from fastapi_jsonapi.data_typing import TypeSchema
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.base import BaseDataLayer

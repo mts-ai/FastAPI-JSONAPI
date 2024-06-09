@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from typing import (
-    Annotated,
     TYPE_CHECKING,
+    Annotated,
 )
 
 from pydantic import ConfigDict
+
 from fastapi_jsonapi.schema_base import (
     BaseModel,
 )
@@ -22,7 +23,7 @@ class UserBioAttributesBaseSchema(BaseModel):
 
     birth_city: str
     favourite_movies: str
-    #
+    # TODO:
     # keys_to_ids_list: Optional[dict[str, list[int]]] = None
 
 

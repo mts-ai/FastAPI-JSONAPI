@@ -1,4 +1,5 @@
 """JSON API router class."""
+
 from enum import Enum, auto
 from inspect import Parameter, Signature, signature
 from typing import (

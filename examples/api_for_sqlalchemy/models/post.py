@@ -1,11 +1,12 @@
 """Post model."""
+
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy import ForeignKey, Text
 from sqlalchemy.orm import (
-    relationship,
     Mapped,
     mapped_column,
+    relationship,
 )
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base

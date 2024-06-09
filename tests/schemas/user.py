@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 from typing import (
-    Optional,
-    Annotated,
     TYPE_CHECKING,
+    Annotated,
+    Optional,
 )
 
-from fastapi_jsonapi.types_metadata import ClientCanSetId
 from pydantic import ConfigDict
 
 from fastapi_jsonapi.schema_base import BaseModel
-from fastapi_jsonapi.types_metadata import RelationshipInfo
+from fastapi_jsonapi.types_metadata import ClientCanSetId, RelationshipInfo
 
 if TYPE_CHECKING:
     from tests.schemas import (
+        ComputerSchema,
         PostSchema,
         UserBioSchema,
-        ComputerSchema,
         WorkplaceSchema,
     )
 

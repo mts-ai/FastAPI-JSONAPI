@@ -1,12 +1,6 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
 
-import inspect
 import logging
-from collections.abc import Sequence
-
-from fastapi_jsonapi.common import search_custom_filter_sql
-from fastapi_jsonapi.types_metadata import CustomFilterSQL
-from fastapi_jsonapi.utils import check_can_be_none
 from typing import (
     Any,
     Callable,
@@ -23,8 +17,8 @@ from pydantic import (
     BaseConfig,
     BaseModel,
     ConfigDict,
-    TypeAdapter,
     PydanticSchemaGenerationError,
+    TypeAdapter,
 )
 from pydantic.fields import FieldInfo
 from sqlalchemy import and_, false, not_, or_
@@ -33,6 +27,7 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql.elements import BinaryExpression, BooleanClauseList
 
+from fastapi_jsonapi.common import search_custom_filter_sql
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidType
 from fastapi_jsonapi.exceptions.json_api import HTTPException
@@ -42,6 +37,8 @@ from fastapi_jsonapi.schema import (
     get_relationship_fields_names,
     get_schema_from_field_annotation,
 )
+from fastapi_jsonapi.types_metadata import CustomFilterSQL
+from fastapi_jsonapi.utils import check_can_be_none
 
 log = logging.getLogger(__name__)
 

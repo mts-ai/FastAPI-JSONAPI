@@ -2,9 +2,9 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
-    sessionmaker,
-    mapped_column,
     Mapped,
+    mapped_column,
+    sessionmaker,
 )
 
 from examples.api_for_sqlalchemy import config

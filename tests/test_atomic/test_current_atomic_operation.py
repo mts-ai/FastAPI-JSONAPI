@@ -5,8 +5,6 @@ from typing import ClassVar, Dict, Literal, Optional
 import pytest
 from fastapi import Body, Depends, FastAPI, HTTPException, status
 from httpx import AsyncClient
-
-from fastapi_jsonapi.views.view_base import ViewBase
 from pydantic import BaseModel
 from pytest_asyncio import fixture
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +16,7 @@ from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
 )
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common_user_api_test import (
     BaseGenericUserCreateUpdateWithBodyDependency,
     CustomNameAttributesJSONAPI,

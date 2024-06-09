@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 from typing import (
-    Optional,
     Annotated,
+    Optional,
 )
 from uuid import UUID
 
-from fastapi_jsonapi.types_metadata import ClientCanSetId
 from pydantic import (
     ConfigDict,
-    Field,
 )
 
 from fastapi_jsonapi.schema_base import BaseModel
+from fastapi_jsonapi.types_metadata import ClientCanSetId
 
 
 class CustomUUIDItemAttributesSchema(BaseModel):

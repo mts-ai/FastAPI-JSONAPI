@@ -19,7 +19,7 @@ def options_as_pydantic_choices_string(options: Sequence[str]) -> str:
         (
             ", ".join(repr(op) for op in options[:-1]),
             repr(options[-1]),
-        )
+        ),
     )
 
 

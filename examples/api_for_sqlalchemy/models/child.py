@@ -5,7 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from examples.api_for_sqlalchemy.utils.sqlalchemy.timestamps_mixin import TimestampsMixin
 
-
 if TYPE_CHECKING:
     from examples.api_for_sqlalchemy.models import ParentToChildAssociation
 

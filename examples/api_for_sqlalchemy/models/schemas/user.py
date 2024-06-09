@@ -1,15 +1,14 @@
-"""User schemas module."""
 from __future__ import annotations
 
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
-    List,
     Annotated,
 )
+
 from pydantic import ConfigDict
 
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+# from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
 from fastapi_jsonapi.schema_base import BaseModel, Field
 from fastapi_jsonapi.types_metadata import RelationshipInfo
 
@@ -24,15 +23,10 @@ class UserBaseSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    class Enum:
-        """User enums."""
-
-        status = UserStatusEnum
-
-    status: UserStatusEnum = Field(default=UserStatusEnum.active)
     first_name: str | None = None
     last_name: str | None = None
     age: int | None = None
+    # status: UserStatusEnum = Field(default=UserStatusEnum.active)
     email: str | None = None
 
     posts: Annotated[

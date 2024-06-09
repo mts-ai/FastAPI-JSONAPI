@@ -1,18 +1,18 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Index, Integer, String
+from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.orm import (
-    relationship,
     Mapped,
     mapped_column,
+    relationship,
 )
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from examples.api_for_sqlalchemy.utils.sqlalchemy.timestamps_mixin import TimestampsMixin
 
 if TYPE_CHECKING:
-    from .parent import Parent
     from .child import Child
+    from .parent import Parent
 
 
 class ParentToChildAssociation(Base, TimestampsMixin):

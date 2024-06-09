@@ -1,16 +1,16 @@
 """Post Comment model."""
+
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import (
-    relationship,
     Mapped,
     mapped_column,
+    relationship,
 )
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from examples.api_for_sqlalchemy.utils.sqlalchemy.timestamps_mixin import TimestampsMixin
-
 
 if TYPE_CHECKING:
     from .post import Post

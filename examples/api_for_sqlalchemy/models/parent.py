@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import (
-    relationship,
     Mapped,
+    relationship,
 )
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base

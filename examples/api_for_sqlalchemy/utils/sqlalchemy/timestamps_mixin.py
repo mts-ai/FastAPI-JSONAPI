@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr

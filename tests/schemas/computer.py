@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from typing import (
-    Annotated,
     TYPE_CHECKING,
+    Annotated,
 )
 
 from pydantic import ConfigDict
+
 from fastapi_jsonapi.schema_base import (
     BaseModel,
 )

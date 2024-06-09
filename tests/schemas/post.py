@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 from typing import (
-    Annotated,
     TYPE_CHECKING,
+    Annotated,
 )
 
 from pydantic import ConfigDict
+
 from fastapi_jsonapi.schema_base import (
     BaseModel,
 )
 from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
-    from tests.schemas import UserSchema, PostCommentSchema
+    from tests.schemas import PostCommentSchema, UserSchema
 
 
 class PostAttributesBaseSchema(BaseModel):

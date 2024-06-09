@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from inspect import isclass
-
 from types import (
-    UnionType,
     GenericAlias,
+    UnionType,
 )
-
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -19,22 +17,23 @@ from typing import (
 )
 
 from fastapi import FastAPI
-
-from fastapi_jsonapi.common import search_relationship_info
-from fastapi_jsonapi.schema_base import BaseModel
 from pydantic import (
-    BaseModel,
+    BaseModel as PydanticBaseModel,
+)
+from pydantic import (
     ConfigDict,
     Field,
-    BaseModel as PydanticBaseModel,
 )
 from pydantic._internal._typing_extra import is_none_type
 
-if TYPE_CHECKING:
-    from fastapi_jsonapi.data_typing import TypeSchema
+from fastapi_jsonapi.common import search_relationship_info
+from fastapi_jsonapi.schema_base import BaseModel
 
+if TYPE_CHECKING:
     # noinspection PyProtectedMember
     from pydantic.fields import FieldInfo
+
+    from fastapi_jsonapi.data_typing import TypeSchema
 
 
 class BaseJSONAPIRelationshipSchema(BaseModel):

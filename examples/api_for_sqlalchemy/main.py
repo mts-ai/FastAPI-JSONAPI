@@ -1,7 +1,10 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -10,11 +13,6 @@ from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from examples.api_for_sqlalchemy.urls import add_routes
 from examples.api_for_sqlalchemy.util import register_static_docs_routes
 from fastapi_jsonapi import init
-
-from contextlib import asynccontextmanager
-
-from fastapi import FastAPI
-from fastapi.responses import ORJSONResponse
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent

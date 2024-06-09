@@ -3,17 +3,17 @@ import logging
 from enum import Enum
 from inspect import Parameter
 from typing import (
+    TYPE_CHECKING,
     Optional,
     Type,
-    TYPE_CHECKING,
 )
 
 from fastapi import Query
 
+from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
 from fastapi_jsonapi.schema_base import (
     BaseModel,
 )
-from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
 
 if TYPE_CHECKING:
     # noinspection PyProtectedMember

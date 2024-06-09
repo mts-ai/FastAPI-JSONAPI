@@ -19,12 +19,14 @@ from fastapi_jsonapi.atomic.atomic_handler import OPERATION_VALIDATION_ERROR_TEX
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Child, Parent, ParentToChildAssociation, User, UserBio
-from tests.schemas import ComputerAttributesBaseSchema
-from tests.schemas import ChildAttributesSchema
-from tests.schemas import ParentAttributesSchema
-from tests.schemas import ParentToChildAssociationAttributesSchema
-from tests.schemas import UserBioAttributesBaseSchema
-from tests.schemas import UserAttributesBaseSchema
+from tests.schemas import (
+    ChildAttributesSchema,
+    ComputerAttributesBaseSchema,
+    ParentAttributesSchema,
+    ParentToChildAssociationAttributesSchema,
+    UserAttributesBaseSchema,
+    UserBioAttributesBaseSchema,
+)
 
 COLUMN_CHARACTERS_LIMIT = 50
 
@@ -919,11 +921,11 @@ class TestAtomicCreateObjects:
                         "msg": "Field required",
                         "type": "missing",
                         "url": "https://errors.pydantic.dev/2.8/v/missing",
-                    }
+                    },
                 ],
                 "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_add["op"]),
                 "ref": None,
-            }
+            },
         }
 
     @pytest.mark.skip("not ready yet")

@@ -30,41 +30,31 @@ from tests.models import (
     User,
     UserBio,
 )
-from tests.schemas import DeltaSchema
-from tests.schemas import GammaSchema
-from tests.schemas import BetaSchema
-from tests.schemas import AlphaSchema
-from tests.schemas import CustomUUIDItemSchema
 from tests.schemas import (
-    TaskPatchSchema,
-    TaskInSchema,
-    TaskSchema,
-)
-from tests.schemas import (
-    ComputerPatchSchema,
-    ComputerInSchema,
-    ComputerSchema,
-)
-from tests.schemas import (
-    ChildPatchSchema,
+    AlphaSchema,
+    BetaSchema,
     ChildInSchema,
+    ChildPatchSchema,
     ChildSchema,
-)
-from tests.schemas import (
+    ComputerInSchema,
+    ComputerPatchSchema,
+    ComputerSchema,
+    CustomUUIDItemSchema,
+    DeltaSchema,
+    GammaSchema,
     ParentPatchSchema,
     ParentSchema,
-)
-from tests.schemas import ParentToChildAssociationSchema
-from tests.schemas import PostCommentSchema
-from tests.schemas import (
-    PostPatchSchema,
+    ParentToChildAssociationSchema,
+    PostCommentSchema,
     PostInSchema,
+    PostPatchSchema,
     PostSchema,
-)
-from tests.schemas import UserBioSchema
-from tests.schemas import (
-    UserPatchSchema,
+    TaskInSchema,
+    TaskPatchSchema,
+    TaskSchema,
+    UserBioSchema,
     UserInSchema,
+    UserPatchSchema,
     UserSchema,
 )
 

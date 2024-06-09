@@ -1,10 +1,9 @@
 from typing import (
-    TypeVar,
-    Type,
-    Generator,
     TYPE_CHECKING,
+    Generator,
+    Type,
+    TypeVar,
 )
-
 
 if TYPE_CHECKING:
     # noinspection PyProtectedMember

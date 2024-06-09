@@ -1,12 +1,11 @@
 from typing import (
-    Any,
-    Union,
     Annotated,
+    Any,
 )
 
-from fastapi_jsonapi.contrib.sqla.filters import sql_filter_jsonb_contains
 from pydantic.fields import Field
 
+from fastapi_jsonapi.contrib.sqla.filters import sql_filter_jsonb_contains
 from fastapi_jsonapi.schema_base import BaseModel
 
 

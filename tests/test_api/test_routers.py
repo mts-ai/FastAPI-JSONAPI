@@ -22,8 +22,8 @@ from tests.misc.utils import fake
 from tests.models import User
 from tests.schemas import (
     UserAttributesBaseSchema,
-    UserPatchSchema,
     UserInSchema,
+    UserPatchSchema,
     UserSchema,
 )
 

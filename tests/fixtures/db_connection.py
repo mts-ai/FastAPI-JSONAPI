@@ -3,7 +3,6 @@ from pytest_asyncio import fixture as async_fixture
 from sqlalchemy import AsyncAdaptedQueuePool
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
-    AsyncSession,
     create_async_engine,
     async_sessionmaker,
 )
@@ -72,5 +71,5 @@ async def recreate_tables(engine):
 
 
 @async_fixture()
-async def refresh_db(async_engine):  # noqa F811
+async def refresh_db(async_engine):
     await recreate_tables(async_engine)

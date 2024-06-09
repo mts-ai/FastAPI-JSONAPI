@@ -1,24 +1,25 @@
 """User model."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column
 from sqlalchemy.orm import (
-    relationship,
     Mapped,
+    relationship,
 )
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
-from examples.api_for_sqlalchemy.utils.sqlalchemy.timestamps_mixin import TimestampsMixin
 from examples.api_for_sqlalchemy.utils.sqlalchemy.fields.enum import EnumColumn
+from examples.api_for_sqlalchemy.utils.sqlalchemy.timestamps_mixin import TimestampsMixin
 
 if TYPE_CHECKING:
-    from .post import Post
-    from .user_bio import UserBio
-    from .post_comment import PostComment
     from .computer import Computer
+    from .post import Post
+    from .post_comment import PostComment
+    from .user_bio import UserBio
 
 
 class User(Base, TimestampsMixin):

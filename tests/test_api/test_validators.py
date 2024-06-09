@@ -1,15 +1,12 @@
 from copy import deepcopy
 from typing import (
-    Type,
     Annotated,
+    Type,
 )
 
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-
-from fastapi_jsonapi.types_metadata import ClientCanSetId
-from fastapi_jsonapi.views.view_base import ViewBase
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from pytest import mark, param  # noqa: PT013
 from pytest_asyncio import fixture
@@ -18,7 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import BadRequest
 from fastapi_jsonapi.schema_builder import SchemaBuilder
+from fastapi_jsonapi.types_metadata import ClientCanSetId
 from fastapi_jsonapi.validation_utils import extract_field_validators
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.app import build_app_custom
 from tests.misc.utils import fake
 from tests.models import (

@@ -1,7 +1,7 @@
-import pytest
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
+import pytest
 from fastapi import status
 from pydantic import BaseModel, ConfigDict
 

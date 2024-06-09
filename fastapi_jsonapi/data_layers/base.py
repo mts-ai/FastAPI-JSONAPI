@@ -7,13 +7,13 @@ you must inherit from this base class
 
 from __future__ import annotations
 
-from pydantic import TypeAdapter
-from typing import Dict, List, Optional, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 from fastapi import Request
+from pydantic import TypeAdapter
 
-from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.common import search_client_can_set_id
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
 

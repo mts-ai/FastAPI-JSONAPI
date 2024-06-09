@@ -6,16 +6,14 @@ from datetime import datetime, timezone
 from itertools import chain, zip_longest
 from json import dumps, loads
 from typing import (
-    Literal,
     Annotated,
+    Literal,
 )
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-
-from fastapi_jsonapi.contrib.sqla.filters import sql_filter_lower_equals
 from pydantic import BaseModel, Field
 from pytest import fixture, mark, param, raises  # noqa PT013
 from sqlalchemy import select
@@ -23,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import QueryParams
 
 from fastapi_jsonapi.api import RoutersJSONAPI
+from fastapi_jsonapi.contrib.sqla.filters import sql_filter_lower_equals
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
 from tests.fixtures.app import build_alphabet_app, build_app_custom
@@ -50,17 +49,17 @@ from tests.models import (
     Workplace,
 )
 from tests.schemas import (
-    UserAttributesBaseSchema,
-    UserPatchSchema,
-    UserInSchemaAllowIdOnPost,
-    UserSchema,
-    CustomUserAttributesSchema,
     CascadeCaseSchema,
-    SelfRelationshipAttributesSchema,
+    CustomUserAttributesSchema,
     CustomUUIDItemAttributesSchema,
-    PostCommentAttributesBaseSchema,
     PostAttributesBaseSchema,
+    PostCommentAttributesBaseSchema,
+    SelfRelationshipAttributesSchema,
+    UserAttributesBaseSchema,
     UserBioAttributesBaseSchema,
+    UserInSchemaAllowIdOnPost,
+    UserPatchSchema,
+    UserSchema,
 )
 
 pytestmark = mark.asyncio
@@ -317,7 +316,7 @@ class TestGetUsersList:
                         "id": ViewBase.get_db_item_id(user_1_post),
                         "relationships": {
                             "comments": {
-                                "data": [{"id": ViewBase.get_db_item_id(user_2_comment), "type": "post_comment"}]
+                                "data": [{"id": ViewBase.get_db_item_id(user_2_comment), "type": "post_comment"}],
                             },
                         },
                         "type": "post",
@@ -641,7 +640,7 @@ class TestCreatePostAndComments:
                     "msg": "Field required",
                     "type": "missing",
                 },
-            ]
+            ],
         }
 
     async def test_create_comment_error_no_relationships_field(
@@ -670,8 +669,8 @@ class TestCreatePostAndComments:
                     "loc": ["body", "data", "relationships"],
                     "msg": "Field required",
                     "type": "missing",
-                }
-            ]
+                },
+            ],
         }
 
 
@@ -1420,7 +1419,8 @@ class TestCreateObjects:
 
             response_json = res.json()
             assert response_json["data"]
-            assert (parent_object_id := response_json["data"].get("id"))
+            parent_object_id = response_json["data"].get("id")
+            assert parent_object_id
             assert response_json == {
                 "data": {
                     "attributes": {
@@ -1454,7 +1454,8 @@ class TestCreateObjects:
 
             response_json = res.json()
             assert response_json["data"]
-            assert (child_object_id := response_json["data"].get("id"))
+            child_object_id = response_json["data"].get("id")
+            assert child_object_id
             assert res.json() == {
                 "data": {
                     "attributes": {"name": "child"},
@@ -2661,7 +2662,8 @@ class TestFilters:
 
         response_json = response.json()
 
-        assert len(data := response_json["data"]) == 1
+        data = response_json["data"]
+        assert len(data) == 1
         assert data[0]["id"] == str(target_user.id)
         assert data[0]["attributes"]["email"] == target_user.email
 

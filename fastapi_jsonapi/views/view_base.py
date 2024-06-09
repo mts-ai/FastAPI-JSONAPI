@@ -22,6 +22,7 @@ from pydantic.fields import FieldInfo
 from starlette.concurrency import run_in_threadpool
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
+from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_typing import (
     TypeModel,
@@ -35,12 +36,11 @@ from fastapi_jsonapi.schema import (
     get_schema_from_field_annotation,
 )
 from fastapi_jsonapi.schema_base import BaseModel
-from fastapi_jsonapi.types_metadata import RelationshipInfo
 from fastapi_jsonapi.schema_builder import (
     JSONAPIObjectSchemas,
 )
 from fastapi_jsonapi.splitter import SPLIT_REL
-from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
@@ -305,8 +305,8 @@ class ViewBase:
         """
         included_objects[cache_key] = object_schema.model_validate(
             obj=parent_included_object.model_dump(
-                exclude={"relationships"} if getattr(parent_included_object, "relationships", None) is None else None
-            )
+                exclude={"relationships"} if getattr(parent_included_object, "relationships", None) is None else None,
+            ),
         ).copy(
             update={"relationships": new_relationships},
         )

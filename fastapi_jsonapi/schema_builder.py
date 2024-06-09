@@ -3,6 +3,7 @@
 import logging
 from dataclasses import dataclass
 from typing import (
+    Annotated,
     Any,
     Callable,
     ClassVar,
@@ -14,19 +15,17 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    Annotated,
 )
 
 import pydantic
-from fastapi_jsonapi.common import (
-    search_client_can_set_id,
-    get_relationship_info_from_field_metadata,
-)
-from fastapi_jsonapi.types_metadata import ClientCanSetId
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
 from pydantic.fields import FieldInfo
 
+from fastapi_jsonapi.common import (
+    get_relationship_info_from_field_metadata,
+    search_client_can_set_id,
+)
 from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
     BaseJSONAPIDataInSchema,
@@ -46,8 +45,8 @@ from fastapi_jsonapi.schema_base import (
     Field,
     registry,
 )
-from fastapi_jsonapi.types_metadata import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.types_metadata import ClientCanSetId, RelationshipInfo
 from fastapi_jsonapi.validation_utils import (
     extract_field_validators,
     extract_validators,

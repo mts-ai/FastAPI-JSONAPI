@@ -13,6 +13,7 @@ from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.sql import column, distinct
 
 from fastapi_jsonapi import BadRequest
+from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import (
     create_filters_and_joins,
@@ -35,9 +36,8 @@ from fastapi_jsonapi.schema import (
     get_model_field,
     get_related_schema,
 )
-from fastapi_jsonapi.types_metadata import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
-from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
 if TYPE_CHECKING:

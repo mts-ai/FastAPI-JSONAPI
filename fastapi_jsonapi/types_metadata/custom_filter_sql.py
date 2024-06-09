@@ -1,10 +1,9 @@
+from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Generic,
     TypeVar,
-    TYPE_CHECKING,
 )
-
-from dataclasses import dataclass
 
 if TYPE_CHECKING:
     # noinspection PyProtectedMember

@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 
 from fastapi_jsonapi.types_metadata import (
     ClientCanSetId,
-    RelationshipInfo,
     CustomFilterSQL,
+    RelationshipInfo,
 )
 from fastapi_jsonapi.utils.metadata_instance_search import MetadataInstanceSearch
 
