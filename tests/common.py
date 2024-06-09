@@ -5,11 +5,14 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
 
+def sqla_db_filepath():
+    return Path(__file__).resolve().parent / "db.sqlite3"
+
+
 def sqla_uri():
     testing_db_url = getenv("TESTING_DB_URL")
     if not testing_db_url:
-        db_dir = Path(__file__).resolve().parent
-        testing_db_url = f"sqlite+aiosqlite:///{db_dir}/db.sqlite3"
+        testing_db_url = f"sqlite+aiosqlite:///{sqla_db_filepath()}"
     return testing_db_url
 
 
