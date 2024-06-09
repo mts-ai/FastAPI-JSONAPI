@@ -1,20 +1,20 @@
-"""
-Main module for w_mount service.
-
-In module placed db initialization functions, app factory.
-"""
 import sys
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from examples.api_for_sqlalchemy import config
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 from examples.api_for_sqlalchemy.urls import add_routes
+from examples.api_for_sqlalchemy.util import register_static_docs_routes
 from fastapi_jsonapi import init
+
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
@@ -31,21 +31,30 @@ async def sqlalchemy_init() -> None:
         await conn.run_sync(Base.metadata.create_all)
 
 
-def create_app() -> FastAPI:
-    """
-    Create app factory.
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
+    await sqlalchemy_init()
+    yield
+    # shutdown
+    # await db_helper.dispose()
 
-    :return: app
-    """
+
+def create_app(
+    create_custom_static_urls: bool = False,
+) -> FastAPI:
     app = FastAPI(
         title="FastAPI and SQLAlchemy",
-        debug=True,
-        openapi_url="/openapi.json",
-        docs_url="/docs",
+        default_response_class=ORJSONResponse,
+        lifespan=lifespan,
+        docs_url=None if create_custom_static_urls else "/docs",
+        redoc_url=None if create_custom_static_urls else "/redoc",
     )
+    if create_custom_static_urls:
+        register_static_docs_routes(app)
+
     app.config = {"MAX_INCLUDE_DEPTH": 5}
     add_routes(app)
-    app.on_event("startup")(sqlalchemy_init)
     init(app)
     return app
 
