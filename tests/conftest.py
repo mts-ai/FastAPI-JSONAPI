@@ -79,6 +79,6 @@ def event_loop():
 
 
 @async_fixture()
-async def client(app: FastAPI) -> AsyncClient:
+async def client(app: FastAPI) -> AsyncClient:  # noqa: F811
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac

@@ -1,5 +1,7 @@
 """This module is a CRUD interface between resource managers and the Tortoise ORM"""
 
+from __future__ import annotations
+
 from collections.abc import Iterable
 from typing import Any
 

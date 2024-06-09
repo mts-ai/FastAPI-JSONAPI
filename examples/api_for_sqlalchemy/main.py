@@ -39,6 +39,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app(
+    *,
     create_custom_static_urls: bool = False,
 ) -> FastAPI:
     app = FastAPI(
@@ -60,7 +61,7 @@ def create_app(
 if __name__ == "__main__":
     uvicorn.run(
         "asgi:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # noqa: S104
         port=8082,
         reload=True,
         app_dir=str(CURRENT_DIR),

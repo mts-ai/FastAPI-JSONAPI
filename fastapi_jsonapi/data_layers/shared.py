@@ -1,15 +1,16 @@
-from typing import TYPE_CHECKING, Union
+from __future__ import annotations
 
-from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.filtering.sqlalchemy import Node as NodeSQLAlchemy
+    from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 
 
 def create_filters_or_sorts(
     model: type[TypeModel],
     filter_or_sort_info: list | dict,
-    class_node: Union[type["NodeSQLAlchemy"]],
+    class_node: type[NodeSQLAlchemy],
     schema: type[TypeSchema],
 ) -> tuple:
     """
