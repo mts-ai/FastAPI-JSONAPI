@@ -1,4 +1,5 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
+
 import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Literal, Optional, Tuple, Type, Union
 
@@ -34,8 +35,9 @@ from fastapi_jsonapi.schema import (
     get_model_field,
     get_related_schema,
 )
-from fastapi_jsonapi.schema_base import RelationshipInfo
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
+from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
 if TYPE_CHECKING:
@@ -237,14 +239,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 log.warning("field for %s in schema %s not found", relation_name, self.schema.__name__)
                 continue
 
-            if "relationship" not in field.json_schema_extra:
-                log.warning(
-                    "relationship info for %s in schema %s extra not found",
-                    relation_name,
-                    self.schema.__name__,
-                )
+            relationship_info: RelationshipInfo | None = get_relationship_info_from_field_metadata(field)
+            if relationship_info is None:
                 continue
-            relationship_info: RelationshipInfo = field.json_schema_extra["relationship"]
             related_model = get_related_model_cls(type(obj), relation_name)
             related_data = await self.get_related_data_to_link(
                 related_model=related_model,
@@ -406,6 +403,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             # TODO: get field alias (if present) and get attribute by alias (rarely used, but required)
 
             if (old_value := getattr(obj, field_name, missing)) is missing:
+                # TODO: tests coverage
                 log.warning("No field %r on %s. Make sure schema conforms model.", field_name, type(obj))
                 continue
 
