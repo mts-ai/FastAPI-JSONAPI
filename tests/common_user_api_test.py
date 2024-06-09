@@ -2,6 +2,8 @@ from typing import Literal
 
 from fastapi import FastAPI
 from httpx import AsyncClient
+
+from fastapi_jsonapi.views.view_base import ViewBase
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,23 +64,28 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         data_user_attributes = user_attributes.model_dump()
         data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_update.expected_value
         data_user_update = {
-            "id": user.id,
+            "id": ViewBase.get_db_item_id(user),
             "type": resource_type,
             "attributes": data_user_attributes,
         }
         return data_user_update
 
-    def validate_field_not_passed_response(self, response, expected_status=status.HTTP_422_UNPROCESSABLE_ENTITY):
+    def validate_field_not_passed_response(
+        self,
+        response,
+        input_data: dict,
+        expected_status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    ):
         assert response.status_code == expected_status, response.text
         response_data = response.json()
-        assert response_data == {
-            "detail": [
-                {
-                    "loc": ["body", "data", "attributes", self.FIELD_CUSTOM_NAME],
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                },
-            ],
+        assert len(response_data["detail"]) == 1
+        detail = response_data["detail"][0]
+        url = detail.pop("url", None)
+        assert detail == {
+            "input": input_data,
+            "loc": ["body", "data", "attributes", self.FIELD_CUSTOM_NAME],
+            "msg": "Field required",
+            "type": "missing",
         }
 
     def validate_field_value_invalid_response(self, response, validator: ValidateCustomNameEqualsBase):
@@ -108,7 +115,10 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         }
         url = app.url_path_for(f"create_{resource_type}_list")
         response = await client.post(url, json=data_user_create)
-        self.validate_field_not_passed_response(response)
+        self.validate_field_not_passed_response(
+            response,
+            input_data=attributes_data,
+        )
 
     async def validate_user_creation_test_error_value_passed_but_invalid(
         self,
@@ -142,14 +152,17 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_update = {
             "data": {
-                "id": user.id,
+                "id": ViewBase.get_db_item_id(user),
                 "type": resource_type,
                 "attributes": attributes_data,
             },
         }
         url = app.url_path_for(f"update_{resource_type}_detail", obj_id=user.id)
         response = await client.patch(url, json=data_user_update)
-        self.validate_field_not_passed_response(response)
+        self.validate_field_not_passed_response(
+            response,
+            input_data=attributes_data,
+        )
 
     async def validate_user_update_error_value_passed_but_invalid(
         self,
@@ -164,7 +177,7 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
         assert attributes_data[self.FIELD_CUSTOM_NAME] != self.validator_update.expected_value
         data_user_update = {
             "data": {
-                "id": user.id,
+                "id": ViewBase.get_db_item_id(user),
                 "type": resource_type,
                 "attributes": attributes_data,
             },
