@@ -15,6 +15,8 @@ __all__ = (
     "TaskSchema",
     "UserAttributesBaseSchema",
     "UserSchema",
+    "UserPatchSchema",
+    "UserInSchema",
     "UserBioSchema",
     "WorkplaceSchema",
 )
@@ -37,6 +39,8 @@ from .user import (
     UserSchema,
     CustomUserAttributesSchema,
     UserAttributesBaseSchema,
+    UserPatchSchema,
+    UserInSchema,
 )
 from .user_bio import UserBioSchema
 from .workplace import WorkplaceSchema
