@@ -5,14 +5,17 @@ If you want to create your own data layer
 you must inherit from this base class
 """
 
+from __future__ import annotations
+
+from pydantic import TypeAdapter
 from typing import Dict, List, Optional, Tuple, Type
 
 from fastapi import Request
 
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
+from fastapi_jsonapi.common import search_client_can_set_id
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
-from fastapi_jsonapi.schema_builder import FieldConfig, TransferSaveWrapper
 
 
 class BaseDataLayer:
@@ -53,19 +56,11 @@ class BaseDataLayer:
         self.is_atomic = False
         self.type_ = type_
 
-    async def atomic_start(self, previous_dl: Optional["BaseDataLayer"] = None):
+    async def atomic_start(self, previous_dl: BaseDataLayer | None = None):
         self.is_atomic = True
 
     async def atomic_end(self, success: bool = True):
         raise NotImplementedError
-
-    def _unwrap_field_config(self, extra: Dict):
-        field_config_wrapper: Optional[TransferSaveWrapper] = extra.get("field_config")
-
-        if field_config_wrapper:
-            return field_config_wrapper.get_field_config()
-
-        return FieldConfig()
 
     def _apply_client_generated_id(
         self,
@@ -80,13 +75,16 @@ class BaseDataLayer:
         """
         if data_create.id is None:
             return model_kwargs
-        extra = data_create.model_fields["id"].json_schema_extra
-        if extra is not None and extra.get("client_can_set_id"):
-            id_value = data_create.id
-            field_config = self._unwrap_field_config(extra)
 
-            if field_config.cast_type:
-                id_value = field_config.cast_type(id_value)
+        # todo: annotation?
+        field = data_create.model_fields["id"]
+        if can_set_id := search_client_can_set_id.first(field):
+            id_value = data_create.id
+
+            if can_set_id.cast_type:
+                # TODO: use type adapter only on builtin types?
+                t = TypeAdapter(can_set_id.cast_type)
+                id_value = t.validate_python(id_value)
 
             model_kwargs["id"] = id_value
 
