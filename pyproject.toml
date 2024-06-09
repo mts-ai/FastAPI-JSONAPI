@@ -279,45 +279,43 @@ select = [
 ]
 
 extend-ignore = [
-    "D400", # First line should end with a period
-    "D401", # First line of docstring should be in imperative mood
+        "D400",  # First line should end with a period
+        "D401",  # First line of docstring should be in imperative mood
     #    "D403",
-    "D404", #  First word of the docstring should not be "This"
-    "D415", # First line should end with a period, question mark, or exclamation point
-    "D100", # Missing docstring in public module
-    "D101", # Missing docstring in public class
-    "D102", # Missing docstring in public method
-    "D103", # Missing docstring in public function
-    "D104", # Missing docstring in public package
-    "D105", # Missing docstring in magic method
-    "D106", # Missing docstring in public nested class
-    "D107", # Missing docstring in `__init__`
-    "D200",  # One-line docstring should fit on one line
-    "D203", # 1 blank line required before class docstring
-    "D205", # 1 blank line required between summary line and description",
-    "D210", # No whitespaces allowed surrounding docstring text
-    "D212", # Multi-line docstring summary should start at the first line
+        "D404",  #  First word of the docstring should not be "This"
+        "D415",  # First line should end with a period, question mark, or exclamation point
+        "D100",  # Missing docstring in public module
+        "D101",  # Missing docstring in public class
+        "D102",  # Missing docstring in public method
+        "D103",  # Missing docstring in public function
+        "D104",  # Missing docstring in public package
+        "D105",  # Missing docstring in magic method
+        "D106",  # Missing docstring in public nested class
+        "D107",  # Missing docstring in `__init__`
+    #    "D200",  # One-line docstring should fit on one line
+        "D203",  # 1 blank line required before class docstring
+        "D205",  # 1 blank line required between summary line and description",
+        "D210",  # No whitespaces allowed surrounding docstring text
+        "D212",  # Multi-line docstring summary should start at the first line
     #    "D301",  # Use r""" if any backslashes in a docstring
-    "PLR0913", # Too many arguments to function call
+        "PLR0913",  # Too many arguments to function call
     #    "A003",  # Class attribute `type` is shadowing a Python builtin
-    "ARG001", # Unused function argument: `{name}`
-    "ARG002", # Unused method argument: `{name}`
-    "ARG003", # Unused class method argument: `{name}`
-    "RUF001", # String contains ambiguous unicode character {confusable} (did you mean {representant}?)
-    "RUF002", # Docstring contains ambiguous unicode character {confusable} (did you mean {representant}?)
-    "RUF003", # Comment contains ambiguous unicode character {confusable} (did you mean {representant}?)
-    "PT006", # pytest parametrize tuple args
-    "B008", # Do not perform function call `Depends` in argument defaults
-    "B904", # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
-    "FIX002", # Line contains TODO, consider resolving the issue
-    "FIX003", # Line contains XXX, consider resolving the issue
-    "FIX004", # Line contains HACK, consider resolving the issue
-    "TD001", # Invalid TODO tag: `XXX`
-    "TD002", # Missing author in TODO; try: `# TODO(<author_name>): ...` or `# TODO @<author_name>
-    "TD003", # Missing issue link on the line following this TODO
-    "TD005", # Missing issue description after `TODO`
-    "ERA001", # TODO: remove
-    "S101", # TODO: remove
+    #    "ARG001",  # Unused function argument: `{name}`
+    #    "ARG002",  # Unused method argument: `{name}`
+    #    "ARG003",  # Unused class method argument: `{name}`
+    #    "RUF001",  # String contains ambiguous unicode character {confusable} (did you mean {representant}?)
+    #    "RUF002",  # Docstring contains ambiguous unicode character {confusable} (did you mean {representant}?)
+    #    "RUF003",  # Comment contains ambiguous unicode character {confusable} (did you mean {representant}?)
+    #    "PT006",  # pytest parametrize tuple args
+    "B008",  # Do not perform function call `Depends` in argument defaults
+    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    "FIX002",  # Line contains TODO, consider resolving the issue
+    "FIX003",  # Line contains XXX, consider resolving the issue
+    "FIX004",  # Line contains HACK, consider resolving the issue
+    "TD001",  # Invalid TODO tag: `XXX`
+    "TD002",  # Missing author in TODO; try: `# TODO(<author_name>): ...` or `# TODO @<author_name>
+    "TD003",  # Missing issue link on the line following this TODO
+    "TD005",  # Missing issue description after `TODO`
 ]
 
 
@@ -329,14 +327,11 @@ extend-ignore = [
 "tests/*" = [
     "S101",
     "ANN001",
-    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
-    "PLR0913", # Too many arguments in function definition
-    "FBT001", # FBT001 Boolean-typed positional argument in function definition
-    "C901", # func is too complex (11 > 10)
-    "N806", #Variable `{name}` in function should be lowercase
-]
-"tests/**/conftest.py" = [
-    "PGH004", # Use specific rule codes when using `noqa`
+    "S311",  # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "PLR0913",  # Too many arguments in function definition
+    "FBT001",  # FBT001 Boolean-typed positional argument in function definition
+    "C901",  # func is too complex (11 > 10)
+    "N806",  #Variable `{name}` in function should be lowercase
 ]
 "tests/test_utils/test_dependency_helper.py" = [
     "SLF001",
