@@ -1,7 +1,9 @@
 """User Bio schemas module."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
+
+from pydantic import ConfigDict
 
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -12,19 +14,18 @@ if TYPE_CHECKING:
 class UserBioBaseSchema(BaseModel):
     """UserBio base schema."""
 
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     birth_city: str
     favourite_movies: str
-    keys_to_ids_list: Dict[str, List[int]] = None
+    # keys_to_ids_list: Optional[Dict[str, List[int]]] = None
 
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -39,10 +40,7 @@ class UserBioInSchema(UserBioBaseSchema):
 class UserBioSchema(UserBioInSchema):
     """UserBio item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     created_at: datetime = Field(description="Create datetime")

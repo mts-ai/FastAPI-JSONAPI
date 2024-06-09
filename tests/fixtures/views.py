@@ -1,7 +1,7 @@
 from typing import ClassVar, Dict
 
 from fastapi import Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pytest import fixture  # noqa
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,8 +17,7 @@ from tests.fixtures.db_connection import async_session_dependency
 
 
 class ArbitraryModelBase(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class SessionDependency(ArbitraryModelBase):

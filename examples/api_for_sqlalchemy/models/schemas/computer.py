@@ -2,6 +2,8 @@
 
 from typing import TYPE_CHECKING, Optional
 
+from pydantic import ConfigDict
+
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
@@ -11,16 +13,15 @@ if TYPE_CHECKING:
 class ComputerBaseSchema(BaseModel):
     """Computer base schema."""
 
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     name: str
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -35,9 +36,6 @@ class ComputerInSchema(ComputerBaseSchema):
 class ComputerSchema(ComputerInSchema):
     """Computer item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int

@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Set, Type
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pytest import mark, param  # noqa: PT013
 from pytest_asyncio import fixture
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,7 +67,7 @@ class TestTaskValidators:
             # "task_ids": None,
             "task_ids": [],
         }
-        assert attributes == TaskBaseSchema.from_orm(task_with_none_ids)
+        assert attributes == TaskBaseSchema.model_validate(task_with_none_ids)
 
     async def test_base_model_root_validator_get_list(
         self,
@@ -230,15 +230,15 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @validator("name")
+            @field_validator("name")
+            @classmethod
             def validate_name(cls, v):
                 # checks that cls arg is not bound to the origin class
                 assert cls is not UserSchemaWithValidator
 
                 raise BadRequest(detail="Check validator")
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"name": fake.name()}
         create_user_body = {"data": {"attributes": attrs}}
@@ -253,13 +253,14 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             names: List[str]
 
-            @validator("names", each_item=True)
+            @field_validator("names")
+            @classmethod
             def validate_name(cls, v):
-                if v == "bad_name":
-                    raise BadRequest(detail="Bad name not allowed")
+                for item in v:
+                    if item == "bad_name":
+                        raise BadRequest(detail="Bad name not allowed")
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"names": ["good_name", "bad_name"]}
         create_user_body = {"data": {"attributes": attrs}}
@@ -274,16 +275,17 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: List[str]
 
-            @validator("name", pre=True)
+            @field_validator("name", mode="before")
+            @classmethod
             def validate_name_pre(cls, v):
                 raise BadRequest(detail="Pre validator called")
 
-            @validator("name")
+            @field_validator("name")
+            @classmethod
             def validate_name(cls, v):
                 raise BadRequest(detail="Not pre validator called")
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"name": fake.name()}
         create_user_body = {"data": {"attributes": attrs}}
@@ -298,12 +300,12 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str = None
 
-            @validator("name", always=True)
+            @field_validator("name")
+            @classmethod
             def validate_name(cls, v):
                 raise BadRequest(detail="Called always validator")
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         create_user_body = {"data": {"attributes": {}}}
 
@@ -317,22 +319,23 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             field: str
 
-            @validator("field")
+            @field_validator("field")
+            @classmethod
             def validator_1(cls, v):
                 if v == "check_validator_1":
                     raise BadRequest(detail="Called validator 1")
 
                 return v
 
-            @validator("field")
+            @field_validator("field")
+            @classmethod
             def validator_2(cls, v):
                 if v == "check_validator_2":
                     raise BadRequest(detail="Called validator 2")
 
                 return v
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"field": "check_validator_1"}
         create_user_body = {"data": {"attributes": attrs}}
@@ -358,13 +361,13 @@ class TestValidators:
             field_1: str
             field_2: str
 
-            @validator("*", pre=True)
+            @field_validator("*", mode="before")
+            @classmethod
             def validator(cls, v):
                 if v == "bad_value":
                     raise BadRequest(detail="Check validator")
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {
             "field_1": "bad_value",
@@ -397,14 +400,14 @@ class TestValidators:
         """
 
         class UserSchemaWithValidator(BaseModel):
-            id: int = Field(client_can_set_id=True)
+            id: int = Field(json_schema_extra={"client_can_set_id": True})
 
-            @validator("id")
+            @field_validator("id")
+            @classmethod
             def validate_id(cls, v):
                 raise BadRequest(detail="Check validator")
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         create_user_body = {
             "data": {
@@ -430,12 +433,12 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @validator("name", allow_reuse=True)
+            @field_validator("name")
+            @classmethod
             def fix_title(cls, v):
                 return v.title()
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"name": "john doe"}
         create_user_body = {"data": {"attributes": attrs}}
@@ -474,36 +477,39 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @root_validator(pre=True, allow_reuse=True)
+            @model_validator(mode="before")
+            @classmethod
             def validator_pre_1(cls, values):
                 if values["name"] == "check_pre_1":
                     raise BadRequest(detail="Raised 1 pre validator")
 
                 return values
 
-            @root_validator(pre=True, allow_reuse=True)
+            @model_validator(mode="before")
+            @classmethod
             def validator_pre_2(cls, values):
                 if values["name"] == "check_pre_2":
                     raise BadRequest(detail="Raised 2 pre validator")
 
                 return values
 
-            @root_validator(allow_reuse=True)
+            @model_validator(mode="after")
+            @classmethod
             def validator_post_1(cls, values):
                 if values["name"] == "check_post_1":
                     raise BadRequest(detail="Raised 1 post validator")
 
                 return values
 
-            @root_validator(allow_reuse=True)
+            @model_validator(mode="after")
+            @classmethod
             def validator_post_2(cls, values):
                 if values["name"] == "check_post_2":
                     raise BadRequest(detail="Raised 2 post validator")
 
                 return values
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"name": name}
         create_user_body = {"data": {"attributes": attrs}}
@@ -525,13 +531,13 @@ class TestValidators:
         class UserSchemaWithValidator(BaseModel):
             name: str
 
-            @root_validator(allow_reuse=True)
+            @model_validator(mode="after")
+            @classmethod
             def fix_title(cls, v):
                 v["name"] = v["name"].title()
                 return v
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"name": "john doe"}
         create_user_body = {"data": {"attributes": attrs}}
@@ -570,70 +576,72 @@ class TestValidators:
         class UserSchemaWithValidatorBase(BaseModel):
             name: str
 
-            @root_validator(pre=True, allow_reuse=True)
+            @model_validator(mode="before")
+            @classmethod
             def validator_pre_1(cls, values):
                 if values["name"] == "check_pre_1":
                     raise BadRequest(detail="Base check_pre_1")
 
                 return values
 
-            @root_validator(pre=True, allow_reuse=True)
+            @model_validator(mode="before")
+            @classmethod
             def validator_pre_2(cls, values):
                 if values["name"] == "check_pre_2":
                     raise BadRequest(detail="Base check_pre_2")
 
                 return values
 
-            @root_validator(allow_reuse=True)
+            @classmethod
             def validator_post_1(cls, values):
                 if values["name"] == "check_post_1":
                     raise BadRequest(detail="Base check_post_1")
 
                 return values
 
-            @root_validator(allow_reuse=True)
+            @classmethod
             def validator_post_2(cls, values):
                 if values["name"] == "check_post_2":
                     raise BadRequest(detail="Base check_post_2")
 
                 return values
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         class UserSchemaWithValidator(UserSchemaWithValidatorBase):
             name: str
 
-            @root_validator(pre=True, allow_reuse=True)
+            @model_validator(mode="before")
+            @classmethod
             def validator_pre_1(cls, values):
                 if values["name"] == "check_pre_1":
                     raise BadRequest(detail="check_pre_1")
 
                 return values
 
-            @root_validator(pre=True, allow_reuse=True)
+            @model_validator(mode="before")
+            @classmethod
             def validator_pre_2(cls, values):
                 if values["name"] == "check_pre_2":
                     raise BadRequest(detail="check_pre_2")
 
                 return values
 
-            @root_validator(allow_reuse=True)
+            @classmethod
             def validator_post_1(cls, values):
                 if values["name"] == "check_post_1":
                     raise BadRequest(detail="check_post_1")
 
                 return values
 
-            @root_validator(allow_reuse=True)
+            @classmethod
             def validator_post_2(cls, values):
                 if values["name"] == "check_post_2":
                     raise BadRequest(detail="check_post_2")
 
                 return values
 
-            class Config:
-                orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
         attrs = {"name": name}
         create_user_body = {"data": {"attributes": attrs}}
@@ -665,16 +673,18 @@ class TestValidationUtils:
             item_1: str
             item_2: str
 
-            @validator("item_1", allow_reuse=True)
+            @field_validator("item_1")
+            @classmethod
             def item_1_validator(cls, v):
                 return v
 
-            @validator("item_2", allow_reuse=True)
+            @field_validator("item_2")
+            @classmethod
             def item_2_validator(cls, v):
                 return v
 
         validators = extract_field_validators(
-            ValidationSchema,
+            model=ValidationSchema,
             include_for_field_names=include,
             exclude_for_field_names=exclude,
         )

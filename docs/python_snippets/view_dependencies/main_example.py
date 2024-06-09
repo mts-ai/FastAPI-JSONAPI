@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import ClassVar, Dict
 
 from fastapi import Depends, Header
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -50,8 +50,7 @@ async def async_session_dependency():
 class SessionDependency(BaseModel):
     session: AsyncSession = Depends(async_session_dependency)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 async def common_handler(view: ViewBase, dto: SessionDependency) -> dict:

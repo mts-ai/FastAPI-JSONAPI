@@ -1,15 +1,14 @@
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import backref, declared_attr, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, backref, declared_attr, relationship
 from sqlalchemy.types import CHAR, TypeDecorator
 
 from tests.common import is_postgres_tests, sqla_uri
 
 
-class Base:
+class Base(DeclarativeBase):
     @declared_attr
     def __tablename__(cls):
         """
@@ -24,9 +23,6 @@ class AutoIdMixin:
     @declared_attr
     def id(cls):
         return Column(Integer, primary_key=True, autoincrement=True)
-
-
-Base = declarative_base(cls=Base)
 
 
 class User(AutoIdMixin, Base):
@@ -74,7 +70,7 @@ class User(AutoIdMixin, Base):
 class UserBio(AutoIdMixin, Base):
     birth_city: str = Column(String, nullable=False, default="", server_default="")
     favourite_movies: str = Column(String, nullable=False, default="", server_default="")
-    keys_to_ids_list: Dict[str, List[int]] = Column(JSON)
+    # keys_to_ids_list: Dict[str, List[int]] = Column(JSON)
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     user = relationship(
@@ -272,8 +268,9 @@ class CustomUUIDType(TypeDecorator):
 
 db_uri = sqla_uri()
 if is_postgres_tests():
+    # from sqlalchemy.dialects.postgresql.asyncpg import AsyncpgUUID as UUIDType
     # noinspection PyPep8Naming
-    from sqlalchemy.dialects.postgresql.asyncpg import AsyncpgUUID as UUIDType
+    from sqlalchemy.dialects.postgresql import UUID as UUIDType
 elif "sqlite" in db_uri:
     UUIDType = CustomUUIDType
 else:
@@ -331,7 +328,7 @@ class Alpha(Base):
     )
     beta = relationship("Beta", back_populates="alphas")
     gamma_id = Column(Integer, ForeignKey("gamma.id"), nullable=False)
-    gamma: "Gamma" = relationship("Gamma")
+    gamma: Mapped["Gamma"] = relationship("Gamma")
 
 
 class BetaGammaBinding(Base):
@@ -346,14 +343,14 @@ class Beta(Base):
     __tablename__ = "beta"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    gammas: List["Gamma"] = relationship(
+    gammas: Mapped[List["Gamma"]] = relationship(
         "Gamma",
         secondary="beta_gamma_binding",
         back_populates="betas",
         lazy="noload",
     )
     alphas = relationship("Alpha")
-    deltas: List["Delta"] = relationship(
+    deltas: Mapped[List["Delta"]] = relationship(
         "Delta",
         secondary="beta_delta_binding",
         lazy="noload",
@@ -364,7 +361,7 @@ class Gamma(Base):
     __tablename__ = "gamma"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    betas: List["Beta"] = relationship(
+    betas: Mapped[List["Beta"]] = relationship(
         "Beta",
         secondary="beta_gamma_binding",
         back_populates="gammas",
@@ -377,7 +374,7 @@ class Gamma(Base):
         index=True,
     )
     alpha = relationship("Alpha")
-    delta: "Delta" = relationship("Delta")
+    delta: Mapped["Delta"] = relationship("Delta")
 
 
 class BetaDeltaBinding(Base):
@@ -393,8 +390,13 @@ class Delta(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
-    gammas: List["Gamma"] = relationship("Gamma", back_populates="delta", lazy="noload")
-    betas: List["Beta"] = relationship("Beta", secondary="beta_delta_binding", back_populates="deltas", lazy="noload")
+    gammas: Mapped[List["Gamma"]] = relationship("Gamma", back_populates="delta", lazy="noload")
+    betas: Mapped[List["Beta"]] = relationship(
+        "Beta",
+        secondary="beta_delta_binding",
+        back_populates="deltas",
+        lazy="noload",
+    )
 
 
 class CascadeCase(Base):
@@ -416,4 +418,4 @@ class CascadeCase(Base):
     )
 
     if TYPE_CHECKING:
-        parent_item: Optional["CascadeCase"]
+        parent_item: Mapped[Optional["CascadeCase"]]

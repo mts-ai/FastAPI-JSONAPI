@@ -4,12 +4,12 @@ from typing import ClassVar
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
+from pydantic import ConfigDict
 from fastapi_jsonapi.schema_base import Field, BaseModel as PydanticBaseModel
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.engine import make_url
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
@@ -22,7 +22,9 @@ PROJECT_DIR = CURRENT_DIR.parent.parent
 DB_URL = f"sqlite+aiosqlite:///{CURRENT_DIR.absolute()}/db.sqlite3"
 sys.path.append(str(PROJECT_DIR))
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class User(Base):
@@ -32,8 +34,7 @@ class User(Base):
 
 
 class BaseModel(PydanticBaseModel):
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserAttributesBaseSchema(BaseModel):
@@ -51,11 +52,11 @@ class UserPatchSchema(UserAttributesBaseSchema):
 class UserInSchema(UserAttributesBaseSchema):
     """User input schema."""
 
-    id: int = Field(client_can_set_id=True)
+    id: int = Field(json_schema_extra={"client_can_set_id": True})
 
 
 async def get_session():
-    sess = sessionmaker(
+    sess = async_sessionmaker(
         bind=create_async_engine(url=make_url(DB_URL)),
         class_=AsyncSession,
         expire_on_commit=False,
@@ -74,8 +75,7 @@ async def sqlalchemy_init() -> None:
 class SessionDependency(BaseModel):
     session: AsyncSession = Depends(get_session)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def session_dependency_handler(view: ViewBase, dto: SessionDependency) -> dict:

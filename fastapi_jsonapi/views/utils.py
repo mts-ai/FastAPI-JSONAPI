@@ -17,8 +17,8 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel
-from pydantic.fields import ModelField
+from pydantic import BaseModel, ConfigDict
+from pydantic_core.core_schema import ModelField
 
 from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import JSONAPIObjectSchema
@@ -43,6 +43,7 @@ class HTTPMethod(Enum):
     PATCH = "patch"
     DELETE = "delete"
 
+    @staticmethod
     @cache
     def names() -> Set[str]:
         return {item.name for item in HTTPMethod}
@@ -50,10 +51,8 @@ class HTTPMethod(Enum):
 
 class HTTPMethodConfig(BaseModel):
     dependencies: Optional[Type[BaseModel]] = None
-    prepare_data_layer_kwargs: Optional[Union[Callable, Coroutine]] = None
-
-    class Config:
-        arbitrary_types_allowed = True
+    prepare_data_layer_kwargs: Optional[Callable] = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def handler(self) -> Optional[Union[Callable, Coroutine]]:
@@ -71,7 +70,7 @@ def _get_includes_indexes_by_type(included: List[JSONAPIObjectSchema]) -> Dict[s
 
 # TODO: move to schema builder?
 def _is_relationship_field(field: ModelField) -> bool:
-    return "relationship" in field.field_info.extra
+    return "relationship" in field.json_schema_extra
 
 
 def _get_schema_field_names(schema: Type[TypeSchema]) -> Set[str]:

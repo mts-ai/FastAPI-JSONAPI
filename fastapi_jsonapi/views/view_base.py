@@ -18,7 +18,7 @@ from typing import (
 
 from fastapi import Request
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic.fields import ModelField
+from pydantic.fields import FieldInfo
 from starlette.concurrency import run_in_threadpool
 
 from fastapi_jsonapi import QueryStringManager, RoutersJSONAPI
@@ -271,7 +271,7 @@ class ViewBase:
         if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
             existing = parent_included_object.relationships or {}
             if isinstance(existing, BaseModel):
-                existing = existing.dict()
+                existing = existing.model_dump()
             new_relationships.update(existing)
         new_relationships.update(
             **{
@@ -280,9 +280,9 @@ class ViewBase:
                 ),
             },
         )
-        included_objects[cache_key] = object_schema.parse_obj(
+        included_objects[cache_key] = object_schema.model_validate(
             parent_included_object,
-        ).copy(
+        ).model_copy(
             update={"relationships": new_relationships},
         )
 
@@ -379,10 +379,10 @@ class ViewBase:
             relationships_schema = object_schemas.relationships_schema
             schemas_include = object_schemas.can_be_included_schemas
 
-            current_relation_field: ModelField = current_relation_schema.__fields__[related_field_name]
-            current_relation_schema: Type[TypeSchema] = current_relation_field.type_
+            current_relation_field: FieldInfo = current_relation_schema.model_fields[related_field_name]
+            current_relation_schema: Type[TypeSchema] = current_relation_field.annotation
 
-            relationship_info: RelationshipInfo = current_relation_field.field_info.extra["relationship"]
+            relationship_info: RelationshipInfo = current_relation_field.description.extra["relationship"]
             included_object_schema: Type[JSONAPIObjectSchema] = schemas_include[related_field_name]
 
             if not isinstance(current_db_item, Iterable):
@@ -429,7 +429,7 @@ class ViewBase:
 
         item_as_schema = object_schemas.object_jsonapi_schema(
             id=self.get_db_item_id(item),
-            attributes=object_schemas.attributes_schema.from_orm(item),
+            attributes=object_schemas.attributes_schema.model_validate(item),
         )
 
         cache_included_objects: Dict[Tuple[str, str], TypeSchema] = {}

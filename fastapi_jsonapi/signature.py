@@ -3,35 +3,33 @@ import inspect
 import logging
 from enum import Enum
 from inspect import Parameter
-from types import GenericAlias
 from typing import (
-    Dict,
-    List,
     Optional,
-    Set,
-    Tuple,
     Type,
 )
 
 from fastapi import Query
-from pydantic import BaseModel as BaseModelOriginal
-from pydantic.fields import ModelField
+from pydantic import Field
 
 from fastapi_jsonapi.schema_base import BaseModel, registry
 
 log = logging.getLogger(__name__)
 
 
-def create_filter_parameter(name: str, field: ModelField) -> Parameter:
-    if field.sub_fields:
+def create_filter_parameter(name: str, field: Field) -> Parameter:
+    if hasattr(field, "sub_fields") and field.sub_fields:
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
-        type_field = field.type_
-    elif inspect.isclass(field.type_) and issubclass(field.type_, Enum) and hasattr(field.type_, "values"):
-        default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=field.type_.values())
+        type_field = field.annotation
+    elif (
+        inspect.isclass(field.annotation)
+        and issubclass(field.annotation, Enum)
+        and hasattr(field.annotation, "values")
+    ):
+        default = Query(None, alias="filter[{alias}]".format(alias=field.alias), enum=list(field.annotation))
         type_field = str
     else:
         default = Query(None, alias="filter[{alias}]".format(alias=field.alias))
-        type_field = field.type_
+        type_field = field.annotation
 
     return Parameter(
         name,
@@ -50,26 +48,21 @@ def create_additional_query_params(schema: Optional[Type[BaseModel]]) -> tuple[l
     available_includes_names = []
 
     # TODO! ?
-    schema.update_forward_refs(**registry.schemas)
-    for name, field in (schema.__fields__ or {}).items():
+    schema.model_rebuild(_types_namespace=registry.schemas)
+    for name, field in (schema.model_fields or {}).items():
         try:
-            # skip collections
-            if inspect.isclass(field.type_):
-                if type(field.type_) is GenericAlias:
-                    continue
-                if issubclass(field.type_, (dict, list, tuple, set, Dict, List, Tuple, Set)):
-                    continue
-            # process inner models, find relationships
-            if inspect.isclass(field.type_) and issubclass(field.type_, (BaseModel, BaseModelOriginal)):
-                if field.field_info.extra.get("relationship"):
+            try:
+                if field.json_schema_extra.get("relationship"):
                     available_includes_names.append(name)
+                    continue
                 else:
                     log.warning(
-                        "found nested schema %s for field %r. Consider marking it as relationship",
+                        " found nested schema %s for field %r. Consider marking it as relationship",
                         field,
                         name,
                     )
-                continue
+            except AttributeError:
+                pass
 
             # create filter params
             parameter = create_filter_parameter(

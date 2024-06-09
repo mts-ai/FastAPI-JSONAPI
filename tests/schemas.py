@@ -1,7 +1,7 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
-from pydantic import validator
+from pydantic import ConfigDict, field_validator
 
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
@@ -10,39 +10,39 @@ class UserAttributesBaseSchema(BaseModel):
     name: str
     age: Optional[int] = None
     email: Optional[str] = None
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBaseSchema(UserAttributesBaseSchema):
     """User base schema."""
 
     posts: Optional[List["PostSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="post",
+                many=True,
+            ),
+        },
     )
 
     bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user_bio",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user_bio",
+            ),
+        },
     )
 
     computers: Optional[List["ComputerSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="computer",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="computer",
+                many=True,
+            ),
+        },
     )
     workplace: Optional["WorkplaceSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="workplace",
-        ),
+        json_schema_extra={"relationship": RelationshipInfo(resource_type="workplace")},
     )
 
 
@@ -55,16 +55,13 @@ class UserInSchema(UserBaseSchema):
 
 
 class UserInSchemaAllowIdOnPost(UserBaseSchema):
-    id: str = Field(client_can_set_id=True)
+    id: str = Field(json_schema_extra={"client_can_set_id": True})
 
 
 class UserSchema(UserInSchema):
     """User item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
 
@@ -75,14 +72,11 @@ class UserSchema(UserInSchema):
 class UserBioAttributesBaseSchema(BaseModel):
     """UserBio base schema."""
 
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     birth_city: str
     favourite_movies: str
-    keys_to_ids_list: Dict[str, List[int]] = None
+    # keys_to_ids_list: Optional[Dict[str, List[int]]] = None
 
 
 class UserBioSchema(UserBioAttributesBaseSchema):
@@ -90,9 +84,11 @@ class UserBioSchema(UserBioAttributesBaseSchema):
 
     id: int
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -102,26 +98,26 @@ class UserBioSchema(UserBioAttributesBaseSchema):
 class PostAttributesBaseSchema(BaseModel):
     title: str
     body: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostBaseSchema(PostAttributesBaseSchema):
     """Post base schema."""
 
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
     comments: Optional[List["PostCommentSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="post_comment",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="post_comment",
+                many=True,
+            ),
+        },
     )
 
 
@@ -144,25 +140,25 @@ class PostSchema(PostInSchema):
 
 class PostCommentAttributesBaseSchema(BaseModel):
     text: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostCommentBaseSchema(PostCommentAttributesBaseSchema):
     """PostComment base schema."""
 
     post: "PostSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="post",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="post",
+            ),
+        },
     )
     author: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -180,22 +176,24 @@ class PostCommentSchema(PostCommentBaseSchema):
 
 class ParentToChildAssociationAttributesSchema(BaseModel):
     extra_data: str
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ParentToChildAssociationSchema(ParentToChildAssociationAttributesSchema):
     parent: "ParentSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="parent",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="parent",
+            ),
+        },
     )
 
     child: "ChildSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="child",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="child",
+            ),
+        },
     )
 
 
@@ -204,11 +202,7 @@ class ParentToChildAssociationSchema(ParentToChildAssociationAttributesSchema):
 
 class ParentAttributesSchema(BaseModel):
     name: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ParentBaseSchema(ParentAttributesSchema):
@@ -216,10 +210,12 @@ class ParentBaseSchema(ParentAttributesSchema):
 
     children: List["ParentToChildAssociationSchema"] = Field(
         default=None,
-        relationship=RelationshipInfo(
-            resource_type="parent_child_association",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="parent_child_association",
+                many=True,
+            ),
+        },
     )
 
 
@@ -242,11 +238,7 @@ class ParentSchema(ParentInSchema):
 
 class ChildAttributesSchema(BaseModel):
     name: str
-
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ChildBaseSchema(ChildAttributesSchema):
@@ -254,10 +246,12 @@ class ChildBaseSchema(ChildAttributesSchema):
 
     parents: List["ParentToChildAssociationSchema"] = Field(
         default=None,
-        relationship=RelationshipInfo(
-            resource_type="parent_child_association",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="parent_child_association",
+                many=True,
+            ),
+        },
     )
 
 
@@ -276,10 +270,7 @@ class ChildSchema(ChildInSchema):
 
 
 class ComputerAttributesBaseSchema(BaseModel):
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     name: str
 
@@ -288,9 +279,11 @@ class ComputerBaseSchema(ComputerAttributesBaseSchema):
     """Computer base schema."""
 
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -305,35 +298,33 @@ class ComputerInSchema(ComputerBaseSchema):
 class ComputerSchema(ComputerInSchema):
     """Computer item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
 
     # TODO: rename
     # owner: Optional["UserSchema"] = Field(
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
 class WorkplaceBaseSchema(BaseModel):
     """Workplace base schema."""
 
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     name: str
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -348,23 +339,20 @@ class WorkplaceInSchema(ComputerBaseSchema):
 class WorkplaceSchema(ComputerInSchema):
     """Workplace item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
 
 
 # task
 class TaskBaseSchema(BaseModel):
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     task_ids: Optional[list[str]] = None
 
     # noinspection PyMethodParameters
-    @validator("task_ids", pre=True)
+    @field_validator("task_ids", mode="before", check_fields=False)
+    @classmethod
     def task_ids_validator(cls, value: Optional[list[str]]):
         """
         return `[]`, if value is None both on get and on create
@@ -391,47 +379,47 @@ class TaskSchema(TaskBaseSchema):
 
 class CustomUUIDItemAttributesSchema(BaseModel):
     extra_id: Optional[UUID] = None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CustomUUIDItemSchema(CustomUUIDItemAttributesSchema):
-    id: UUID = Field(client_can_set_id=True)
+    id: UUID = Field(json_schema_extra={"client_can_set_id": True})
 
 
 class SelfRelationshipAttributesSchema(BaseModel):
     name: str
-
-    class Config:
-        orm_mode = True
-
-
-class SelfRelationshipSchema(SelfRelationshipAttributesSchema):
-    parent_object: Optional["SelfRelationshipSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="self_relationship",
-        ),
+    self_relationship: Optional["SelfRelationshipAttributesSchema"] = Field(
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="self_relationship",
+            ),
+        },
     )
-    children_objects: Optional[list["SelfRelationshipSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="self_relatiosnhip",
-            many=True,
-        ),
+    children_objects: Optional["SelfRelationshipAttributesSchema"] = Field(
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="self_relationship",
+                many=True,
+            ),
+        },
     )
 
 
 class CascadeCaseSchema(BaseModel):
     parent_item: Optional["CascadeCaseSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="cascade_case",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="cascade_case",
+            ),
+        },
     )
     sub_items: Optional[list["CascadeCaseSchema"]] = Field(
-        relationship=RelationshipInfo(
-            resource_type="cascade_case",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="cascade_case",
+                many=True,
+            ),
+        },
     )
 
 
@@ -442,68 +430,86 @@ class CustomUserAttributesSchema(UserBaseSchema):
 
 class AlphaSchema(BaseModel):
     beta: Optional["BetaSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="beta",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="beta",
+            ),
+        },
     )
-    gamma: Optional["GammaSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="gamma",
-        ),
+    gamma: Optional["BetaSchema"] = Field(
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="gamma",
+            ),
+        },
     )
 
 
 class BetaSchema(BaseModel):
     alphas: Optional["AlphaSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="alpha",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="alpha",
+            ),
+        },
     )
     gammas: Optional["GammaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="gamma",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="gamma",
+                many=True,
+            ),
+        },
     )
     deltas: Optional["DeltaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="delta",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="delta",
+                many=True,
+            ),
+        },
     )
 
 
 class GammaSchema(BaseModel):
     betas: Optional["BetaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="beta",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="beta",
+                many=True,
+            ),
+        },
     )
     delta: Optional["DeltaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="Delta",
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="Delta",
+            ),
+        },
     )
 
 
 class DeltaSchema(BaseModel):
     name: str
     gammas: Optional["GammaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="gamma",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="gamma",
+                many=True,
+            ),
+        },
     )
     betas: Optional["BetaSchema"] = Field(
-        None,
-        relationship=RelationshipInfo(
-            resource_type="beta",
-            many=True,
-        ),
+        default=None,
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="beta",
+                many=True,
+            ),
+        },
     )

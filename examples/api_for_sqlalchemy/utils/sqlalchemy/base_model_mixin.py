@@ -2,8 +2,6 @@ from datetime import datetime
 from typing import Generic, List, TypeVar
 
 from sqlalchemy import (
-    Column,
-    DateTime,
     delete,
     func,
     inspect,
@@ -12,6 +10,7 @@ from sqlalchemy import (
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import Mapped, mapped_column
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
 
@@ -23,21 +22,19 @@ class BaseModelMixin(Generic[Model]):
     id: int
 
     @declared_attr
-    def created_at(cls) -> Column:
+    def created_at(cls) -> Mapped[datetime]:
         """Дата создания записи"""
-        return Column(
+        return mapped_column(
             "created_at",
-            DateTime,
             default=datetime.utcnow,
             server_default=func.now(),
         )
 
     @declared_attr
-    def modified_at(cls) -> Column:
+    def modified_at(cls) -> Mapped[datetime]:
         """Дата изменения записи"""
-        return Column(
+        return mapped_column(
             "modified_at",
-            DateTime,
             default=datetime.utcnow,
             onupdate=datetime.utcnow,
             server_onupdate=func.now(),

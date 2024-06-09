@@ -3,7 +3,7 @@ from typing import Optional, Type
 
 import pytest
 from fastapi import APIRouter, FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.atomic import AtomicOperations
@@ -298,8 +298,7 @@ class ResourceInfoDTO(BaseModel):
     class_list: Type[ListViewBase] = ListViewBaseGeneric
     class_detail: Type[DetailViewBase] = DetailViewBaseGeneric
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def build_custom_app_by_schemas(resources_info: list[ResourceInfoDTO]):

@@ -2,6 +2,8 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from pydantic import ConfigDict
+
 from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
 
 if TYPE_CHECKING:
@@ -12,10 +14,7 @@ if TYPE_CHECKING:
 class PostCommentBaseSchema(BaseModel):
     """PostComment base schema."""
 
-    class Config:
-        """Pydantic schema config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     text: str
     created_at: datetime = Field(description="Create datetime")
@@ -44,9 +43,6 @@ class PostCommentInSchema(PostCommentBaseSchema):
 class PostCommentSchema(PostCommentInSchema):
     """PostComment item schema."""
 
-    class Config:
-        """Pydantic model config."""
-
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
     id: int

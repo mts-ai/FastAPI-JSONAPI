@@ -1,28 +1,31 @@
 from typing import Optional
 
-from pydantic import BaseModel as PydanticBaseModel
+from pydantic import BaseModel as PydanticBaseModel, ConfigDict
 
 from fastapi_jsonapi.schema_base import Field, RelationshipInfo
 
 
 class BaseModel(PydanticBaseModel):
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBaseSchema(BaseModel):
     id: int
     name: str
     bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user_bio",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user_bio",
+            ),
+        },
     )
     computers: Optional["ComputerSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="computer",
-            many=True,
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="computer",
+                many=True,
+            ),
+        },
     )
 
 
@@ -34,12 +37,14 @@ class UserSchema(BaseModel):
 class UserBioBaseSchema(BaseModel):
     birth_city: str
     favourite_movies: str
-    keys_to_ids_list: dict[str, list[int]] = None
+    # keys_to_ids_list: Optional[dict[str, list[int]]] = None
 
     user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )
 
 
@@ -47,7 +52,9 @@ class ComputerBaseSchema(BaseModel):
     id: int
     name: str
     user: Optional["UserSchema"] = Field(
-        relationship=RelationshipInfo(
-            resource_type="user",
-        ),
+        json_schema_extra={
+            "relationship": RelationshipInfo(
+                resource_type="user",
+            ),
+        },
     )

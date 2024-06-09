@@ -1,7 +1,7 @@
 from typing import ClassVar, Dict
 
 from fastapi import Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Connector
@@ -14,8 +14,7 @@ from fastapi_jsonapi.views.view_base import ViewBase
 class SessionDependency(BaseModel):
     session: AsyncSession = Depends(Connector.get_session)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def handler(view: ViewBase, dto: SessionDependency) -> Dict:
