@@ -48,12 +48,16 @@ class ListViewBase(ViewBase):
         self,
         data_create: BaseJSONAPIItemInSchema,
         **extra_view_deps,
-    ) -> Union[JSONAPIResultDetailSchema, Dict]:
+    ) -> JSONAPIResultDetailSchema:
         dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
         response = await self.process_create_object(dl=dl, data_create=data_create)
         return handle_jsonapi_fields(response, self.query_params, self.jsonapi)
 
-    async def process_create_object(self, dl: "BaseDataLayer", data_create: BaseJSONAPIItemInSchema):
+    async def process_create_object(
+        self,
+        dl: "BaseDataLayer",
+        data_create: BaseJSONAPIItemInSchema,
+    ) -> JSONAPIResultDetailSchema:
         created_object = await dl.create_object(data_create=data_create, view_kwargs={})
 
         created_object_id = dl.get_object_id(created_object)
