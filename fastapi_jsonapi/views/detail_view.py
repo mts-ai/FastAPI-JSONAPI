@@ -8,6 +8,7 @@ from typing import (
 )
 
 from fastapi_jsonapi import BadRequest
+from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
     BaseJSONAPIItemInSchema,
     JSONAPIResultDetailSchema,
@@ -35,7 +36,7 @@ class DetailViewBase(ViewBase):
         self,
         object_id: Union[int, str],
         **extra_view_deps,
-    ) -> Union[JSONAPIResultDetailSchema, Dict]:
+    ) -> Union[JSONAPIResultDetailSchema, dict]:
         dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: object_id}
@@ -49,7 +50,7 @@ class DetailViewBase(ViewBase):
         obj_id: str,
         data_update: BaseJSONAPIItemInSchema,
         **extra_view_deps,
-    ) -> Union[JSONAPIResultDetailSchema, Dict]:
+    ) -> Union[JSONAPIResultDetailSchema, dict]:
         dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
         response = await self.process_update_object(dl=dl, obj_id=obj_id, data_update=data_update)
         return handle_jsonapi_fields(response, self.query_params, self.jsonapi)
@@ -59,7 +60,7 @@ class DetailViewBase(ViewBase):
         dl: "BaseDataLayer",
         obj_id: str,
         data_update: BaseJSONAPIItemInSchema,
-    ):
+    ) -> TypeSchema:
         if obj_id != data_update.id:
             raise BadRequest(
                 detail="obj_id and data.id should be same",
