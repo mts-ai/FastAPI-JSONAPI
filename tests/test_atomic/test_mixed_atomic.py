@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Awaitable, Callable
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+)
 
 import pytest
-from httpx import AsyncClient
-from pytest import mark  # noqa
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
 from starlette import status
 
@@ -16,7 +16,13 @@ from tests.misc.utils import fake
 from tests.models import Computer, User, UserBio
 from tests.schemas import ComputerAttributesBaseSchema, UserAttributesBaseSchema, UserBioAttributesBaseSchema
 
-pytestmark = mark.asyncio
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
+    from httpx import AsyncClient
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -25,8 +31,6 @@ class TestAtomicMixedActions:
     async def test_schema_validation_error(
         self,
         client: AsyncClient,
-        allowed_atomic_actions_list: list[str],
-        allowed_atomic_actions_as_string: str,
         atomic_operation_actions_as_str: str,
     ):
         operation_name = fake.word()
@@ -379,7 +383,6 @@ class TestAtomicMixedActions:
             # https://jsonapi.org/ext/atomic/#result-objects
             # An empty result object ({}) is acceptable for operations that are not required to return data.
             # TODO: An empty result object ({})
-            # {},
             {
                 "data": None,
                 "meta": None,
@@ -566,8 +569,6 @@ class TestAtomicMixedActions:
     @pytest.mark.skip("todo: create relationships resources")
     async def create_user_and_link_existing_computer_to_user(
         self,
-        client: AsyncClient,
-        async_session: AsyncSession,
         computer_1: Computer,
     ):
         """
