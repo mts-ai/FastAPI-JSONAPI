@@ -17,7 +17,10 @@ from typing import (
 )
 
 from fastapi import HTTPException, status
+
+from fastapi_jsonapi.data_typing import TypeSchema
 from pydantic import ValidationError
+from pydantic import BaseModel as PydanticBaseModel
 from starlette.requests import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
@@ -33,6 +36,9 @@ AtomicResponseDict = TypedDict("AtomicResponseDict", {"atomic:results": List[Any
 current_atomic_operation: ContextVar[OperationBase] = ContextVar("current_atomic_operation")
 
 
+OPERATION_VALIDATION_ERROR_TEXT = "Validation error on operation {operation!r}"
+
+
 def catch_exc_on_operation_handle(func: Callable[..., Awaitable]):
     @wraps(func)
     async def wrapper(*a, operation: OperationBase, **kw):
@@ -45,9 +51,9 @@ def catch_exc_on_operation_handle(func: Callable[..., Awaitable]):
                 operation.data,
             )
             errors_details = {
-                "message": f"Validation error on operation {operation.op_type}",
+                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=operation.op_type),
                 "ref": operation.ref,
-                "data": operation.data.model_dump(),
+                "data": operation.data.model_dump(exclude_unset=True),
             }
             if isinstance(ex, ValidationError):
                 errors_details.update(errors=ex.errors())
@@ -113,26 +119,39 @@ class AtomicViewHandler:
         self,
         dl: BaseDataLayer,
         operation: OperationBase,
-    ):
+    ) -> TypeSchema | None:
         operation.update_relationships_with_lid(local_ids=self.local_ids_cache)
         return await operation.handle(dl=dl)
+
+    async def process_next_operation(
+        self,
+        operation: OperationBase,
+        previous_dl: BaseDataLayer | None,
+    ) -> tuple[TypeSchema | None, BaseDataLayer]:
+        dl = await operation.get_data_layer()
+        await dl.atomic_start(previous_dl=previous_dl)
+        try:
+            response = await self.process_one_operation(
+                dl=dl,
+                operation=operation,
+            )
+        except HTTPException as ex:
+            # gracefully end!!
+            await dl.atomic_end(success=False, exception=ex)
+            raise ex
+
+        return response, dl
 
     async def handle(self) -> Union[AtomicResponseDict, AtomicResultResponse, None]:
         prepared_operations = await self.prepare_operations()
         results = []
         only_empty_responses = True
         success = True
-        previous_dl: Optional[BaseDataLayer] = None
+        previous_dl: BaseDataLayer | None = None
         for operation in prepared_operations:
             # set context var
             ctx_var_token = current_atomic_operation.set(operation)
-
-            dl: BaseDataLayer = await operation.get_data_layer()
-            await dl.atomic_start(previous_dl=previous_dl)
-            response = await self.process_one_operation(
-                dl=dl,
-                operation=operation,
-            )
+            response, dl = await self.process_next_operation(operation, previous_dl)
             previous_dl = dl
 
             # response.data.id
@@ -143,7 +162,12 @@ class AtomicViewHandler:
                 results.append({})
                 continue
             only_empty_responses = False
-            results.append({"data": response.data})
+            response_data = response.data
+            # TODO: leave as is? Is there any chance we get not a Pydantic model?
+            #  maybe type annotations + mypy will help here
+            if isinstance(response_data, PydanticBaseModel):
+                response_data = response_data.model_dump()
+            results.append({"data": response_data})
             if operation.data.lid and response.data:
                 self.local_ids_cache[operation.data.type][operation.data.lid] = response.data.id
 
