@@ -12,7 +12,7 @@ from fastapi_jsonapi.schema_base import (
 from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
-    from tests.schemas.user import UserSchema
+    from tests.schemas import UserSchema
 
 
 class UserBioAttributesBaseSchema(BaseModel):

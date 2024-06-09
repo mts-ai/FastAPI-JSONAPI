@@ -12,8 +12,7 @@ from fastapi_jsonapi.schema_base import (
 from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
-    from tests.schemas.user import UserSchema
-    from tests.schemas.post_comment import PostCommentSchema
+    from tests.schemas import UserSchema, PostCommentSchema
 
 
 class PostAttributesBaseSchema(BaseModel):

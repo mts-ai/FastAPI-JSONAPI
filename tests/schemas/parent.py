@@ -12,7 +12,7 @@ from fastapi_jsonapi.schema_base import (
 from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
-    from tests.schemas.parent_to_child import ParentToChildAssociationSchema
+    from tests.schemas import ParentToChildAssociationSchema
 
 
 class ParentAttributesSchema(BaseModel):

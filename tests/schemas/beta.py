@@ -10,9 +10,7 @@ from fastapi_jsonapi.schema_base import (
 from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
-    from tests.schemas.alpha import AlphaSchema
-    from tests.schemas.delta import DeltaSchema
-    from tests.schemas.gamma import GammaSchema
+    from tests.schemas import AlphaSchema, DeltaSchema, GammaSchema
 
 
 class BetaSchema(BaseModel):

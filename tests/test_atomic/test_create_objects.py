@@ -4,29 +4,35 @@ from typing import Callable, Sequence
 import pytest
 from httpx import AsyncClient
 from pytest import mark  # noqa
-from sqlalchemy import and_, or_, select
+from sqlalchemy import (
+    and_,
+    or_,
+    select,
+)
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
 from starlette import status
 
+from fastapi_jsonapi.atomic.atomic_handler import OPERATION_VALIDATION_ERROR_TEXT
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Child, Parent, ParentToChildAssociation, User, UserBio
-from tests.schemas import (
-    ChildAttributesSchema,
-    ComputerAttributesBaseSchema,
-    ParentAttributesSchema,
-    ParentToChildAssociationAttributesSchema,
-    UserAttributesBaseSchema,
-    UserBioAttributesBaseSchema,
-)
+from tests.schemas import ComputerAttributesBaseSchema
+from tests.schemas import ChildAttributesSchema
+from tests.schemas import ParentAttributesSchema
+from tests.schemas import ParentToChildAssociationAttributesSchema
+from tests.schemas import UserBioAttributesBaseSchema
+from tests.schemas import UserAttributesBaseSchema
 
 COLUMN_CHARACTERS_LIMIT = 50
 
 pytestmark = mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
+
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 
 def random_sentence() -> str:
@@ -45,9 +51,14 @@ class TestAtomicCreateObjects:
             "detail": [
                 {
                     "loc": ["body", "atomic:operations"],
-                    "msg": "ensure this value has at least 1 items",
-                    "type": "value_error.list.min_items",
-                    "ctx": {"limit_value": 1},
+                    "input": [],
+                    "msg": "List should have at least 1 item after validation, not 0",
+                    "type": "too_short",
+                    "ctx": {
+                        "min_length": 1,
+                        "field_type": "List",
+                        "actual_length": 0,
+                    },
                 },
             ],
         }
@@ -660,11 +671,9 @@ class TestAtomicCreateObjects:
             "detail": {
                 "data": {
                     **action_2["data"],
-                    "id": None,
-                    "lid": None,
                 },
                 "error": expected_error_text,
-                "message": f"Validation error on operation {action_1['op']}",
+                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_1["op"]),
                 "ref": None,
             },
         }
@@ -672,6 +681,7 @@ class TestAtomicCreateObjects:
         user = await async_session.scalar(user_stmt)
         assert user is None
 
+    @pytest.mark.usefixtures("refresh_db")
     async def test_local_id_not_found(
         self,
         client: AsyncClient,
@@ -758,11 +768,9 @@ class TestAtomicCreateObjects:
             "detail": {
                 "data": {
                     **action_2["data"],
-                    "id": None,
-                    "lid": None,
                 },
                 "error": expected_error_text,
-                "message": f"Validation error on operation {action_2['op']}",
+                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_2["op"]),
                 "ref": None,
             },
         }
@@ -770,6 +778,7 @@ class TestAtomicCreateObjects:
         user = await async_session.scalar(user_stmt)
         assert user is None
 
+    @pytest.mark.usefixtures("refresh_db")
     async def test_create_and_associate_many_to_many(
         self,
         client: AsyncClient,
@@ -902,22 +911,19 @@ class TestAtomicCreateObjects:
         # TODO: json:api exception
         assert response.json() == {
             "detail": {
-                "data": {
-                    **action_add["data"],
-                    "id": None,
-                    "lid": None,
-                    "relationships": None,
-                },
+                "data": action_add["data"],
                 "errors": [
                     {
+                        "input": {},
                         "loc": ["data", "attributes", "name"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
-                    },
+                        "msg": "Field required",
+                        "type": "missing",
+                        "url": "https://errors.pydantic.dev/2.8/v/missing",
+                    }
                 ],
-                "message": f"Validation error on operation {action_add['op']}",
+                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_add["op"]),
                 "ref": None,
-            },
+            }
         }
 
     @pytest.mark.skip("not ready yet")

@@ -8,8 +8,8 @@ from starlette import status
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Computer, User, UserBio
-from tests.schemas.user_bio import UserBioAttributesBaseSchema
-from tests.schemas.user import UserAttributesBaseSchema
+from tests.schemas import UserBioAttributesBaseSchema
+from tests.schemas import UserAttributesBaseSchema
 
 pytestmark = pytest.mark.asyncio
 

@@ -13,10 +13,12 @@ from fastapi_jsonapi.schema_base import BaseModel
 from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
-    from tests.schemas.post import PostSchema
-    from tests.schemas.user_bio import UserBioSchema
-    from tests.schemas.computer import ComputerSchema
-    from tests.schemas.workplace import WorkplaceSchema
+    from tests.schemas import (
+        PostSchema,
+        UserBioSchema,
+        ComputerSchema,
+        WorkplaceSchema,
+    )
 
 
 class UserAttributesBaseSchema(BaseModel):
