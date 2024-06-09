@@ -1,7 +1,7 @@
 """Helper to create sqlalchemy sortings according to filter querystring parameter"""
+
 from typing import Any, List, Tuple, Type, Union
 
-from fastapi_jsonapi.utils.helpers import get_schema_from_field_annotation
 from pydantic.fields import FieldInfo
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, aliased
 from sqlalchemy.sql.elements import BinaryExpression
@@ -9,7 +9,11 @@ from sqlalchemy.sql.elements import BinaryExpression
 from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidSort
-from fastapi_jsonapi.schema import get_model_field, get_relationship_fields_names
+from fastapi_jsonapi.schema import (
+    get_model_field,
+    get_relationship_fields_names,
+    get_schema_from_field_annotation,
+)
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
