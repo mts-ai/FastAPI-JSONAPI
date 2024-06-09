@@ -1,5 +1,6 @@
 """JSON API router class."""
 
+from collections.abc import Iterable
 from enum import Enum, auto
 from inspect import Parameter, Signature, signature
 from typing import (
@@ -7,12 +8,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    Iterable,
-    List,
     Literal,
     Optional,
-    Type,
     TypeVar,
     Union,
 )
@@ -36,7 +33,7 @@ if TYPE_CHECKING:
     from fastapi_jsonapi.views.list_view import ListViewBase
     from fastapi_jsonapi.views.view_base import ViewBase
 
-JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
+JSON_API_RESPONSE_TYPE = dict[int | str, dict[str, Any]]
 
 JSONAPIObjectSchemaType = TypeVar("JSONAPIObjectSchemaType", bound=PydanticBaseModel)
 
@@ -58,22 +55,22 @@ class RoutersJSONAPI:
     """
 
     # xxx: store in app, not in routers!
-    all_jsonapi_routers: ClassVar[Dict[str, "RoutersJSONAPI"]] = {}
+    all_jsonapi_routers: ClassVar[dict[str, "RoutersJSONAPI"]] = {}
     Methods = ViewMethods
     DEFAULT_METHODS = tuple(str(method) for method in ViewMethods)
 
     def __init__(
         self,
         router: APIRouter,
-        path: Union[str, List[str]],
-        tags: List[str],
-        class_list: Type["ListViewBase"],
-        class_detail: Type["DetailViewBase"],
-        model: Type[TypeModel],
-        schema: Type[BaseModel],
+        path: Union[str, list[str]],
+        tags: Iterable[str],
+        class_list: type["ListViewBase"],
+        class_detail: type["DetailViewBase"],
+        model: type[TypeModel],
+        schema: type[BaseModel],
         resource_type: str,
-        schema_in_post: Optional[Type[BaseModel]] = None,
-        schema_in_patch: Optional[Type[BaseModel]] = None,
+        schema_in_post: Optional[type[BaseModel]] = None,
+        schema_in_patch: Optional[type[BaseModel]] = None,
         pagination_default_size: Optional[int] = 25,
         pagination_default_number: Optional[int] = 1,
         pagination_default_offset: Optional[int] = None,
@@ -104,17 +101,17 @@ class RoutersJSONAPI:
         :param pagination_default_limit: `page[limit]`
                 default swagger param. limit/offset pagination, used with `page[offset]`
         """
-        self._router: APIRouter = router
-        self._path: Union[str, List[str]] = path
-        self._tags: List[str] = tags
+        self.router: APIRouter = router
+        self.path: str | Iterable[str] = path
+        self.tags: list[str] = list(tags)
         self.detail_views = None
         self.list_views = None
-        self.detail_view_resource: Type["DetailViewBase"] = class_detail
-        self.list_view_resource: Type["ListViewBase"] = class_list
+        self.detail_view_resource: type[DetailViewBase] = class_detail
+        self.list_view_resource: type[ListViewBase] = class_list
         self.type_: str = resource_type
-        self._schema: Type[BaseModel] = schema
-        self.schema_list: Type[BaseModel] = schema
-        self.model: Type[TypeModel] = model
+        self.schema: type[BaseModel] = schema
+        self.schema_list: type[BaseModel] = schema
+        self.model: type[TypeModel] = model
         self.schema_detail = schema
         # tuple and not set, so ordering is persisted
         self.methods = tuple(methods) or self.DEFAULT_METHODS
@@ -162,11 +159,11 @@ class RoutersJSONAPI:
         }
 
     def _create_and_register_generic_views(self):
-        if isinstance(self._path, Iterable) and not isinstance(self._path, (str, bytes)):
-            for i_path in self._path:
+        if isinstance(self.path, Iterable) and not isinstance(self.path, (str, bytes)):
+            for i_path in self.path:
                 self._register_views(i_path)
         else:
-            self._register_views(self._path)
+            self._register_views(self.path)
 
     def get_endpoint_name(
         self,
@@ -186,9 +183,9 @@ class RoutersJSONAPI:
         list_response_example = {
             status.HTTP_200_OK: {"model": self.list_response_schema},
         }
-        self._router.add_api_route(
+        self.router.add_api_route(
             path=path,
-            tags=self._tags,
+            tags=self.tags,
             responses=list_response_example | self.default_error_responses,
             methods=["GET"],
             summary=f"Get list of `{self.type_}` objects",
@@ -200,9 +197,9 @@ class RoutersJSONAPI:
         create_resource_response_example = {
             status.HTTP_201_CREATED: {"model": self.detail_response_schema},
         }
-        self._router.add_api_route(
+        self.router.add_api_route(
             path=path,
-            tags=self._tags,
+            tags=self.tags,
             responses=create_resource_response_example | self.default_error_responses,
             methods=["POST"],
             summary=f"Create object `{self.type_}`",
@@ -215,9 +212,9 @@ class RoutersJSONAPI:
         detail_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
         }
-        self._router.add_api_route(
+        self.router.add_api_route(
             path=path,
-            tags=self._tags,
+            tags=self.tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["DELETE"],
             summary=f"Delete objects `{self.type_}` by filters",
@@ -229,11 +226,11 @@ class RoutersJSONAPI:
         detail_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
         }
-        self._router.add_api_route(
+        self.router.add_api_route(
             # TODO: variable path param name (set default name on DetailView class)
             # TODO: trailing slash (optional)
             path=path + "/{obj_id}",
-            tags=self._tags,
+            tags=self.tags,
             responses=detail_response_example | self.default_error_responses,
             methods=["GET"],
             summary=f"Get object `{self.type_}` by id",
@@ -245,11 +242,11 @@ class RoutersJSONAPI:
         update_response_example = {
             status.HTTP_200_OK: {"model": self.detail_response_schema},
         }
-        self._router.add_api_route(
+        self.router.add_api_route(
             # TODO: variable path param name (set default name on DetailView class)
             # TODO: trailing slash (optional)
             path=path + "/{obj_id}",
-            tags=self._tags,
+            tags=self.tags,
             responses=update_response_example | self.default_error_responses,
             methods=["PATCH"],
             summary=f"Patch object `{self.type_}` by id",
@@ -264,11 +261,11 @@ class RoutersJSONAPI:
                 " the server MUST return a result with no data",
             },
         }
-        self._router.add_api_route(
+        self.router.add_api_route(
             # TODO: variable path param name (set default name on DetailView class)
             # TODO: trailing slash (optional)
             path=path + "/{obj_id}",
-            tags=self._tags,
+            tags=self.tags,
             responses=delete_response_example | self.default_error_responses,
             methods=["DELETE"],
             summary=f"Delete object `{self.type_}` by id",
@@ -277,7 +274,7 @@ class RoutersJSONAPI:
             status_code=status.HTTP_204_NO_CONTENT,
         )
 
-    def _create_pagination_query_params(self) -> List[Parameter]:
+    def _create_pagination_query_params(self) -> list[Parameter]:
         size = Query(self.pagination_default_size, alias="page[size]", title="pagination_page_size")
         number = Query(self.pagination_default_number, alias="page[number]", title="pagination_page_number")
         offset = Query(self.pagination_default_offset, alias="page[offset]", title="pagination_page_offset")
@@ -347,7 +344,7 @@ class RoutersJSONAPI:
         params = []
         tail_params = []
 
-        for name, param in sig.parameters.items():
+        for param in sig.parameters.values():
             if param.kind is Parameter.VAR_KEYWORD:
                 # skip **kwargs for spec
                 continue
@@ -391,7 +388,7 @@ class RoutersJSONAPI:
         return sig.replace(parameters=params + include_params + list(additional_dependency_params) + tail_params)
 
     @staticmethod
-    def _create_dependency_params_from_pydantic_model(model_class: Type[BaseModel]) -> List[Parameter]:
+    def _create_dependency_params_from_pydantic_model(model_class: type[BaseModel]) -> list[Parameter]:
         return [
             Parameter(
                 name=field_name,
@@ -403,7 +400,7 @@ class RoutersJSONAPI:
         ]
 
     @staticmethod
-    def _update_method_config(view: Type["ViewBase"], method: HTTPMethod) -> HTTPMethodConfig:
+    def _update_method_config(view: type["ViewBase"], method: HTTPMethod) -> HTTPMethodConfig:
         target_config = view.method_dependencies.get(method) or HTTPMethodConfig()
         common_config = view.method_dependencies.get(HTTPMethod.ALL) or HTTPMethodConfig()
 
@@ -430,9 +427,9 @@ class RoutersJSONAPI:
 
     def _update_method_config_and_get_dependency_params(
         self,
-        view: Type["ViewBase"],
+        view: type["ViewBase"],
         method: HTTPMethod,
-    ) -> List[Parameter]:
+    ) -> list[Parameter]:
         method_config = self._update_method_config(view, method)
 
         if method_config.dependencies is None:
@@ -460,9 +457,9 @@ class RoutersJSONAPI:
     async def handle_view_dependencies(
         self,
         request: Request,
-        view_cls: Type["ViewBase"],
+        view_cls: type["ViewBase"],
         method: HTTPMethod,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Combines all dependencies (prepared) and returns them as list
 
@@ -485,7 +482,7 @@ class RoutersJSONAPI:
         )
 
         dep_helper = DependencyHelper(request=request)
-        dependencies_result: Dict[str, Any] = await dep_helper.run(handle_dependencies)
+        dependencies_result: dict[str, Any] = await dep_helper.run(handle_dependencies)
         return dependencies_result
 
     def _create_get_resource_list_view(self):
@@ -501,8 +498,7 @@ class RoutersJSONAPI:
                 jsonapi=self,
             )
 
-            response = await resource.handle_get_resource_list(**extra_view_deps)
-            return response
+            return await resource.handle_get_resource_list(**extra_view_deps)
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.list_view_resource,
@@ -533,11 +529,10 @@ class RoutersJSONAPI:
                 jsonapi=self,
             )
 
-            response = await resource.handle_post_resource_list(
+            return await resource.handle_post_resource_list(
                 data_create=data,
                 **extra_view_deps,
             )
-            return response
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.list_view_resource,
@@ -564,8 +559,7 @@ class RoutersJSONAPI:
                 jsonapi=self,
             )
 
-            response = await resource.handle_delete_resource_list(**extra_view_deps)
-            return response
+            return await resource.handle_delete_resource_list(**extra_view_deps)
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.list_view_resource,
@@ -595,8 +589,7 @@ class RoutersJSONAPI:
             )
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.handle_get_resource_detail(obj_id, **extra_view_deps)
-            return response
+            return await resource.handle_get_resource_detail(obj_id, **extra_view_deps)
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.detail_view_resource,
@@ -630,12 +623,11 @@ class RoutersJSONAPI:
             )
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.handle_update_resource(
+            return await resource.handle_update_resource(
                 obj_id=obj_id,
                 data_update=data,
                 **extra_view_deps,
             )
-            return response
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.detail_view_resource,
@@ -666,8 +658,7 @@ class RoutersJSONAPI:
             )
 
             # TODO: pass obj_id as kwarg (get name from DetailView class)
-            response = await resource.handle_delete_resource(obj_id=obj_id, **extra_view_deps)
-            return response
+            return await resource.handle_delete_resource(obj_id=obj_id, **extra_view_deps)
 
         additional_dependency_params = self._update_method_config_and_get_dependency_params(
             self.detail_view_resource,
@@ -688,7 +679,7 @@ class RoutersJSONAPI:
         :param path:
         :return:
         """
-        methods_map: Dict[Union[str, ViewMethods], Callable[[str], None]] = {
+        methods_map: dict[Union[str, ViewMethods], Callable[[str], None]] = {
             ViewMethods.GET_LIST: self._register_get_resource_list,
             ViewMethods.POST: self._register_post_resource_list,
             ViewMethods.DELETE_LIST: self._register_delete_resource_list,

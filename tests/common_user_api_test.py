@@ -45,11 +45,10 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
     ):
         data_user_attributes = user_attributes.model_dump()
         data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_create.expected_value
-        data_user_create = {
+        return {
             "type": resource_type,
             "attributes": data_user_attributes,
         }
-        return data_user_create
 
     def prepare_user_update_data(
         self,
@@ -62,12 +61,11 @@ class BaseGenericUserCreateUpdateWithBodyDependency:
 
         data_user_attributes = user_attributes.model_dump()
         data_user_attributes[self.FIELD_CUSTOM_NAME] = self.validator_update.expected_value
-        data_user_update = {
+        return {
             "id": ViewBase.get_db_item_id(user),
             "type": resource_type,
             "attributes": data_user_attributes,
         }
-        return data_user_update
 
     def validate_field_not_passed_response(
         self,

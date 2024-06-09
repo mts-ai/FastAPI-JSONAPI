@@ -4,7 +4,6 @@ import logging
 import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
-from pytest import fixture  # noqa PT013
 from pytest_asyncio import fixture as async_fixture
 
 from tests.fixtures.app import (  # noqa
@@ -80,6 +79,6 @@ def event_loop():
 
 
 @async_fixture()
-async def client(app: FastAPI) -> AsyncClient:  # noqa
+async def client(app: FastAPI) -> AsyncClient:
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac

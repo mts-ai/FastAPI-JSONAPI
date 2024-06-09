@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from fastapi_jsonapi.types_metadata import (
@@ -17,6 +19,6 @@ search_custom_filter_sql = MetadataInstanceSearch(CustomFilterSQL)
 
 
 def get_relationship_info_from_field_metadata(
-    field: "FieldInfo",
+    field: FieldInfo,
 ) -> RelationshipInfo | None:
     return search_relationship_info.first(field)

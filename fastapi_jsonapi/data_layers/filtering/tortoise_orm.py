@@ -2,11 +2,7 @@
 
 from typing import (
     Any,
-    Dict,
-    List,
     Optional,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -24,7 +20,7 @@ from fastapi_jsonapi.jsonapi_typing import Filters
 from fastapi_jsonapi.querystring import QueryStringManager
 
 
-def prepare_filter_pair(field: Type[ModelField], field_name: str, type_op: str, value: Any) -> Tuple:
+def prepare_filter_pair(field: type[ModelField], field_name: str, type_op: str, value: Any) -> tuple:
     """Prepare filter."""
     name_field_q: str = prepare_field_name_for_filtering(field_name, type_op)
     return name_field_q, value
@@ -45,7 +41,7 @@ class FilterTortoiseORM:
         self,
         op: DBORMOperandType,
         filters: list,
-    ) -> Union[None, QuerySet, Dict[str, Union[QuerySet, List[QuerySet]]]]:
+    ) -> Union[None, QuerySet, dict[str, Union[QuerySet, list[QuerySet]]]]:
         """Filter for query to ORM."""
         if not filters:
             return None
@@ -73,9 +69,9 @@ class FilterTortoiseORM:
 
     def filter_converter(
         self,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         filters: Filters,
-    ) -> List:
+    ) -> list:
         """
         Make a list with filters, which can be used in the tortoise filter.
 
@@ -84,7 +80,7 @@ class FilterTortoiseORM:
         :return: list of filters, prepared for use in tortoise model.
         :raises InvalidFilters: if the filter was created with an error.
         """
-        converted_filters: List = []
+        converted_filters: list = []
         for i_filter in filters:
             if "or" in i_filter:
                 result = self.filter_converter(schema, i_filter["or"])
@@ -113,7 +109,7 @@ class FilterTortoiseORM:
                 )
                 converted_filters.append(result)
             else:
-                val: Union[List[Any], Any]
+                val: Union[list[Any], Any]
                 field: ModelField = schema.model_fields[name_field]
                 if isinstance(i_filter["val"], list) and field.annotation is not list:
                     val = self._validate(i_filter, field)
@@ -129,7 +125,7 @@ class FilterTortoiseORM:
     async def json_api_filter(
         self,
         query,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         query_params: QueryStringManager,
     ) -> QuerySet:
         """Make queries with filtering from request."""
@@ -147,7 +143,7 @@ class FilterTortoiseORM:
             val = val.value
         return val
 
-    def _validate(self, json_api_filter: Dict[str, List[str]], model_filed: ModelField) -> List:
+    def _validate(self, json_api_filter: dict[str, list[str]], model_filed: ModelField) -> list:
         val = []
         for i_v in json_api_filter["val"]:
             i_val, errors = model_filed.validate(i_v, {}, loc=model_filed.alias)
@@ -157,7 +153,7 @@ class FilterTortoiseORM:
             val.append(i_val)
         return val
 
-    def validate(self, filter_q: Union[None, Q, Dict[str, Union[Q, List[Q]]]]) -> Optional[Q]:
+    def validate(self, filter_q: Union[None, Q, dict[str, Union[Q, list[Q]]]]) -> Optional[Q]:
         """
         Tortoise filter validation.
 
@@ -170,5 +166,5 @@ class FilterTortoiseORM:
         elif filter_q is None:
             return None
         else:
-            msg = "An unexpected argument for Q (result_filter={type})".format(type=type(filter_q))
+            msg = f"An unexpected argument for Q (result_filter={type(filter_q)})"
             raise QueryError(msg)

@@ -1,23 +1,23 @@
+from __future__ import annotations
+
 import logging
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     TypeVar,
-    Union,
 )
 
 from fastapi_jsonapi import BadRequest
-from fastapi_jsonapi.data_typing import TypeSchema
-from fastapi_jsonapi.schema import (
-    BaseJSONAPIItemInSchema,
-    JSONAPIResultDetailSchema,
-)
 from fastapi_jsonapi.views.utils import handle_jsonapi_fields
 from fastapi_jsonapi.views.view_base import ViewBase
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
+    from fastapi_jsonapi.data_typing import TypeSchema
+    from fastapi_jsonapi.schema import (
+        BaseJSONAPIItemInSchema,
+        JSONAPIResultDetailSchema,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +28,16 @@ TypeModel = TypeVar("TypeModel")
 class DetailViewBase(ViewBase):
     async def get_data_layer(
         self,
-        extra_view_deps: Dict[str, Any],
-    ) -> "BaseDataLayer":
+        extra_view_deps: dict[str, Any],
+    ) -> BaseDataLayer:
         return await self.get_data_layer_for_detail(extra_view_deps)
 
     async def handle_get_resource_detail(
         self,
-        object_id: Union[int, str],
+        object_id: int | str,
         **extra_view_deps,
-    ) -> Union[JSONAPIResultDetailSchema, dict]:
-        dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
+    ) -> JSONAPIResultDetailSchema | dict:
+        dl: BaseDataLayer = await self.get_data_layer(extra_view_deps)
 
         view_kwargs = {dl.url_id_field: object_id}
         db_object = await dl.get_object(view_kwargs=view_kwargs, qs=self.query_params)
@@ -50,14 +50,14 @@ class DetailViewBase(ViewBase):
         obj_id: str,
         data_update: BaseJSONAPIItemInSchema,
         **extra_view_deps,
-    ) -> Union[JSONAPIResultDetailSchema, dict]:
-        dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
+    ) -> JSONAPIResultDetailSchema | dict:
+        dl: BaseDataLayer = await self.get_data_layer(extra_view_deps)
         response = await self.process_update_object(dl=dl, obj_id=obj_id, data_update=data_update)
         return handle_jsonapi_fields(response, self.query_params, self.jsonapi)
 
     async def process_update_object(
         self,
-        dl: "BaseDataLayer",
+        dl: BaseDataLayer,
         obj_id: str,
         data_update: BaseJSONAPIItemInSchema,
     ) -> TypeSchema:
@@ -78,12 +78,12 @@ class DetailViewBase(ViewBase):
         obj_id: str,
         **extra_view_deps,
     ) -> None:
-        dl: "BaseDataLayer" = await self.get_data_layer(extra_view_deps)
+        dl: BaseDataLayer = await self.get_data_layer(extra_view_deps)
         await self.process_delete_object(dl=dl, obj_id=obj_id)
 
     async def process_delete_object(
         self,
-        dl: "BaseDataLayer",
+        dl: BaseDataLayer,
         obj_id: str,
     ) -> None:
         view_kwargs = {dl.url_id_field: obj_id}

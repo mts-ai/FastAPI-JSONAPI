@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict, Literal
+from typing import ClassVar, Literal
 
 import pytest
 from fastapi import Body, Depends, FastAPI, HTTPException, status
@@ -72,7 +72,7 @@ class UserUpdateCustomDependency(ArbitraryModelBase):
 
 
 class UserCustomListView(ListViewBaseGeneric):
-    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+    method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -84,7 +84,7 @@ class UserCustomListView(ListViewBaseGeneric):
 
 
 class UserCustomDetailView(DetailViewBaseGeneric):
-    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+    method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -107,7 +107,7 @@ class TestGenericUserCreateUpdateWithBodyDependency(
 
     @pytest.fixture(scope="class")
     def app_w_deps(self, resource_type):
-        app = build_app_custom(
+        return build_app_custom(
             model=User,
             schema=UserSchema,
             resource_type=resource_type,
@@ -115,7 +115,6 @@ class TestGenericUserCreateUpdateWithBodyDependency(
             class_detail=UserCustomDetailView,
             path=f"/path_{resource_type}",
         )
-        return app
 
     @fixture(scope="class")
     async def client(self, app_w_deps: FastAPI):

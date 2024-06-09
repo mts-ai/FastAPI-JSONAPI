@@ -1,15 +1,13 @@
 import logging
-from typing import Callable, Sequence
+from typing import TYPE_CHECKING, Callable
 
 import pytest
 from httpx import AsyncClient
-from pytest import mark  # noqa
 from sqlalchemy import (
     and_,
     or_,
     select,
 )
-from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
@@ -28,9 +26,14 @@ from tests.schemas import (
     UserBioAttributesBaseSchema,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from sqlalchemy.engine import Result
+
 COLUMN_CHARACTERS_LIMIT = 50
 
-pytestmark = mark.asyncio
+pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 

@@ -1,15 +1,17 @@
+from __future__ import annotations
+
 from copy import deepcopy
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Set, Type
+from typing import TYPE_CHECKING, Callable
 
 from pydantic import field_validator, model_validator
-
-from fastapi_jsonapi.schema_base import BaseModel
 
 if TYPE_CHECKING:
     from pydantic._internal._decorators import Decorator, DecoratorInfos
 
+    from fastapi_jsonapi.schema_base import BaseModel
 
-def extract_root_validators(model: Type[BaseModel]) -> Dict[str, Callable]:
+
+def extract_root_validators(model: type[BaseModel]) -> dict[str, Callable]:
     pre_root_validators = getattr(model, "__pre_root_validators__", [])
     post_root_validators = getattr(model, "__post_root_validators__", [])
     result_validators = {}
@@ -24,13 +26,13 @@ def extract_root_validators(model: Type[BaseModel]) -> Dict[str, Callable]:
     return result_validators
 
 
-def _deduplicate_field_validators(validators: "DecoratorInfos") -> Dict:
+def _deduplicate_field_validators(validators: DecoratorInfos) -> dict:
     result_validators = {}
     field_validators = validators.field_validators
     model_validators = validators.model_validators
 
     for category_validators in [field_validators, model_validators]:
-        for validator_name, field_validator_ in category_validators.items():
+        for field_validator_ in category_validators.values():
             func_name = field_validator_.func.__name__
 
             if func_name not in result_validators:
@@ -40,9 +42,9 @@ def _deduplicate_field_validators(validators: "DecoratorInfos") -> Dict:
 
 
 def extract_field_validators(
-    model: Type[BaseModel],
-    include_for_field_names: Optional[Set[str]] = None,
-    exclude_for_field_names: Optional[Set[str]] = None,
+    model: type[BaseModel],
+    include_for_field_names: set[str] | None = None,
+    exclude_for_field_names: set[str] | None = None,
 ):
     # TODO: refactor?
     validators: dict[str, Decorator] = _deduplicate_field_validators(deepcopy(model.__pydantic_decorators__))
@@ -74,9 +76,9 @@ def extract_field_validators(
 
 
 def extract_validators(
-    model: Type[BaseModel],
-    exclude_for_field_names: Optional[Set[str]] = None,
-) -> Dict[str, Callable]:
+    model: type[BaseModel],
+    exclude_for_field_names: set[str] | None = None,
+) -> dict[str, Callable]:
     return {
         **extract_field_validators(
             model=model,

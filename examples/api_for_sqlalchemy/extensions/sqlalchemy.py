@@ -16,8 +16,7 @@ class Base(DeclarativeBase):
 
 def async_session() -> sessionmaker:
     engine = create_async_engine(url=make_url(config.SQLA_URI), echo=config.SQLA_ECHO)
-    _async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-    return _async_session
+    return sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 class Connector:

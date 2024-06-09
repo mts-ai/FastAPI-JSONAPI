@@ -32,10 +32,10 @@ class User(Base, TimestampsMixin):
     status = Column(EnumColumn(UserStatusEnum), nullable=False, default=UserStatusEnum.active)
     email: Mapped[str | None]
 
-    posts: Mapped[list["Post"]] = relationship("Post", back_populates="user", uselist=True)
-    bio: Mapped["UserBio"] = relationship("UserBio", back_populates="user", uselist=False)
-    comments: Mapped[list["PostComment"]] = relationship("PostComment", back_populates="author", uselist=True)
-    computers: Mapped[list["Computer"]] = relationship("Computer", back_populates="user", uselist=True)
+    posts: Mapped[list[Post]] = relationship("Post", back_populates="user", uselist=True)
+    bio: Mapped[UserBio] = relationship("UserBio", back_populates="user", uselist=False)
+    comments: Mapped[list[PostComment]] = relationship("PostComment", back_populates="author", uselist=True)
+    computers: Mapped[list[Computer]] = relationship("Computer", back_populates="user", uselist=True)
 
     def __repr__(self):
         return (

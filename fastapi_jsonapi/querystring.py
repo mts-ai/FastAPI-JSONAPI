@@ -1,14 +1,12 @@
 """Helper to deal with querystring parameters according to jsonapi specification."""
 
+from __future__ import annotations
+
 from collections import defaultdict
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
-    Optional,
-    Type,
 )
 from urllib.parse import unquote
 
@@ -49,10 +47,10 @@ class PaginationQueryStringManager(BaseModel):
     Contains info about offsets, sizes, number and limits of query with pagination.
     """
 
-    offset: Optional[int] = None
-    size: Optional[int] = 25
+    offset: int | None = None
+    size: int | None = 25
     number: int = 1
-    limit: Optional[int] = None
+    limit: int | None = None
 
 
 class HeadersQueryStringManager(BaseModel):
@@ -62,13 +60,13 @@ class HeadersQueryStringManager(BaseModel):
     Contains info about request headers.
     """
 
-    host: Optional[str] = None
-    connection: Optional[str] = None
-    accept: Optional[str] = None
-    user_agent: Optional[str] = Field(None, alias="user-agent")
-    referer: Optional[str] = None
-    accept_encoding: Optional[str] = Field(None, alias="accept-encoding")
-    accept_language: Optional[str] = Field(None, alias="accept-language")
+    host: str | None = None
+    connection: str | None = None
+    accept: str | None = None
+    user_agent: str | None = Field(None, alias="user-agent")
+    referer: str | None = None
+    accept_encoding: str | None = Field(None, alias="accept-encoding")
+    accept_language: str | None = Field(None, alias="accept-language")
 
 
 class QueryStringManager:
@@ -85,22 +83,23 @@ class QueryStringManager:
         self.request: Request = request
         self.app: FastAPI = request.app
         self.qs: QueryParams = request.query_params
-        self.config: Dict[str, Any] = getattr(self.app, "config", {})
+        self.config: dict[str, Any] = getattr(self.app, "config", {})
         self.ALLOW_DISABLE_PAGINATION: bool = self.config.get("ALLOW_DISABLE_PAGINATION", True)
         self.MAX_PAGE_SIZE: int = self.config.get("MAX_PAGE_SIZE", 10000)
         self.MAX_INCLUDE_DEPTH: int = self.config.get("MAX_INCLUDE_DEPTH", 3)
         self.headers: HeadersQueryStringManager = HeadersQueryStringManager(**dict(self.request.headers))
 
-    def _extract_item_key(self, key: str) -> str:
+    @classmethod
+    def extract_item_key(cls, key: str) -> str:
         try:
             key_start = key.index("[") + 1
             key_end = key.index("]")
             return key[key_start:key_end]
-        except Exception:
+        except (IndexError, ValueError):
             msg = "Parse error"
             raise BadRequest(msg, parameter=key)
 
-    def _get_unique_key_values(self, name: str) -> Dict[str, str]:
+    def _get_unique_key_values(self, name: str) -> dict[str, str]:
         """
         Return a dict containing key / values items for a given key, used for items like filters, page, etc.
 
@@ -115,12 +114,12 @@ class QueryStringManager:
             if not key.startswith(name):
                 continue
 
-            item_key = self._extract_item_key(key)
+            item_key = self.extract_item_key(key)
             results[item_key] = value
 
         return results
 
-    def _get_multiple_key_values(self, name: str) -> Dict[str, List]:
+    def _get_multiple_key_values(self, name: str) -> dict[str, list]:
         results = defaultdict(list)
 
         for raw_key, value in self.qs.multi_items():
@@ -128,18 +127,18 @@ class QueryStringManager:
             if not key.startswith(name):
                 continue
 
-            item_key = self._extract_item_key(key)
+            item_key = self.extract_item_key(key)
             results[item_key].extend(value.split(","))
 
         return results
 
     @classmethod
-    def _simple_filters(cls, dict_: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _simple_filters(cls, dict_: dict[str, Any]) -> list[dict[str, Any]]:
         """Filter creation."""
         return [{"name": key, "op": "eq", "val": value} for (key, value) in dict_.items()]
 
     @property
-    def querystring(self) -> Dict[str, str]:
+    def querystring(self) -> dict[str, str]:
         """
         Return original querystring but containing only managed keys.
 
@@ -152,7 +151,7 @@ class QueryStringManager:
         }
 
     @property
-    def filters(self) -> List[dict]:
+    def filters(self) -> list[dict]:
         """
         Return filters from query string.
 
@@ -200,7 +199,7 @@ class QueryStringManager:
         :raises BadRequest: if the client is not allowed to disable pagination.
         """
         # check values type
-        pagination_data: Dict[str, str] = self._get_unique_key_values("page")
+        pagination_data: dict[str, str] = self._get_unique_key_values("page")
         pagination = PaginationQueryStringManager(**pagination_data)
         if pagination_data.get("size") is None:
             pagination.size = None
@@ -237,25 +236,22 @@ class QueryStringManager:
                 msg = f"Application has no resource with type {resource_type!r}"
                 raise InvalidType(msg)
 
-            schema: Type[BaseModel] = self._get_schema(resource_type)
+            schema: type[BaseModel] = self._get_schema(resource_type)
 
             for field_name in field_names:
                 if field_name == "":
                     continue
 
                 if field_name not in schema.__fields__:
-                    msg = "{schema} has no attribute {field}".format(
-                        schema=schema.__name__,
-                        field=field_name,
-                    )
+                    msg = f"{schema.__name__} has no attribute {field_name}"
                     raise InvalidField(msg)
 
         return {resource_type: set(field_names) for resource_type, field_names in fields.items()}
 
-    def _get_schema(self, resource_type: str) -> Type[BaseModel]:
-        return RoutersJSONAPI.all_jsonapi_routers[resource_type]._schema
+    def _get_schema(self, resource_type: str) -> type[BaseModel]:
+        return RoutersJSONAPI.all_jsonapi_routers[resource_type].schema
 
-    def get_sorts(self, schema: Type["TypeSchema"]) -> List[Dict[str, str]]:
+    def get_sorts(self, schema: type[TypeSchema]) -> list[dict[str, str]]:
         """
         Return fields to sort by including sort name for SQLAlchemy and row sort parameter for other ORMs.
 
@@ -279,10 +275,7 @@ class QueryStringManager:
             field = sort_field.replace("-", "")
             if SPLIT_REL not in field:
                 if field not in schema.model_fields:
-                    msg = "{schema} has no attribute {field}".format(
-                        schema=schema.__name__,
-                        field=field,
-                    )
+                    msg = f"{schema.__name__} has no attribute {field}"
                     raise InvalidSort(msg)
                 if field in relationships_fields_names:
                     msg = f"You can't sort by relationship field {field!r} on {schema.__name__!r}"
@@ -293,7 +286,7 @@ class QueryStringManager:
         return sorting_results
 
     @property
-    def include(self) -> List[str]:
+    def include(self) -> list[str]:
         """
         Return fields to include.
 
@@ -306,8 +299,6 @@ class QueryStringManager:
         if self.MAX_INCLUDE_DEPTH is not None:
             for include_path in includes:
                 if len(include_path.split(SPLIT_REL)) > self.MAX_INCLUDE_DEPTH:
-                    msg = "You can't use include through more than {max_include_depth} relationships".format(
-                        max_include_depth=self.MAX_INCLUDE_DEPTH,
-                    )
+                    msg = f"You can't use include through more than {self.MAX_INCLUDE_DEPTH} relationships"
                     raise InvalidInclude(msg)
         return includes

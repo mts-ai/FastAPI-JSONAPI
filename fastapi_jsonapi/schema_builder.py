@@ -1,18 +1,15 @@
 """JSON API schemas builder class."""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
     ClassVar,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -20,13 +17,11 @@ from typing import (
 import pydantic
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ConfigDict
-from pydantic.fields import FieldInfo
 
 from fastapi_jsonapi.common import (
     get_relationship_info_from_field_metadata,
     search_client_can_set_id,
 )
-from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.schema import (
     BaseJSONAPIDataInSchema,
     BaseJSONAPIItemInSchema,
@@ -52,7 +47,14 @@ from fastapi_jsonapi.validation_utils import (
     extract_validators,
 )
 
-JSON_API_RESPONSE_TYPE = Dict[Union[int, str], Dict[str, Any]]
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from pydantic.fields import FieldInfo
+
+    from fastapi_jsonapi.data_typing import TypeSchema
+
+JSON_API_RESPONSE_TYPE = dict[int | str, dict[str, Any]]
 
 JSONAPIObjectSchemaType = TypeVar("JSONAPIObjectSchemaType", bound=PydanticBaseModel)
 
@@ -68,7 +70,7 @@ log = logging.getLogger(__name__)
 class FieldConfig:
     cast_type: Callable
 
-    def __init__(self, cast_type: Optional[Callable] = None):
+    def __init__(self, cast_type: Callable | None = None):
         self.cast_type = cast_type
 
 
@@ -91,37 +93,37 @@ class TransferSaveWrapper:
 
 @dataclass(frozen=True)
 class JSONAPIObjectSchemas:
-    attributes_schema: Type[BaseModel]
-    relationships_schema: Type[BaseModel]
-    object_jsonapi_schema: Type[JSONAPIObjectSchema]
-    can_be_included_schemas: Dict[str, Type[JSONAPIObjectSchema]]
+    attributes_schema: type[BaseModel]
+    relationships_schema: type[BaseModel]
+    object_jsonapi_schema: type[JSONAPIObjectSchema]
+    can_be_included_schemas: dict[str, type[JSONAPIObjectSchema]]
 
     @property
-    def included_schemas_list(self) -> List[Type[JSONAPIObjectSchema]]:
+    def included_schemas_list(self) -> list[type[JSONAPIObjectSchema]]:
         return list(self.can_be_included_schemas.values())
 
 
 @dataclass(frozen=True)
 class BuiltSchemasDTO:
-    schema_in_post: Type[BaseJSONAPIDataInSchema]
-    schema_in_post_data: Type[BaseJSONAPIItemInSchema]
-    schema_in_patch: Type[BaseJSONAPIDataInSchema]
-    schema_in_patch_data: Type[BaseJSONAPIItemInSchema]
-    detail_response_schema: Type[JSONAPIResultDetailSchema]
-    list_response_schema: Type[JSONAPIResultListSchema]
+    schema_in_post: type[BaseJSONAPIDataInSchema]
+    schema_in_post_data: type[BaseJSONAPIItemInSchema]
+    schema_in_patch: type[BaseJSONAPIDataInSchema]
+    schema_in_patch_data: type[BaseJSONAPIItemInSchema]
+    detail_response_schema: type[JSONAPIResultDetailSchema]
+    list_response_schema: type[JSONAPIResultListSchema]
 
 
-FieldValidators = Dict[str, Callable]
+FieldValidators = dict[str, Callable]
 
 
 @dataclass(frozen=True)
 class SchemasInfoDTO:
     # id field
-    resource_id_field: tuple[Type, FieldInfo, Callable, FieldValidators]
+    resource_id_field: tuple[type, FieldInfo, Callable, FieldValidators]
     # pre-built attributes
-    attributes_schema: Type[BaseModel]
+    attributes_schema: type[BaseModel]
     # relationships
-    relationships_schema: Type[BaseModel]
+    relationships_schema: type[BaseModel]
     # has any required relationship
     has_required_relationship: bool
     # anything that can be included
@@ -141,19 +143,19 @@ class SchemaBuilder:
     ):
         self._resource_type = resource_type
 
-    def _create_schemas_objects_list(self, schema: Type[BaseModel]) -> Type[JSONAPIResultListSchema]:
+    def _create_schemas_objects_list(self, schema: type[BaseModel]) -> type[JSONAPIResultListSchema]:
         object_jsonapi_list_schema, list_jsonapi_schema = self.build_list_schemas(schema)
         return list_jsonapi_schema
 
-    def _create_schemas_object_detail(self, schema: Type[BaseModel]) -> Type[JSONAPIResultDetailSchema]:
+    def _create_schemas_object_detail(self, schema: type[BaseModel]) -> type[JSONAPIResultDetailSchema]:
         object_jsonapi_detail_schema, detail_jsonapi_schema = self.build_detail_schemas(schema)
         return detail_jsonapi_schema
 
     def create_schemas(
         self,
-        schema: Type[BaseModel],
-        schema_in_post: Optional[Type[BaseModel]] = None,
-        schema_in_patch: Optional[Type[BaseModel]] = None,
+        schema: type[BaseModel],
+        schema_in_post: type[BaseModel] | None = None,
+        schema_in_patch: type[BaseModel] | None = None,
     ) -> BuiltSchemasDTO:
         # TODO: generic?
         schema_in_post = schema_in_post or schema
@@ -191,11 +193,12 @@ class SchemaBuilder:
 
     def build_schema_in(
         self,
-        schema_in: Type[BaseModel],
+        schema_in: type[BaseModel],
         schema_name_suffix: str = "",
+        *,
         non_optional_relationships: bool = False,
         id_field_required: bool = False,
-    ) -> Tuple[Type[BaseJSONAPIDataInSchema], Type[BaseJSONAPIItemInSchema]]:
+    ) -> tuple[type[BaseJSONAPIDataInSchema], type[BaseJSONAPIItemInSchema]]:
         base_schema_name = schema_in.__name__.removesuffix("Schema") + schema_name_suffix
 
         dto = self._get_info_from_schema_for_building(
@@ -227,7 +230,7 @@ class SchemaBuilder:
     def _build_schema(
         self,
         base_name: str,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         builder: Callable,
         includes: Iterable[str] = not_passed,
     ):
@@ -247,9 +250,9 @@ class SchemaBuilder:
 
     def build_detail_schemas(
         self,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         includes: Iterable[str] = not_passed,
-    ) -> Tuple[Type[JSONAPIObjectSchema], Type[JSONAPIResultDetailSchema]]:
+    ) -> tuple[type[JSONAPIObjectSchema], type[JSONAPIResultDetailSchema]]:
         return self._build_schema(
             base_name=f"{schema.__name__}Detail",
             schema=schema,
@@ -259,9 +262,9 @@ class SchemaBuilder:
 
     def build_list_schemas(
         self,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         includes: Iterable[str] = not_passed,
-    ) -> Tuple[Type[JSONAPIObjectSchema], Type[JSONAPIResultListSchema]]:
+    ) -> tuple[type[JSONAPIObjectSchema], type[JSONAPIResultListSchema]]:
         return self._build_schema(
             base_name=f"{schema.__name__}List",
             schema=schema,
@@ -272,14 +275,15 @@ class SchemaBuilder:
     def _get_info_from_schema_for_building(
         self,
         base_name: str,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         includes: Iterable[str] = not_passed,
+        *,
         non_optional_relationships: bool = False,
     ) -> SchemasInfoDTO:
         attributes_schema_fields = {}
         relationships_schema_fields = {}
         # TODO: dto? instead of tuples
-        included_schemas: list[tuple[str, Optional[type], str]] = []
+        included_schemas: list[tuple[str, type | None, str]] = []
         has_required_relationship = False
         resource_id_field = (str, Field(None), None, {})
 
@@ -368,21 +372,19 @@ class SchemaBuilder:
         self,
         name: str,
         relationship_info: RelationshipInfo,
-    ) -> Type[BaseJSONAPIRelationshipSchema]:
+    ) -> type[BaseJSONAPIRelationshipSchema]:
         # TODO: cache?
         if name.endswith("s"):
             # plural to single
             name = name[:-1]
 
         schema_name = f"{name}RelationshipJSONAPI".format(name=name)
-        relationship_schema = pydantic.create_model(
+        return pydantic.create_model(
             schema_name,
             id=(str, Field(..., description="Resource object id", example=relationship_info.resource_id_example)),
             type=(str, Field(default=relationship_info.resource_type, description="Resource type")),
             __base__=BaseJSONAPIRelationshipSchema,
         )
-
-        return relationship_schema
 
     def create_relationship_data_schema(
         self,
@@ -406,7 +408,7 @@ class SchemaBuilder:
             relationship_schema = list[relationship_schema]
             base = BaseJSONAPIRelationshipDataToManySchema
         elif not field.is_required():
-            relationship_schema = Optional[relationship_schema]
+            relationship_schema = relationship_schema | None
 
         relationship_data_schema = pydantic.create_model(
             f"{schema_name}RelationshipDataJSONAPI",
@@ -421,15 +423,16 @@ class SchemaBuilder:
         self,
         base_name: str,
         resource_type: str,
-        attributes_schema: Type[TypeSchema],
-        relationships_schema: Type[TypeSchema],
+        attributes_schema: type[TypeSchema],
+        relationships_schema: type[TypeSchema],
         includes,
-        resource_id_field: Tuple[Type, FieldInfo, Callable, FieldValidators],
-        model_base: Type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
+        resource_id_field: tuple[type, FieldInfo, Callable, FieldValidators],
+        model_base: type[JSONAPIObjectSchemaType] = JSONAPIObjectSchema,
+        *,
         use_schema_cache: bool = True,
         relationships_required: bool = False,
         id_field_required: bool = False,
-    ) -> Type[JSONAPIObjectSchemaType]:
+    ) -> type[JSONAPIObjectSchemaType]:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
 
@@ -446,7 +449,7 @@ class SchemaBuilder:
         }
         if includes:
             object_jsonapi_schema_fields.update(
-                relationships=(Optional[relationships_schema], (... if relationships_required else None)),
+                relationships=(relationships_schema | None, (... if relationships_required else None)),
             )
 
         default_resource_type = resource_type or self._resource_type
@@ -466,11 +469,11 @@ class SchemaBuilder:
 
     def find_all_included_schemas(
         self,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         resource_type: str,
         includes: Iterable[str],
-        included_schemas: List[Tuple[str, BaseModel, str]],
-    ) -> Dict[str, Type[JSONAPIObjectSchema]]:
+        included_schemas: list[tuple[str, BaseModel, str]],
+    ) -> dict[str, type[JSONAPIObjectSchema]]:
         if includes is not_passed:
             return {
                 # prepare same object schema
@@ -485,11 +488,11 @@ class SchemaBuilder:
         can_be_included_schemas = {}
         for i_include in includes:
             current_schema = schema
-            relations_list: List[str] = i_include.split(SPLIT_REL)
+            relations_list: list[str] = i_include.split(SPLIT_REL)
             for part_index, include_part in enumerate(relations_list, start=1):
                 # find nested from the Schema
                 nested_schema = get_schema_from_field_annotation(current_schema.model_fields[include_part])
-                # TODO? continue or raise?
+                # TODO: ? continue or raise? probably should be already checked
                 assert nested_schema is not None
                 # find all relations for this one
                 nested_schema_includes = set(relations_list[: part_index - 1] + relations_list[part_index:])
@@ -510,10 +513,11 @@ class SchemaBuilder:
 
     def create_jsonapi_object_schemas(
         self,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         includes: Iterable[str] = not_passed,
-        resource_type: Optional[str] = None,
+        resource_type: str | None = None,
         base_name: str = "",
+        *,
         compute_included_schemas: bool = False,
         use_schema_cache: bool = True,
     ) -> JSONAPIObjectSchemas:
@@ -564,23 +568,22 @@ class SchemaBuilder:
     def build_schema_for_list_result(
         self,
         name: str,
-        object_jsonapi_schema: Type[JSONAPIObjectSchema],
-        includes_schemas: List[Type[JSONAPIObjectSchema]],
-    ) -> Type[JSONAPIResultListSchema]:
+        object_jsonapi_schema: type[JSONAPIObjectSchema],
+        includes_schemas: list[type[JSONAPIObjectSchema]],
+    ) -> type[JSONAPIResultListSchema]:
         return self.build_schema_for_result(
             name=f"{name}JSONAPI",
             base=JSONAPIResultListSchema,
-            data_type=List[object_jsonapi_schema],
+            data_type=list[object_jsonapi_schema],
             includes_schemas=includes_schemas,
         )
 
     def build_schema_for_detail_result(
         self,
         name: str,
-        object_jsonapi_schema: Type[JSONAPIObjectSchema],
-        includes_schemas: List[Type[JSONAPIObjectSchema]],
-    ) -> Type[JSONAPIResultDetailSchema]:
-        # return detail_jsonapi_schema
+        object_jsonapi_schema: type[JSONAPIObjectSchema],
+        includes_schemas: list[type[JSONAPIObjectSchema]],
+    ) -> type[JSONAPIResultDetailSchema]:
         return self.build_schema_for_result(
             name=f"{name}JSONAPI",
             base=JSONAPIResultDetailSchema,
@@ -591,10 +594,10 @@ class SchemaBuilder:
     def build_schema_for_result(
         self,
         name: str,
-        base: Type[BaseJSONAPIResultSchema],
-        data_type: Union[Type[JSONAPIObjectSchema], Type[List[JSONAPIObjectSchema]]],
-        includes_schemas: List[Type[JSONAPIObjectSchema]],
-    ) -> Union[Type[JSONAPIResultListSchema], Type[JSONAPIResultDetailSchema]]:
+        base: type[BaseJSONAPIResultSchema],
+        data_type: type[JSONAPIObjectSchema | list[JSONAPIObjectSchema]],
+        includes_schemas: list[type[JSONAPIObjectSchema]],
+    ) -> type[JSONAPIResultListSchema | JSONAPIResultDetailSchema]:
         included_schema_annotation = Union[JSONAPIObjectSchema]
         for includes_schema in includes_schemas:
             included_schema_annotation = Union[included_schema_annotation, includes_schema]
@@ -605,14 +608,13 @@ class SchemaBuilder:
         if includes_schemas:
             schema_fields.update(
                 included=(
-                    List[included_schema_annotation],
+                    list[included_schema_annotation],
                     Field(None),
                 ),
             )
 
-        result_jsonapi_schema = pydantic.create_model(
+        return pydantic.create_model(
             name,
             **schema_fields,
             __base__=base,
         )
-        return result_jsonapi_schema

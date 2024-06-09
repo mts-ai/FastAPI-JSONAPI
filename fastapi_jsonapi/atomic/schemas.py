@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -30,7 +30,7 @@ OperationDataType = Union[
     # any object creation
     OperationItemInSchema,
     # to-many relationship
-    List[OperationRelationshipSchema],
+    list[OperationRelationshipSchema],
     # to-one relationship
     OperationRelationshipSchema,
     # not required
@@ -52,9 +52,9 @@ class AtomicOperationRef(BaseModel):
     """
 
     type: str = Field(default=...)
-    id: Optional[str] = Field(default=None)
-    lid: Optional[str] = Field(default=None)
-    relationship: Optional[str] = Field(default=None)
+    id: str | None = Field(default=None)
+    lid: str | None = Field(default=None)
+    relationship: str | None = Field(default=None)
 
     @model_validator(mode="before")
     def validate_atomic_operation_ref(cls, values: dict):
@@ -103,8 +103,8 @@ class AtomicOperation(BaseModel):
         default=...,
         description="an operation code, expressed as a string, that indicates the type of operation to perform.",
     )
-    ref: Optional[AtomicOperationRef] = Field(default=None)
-    href: Optional[str] = Field(
+    ref: AtomicOperationRef | None = Field(default=None)
+    href: str | None = Field(
         default=None,
         description="a string that contains a URI-reference that identifies the target of the operation.",
     )
@@ -114,7 +114,7 @@ class AtomicOperation(BaseModel):
         description="the operation’s “primary data”.",
     )
 
-    meta: Optional[dict] = Field(
+    meta: dict | None = Field(
         default=None,
         description="a meta object that contains non-standard meta-information about the operation",
     )
@@ -166,7 +166,7 @@ class AtomicOperation(BaseModel):
         """
         cls._validate_one_of_ref_or_href(values=values)
         op = values.get("op")
-        ref: Optional[AtomicOperationRef] = values.get("ref")
+        ref: AtomicOperationRef | None = values.get("ref")
         if op == AtomicOperationAction.remove:
             if not ref:
                 msg = f"ref should be present for action {op!r}"
@@ -189,18 +189,18 @@ class AtomicOperation(BaseModel):
 
 
 class AtomicOperationRequest(BaseModel):
-    operations: List[AtomicOperation] = Field(
+    operations: list[AtomicOperation] = Field(
         alias="atomic:operations",
         min_length=1,
     )
 
 
 class AtomicResult(BaseModel):
-    data: Optional[dict] = Field(
+    data: dict | None = Field(
         default=None,
         description="the “primary data” resulting from the operation.",
     )
-    meta: Optional[dict] = Field(
+    meta: dict | None = Field(
         default=None,
         description="a meta object that contains non-standard meta-information about the result.",
     )
@@ -211,7 +211,7 @@ class AtomicResultResponse(BaseModel):
     https://jsonapi.org/ext/atomic/#auto-id-responses-4
     """
 
-    results: List[AtomicResult] = Field(
+    results: list[AtomicResult] = Field(
         alias="atomic:results",
         min_length=1,
     )

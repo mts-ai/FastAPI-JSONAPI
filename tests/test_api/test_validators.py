@@ -1,16 +1,16 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from typing import (
+    TYPE_CHECKING,
     Annotated,
-    Type,
 )
 
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
-from pytest import mark, param  # noqa: PT013
 from pytest_asyncio import fixture
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.exceptions import BadRequest
@@ -25,6 +25,9 @@ from tests.models import (
     User,
 )
 from tests.schemas import TaskBaseSchema
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = pytest.mark.asyncio
 
@@ -73,7 +76,6 @@ class TestTaskValidators:
         }
         assert attributes == {
             # not `None`! schema validator returns empty list `[]`
-            # "task_ids": None,
             "task_ids": [],
         }
         assert attributes == TaskBaseSchema.model_validate(task_with_none_ids)
@@ -96,7 +98,6 @@ class TestTaskValidators:
                 "type": resource_type,
                 "attributes": {
                     # not `None`! schema validator returns empty list `[]`
-                    # "task_ids": None,
                     "task_ids": [],
                 },
             },
@@ -170,7 +171,7 @@ class TestValidators:
             resource_type=resource_type or self.resource_type,
         )
 
-    def inherit(self, schema: Type[BaseModel]) -> Type[BaseModel]:
+    def inherit(self, schema: type[BaseModel]) -> type[BaseModel]:
         class InheritedSchema(schema):
             pass
 
@@ -201,7 +202,7 @@ class TestValidators:
 
     async def execute_request_twice_and_check_response(
         self,
-        schema: Type[BaseModel],
+        schema: type[BaseModel],
         body: dict,
         expected_detail: str,
     ):
@@ -235,7 +236,7 @@ class TestValidators:
                 # checks that cls arg is not bound to the origin class
                 assert cls is not UserSchemaWithValidator
 
-                raise BadRequest(detail="Check validator")
+                raise BadRequest(detail=f"Check validator for {v}")
 
             model_config = ConfigDict(from_attributes=True)
 
@@ -277,12 +278,12 @@ class TestValidators:
             @field_validator("name", mode="before")
             @classmethod
             def validate_name_pre(cls, v):
-                raise BadRequest(detail="Pre validator called")
+                raise BadRequest(detail=f"Pre validator called for {v}")
 
             @field_validator("name")
             @classmethod
             def validate_name(cls, v):
-                raise BadRequest(detail="Not pre validator called")
+                raise BadRequest(detail=f"Not pre validator called for {v}")
 
             model_config = ConfigDict(from_attributes=True)
 
@@ -302,7 +303,7 @@ class TestValidators:
             @field_validator("name")
             @classmethod
             def validate_name(cls, v):
-                raise BadRequest(detail="Called always validator")
+                raise BadRequest(detail=f"Called always validator for {v}")
 
             model_config = ConfigDict(from_attributes=True)
 
@@ -399,13 +400,12 @@ class TestValidators:
         """
 
         class UserSchemaWithValidator(BaseModel):
-            # TODO
             id: Annotated[int, ClientCanSetId()]
 
             @field_validator("id")
             @classmethod
             def validate_id(cls, v):
-                raise BadRequest(detail="Check validator")
+                raise BadRequest(detail=f"Check validator for {v}")
 
             model_config = ConfigDict(from_attributes=True)
 
@@ -422,11 +422,11 @@ class TestValidators:
             expected_detail="Check validator",
         )
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "inherit",
         [
-            param(True, id="inherited_true"),
-            param(False, id="inherited_false"),
+            pytest.param(True, id="inherited_true"),
+            pytest.param(False, id="inherited_false"),
         ],
     )
     async def test_field_validator_can_change_value(self, inherit: bool):
@@ -464,13 +464,13 @@ class TestValidators:
                 "meta": None,
             }
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("name", "expected_detail"),
         [
-            param("check_pre_1", "Raised 1 pre validator", id="check_1_pre_validator"),
-            param("check_pre_2", "Raised 2 pre validator", id="check_2_pre_validator"),
-            param("check_post_1", "Raised 1 post validator", id="check_1_post_validator"),
-            param("check_post_2", "Raised 2 post validator", id="check_2_post_validator"),
+            pytest.param("check_pre_1", "Raised 1 pre validator", id="check_1_pre_validator"),
+            pytest.param("check_pre_2", "Raised 2 pre validator", id="check_2_pre_validator"),
+            pytest.param("check_post_1", "Raised 1 post validator", id="check_1_post_validator"),
+            pytest.param("check_post_2", "Raised 2 post validator", id="check_2_post_validator"),
         ],
     )
     async def test_root_validator(self, name: str, expected_detail: str):
@@ -520,11 +520,11 @@ class TestValidators:
             expected_detail=expected_detail,
         )
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "inherit",
         [
-            param(True, id="inherited_true"),
-            param(False, id="inherited_false"),
+            pytest.param(True, id="inherited_true"),
+            pytest.param(False, id="inherited_false"),
         ],
     )
     async def test_root_validator_can_change_value(self, inherit: bool):
@@ -563,13 +563,13 @@ class TestValidators:
                 "meta": None,
             }
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("name", "expected_detail"),
         [
-            param("check_pre_1", "check_pre_1", id="check_1_pre_validator"),
-            param("check_pre_2", "check_pre_2", id="check_2_pre_validator"),
-            param("check_post_1", "check_post_1", id="check_1_post_validator"),
-            param("check_post_2", "check_post_2", id="check_2_post_validator"),
+            pytest.param("check_pre_1", "check_pre_1", id="check_1_pre_validator"),
+            pytest.param("check_pre_2", "check_pre_2", id="check_2_pre_validator"),
+            pytest.param("check_post_1", "check_post_1", id="check_1_post_validator"),
+            pytest.param("check_post_2", "check_post_2", id="check_2_post_validator"),
         ],
     )
     async def test_root_validator_inheritance(self, name: str, expected_detail: str):
@@ -655,13 +655,13 @@ class TestValidators:
 
 @pytest.mark.xfail(reason="validators passthrough not supported yet")
 class TestValidationUtils:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("include", "exclude", "expected"),
         [
-            param({"item_1"}, None, {"item_1_validator"}, id="include"),
-            param(None, {"item_1"}, {"item_2_validator"}, id="exclude"),
-            param(None, None, {"item_1_validator", "item_2_validator"}, id="empty_params"),
-            param({"item_1", "item_2"}, {"item_2"}, {"item_1_validator"}, id="intersection"),
+            pytest.param({"item_1"}, None, {"item_1_validator"}, id="include"),
+            pytest.param(None, {"item_1"}, {"item_2_validator"}, id="exclude"),
+            pytest.param(None, None, {"item_1_validator", "item_2_validator"}, id="empty_params"),
+            pytest.param({"item_1", "item_2"}, {"item_2"}, {"item_1_validator"}, id="intersection"),
         ],
     )
     def test_extract_field_validators_args(

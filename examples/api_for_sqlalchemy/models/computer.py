@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
@@ -19,7 +21,7 @@ class Computer(Base, TimestampsMixin):
 
     name: Mapped[str]
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
-    user: Mapped["User"] = relationship(back_populates="computers")
+    user: Mapped[User] = relationship(back_populates="computers")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r}, user_id={self.user_id})"

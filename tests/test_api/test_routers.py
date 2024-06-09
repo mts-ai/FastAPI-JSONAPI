@@ -1,12 +1,12 @@
-from typing import ClassVar, Dict, Optional
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Annotated, ClassVar
+
+import pytest
 from fastapi import APIRouter, Depends, FastAPI, Header, Path, status
 from httpx import AsyncClient
 from pydantic import BaseModel, ConfigDict
-from pytest import mark  # noqa
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing_extensions import Annotated
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.exceptions import Forbidden, InternalServerError
@@ -15,7 +15,6 @@ from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
 )
-from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.db_connection import async_session_dependency
 from tests.fixtures.views import SessionDependency
 from tests.misc.utils import fake
@@ -26,8 +25,11 @@ from tests.schemas import (
     UserPatchSchema,
     UserSchema,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
-pytestmark = mark.asyncio
+from fastapi_jsonapi.views.view_base import ViewBase
+
+pytestmark = pytest.mark.asyncio
 
 
 def build_app(detail_view, resource_type: str) -> FastAPI:
@@ -69,7 +71,7 @@ async def test_dependency_handler_call():
         dependency_1: int = Depends(one)
         dependency_2: int = Depends(two)
 
-    async def dependencies_handler(view_base: ViewBase, dto: CustomDependencies) -> Optional[Dict]:
+    async def dependencies_handler(view_base: ViewBase, dto: CustomDependencies) -> dict | None:
         raise InternalServerError(
             detail="hi",
             errors=[
@@ -87,7 +89,7 @@ async def test_dependency_handler_call():
         )
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+        method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=CustomDependencies,
                 prepare_data_layer_kwargs=dependencies_handler,
@@ -129,7 +131,7 @@ async def test_dependencies_as_permissions(user_1: User):
             raise Forbidden(detail="Only admin user have permissions to this endpoint")
 
     class AdminOnlyPermission(BaseModel):
-        is_admin: Optional[bool] = Depends(check_that_user_is_admin)
+        is_admin: bool | None = Depends(check_that_user_is_admin)
 
     def get_path_obj_id(obj_id: int = Path(default=...)):
         return obj_id
@@ -137,13 +139,13 @@ async def test_dependencies_as_permissions(user_1: User):
     class DetailGenericDependency(SessionDependency):
         custom_name_obj_id: int = Depends(get_path_obj_id)
 
-    def all_handler(view: ViewBase, dto: DetailGenericDependency) -> Dict:
+    def all_handler(view: ViewBase, dto: DetailGenericDependency) -> dict:
         # test inside handler
         assert dto.custom_name_obj_id == int(view.request.path_params["obj_id"])
         return {"session": dto.session}
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+        method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
             HTTPMethod.GET: HTTPMethodConfig(dependencies=AdminOnlyPermission),
             HTTPMethod.ALL: HTTPMethodConfig(
                 dependencies=DetailGenericDependency,
@@ -187,7 +189,7 @@ async def test_manipulate_data_layer_kwargs(
         session: AsyncSession = Depends(async_session_dependency)
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    async def set_session_and_ignore_user_1(view_base: ViewBase, dto: GetDetailDependencies) -> Dict:
+    async def set_session_and_ignore_user_1(view_base: ViewBase, dto: GetDetailDependencies) -> dict:  # noqa: ARG001
         query = select(User).where(User.id != user_1.id)
 
         return {
@@ -196,7 +198,7 @@ async def test_manipulate_data_layer_kwargs(
         }
 
     class DependencyInjectionDetailView(DetailViewBaseGeneric):
-        method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+        method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
             HTTPMethod.GET: HTTPMethodConfig(
                 dependencies=GetDetailDependencies,
                 prepare_data_layer_kwargs=set_session_and_ignore_user_1,

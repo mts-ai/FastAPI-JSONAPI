@@ -1,28 +1,25 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Coroutine, Iterable
 from enum import Enum
 from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Coroutine,
-    Iterable,
-    Optional,
-    Type,
     Union,
 )
 
 from pydantic import BaseModel, ConfigDict
 
 from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
-from fastapi_jsonapi.data_typing import TypeSchema
-from fastapi_jsonapi.schema import JSONAPIObjectSchema
 from fastapi_jsonapi.schema_builder import (
     JSONAPIResultDetailSchema,
     JSONAPIResultListSchema,
 )
+from fastapi_jsonapi.data_typing import TypeSchema
+from fastapi_jsonapi.schema import JSONAPIObjectSchema
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.api import RoutersJSONAPI
@@ -47,12 +44,12 @@ class HTTPMethod(Enum):
 
 
 class HTTPMethodConfig(BaseModel):
-    dependencies: Optional[Type[BaseModel]] = None
-    prepare_data_layer_kwargs: Optional[Callable] = None
+    dependencies: type[BaseModel] | None = None
+    prepare_data_layer_kwargs: Callable | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
-    def handler(self) -> Optional[Union[Callable, Coroutine]]:
+    def handler(self) -> Callable | Coroutine | None:
         return self.prepare_data_layer_kwargs
 
 
@@ -65,10 +62,8 @@ def get_includes_indexes_by_type(included: list[JSONAPIObjectSchema]) -> dict[st
     return result
 
 
-def get_schema_field_names(schema: Type[TypeSchema]) -> set[str]:
-    """
-    Returns all attribute names except relationships
-    """
+def get_schema_field_names(schema: type[TypeSchema]) -> set[str]:
+    """Returns all attribute names except relationships"""
     result = set()
 
     for field_name, field in schema.__fields__.items():
@@ -81,7 +76,7 @@ def get_schema_field_names(schema: Type[TypeSchema]) -> set[str]:
 
 
 def _get_exclude_fields(
-    schema: Type[TypeSchema],
+    schema: type[TypeSchema],
     include_fields: Iterable[str],
 ) -> set[str]:
     schema_fields = get_schema_field_names(schema)
@@ -105,7 +100,7 @@ def _calculate_exclude_fields(
     includes_indexes_by_type = get_includes_indexes_by_type(included)
 
     for resource_type, field_names in query_params.fields.items():
-        schema = jsonapi.all_jsonapi_routers[resource_type]._schema
+        schema = jsonapi.all_jsonapi_routers[resource_type].schema
         exclude_fields = _get_exclude_fields(schema, include_fields=field_names)
         attributes_exclude = {"attributes": exclude_fields}
 
@@ -135,7 +130,7 @@ def handle_jsonapi_fields(
     response: JSONAPIResponse,
     query_params: QueryStringManager,
     jsonapi: RoutersJSONAPI,
-) -> Union[JSONAPIResponse, dict]:
+) -> JSONAPIResponse | dict:
     if not query_params.fields:
         return response
 

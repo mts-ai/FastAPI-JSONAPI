@@ -1,7 +1,4 @@
-from typing import (
-    Optional,
-    Type,
-)
+from __future__ import annotations
 
 from fastapi import APIRouter, Request, Response, status
 
@@ -13,12 +10,12 @@ from fastapi_jsonapi.atomic.schemas import (
 
 
 class AtomicOperations:
-    atomic_handler: Type[AtomicViewHandler] = AtomicViewHandler
+    atomic_handler: type[AtomicViewHandler] = AtomicViewHandler
 
     def __init__(
         self,
         url_path: str = "/operations",
-        router: Optional[APIRouter] = None,
+        router: APIRouter | None = None,
     ):
         self.router = router or APIRouter(tags=["Atomic Operations"])
         self.url_path = url_path

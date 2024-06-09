@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional, Type
+from typing import TYPE_CHECKING
 
 import pytest
 from fastapi import APIRouter, FastAPI
@@ -7,9 +9,6 @@ from pydantic import BaseModel, ConfigDict
 
 from fastapi_jsonapi import RoutersJSONAPI, init
 from fastapi_jsonapi.atomic import AtomicOperations
-from fastapi_jsonapi.data_typing import TypeModel
-from fastapi_jsonapi.views.detail_view import DetailViewBase
-from fastapi_jsonapi.views.list_view import ListViewBase
 from tests.fixtures.views import (
     DetailViewBaseGeneric,
     ListViewBaseGeneric,
@@ -57,6 +56,10 @@ from tests.schemas import (
     UserPatchSchema,
     UserSchema,
 )
+
+from fastapi_jsonapi.data_typing import TypeModel
+from fastapi_jsonapi.views.detail_view import DetailViewBase
+from fastapi_jsonapi.views.list_view import ListViewBase
 
 CURRENT_FILE = Path(__file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
@@ -230,8 +233,8 @@ def build_app_custom(
     schema_in_post=None,
     path: str = "/misc",
     resource_type: str = "misc",
-    class_list: Type[ListViewBase] = ListViewBaseGeneric,
-    class_detail: Type[DetailViewBase] = DetailViewBaseGeneric,
+    class_list: type[ListViewBase] = ListViewBaseGeneric,
+    class_detail: type[DetailViewBase] = DetailViewBaseGeneric,
 ) -> FastAPI:
     router: APIRouter = APIRouter()
 
@@ -291,12 +294,12 @@ def build_alphabet_app() -> FastAPI:
 class ResourceInfoDTO(BaseModel):
     path: str
     resource_type: str
-    model: Type[TypeModel]
-    schema_: Type[BaseModel]
-    schema_in_patch: Optional[BaseModel] = None
-    schema_in_post: Optional[BaseModel] = None
-    class_list: Type[ListViewBase] = ListViewBaseGeneric
-    class_detail: Type[DetailViewBase] = DetailViewBaseGeneric
+    model: type[TypeModel]
+    schema_: type[BaseModel]
+    schema_in_patch: BaseModel | None = None
+    schema_in_post: BaseModel | None = None
+    class_list: type[ListViewBase] = ListViewBaseGeneric
+    class_detail: type[DetailViewBase] = DetailViewBaseGeneric
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

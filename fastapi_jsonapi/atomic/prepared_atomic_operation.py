@@ -1,29 +1,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
-
-from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.atomic.schemas import AtomicOperationAction, AtomicOperationRef, OperationDataType
-from fastapi_jsonapi.data_typing import TypeSchema
 from fastapi_jsonapi.views.utils import HTTPMethod
 
 if TYPE_CHECKING:
+    from fastapi import Request
+
+    from fastapi_jsonapi import RoutersJSONAPI
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
+    from fastapi_jsonapi.data_typing import TypeSchema
     from fastapi_jsonapi.views.detail_view import DetailViewBase
     from fastapi_jsonapi.views.list_view import ListViewBase
     from fastapi_jsonapi.views.view_base import ViewBase
 
-LocalIdsType = Dict[str, Dict[str, str]]
+LocalIdsType = dict[str, dict[str, str]]
 
 
 @dataclass
 class OperationBase:
     jsonapi: RoutersJSONAPI
     view: ViewBase
-    ref: Optional[AtomicOperationRef]
+    ref: AtomicOperationRef | None
     data: OperationDataType
     op_type: str
 
@@ -37,10 +37,10 @@ class OperationBase:
         action: str,
         request: Request,
         jsonapi: RoutersJSONAPI,
-        ref: Optional[AtomicOperationRef],
+        ref: AtomicOperationRef | None,
         data: OperationDataType,
-    ) -> "OperationBase":
-        view_cls: Type[ViewBase] = jsonapi.detail_view_resource
+    ) -> OperationBase:
+        view_cls: type[ViewBase] = jsonapi.detail_view_resource
 
         if hasattr(action, "value"):
             # convert to str if enum
@@ -68,7 +68,7 @@ class OperationBase:
         )
 
     async def get_data_layer(self) -> BaseDataLayer:
-        data_layer_view_dependencies: Dict[str, Any] = await self.jsonapi.handle_view_dependencies(
+        data_layer_view_dependencies: dict[str, Any] = await self.jsonapi.handle_view_dependencies(
             request=self.view.request,
             view_cls=self.view.__class__,
             method=self.http_method,
@@ -88,7 +88,7 @@ class OperationBase:
         :return:
         """
         missing = object()
-        lid: str | Type[missing] = relationship_info.get("lid", missing)
+        lid: str | type[missing] = relationship_info.get("lid", missing)
         if lid is missing:
             return
 
@@ -114,7 +114,7 @@ class OperationBase:
     def update_relationships_with_lid(self, local_ids: LocalIdsType):
         if not (self.data and self.data.relationships):
             return
-        for relationship_name, relationship_value in self.data.relationships.items():
+        for relationship_value in self.data.relationships.values():
             relationship_data = relationship_value["data"]
             if isinstance(relationship_data, list):
                 for data in relationship_data:
@@ -142,11 +142,10 @@ class OperationAdd(ListOperationBase):
         # `{'loc': ['data', 'attributes', 'name']`
         # and not `{'loc': ['attributes', 'name']`
         data_in = self.jsonapi.schema_in_post(data=self.data.model_dump(exclude_unset=True))
-        response = await self.view.process_create_object(
+        return await self.view.process_create_object(
             dl=dl,
             data_create=data_in.data,
         )
-        return response
 
 
 class OperationUpdate(DetailOperationBase):
@@ -163,12 +162,11 @@ class OperationUpdate(DetailOperationBase):
         # and not `{'loc': ['attributes', 'name']`
         data_in = self.jsonapi.schema_in_patch(data=self.data.model_dump(exclude_unset=True))
         obj_id = self.ref and self.ref.id or self.data and self.data.id
-        response = await self.view.process_update_object(
+        return await self.view.process_update_object(
             dl=dl,
             obj_id=obj_id,
             data_update=data_in.data,
         )
-        return response
 
 
 class OperationRemove(DetailOperationBase):

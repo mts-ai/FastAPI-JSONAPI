@@ -1,8 +1,9 @@
 import logging
-from typing import Awaitable, Callable
+from collections.abc import Awaitable
+from typing import Callable
 
+import pytest
 from httpx import AsyncClient
-from pytest import mark  # noqa
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
@@ -11,7 +12,7 @@ from starlette import status
 from fastapi_jsonapi.atomic.schemas import AtomicOperationAction
 from tests.models import Computer
 
-pytestmark = mark.asyncio
+pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 

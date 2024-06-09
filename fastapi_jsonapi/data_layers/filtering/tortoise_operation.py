@@ -14,7 +14,7 @@ def add_suffix(field_name: str, suffix: str, sep: str = "__") -> str:
     :param sep:
     :return:
     """
-    return "".join((field_name, sep, suffix))
+    return f"{field_name}{sep}{suffix}"
 
 
 def type_op_any(field_name: str, type_op: str) -> str:

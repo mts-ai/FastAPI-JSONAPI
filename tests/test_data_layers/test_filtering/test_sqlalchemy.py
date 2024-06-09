@@ -40,7 +40,7 @@ class TestFilteringFuncs:
 
     def test_user_type_cast_fail(self):
         class UserType:
-            def __init__(self, *args, **kwargs):
+            def __init__(self, *args, **kwargs):  # noqa: ARG002
                 msg = "Cast failed"
                 raise ValueError(msg)
 

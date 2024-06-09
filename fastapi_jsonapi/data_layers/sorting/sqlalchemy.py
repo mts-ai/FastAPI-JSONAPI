@@ -1,6 +1,8 @@
 """Helper to create sqlalchemy sortings according to filter querystring parameter"""
 
-from typing import Any, List, Tuple, Type, Union
+from __future__ import annotations
+
+from typing import Any
 
 from pydantic.fields import FieldInfo
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, aliased
@@ -18,15 +20,15 @@ from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
 Sort = BinaryExpression
-Join = List[Any]
+Join = list[Any]
 
-SortAndJoins = Tuple[
+SortAndJoins = tuple[
     Sort,
-    List[Join],
+    list[Join],
 ]
 
 
-def create_sorts(model: Type[TypeModel], filter_info: Union[list, dict], schema: Type[TypeSchema]):
+def create_sorts(model: type[TypeModel], filter_info: list | dict, schema: type[TypeSchema]):
     """
     Apply filters from filters information to base query.
 
@@ -37,10 +39,10 @@ def create_sorts(model: Type[TypeModel], filter_info: Union[list, dict], schema:
     return create_filters_or_sorts(model, filter_info, Node, schema)
 
 
-class Node(object):
+class Node:
     """Helper to recursively create sorts with sqlalchemy according to sort querystring parameter"""
 
-    def __init__(self, model: Type[TypeModel], sort_: dict, schema: Type[TypeSchema]):
+    def __init__(self, model: type[TypeModel], sort_: dict, schema: type[TypeSchema]):
         """
         Initialize an instance of a filter node.
 
@@ -81,12 +83,10 @@ class Node(object):
         return getattr(model_column, order)()
 
     def resolve(self) -> SortAndJoins:
-        """
-        Create sort for a particular node of the sort tree.
-        """
+        """Create sort for a particular node of the sort tree."""
         field = self.sort_.get("field", "")
         if not hasattr(self.model, field) and SPLIT_REL not in field:
-            msg = "{} has no attribute {}".format(self.model.__name__, field)
+            msg = f"{self.model.__name__} has no attribute {field}"
             raise InvalidSort(msg)
 
         if SPLIT_REL in field:
@@ -124,7 +124,7 @@ class Node(object):
             name = name.split(SPLIT_REL)[0]
 
         if name not in self.schema.model_fields:
-            msg = "{} has no attribute {}".format(self.schema.__name__, name)
+            msg = f"{self.schema.__name__} has no attribute {name}"
             raise InvalidFilters(msg)
 
         return name
@@ -143,7 +143,7 @@ class Node(object):
         try:
             return getattr(self.model, model_field)
         except AttributeError:
-            msg = "{} has no attribute {}".format(self.model.__name__, model_field)
+            msg = f"{self.model.__name__} has no attribute {model_field}"
             raise InvalidFilters(msg)
 
     def validate_field_relationship(self, relationship_field: str) -> None:
@@ -163,7 +163,7 @@ class Node(object):
         return get_related_model_cls(self.model, get_model_field(self.schema, relationship_field))
 
     @property
-    def related_schema(self) -> Type[TypeSchema]:
+    def related_schema(self) -> type[TypeSchema]:
         """
         Get the related schema of a relationship field.
 

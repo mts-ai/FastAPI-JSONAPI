@@ -24,10 +24,11 @@ class BaseDataLayer:
     def __init__(
         self,
         request: Request,
-        schema: Type[TypeSchema],
-        model: Type[TypeModel],
+        schema: type[TypeSchema],
+        model: type[TypeModel],
+        *,
         url_id_field: str,
-        id_name_field: Optional[str] = None,
+        id_name_field: str | None = None,
         disable_collection_count: bool = False,
         default_collection_count: int = -1,
         type_: str = "",
@@ -64,6 +65,7 @@ class BaseDataLayer:
 
     async def atomic_end(
         self,
+        *,
         success: bool = True,
         exception: Exception | None = None,
     ) -> None:
@@ -83,7 +85,7 @@ class BaseDataLayer:
         if data_create.id is None:
             return model_kwargs
 
-        # todo: annotation?
+        # TODO: annotation?
         field = data_create.model_fields["id"]
         if can_set_id := search_client_can_set_id.first(field):
             id_value = data_create.id
@@ -127,7 +129,7 @@ class BaseDataLayer:
     def get_object_id(self, obj: TypeModel):
         return getattr(obj, self.get_object_id_field_name())
 
-    async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
+    async def get_object(self, view_kwargs: dict, qs: QueryStringManager | None = None) -> TypeModel:
         """
         Retrieve an object
 
@@ -137,7 +139,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
+    async def get_collection(self, qs: QueryStringManager, view_kwargs: dict | None = None) -> tuple[int, list]:
         """
         Retrieve a collection of objects
 
@@ -241,7 +243,7 @@ class BaseDataLayer:
 
     def get_related_model_query_base(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
     ):
         """
         Prepare query for the related model
@@ -253,7 +255,7 @@ class BaseDataLayer:
 
     def get_related_object_query(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         id_value: str,
     ):
@@ -269,7 +271,7 @@ class BaseDataLayer:
 
     def get_related_objects_list_query(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         ids: list[str],
     ):
@@ -286,7 +288,7 @@ class BaseDataLayer:
     # async def get_related_object_query(self):
     async def get_related_object(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         id_value: str,
     ) -> TypeModel:
@@ -302,7 +304,7 @@ class BaseDataLayer:
 
     async def get_related_objects_list(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         ids: list[str],
     ) -> list[TypeModel]:
@@ -417,27 +419,25 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def delete_objects(self, objects: List[TypeModel], view_kwargs):
+    async def delete_objects(self, objects: list[TypeModel], view_kwargs):
         # TODO: doc
         raise NotImplementedError
 
-    async def before_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+    async def before_delete_objects(self, objects: list[TypeModel], view_kwargs: dict):
         """
         Make checks before deleting objects.
 
         :param objects: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
-    async def after_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+    async def after_delete_objects(self, objects: list[TypeModel], view_kwargs: dict):
         """
         Any action after deleting objects.
 
         :param objects: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_create_relationship(
         self,

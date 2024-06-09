@@ -1,8 +1,22 @@
-from typing import TYPE_CHECKING, List, Optional
+from __future__ import annotations
+
+from datetime import datetime
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+)
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, backref, declared_attr, relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    backref,
+    declared_attr,
+    mapped_column,
+    relationship,
+)
 from sqlalchemy.types import CHAR, TypeDecorator
 
 from tests.common import is_postgres_tests, sqla_uri
@@ -20,15 +34,13 @@ class Base(DeclarativeBase):
 
 
 class AutoIdMixin:
-    @declared_attr
-    def id(cls):
-        return Column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
 
 class User(AutoIdMixin, Base):
-    name: str = Column(String, nullable=False, unique=True)
-    age: int = Column(Integer, nullable=True)
-    email: Optional[str] = Column(String, nullable=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    age: Mapped[int | None]
+    email: Mapped[str | None]
 
     posts = relationship(
         "Post",
@@ -61,7 +73,7 @@ class User(AutoIdMixin, Base):
         uselist=False,
     )
     if TYPE_CHECKING:
-        computers: list["Computer"]
+        computers: list[Computer]
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, name={self.name!r})"
@@ -245,20 +257,20 @@ class CustomUUIDType(TypeDecorator):
         super().__init__(*args, **kwargs)
         self.as_uuid = as_uuid
 
-    def load_dialect_impl(self, dialect):
+    def load_dialect_impl(self, dialect):  # noqa: ARG002
         return CHAR(32)
 
-    def process_bind_param(self, value, dialect):
+    def process_bind_param(self, value, dialect):  # noqa: ARG002
         if value is None:
             return value
 
         if not isinstance(value, UUID):
             msg = f"Incorrect type got {type(value).__name__}, expected {UUID.__name__}"
-            raise Exception(msg)
+            raise TypeError(msg)
 
         return str(value)
 
-    def process_result_value(self, value, dialect):
+    def process_result_value(self, value, dialect):  # noqa: ARG002
         return value and UUID(value)
 
     @property
@@ -270,7 +282,7 @@ db_uri = sqla_uri()
 if is_postgres_tests():
     # from sqlalchemy.dialects.postgresql.asyncpg import AsyncpgUUID as UUIDType
     # noinspection PyPep8Naming
-    from sqlalchemy.dialects.postgresql import UUID as UUIDType
+    from sqlalchemy.dialects.postgresql import UUID as UUIDType  # noqa: N811
 elif "sqlite" in db_uri:
     UUIDType = CustomUUIDType
 else:
@@ -308,12 +320,15 @@ class SelfRelationship(Base):
     )
 
     if TYPE_CHECKING:
-        parent_object: Optional["SelfRelationship"]
+        parent_object: SelfRelationship
 
 
-class ContainsTimestamp(Base):
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime(True), nullable=False)
+class ContainsTimestamp(AutoIdMixin, Base):
+    type_annotation_map: ClassVar[dict[Any, Any]] = {
+        datetime: DateTime(timezone=True),
+    }
+
+    timestamp: Mapped[datetime]
 
 
 class Alpha(Base):
@@ -328,7 +343,7 @@ class Alpha(Base):
     )
     beta = relationship("Beta", back_populates="alphas")
     gamma_id = Column(Integer, ForeignKey("gamma.id"), nullable=False)
-    gamma: Mapped["Gamma"] = relationship("Gamma")
+    gamma: Mapped[Gamma] = relationship("Gamma")
 
 
 class BetaGammaBinding(Base):
@@ -343,14 +358,14 @@ class Beta(Base):
     __tablename__ = "beta"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    gammas: Mapped[List["Gamma"]] = relationship(
+    gammas: Mapped[list[Gamma]] = relationship(
         "Gamma",
         secondary="beta_gamma_binding",
         back_populates="betas",
         lazy="noload",
     )
     alphas = relationship("Alpha")
-    deltas: Mapped[List["Delta"]] = relationship(
+    deltas: Mapped[list[Delta]] = relationship(
         "Delta",
         secondary="beta_delta_binding",
         lazy="noload",
@@ -361,7 +376,7 @@ class Gamma(Base):
     __tablename__ = "gamma"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    betas: Mapped[List["Beta"]] = relationship(
+    betas: Mapped[list[Beta]] = relationship(
         "Beta",
         secondary="beta_gamma_binding",
         back_populates="gammas",
@@ -374,7 +389,7 @@ class Gamma(Base):
         index=True,
     )
     alpha = relationship("Alpha")
-    delta: Mapped["Delta"] = relationship("Delta")
+    delta: Mapped[Delta] = relationship("Delta")
 
 
 class BetaDeltaBinding(Base):
@@ -390,8 +405,8 @@ class Delta(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
-    gammas: Mapped[List["Gamma"]] = relationship("Gamma", back_populates="delta", lazy="noload")
-    betas: Mapped[List["Beta"]] = relationship(
+    gammas: Mapped[list[Gamma]] = relationship("Gamma", back_populates="delta", lazy="noload")
+    betas: Mapped[list[Beta]] = relationship(
         "Beta",
         secondary="beta_delta_binding",
         back_populates="deltas",
@@ -418,4 +433,4 @@ class CascadeCase(Base):
     )
 
     if TYPE_CHECKING:
-        parent_item: Mapped[Optional["CascadeCase"]]
+        parent_item: Mapped[CascadeCase]

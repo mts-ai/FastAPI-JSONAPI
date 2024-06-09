@@ -13,8 +13,6 @@ class Enum(MixinEnum):
     All used non-integer enumerations must inherit from this class.
     """
 
-    pass
-
 
 class IntEnum(MixinIntEnum):
     """
@@ -22,5 +20,3 @@ class IntEnum(MixinIntEnum):
 
     All used integer enumerations must inherit from this class.
     """
-
-    pass

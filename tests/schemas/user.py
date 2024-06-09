@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Annotated,
-    Optional,
 )
 
 from pydantic import ConfigDict
@@ -22,8 +21,8 @@ if TYPE_CHECKING:
 
 class UserAttributesBaseSchema(BaseModel):
     name: str
-    age: Optional[int] = None
-    email: Optional[str] = None
+    age: int | None = None
+    email: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
 

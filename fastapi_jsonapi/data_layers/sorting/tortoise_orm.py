@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 from tortoise.queryset import QuerySet
 
@@ -8,7 +7,7 @@ class SortTortoiseORM:
     def sort(
         cls,
         query: QuerySet,
-        query_params_sorting: List[Dict[str, str]],
+        query_params_sorting: list[dict[str, str]],
         default_sort: str = "",
     ) -> QuerySet:
         """

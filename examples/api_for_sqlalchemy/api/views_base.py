@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict
+from typing import ClassVar
 
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict
@@ -17,7 +17,7 @@ class SessionDependency(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-def handler(view: ViewBase, dto: SessionDependency) -> Dict:
+def handler(view: ViewBase, dto: SessionDependency) -> dict:
     return {"session": dto.session}
 
 

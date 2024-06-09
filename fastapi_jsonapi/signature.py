@@ -5,7 +5,6 @@ from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
     Optional,
-    Type,
 )
 
 from fastapi import Query
@@ -58,7 +57,7 @@ def get_param_for_includes(
     includes_names: list[str],
 ) -> Parameter:
     doc_available_includes = "\n".join([f"* `{name}`" for name in includes_names])
-    include_param = Parameter(
+    return Parameter(
         "_jsonapi_include",
         kind=Parameter.POSITIONAL_OR_KEYWORD,
         annotation=Optional[str],
@@ -68,10 +67,9 @@ def get_param_for_includes(
             description=f"Available includes:\n {doc_available_includes}",
         ),
     )
-    return include_param
 
 
-def create_additional_query_params(schema: Type[BaseModel]) -> tuple[list[Parameter], list[Parameter]]:
+def create_additional_query_params(schema: type[BaseModel]) -> tuple[list[Parameter], list[Parameter]]:
     filter_params = []
     include_params = []
     if not schema:

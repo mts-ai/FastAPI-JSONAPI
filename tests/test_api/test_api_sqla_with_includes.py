@@ -14,14 +14,14 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import BaseModel, Field
-from pytest import fixture, mark, param, raises  # noqa PT013
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.datastructures import QueryParams
 
 from fastapi_jsonapi.api import RoutersJSONAPI
 from fastapi_jsonapi.contrib.sqla.filters import sql_filter_lower_equals
+from fastapi_jsonapi.types_metadata import ClientCanSetId
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
 from tests.fixtures.app import build_alphabet_app, build_app_custom
@@ -62,7 +62,7 @@ from tests.schemas import (
     UserSchema,
 )
 
-pytestmark = mark.asyncio
+pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -162,16 +162,16 @@ class TestGetUsersList:
         assert "data" in response_data
         assert response_data["data"] == expected_data
 
-    @mark.parametrize(
-        "fields, expected_include",
+    @pytest.mark.parametrize(
+        ("fields", "expected_include"),
         [
-            param(
+            pytest.param(
                 [
                     ("fields[user]", "name,age"),
                 ],
                 {"name", "age"},
             ),
-            param(
+            pytest.param(
                 [
                     ("fields[user]", "name,age"),
                     ("fields[user]", "email"),
@@ -847,8 +847,12 @@ class TestGetUserDetail:
 
 
 class TestUserWithPostsWithInnerIncludes:
-    @mark.parametrize(
-        "include, expected_relationships_inner_relations, expect_user_include",
+    @pytest.mark.parametrize(
+        (
+            "include",
+            "expected_relationships_inner_relations",
+            "expect_user_include",
+        ),
         [
             (
                 ["posts", "posts.user"],
@@ -891,6 +895,7 @@ class TestUserWithPostsWithInnerIncludes:
         Test if requesting `posts.user` and `posts.comments`
         returns posts with both `user` and `comments`
         """
+        assert user_1_post_for_comments.id, "post required"
         assert user_1_posts
         assert user_2_comment_for_one_u1_post.author_id == user_2.id
         include_param = ",".join(include)
@@ -954,7 +959,6 @@ class TestUserWithPostsWithInnerIncludes:
         for key in set(expected_includes).difference(expected_relationships_inner_relations):
             expected_includes.pop(key)
 
-        # XXX
         if not expect_user_include:
             expected_includes.pop("user", None)
         assert included_as_map == expected_includes
@@ -966,7 +970,7 @@ class TestUserWithPostsWithInnerIncludes:
         user_1_posts: list[PostComment],
         user_2_comment_for_one_u1_post: PostComment,
     ):
-        expected_includes = {
+        return {
             "post": [
                 #
                 {
@@ -1022,8 +1026,6 @@ class TestUserWithPostsWithInnerIncludes:
                 },
             ],
         }
-
-        return expected_includes
 
 
 async def test_method_not_allowed(app: FastAPI, client: AsyncClient):
@@ -1762,7 +1764,7 @@ class TestPatchObjects:
             "meta": None,
         }
 
-    @mark.parametrize("check_type", ["ok", "fail"])
+    @pytest.mark.parametrize("check_type", ["ok", "fail"])
     async def test_update_to_many_relationships(self, async_session: AsyncSession, check_type: Literal["ok", "fail"]):
         resource_type = "cascade_case"
         with suppress(KeyError):
@@ -2303,7 +2305,7 @@ class TestPatchRelationshipsToMany:
 
         assert child_obj_1.self_relationship_id == parent_obj.id
         assert child_obj_2.self_relationship_id == parent_obj.id
-        assert len(parent_obj.children_objects) == 2  # noqa PLR2004
+        assert len(parent_obj.children_objects) == 2  # noqa: PLR2004
 
         async with AsyncClient(app=app, base_url="http://test") as client:
             expected_name = fake.name()
@@ -2513,11 +2515,7 @@ class TestOpenApi:
 
     async def test_openapi_for_client_can_set_id(self):
         class Schema(BaseModel):
-            # TODO
-            id: UUID = Field(
-                #
-                # json_schema_extra={"client_can_set_id": True}
-            )
+            id: Annotated[UUID, ClientCanSetId()]
 
         app = build_app_custom(
             model=User,
@@ -2551,7 +2549,7 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
-    @mark.parametrize("field_name", [param(name, id=name) for name in ["id", "name", "age", "email"]])
+    @pytest.mark.parametrize("field_name", [pytest.param(name, id=name) for name in ["id", "name", "age", "email"]])
     async def test_field_filters(
         self,
         app: FastAPI,
@@ -2632,11 +2630,11 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("filter_dict", "expected_email_is_null"),
         [
-            param([{"name": "email", "op": "is_", "val": None}], True),
-            param([{"name": "email", "op": "isnot", "val": None}], False),
+            pytest.param([{"name": "email", "op": "is_", "val": None}], True),
+            pytest.param([{"name": "email", "op": "isnot", "val": None}], False),
         ],
     )
     async def test_filter_by_null(
@@ -2762,7 +2760,6 @@ class TestFilters:
 
     async def test_custom_sql_filter_lower_string_old_style_with_joins(
         self,
-        caplog,
         async_session: AsyncSession,
         user_1: User,
         user_2: User,
@@ -2807,7 +2804,7 @@ class TestFilters:
             "attributes": UserWithEmailFieldFilterSchema.model_validate(user_1).model_dump(),
         }
 
-    async def test_custom_sql_filter_doesnt_exist(self, caplog):
+    async def test_custom_sql_filter_doesnt_exist(self):
         resource_type = "user_with_custom_invalid_sql_filter"
 
         class UserWithInvalidEmailFieldFilterSchema(UserAttributesBaseSchema):
@@ -2855,6 +2852,7 @@ class TestFilters:
         user_2: User,
         user_3: User,
     ):
+        assert user_2.id, "user 2 should exist"
         params = {
             "filter": dumps(
                 [
@@ -2898,6 +2896,7 @@ class TestFilters:
         user_2: User,
         user_3: User,
     ):
+        assert user_2.id, "user 2 should exist"
         params = {
             "filter": dumps(
                 [
@@ -3360,11 +3359,11 @@ class TestSorts:
     def get_reverse(self, order: str) -> bool:
         return order is DESCENDING
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "order",
         [
-            param(ASCENDING, id="ascending"),
-            param(DESCENDING, id="descending"),
+            pytest.param(ASCENDING, id="ascending"),
+            pytest.param(DESCENDING, id="descending"),
         ],
     )
     async def test_sort(
@@ -3452,4 +3451,4 @@ class TestFilteringErrors:
         }
 
 
-# todo: test errors
+# TODO: test errors

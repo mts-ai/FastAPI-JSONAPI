@@ -7,34 +7,65 @@ from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
-    List,
-    Type,
     TypedDict,
-    Union,
+    NoReturn,
 )
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import ValidationError
-from starlette.requests import Request
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.atomic.prepared_atomic_operation import LocalIdsType, OperationBase
-from fastapi_jsonapi.atomic.schemas import AtomicOperation, AtomicOperationRequest, AtomicResultResponse
-from fastapi_jsonapi.data_typing import TypeSchema
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
+    from starlette.requests import Request
+
+    from fastapi_jsonapi.atomic.schemas import (
+        AtomicOperation,
+        AtomicOperationRequest,
+        AtomicResultResponse,
+    )
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
+    from fastapi_jsonapi.data_typing import TypeSchema
 
 log = logging.getLogger(__name__)
-AtomicResponseDict = TypedDict("AtomicResponseDict", {"atomic:results": List[Any]})
+AtomicResponseDict = TypedDict("AtomicResponseDict", {"atomic:results": list[Any]})
 
 current_atomic_operation: ContextVar[OperationBase] = ContextVar("current_atomic_operation")
 
 
 OPERATION_VALIDATION_ERROR_TEXT = "Validation error on operation {operation!r}"
+
+
+def handle_operation_exc(
+    operation: OperationBase,
+    ex: ValidationError | ValueError,
+) -> NoReturn:
+    log.exception(
+        "Validation error on atomic action ref=%s, data=%s",
+        operation.ref,
+        operation.data,
+    )
+    errors_details = {
+        "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=operation.op_type),
+        "ref": operation.ref,
+        "data": operation.data.model_dump(exclude_unset=True),
+    }
+    if isinstance(ex, ValidationError):
+        errors_details.update(errors=ex.errors())
+    elif isinstance(ex, ValueError):
+        errors_details.update(error=str(ex))
+    else:
+        raise ex
+    # TODO: json:api exception
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=errors_details,
+    )
 
 
 def catch_exc_on_operation_handle(func: Callable[..., Awaitable]):
@@ -43,33 +74,13 @@ def catch_exc_on_operation_handle(func: Callable[..., Awaitable]):
         try:
             return await func(*a, operation=operation, **kw)
         except (ValidationError, ValueError) as ex:
-            log.exception(
-                "Validation error on atomic action ref=%s, data=%s",
-                operation.ref,
-                operation.data,
-            )
-            errors_details = {
-                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=operation.op_type),
-                "ref": operation.ref,
-                "data": operation.data.model_dump(exclude_unset=True),
-            }
-            if isinstance(ex, ValidationError):
-                errors_details.update(errors=ex.errors())
-            elif isinstance(ex, ValueError):
-                errors_details.update(error=str(ex))
-            else:
-                raise
-            # TODO: json:api exception
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=errors_details,
-            )
+            handle_operation_exc(operation, ex)
 
     return wrapper
 
 
 class AtomicViewHandler:
-    jsonapi_routers_cls: Type[RoutersJSONAPI] = RoutersJSONAPI
+    jsonapi_routers_cls: type[RoutersJSONAPI] = RoutersJSONAPI
 
     def __init__(
         self,
@@ -94,17 +105,16 @@ class AtomicViewHandler:
             raise ValueError(msg)
         jsonapi = self.jsonapi_routers_cls.all_jsonapi_routers[operation_type]
 
-        one_operation = OperationBase.prepare(
+        return OperationBase.prepare(
             action=operation.op,
             request=self.request,
             jsonapi=jsonapi,
             ref=operation.ref,
             data=operation.data,
         )
-        return one_operation
 
-    async def prepare_operations(self) -> List[OperationBase]:
-        prepared_operations: List[OperationBase] = []
+    async def prepare_operations(self) -> list[OperationBase]:
+        prepared_operations: list[OperationBase] = []
 
         for operation in self.operations_request.operations:
             one_operation = await self.prepare_one_operation(operation)
@@ -136,11 +146,11 @@ class AtomicViewHandler:
         except HTTPException as ex:
             # gracefully end!!
             await dl.atomic_end(success=False, exception=ex)
-            raise ex
+            raise
 
         return response, dl
 
-    async def handle(self) -> Union[AtomicResponseDict, AtomicResultResponse, None]:
+    async def handle(self) -> AtomicResponseDict | AtomicResultResponse | None:
         prepared_operations = await self.prepare_operations()
         results = []
         only_empty_responses = True
@@ -182,3 +192,4 @@ class AtomicViewHandler:
         if all results are empty,
         the server MAY respond with 204 No Content and no document.
         """
+        return None

@@ -1,9 +1,8 @@
-from typing import Type
 
 from fastapi_jsonapi.data_typing import TypeModel
 
 
-def get_related_model_cls(cls: Type[TypeModel], relation_name: str) -> Type[TypeModel]:
+def get_related_model_cls(cls: type[TypeModel], relation_name: str) -> type[TypeModel]:
     """
     Get related model from SQLAlchemy model
 

@@ -1,10 +1,9 @@
-from pytest import fixture  # noqa PT013
 from pytest_asyncio import fixture as async_fixture
 from sqlalchemy import AsyncAdaptedQueuePool
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
     async_sessionmaker,
+    create_async_engine,
 )
 
 from tests.common import (
@@ -16,8 +15,7 @@ from tests.models import Base
 def create_engine():
     return create_async_engine(
         url=make_url(sqla_uri()),
-        # echo=False,
-        echo=True,
+        echo=False,
         pool_size=10,
         poolclass=AsyncAdaptedQueuePool,
     )
@@ -47,8 +45,7 @@ async def async_session_dependency():
 
 @async_fixture(scope="class")
 async def async_engine():
-    engine = create_engine()
-    return engine
+    return create_engine()
 
 
 @async_fixture(scope="function")
