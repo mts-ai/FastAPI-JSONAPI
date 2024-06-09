@@ -1,8 +1,12 @@
-"""
-Base JSON:API schemas.
+from __future__ import annotations
 
-Pydantic (for FastAPI).
-"""
+from inspect import isclass
+
+from types import (
+    UnionType,
+    GenericAlias,
+)
+
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -11,17 +15,26 @@ from typing import (
     Sequence,
     Type,
     Union,
+    get_args,
 )
 
 from fastapi import FastAPI
+
+from fastapi_jsonapi.common import search_relationship_info
+from fastapi_jsonapi.schema_base import BaseModel
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    BaseModel as PydanticBaseModel,
 )
+from pydantic._internal._typing_extra import is_none_type
 
 if TYPE_CHECKING:
     from fastapi_jsonapi.data_typing import TypeSchema
+
+    # noinspection PyProtectedMember
+    from pydantic.fields import FieldInfo
 
 
 class BaseJSONAPIRelationshipSchema(BaseModel):
@@ -54,8 +67,8 @@ class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
     TODO PATCH: accept object id (maybe create a new separate schema)
     """
 
-    attributes: "TypeSchema" = Field(description="Resource object attributes")
-    relationships: Optional["TypeSchema"] = Field(None, description="Resource object relationships")
+    attributes: TypeSchema = Field(description="Resource object attributes")
+    relationships: Optional[TypeSchema] = Field(None, description="Resource object relationships")
     id: Optional[str] = Field(None, description="Resource object ID")
 
 
@@ -125,7 +138,7 @@ class JSONAPISchemaIntrospectionError(Exception):
     pass
 
 
-def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
+def get_model_field(schema: Type[TypeSchema], field: str) -> str:
     """
     Get the model field of a schema field.
 
@@ -152,25 +165,20 @@ def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
     return field
 
 
-def get_relationships(schema: Type["TypeSchema"], model_field: bool = False) -> List[str]:
+def get_relationship_fields_names(
+    schema: Type[TypeSchema],
+) -> set[str]:
     """
     Return relationship fields of a schema.
 
     :param schema: a schemas schema
-    :param model_field: list of relationship fields of a schema
     """
-    relationships: List[str] = []
+    names: set[str] = set()
     for i_name, i_type in schema.model_fields.items():
-        try:
-            if issubclass(i_type.annotation, BaseModel):
-                relationships.append(i_name)
-        except TypeError:
-            pass
+        if search_relationship_info.first(i_type):
+            names.add(i_name)
 
-    if model_field is True:
-        relationships = [get_model_field(schema, key) for key in relationships]
-
-    return relationships
+    return names
 
 
 def get_schema_from_type(resource_type: str, app: FastAPI) -> Type[BaseModel]:
@@ -190,7 +198,32 @@ def get_schema_from_type(resource_type: str, app: FastAPI) -> Type[BaseModel]:
         raise Exception(msg)
 
 
-def get_related_schema(schema: Type["TypeSchema"], field: str) -> Type["TypeSchema"]:
+def get_schema_from_field_annotation(field: FieldInfo) -> Type[BaseModel] | None:
+    """
+    TODO: consider using pydantic's GenerateSchema ?
+    """
+    choices = []
+    if isinstance(field.annotation, UnionType):
+        args = get_args(field.annotation)
+        choices.extend(args)
+    else:
+        choices.append(field.annotation)
+    while choices:
+        elem = choices.pop(0)
+        if isinstance(elem, GenericAlias):
+            choices.extend(get_args(elem))
+            continue
+
+        if is_none_type(elem):
+            continue
+
+        if isclass(elem) and issubclass(elem, PydanticBaseModel):
+            return elem
+
+    return None
+
+
+def get_related_schema(schema: Type[TypeSchema], field: str) -> Type[TypeSchema]:
     """
     Retrieve the related schema of a relationship field.
 
@@ -198,4 +231,4 @@ def get_related_schema(schema: Type["TypeSchema"], field: str) -> Type["TypeSche
     :params field: the relationship field
     :return: the related schema
     """
-    return schema.model_fields[field].annotation
+    return get_schema_from_field_annotation(schema.model_fields[field])
