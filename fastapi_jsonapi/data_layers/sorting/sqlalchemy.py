@@ -1,6 +1,7 @@
 """Helper to create sqlalchemy sortings according to filter querystring parameter"""
 from typing import Any, List, Tuple, Type, Union
 
+from fastapi_jsonapi.utils.helpers import get_schema_from_field_annotation
 from pydantic.fields import FieldInfo
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, aliased
 from sqlalchemy.sql.elements import BinaryExpression
@@ -8,7 +9,7 @@ from sqlalchemy.sql.elements import BinaryExpression
 from fastapi_jsonapi.data_layers.shared import create_filters_or_sorts
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.exceptions import InvalidFilters, InvalidSort
-from fastapi_jsonapi.schema import get_model_field, get_relationships
+from fastapi_jsonapi.schema import get_model_field, get_relationship_fields_names
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
@@ -141,6 +142,11 @@ class Node(object):
             msg = "{} has no attribute {}".format(self.model.__name__, model_field)
             raise InvalidFilters(msg)
 
+    def validate_field_relationship(self, relationship_field: str) -> None:
+        if relationship_field not in get_relationship_fields_names(self.schema):
+            msg = f"{self.schema.__name__!r} has no relationship attribute {relationship_field!r}"
+            raise InvalidFilters(msg)
+
     @property
     def related_model(self) -> DeclarativeMeta:
         """
@@ -149,11 +155,7 @@ class Node(object):
         :return: the related model.
         """
         relationship_field = self.name
-
-        if relationship_field not in get_relationships(self.schema):
-            msg = "{} has no relationship attribute {}".format(self.schema.__name__, relationship_field)
-            raise InvalidFilters(msg)
-
+        self.validate_field_relationship(relationship_field)
         return get_related_model_cls(self.model, get_model_field(self.schema, relationship_field))
 
     @property
@@ -164,9 +166,5 @@ class Node(object):
         :return: the related schema
         """
         relationship_field = self.name
-
-        if relationship_field not in get_relationships(self.schema):
-            msg = "{} has no relationship attribute {}".format(self.schema.__name__, relationship_field)
-            raise InvalidFilters(msg)
-
-        return self.schema.model_fields[relationship_field].annotation
+        self.validate_field_relationship(relationship_field)
+        return get_schema_from_field_annotation(self.schema.model_fields[relationship_field])
