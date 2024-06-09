@@ -11,7 +11,6 @@ from typing import (
     Literal,
     Optional,
     TypeVar,
-    Union,
 )
 
 from fastapi import APIRouter, Body, Path, Query, Request, status
@@ -62,19 +61,19 @@ class RoutersJSONAPI:
     def __init__(
         self,
         router: APIRouter,
-        path: Union[str, list[str]],
+        path: str | list[str],
         tags: Iterable[str],
         class_list: type["ListViewBase"],
         class_detail: type["DetailViewBase"],
         model: type[TypeModel],
         schema: type[BaseModel],
         resource_type: str,
-        schema_in_post: Optional[type[BaseModel]] = None,
-        schema_in_patch: Optional[type[BaseModel]] = None,
-        pagination_default_size: Optional[int] = 25,
-        pagination_default_number: Optional[int] = 1,
-        pagination_default_offset: Optional[int] = None,
-        pagination_default_limit: Optional[int] = None,
+        schema_in_post: type[BaseModel] | None = None,
+        schema_in_patch: type[BaseModel] | None = None,
+        pagination_default_size: int | None = 25,
+        pagination_default_number: int | None = 1,
+        pagination_default_offset: int | None = None,
+        pagination_default_limit: int | None = None,
         methods: Iterable[str] = (),
     ) -> None:
         """
@@ -121,10 +120,10 @@ class RoutersJSONAPI:
             raise ValueError(msg)
         self.all_jsonapi_routers[self.type_] = self
 
-        self.pagination_default_size: Optional[int] = pagination_default_size
-        self.pagination_default_number: Optional[int] = pagination_default_number
-        self.pagination_default_offset: Optional[int] = pagination_default_offset
-        self.pagination_default_limit: Optional[int] = pagination_default_limit
+        self.pagination_default_size: int | None = pagination_default_size
+        self.pagination_default_number: int | None = pagination_default_number
+        self.pagination_default_offset: int | None = pagination_default_offset
+        self.pagination_default_limit: int | None = pagination_default_limit
         self.schema_builder = SchemaBuilder(resource_type=resource_type)
 
         dto = self.schema_builder.create_schemas(
@@ -280,25 +279,21 @@ class RoutersJSONAPI:
         offset = Query(self.pagination_default_offset, alias="page[offset]", title="pagination_page_offset")
         limit = Query(self.pagination_default_limit, alias="page[limit]", title="pagination_page_limit")
 
-        params = []
-
-        for q_param in (
-            size,
-            number,
-            offset,
-            limit,
-        ):
-            params.append(
-                Parameter(
-                    # name doesn't really matter here
-                    name=q_param.title,
-                    kind=Parameter.POSITIONAL_OR_KEYWORD,
-                    annotation=Optional[int],
-                    default=q_param,
-                ),
+        return [
+            Parameter(
+                # name doesn't really matter here
+                name=q_param.title,
+                kind=Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=int | None,
+                default=q_param,
             )
-
-        return params
+            for q_param in (
+                size,
+                number,
+                offset,
+                limit,
+            )
+        ]
 
     @classmethod
     def _create_filters_query_dependency_param(cls):
@@ -387,8 +382,11 @@ class RoutersJSONAPI:
 
         return sig.replace(parameters=params + include_params + list(additional_dependency_params) + tail_params)
 
-    @staticmethod
-    def _create_dependency_params_from_pydantic_model(model_class: type[BaseModel]) -> list[Parameter]:
+    @classmethod
+    def _create_dependency_params_from_pydantic_model(
+        cls,
+        model_class: type[BaseModel],
+    ) -> list[Parameter]:
         return [
             Parameter(
                 name=field_name,
@@ -399,8 +397,12 @@ class RoutersJSONAPI:
             for field_name, field_info in model_class.model_fields.items()
         ]
 
-    @staticmethod
-    def _update_method_config(view: type["ViewBase"], method: HTTPMethod) -> HTTPMethodConfig:
+    @classmethod
+    def _update_method_config(
+        cls,
+        view: type["ViewBase"],
+        method: HTTPMethod,
+    ) -> HTTPMethodConfig:
         target_config = view.method_dependencies.get(method) or HTTPMethodConfig()
         common_config = view.method_dependencies.get(HTTPMethod.ALL) or HTTPMethodConfig()
 
@@ -425,17 +427,18 @@ class RoutersJSONAPI:
 
         return new_method_config
 
+    @classmethod
     def _update_method_config_and_get_dependency_params(
-        self,
+        cls,
         view: type["ViewBase"],
         method: HTTPMethod,
     ) -> list[Parameter]:
-        method_config = self._update_method_config(view, method)
+        method_config = cls._update_method_config(view, method)
 
         if method_config.dependencies is None:
             return []
 
-        return self._create_dependency_params_from_pydantic_model(method_config.dependencies)
+        return cls._create_dependency_params_from_pydantic_model(method_config.dependencies)
 
     def prepare_dependencies_handler_signature(
         self,
@@ -679,7 +682,7 @@ class RoutersJSONAPI:
         :param path:
         :return:
         """
-        methods_map: dict[Union[str, ViewMethods], Callable[[str], None]] = {
+        methods_map: dict[str | ViewMethods, Callable[[str], None]] = {
             ViewMethods.GET_LIST: self._register_get_resource_list,
             ViewMethods.POST: self._register_post_resource_list,
             ViewMethods.DELETE_LIST: self._register_delete_resource_list,
