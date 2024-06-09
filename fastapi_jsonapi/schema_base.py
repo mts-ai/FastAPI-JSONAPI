@@ -1,13 +1,8 @@
-from pydantic import ConfigDict
-
 __all__ = (
     "Field",
     "BaseModel",
     "registry",
-    "RelationshipInfo",
 )
-
-from typing import Dict
 
 from pydantic import BaseModel as BaseModelGeneric
 from pydantic import Field
@@ -39,14 +34,3 @@ class RegistryMeta(BaseModelGeneric):
 
 class BaseModel(RegistryMeta):
     pass
-
-
-class RelationshipInfo(BaseModel):
-    resource_type: str
-    many: bool = False
-    related_view: str = None
-    related_view_kwargs: Dict[str, str] = Field(default_factory=dict)
-    resource_id_example: str = "1"
-    id_field_name: str = "id"
-
-    model_config = ConfigDict(frozen=True)
