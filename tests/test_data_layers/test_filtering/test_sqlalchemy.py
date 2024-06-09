@@ -1,9 +1,9 @@
+import pytest
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
 from fastapi import status
 from pydantic import BaseModel, ConfigDict
-from pytest import raises  # noqa PT013
 
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import (
     build_filter_expression,
@@ -23,8 +23,11 @@ class TestFilteringFuncs:
 
         model_column_mock = MagicMock()
 
+        # field name for model ModelSchema
+        field_name = "value"
         build_filter_expression(
-            schema_field=ModelSchema.model_fields["value"],
+            field_name=field_name,
+            schema_field=ModelSchema.model_fields[field_name],
             model_column=model_column_mock,
             operator="__eq__",
             value=Any,
@@ -45,9 +48,12 @@ class TestFilteringFuncs:
             user_type: UserType
             model_config = ConfigDict(arbitrary_types_allowed=True)
 
-        with raises(InvalidType) as exc_info:
+        # field name for model ModelSchema
+        field_name = "user_type"
+        with pytest.raises(InvalidType) as exc_info:
             build_filter_expression(
-                schema_field=ModelSchema.model_fields["user_type"],
+                field_name=field_name,
+                schema_field=ModelSchema.model_fields[field_name],
                 model_column=Mock(),
                 operator=Mock(),
                 value=Any,
