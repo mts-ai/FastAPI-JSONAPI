@@ -5,6 +5,8 @@ from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel, Field, model_validator
 
+from fastapi_jsonapi.utils import logical_xor
+
 
 class OperationRelationshipSchema(BaseModel):
     id: str = Field(default=..., description="Related object ID")
@@ -62,11 +64,7 @@ class AtomicOperationRef(BaseModel):
         :param values:
         :return:
         """
-        if (
-            # XOR
-            bool(values.get("lid"))
-            != bool(values.get("id"))
-        ):
+        if logical_xor(values.get("lid"), values.get("id")):
             # if one of id/lid is present, ref is ok
             return values
 
