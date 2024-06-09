@@ -14,9 +14,10 @@ from starlette import status
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Computer, User, UserBio
-from tests.schemas.computer import ComputerAttributesBaseSchema
-from tests.schemas.user_bio import UserBioAttributesBaseSchema
-from tests.schemas.user import UserAttributesBaseSchema
+from tests.schemas import ComputerAttributesBaseSchema
+from tests.schemas import UserBioAttributesBaseSchema
+from tests.schemas import UserAttributesBaseSchema
+from tests.test_atomic.conftest import options_as_pydantic_choices_string
 
 pytestmark = mark.asyncio
 
@@ -29,6 +30,7 @@ class TestAtomicMixedActions:
         client: AsyncClient,
         allowed_atomic_actions_list: list[str],
         allowed_atomic_actions_as_string: str,
+        atomic_operation_actions_as_str: str,
     ):
         operation_name = fake.word()
         atomic_request_data = {
@@ -50,17 +52,16 @@ class TestAtomicMixedActions:
         response_data = response.json()
 
         assert response_data == {
-            # TODO: jsonapi exception?
+            # TODO: raise jsonapi exception?
             "detail": [
                 {
+                    "ctx": {"expected": atomic_operation_actions_as_str},
+                    "input": operation_name,
                     "loc": ["body", "atomic:operations", 0, "op"],
-                    "msg": f"value is not a valid enumeration member; permitted: {allowed_atomic_actions_as_string}",
-                    "type": "type_error.enum",
-                    "ctx": {
-                        "enum_values": allowed_atomic_actions_list,
-                    },
-                },
-            ],
+                    "msg": f"Input should be {atomic_operation_actions_as_str}",
+                    "type": "enum",
+                }
+            ]
         }
 
     async def test_create_and_update_atomic_success(
