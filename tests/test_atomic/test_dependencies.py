@@ -172,7 +172,7 @@ class TestDependenciesResolver:
             "atomic:operations": [
                 {
                     "op": "update",
-                    "id": user_1.id,
+                    "id": ViewBase.get_db_item_id(user_1),
                     "data": {
                         "type": resource_type,
                         "attributes": user.model_dump(),
@@ -206,7 +206,7 @@ class TestDependenciesResolver:
                 {
                     "op": "remove",
                     "ref": {
-                        "id": user_1.id,
+                        "id": ViewBase.get_db_item_id(user_1),
                         "type": resource_type,
                     },
                 },

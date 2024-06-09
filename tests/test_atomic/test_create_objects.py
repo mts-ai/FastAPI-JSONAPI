@@ -88,7 +88,7 @@ class TestAtomicCreateObjects:
         assert result == {
             "data": {
                 "attributes": UserAttributesBaseSchema.model_validate(user_obj).model_dump(),
-                "id": str(user_obj.id),
+                "id": ViewBase.get_db_item_id(user_obj),
                 "type": "user",
             },
         }
@@ -223,7 +223,7 @@ class TestAtomicCreateObjects:
                         "relationships": {
                             "user": {
                                 "data": {
-                                    "id": user_1.id,
+                                    "id": ViewBase.get_db_item_id(user_1),
                                     "type": "user",
                                 },
                             },

@@ -303,7 +303,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         attributes_data = user_attributes.model_dump()
         assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_update = {
-            "id": user_1.id,
+            "id": ViewBase.get_db_item_id(user_1),
             "type": resource_type,
             "attributes": attributes_data,
         }
@@ -351,7 +351,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         attributes_data = user_attributes.model_dump()
         attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
         data_user_update = {
-            "id": user_1.id,
+            "id": ViewBase.get_db_item_id(user_1),
             "type": resource_type,
             "attributes": attributes_data,
         }

@@ -11,9 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
 from starlette import status
 
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Computer, User, UserBio
-from tests.schemas import ComputerAttributesBaseSchema, UserAttributesBaseSchema, UserBioAttributesBaseSchema
+from tests.schemas.computer import ComputerAttributesBaseSchema
+from tests.schemas.user_bio import UserBioAttributesBaseSchema
+from tests.schemas.user import UserAttributesBaseSchema
 
 pytestmark = mark.asyncio
 
@@ -99,7 +102,7 @@ class TestAtomicMixedActions:
                         "relationships": {
                             "user": {
                                 "data": {
-                                    "id": user_1.id,
+                                    "id": ViewBase.get_db_item_id(user_1),
                                     "type": "user",
                                 },
                             },
@@ -109,7 +112,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "update",
                     "data": {
-                        "id": str(user_1_bio.id),
+                        "id": ViewBase.get_db_item_id(user_1_bio),
                         "type": "user_bio",
                         "attributes": user_bio_data.model_dump(),
                     },
@@ -117,7 +120,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "update",
                     "data": {
-                        "id": str(user_1.id),
+                        "id": ViewBase.get_db_item_id(user_1),
                         "type": "user",
                         "attributes": user_data.model_dump(),
                     },
@@ -138,7 +141,7 @@ class TestAtomicMixedActions:
         assert results == [
             {
                 "data": {
-                    "id": str(computer.id),
+                    "id": ViewBase.get_db_item_id(computer),
                     "type": "computer",
                     "attributes": new_computer.model_dump(),
                 },
@@ -146,7 +149,7 @@ class TestAtomicMixedActions:
             },
             {
                 "data": {
-                    "id": str(user_1_bio.id),
+                    "id": ViewBase.get_db_item_id(user_1_bio),
                     "type": "user_bio",
                     "attributes": user_bio_data.model_dump(),
                 },
@@ -154,7 +157,7 @@ class TestAtomicMixedActions:
             },
             {
                 "data": {
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                     "attributes": user_data.model_dump(),
                 },
@@ -205,7 +208,7 @@ class TestAtomicMixedActions:
                         "relationships": {
                             "user": {
                                 "data": {
-                                    "id": user_1.id,
+                                    "id": ViewBase.get_db_item_id(user_1),
                                     "type": "user",
                                 },
                             },
@@ -215,7 +218,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "update",
                     "data": {
-                        "id": str(user_1_bio.id),
+                        "id": ViewBase.get_db_item_id(user_1_bio),
                         "type": "user_bio",
                         "attributes": user_bio_data.model_dump(),
                     },
@@ -223,7 +226,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "update",
                     "data": {
-                        "id": str(user_1.id),
+                        "id": ViewBase.get_db_item_id(user_1),
                         "type": "user",
                         "attributes": user_data.model_dump(),
                     },
@@ -253,7 +256,7 @@ class TestAtomicMixedActions:
                 "status_code": status.HTTP_400_BAD_REQUEST,
                 "title": "Bad Request",
                 "meta": {
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
             },
@@ -304,7 +307,7 @@ class TestAtomicMixedActions:
                         "relationships": {
                             "user": {
                                 "data": {
-                                    "id": user_1.id,
+                                    "id": ViewBase.get_db_item_id(user_1),
                                     "type": "user",
                                 },
                             },
@@ -314,7 +317,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "update",
                     "data": {
-                        "id": user_1_bio.id,
+                        "id": ViewBase.get_db_item_id(user_1_bio),
                         "type": "user_bio",
                         "attributes": user_bio_data.model_dump(),
                     },
@@ -322,7 +325,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "update",
                     "data": {
-                        "id": user_1.id,
+                        "id": ViewBase.get_db_item_id(user_1),
                         "type": "user",
                         "attributes": user_data.model_dump(),
                     },
@@ -330,7 +333,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "remove",
                     "ref": {
-                        "id": computer.id,
+                        "id": ViewBase.get_db_item_id(computer),
                         "type": "computer",
                     },
                 },
@@ -353,7 +356,7 @@ class TestAtomicMixedActions:
         assert results == [
             {
                 "data": {
-                    "id": str(computer.id),
+                    "id": ViewBase.get_db_item_id(computer),
                     "type": "computer",
                     "attributes": new_computer.model_dump(),
                 },
@@ -361,7 +364,7 @@ class TestAtomicMixedActions:
             },
             {
                 "data": {
-                    "id": str(user_1_bio.id),
+                    "id": ViewBase.get_db_item_id(user_1_bio),
                     "type": "user_bio",
                     "attributes": user_bio_data.model_dump(),
                 },
@@ -369,7 +372,7 @@ class TestAtomicMixedActions:
             },
             {
                 "data": {
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                     "attributes": user_data.model_dump(),
                 },
@@ -430,7 +433,7 @@ class TestAtomicMixedActions:
                 {
                     "op": "update",
                     "data": {
-                        "id": str(computer_1.id),
+                        "id": ViewBase.get_db_item_id(computer_1),
                         "type": "computer",
                         "attributes": computer_update.model_dump(),
                         "relationships": {
@@ -471,7 +474,7 @@ class TestAtomicMixedActions:
         assert results == [
             {
                 "data": {
-                    "id": str(user.id),
+                    "id": ViewBase.get_db_item_id(user),
                     "type": "user",
                     "attributes": user_create.model_dump(),
                 },
@@ -479,7 +482,7 @@ class TestAtomicMixedActions:
             },
             {
                 "data": {
-                    "id": str(computer_1.id),
+                    "id": ViewBase.get_db_item_id(computer_1),
                     "type": "computer",
                     "attributes": computer_update.model_dump(),
                 },
@@ -519,7 +522,7 @@ class TestAtomicMixedActions:
                             "computers": {
                                 "data": [
                                     {
-                                        "id": computer_1.id,
+                                        "id": ViewBase.get_db_item_id(computer_1),
                                         "type": "computer",
                                     },
                                 ],
@@ -554,7 +557,7 @@ class TestAtomicMixedActions:
         assert results == [
             {
                 "data": {
-                    "id": str(new_user.id),
+                    "id": ViewBase.get_db_item_id(new_user),
                     "type": "user",
                     "attributes": user_create.model_dump(),
                 },
