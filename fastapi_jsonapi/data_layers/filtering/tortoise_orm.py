@@ -1,9 +1,9 @@
 """Tortoise filters creator."""
 
-from __future__ import annotations
-
 from typing import (
     Any,
+    Optional,
+    Union,
 )
 
 from pydantic import BaseModel
@@ -30,17 +30,18 @@ class FilterTortoiseORM:
     def __init__(self, model: TypeModel):
         self.model = model
 
-    def create_query(self, filter_q: tuple | Q) -> Q:
+    def create_query(self, filter_q: Union[tuple, Q]) -> Q:
         """Tortoise filter creation."""
         if isinstance(filter_q, tuple):
             return Q(**{filter_q[0]: filter_q[1]})
-        return Q(filter_q)
+        else:
+            return Q(filter_q)
 
     def orm_and_or(
         self,
         op: DBORMOperandType,
         filters: list,
-    ) -> None | QuerySet | dict[str, QuerySet | list[QuerySet]]:
+    ) -> Union[None, QuerySet, dict[str, Union[QuerySet, list[QuerySet]]]]:
         """Filter for query to ORM."""
         if not filters:
             return None
@@ -85,11 +86,11 @@ class FilterTortoiseORM:
                 result = self.filter_converter(schema, i_filter["or"])
                 converted_filters.append(self.orm_and_or(DBORMOperandType.or_, result))
                 continue
-            if "and" in i_filter:
+            elif "and" in i_filter:
                 result = self.filter_converter(schema, i_filter["and"])
                 converted_filters.append(self.orm_and_or(DBORMOperandType.and_, result))
                 continue
-            if "not" in i_filter:
+            elif "not" in i_filter:
                 result = self.filter_converter(schema, [i_filter["not"]])
                 converted_filters.append(self.orm_and_or(DBORMOperandType.not_, result))
                 continue
@@ -108,7 +109,7 @@ class FilterTortoiseORM:
                 )
                 converted_filters.append(result)
             else:
-                val: list[Any] | Any
+                val: Union[list[Any], Any]
                 field: ModelField = schema.model_fields[name_field]
                 if isinstance(i_filter["val"], list) and field.annotation is not list:
                     val = self._validate(i_filter, field)
@@ -152,10 +153,7 @@ class FilterTortoiseORM:
             val.append(i_val)
         return val
 
-    def validate(
-        self,
-        filter_q: None | Q | dict[str, Q | list[Q]],
-    ) -> Q | None:
+    def validate(self, filter_q: Union[None, Q, dict[str, Union[Q, list[Q]]]]) -> Optional[Q]:
         """
         Tortoise filter validation.
 
@@ -165,7 +163,8 @@ class FilterTortoiseORM:
         """
         if isinstance(filter_q, Q):
             return Q(filter_q)
-        if filter_q is None:
+        elif filter_q is None:
             return None
-        msg = f"An unexpected argument for Q (result_filter={type(filter_q)})"
-        raise QueryError(msg)
+        else:
+            msg = f"An unexpected argument for Q (result_filter={type(filter_q)})"
+            raise QueryError(msg)

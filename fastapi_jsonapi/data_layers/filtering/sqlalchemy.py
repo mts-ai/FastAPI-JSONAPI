@@ -91,8 +91,7 @@ def cast_value_with_pydantic(
             # Создаем экземпляр схемы для валидации значения
             model_instance = type_to_cast(**{schema_field.title: value}, __config__=BaseConfig)
             result_value = model_instance.model_dump()[schema_field.title]
-        # TODO: handle specific exception
-        except Exception as ex:  # noqa: BLE001, PERF203
+        except Exception as ex:
             errors.append(str(ex))
         else:
             return result_value, errors
@@ -512,17 +511,18 @@ def build_filter_expressions(
             ),
         )
 
-    return op(
-        *(
+    expressions = []
+    for filter_sub_item in filter_item[logic_operator]:
+        expressions.append(
             build_filter_expressions(
                 filter_item=filter_sub_item,
                 target_schema=target_schema,
                 target_model=target_model,
                 relationships_info=relationships_info,
-            )
-            for filter_sub_item in filter_item[logic_operator]
-        ),
-    )
+            ),
+        )
+
+    return op(*expressions)
 
 
 def create_filters_and_joins(

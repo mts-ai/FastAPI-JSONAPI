@@ -15,7 +15,7 @@ from fastapi_jsonapi.types_metadata import ClientCanSetId
 
 
 class CustomUUIDItemAttributesSchema(BaseModel):
-    extra_id: UUID | None = None
+    extra_id: Optional[UUID] = None
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -123,7 +123,7 @@ class OperationBase:
                 self.upd_one_relationship_with_local_id(relationship_data, local_ids=local_ids)
             else:
                 msg = "unexpected relationship data"
-                raise ValueError(msg)  # noqa: TRY004
+                raise ValueError(msg)
 
 
 class ListOperationBase(OperationBase):

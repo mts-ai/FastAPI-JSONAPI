@@ -1,13 +1,12 @@
 """Base factory module."""
 
-from __future__ import annotations
-
 from typing import (
     Any,
     Callable,
     Dict,
     Generic,
     List,
+    Optional,
     Tuple,
     Type,
     TypeVar,
@@ -54,7 +53,7 @@ class _BaseFactory(Generic[TYPE_MODEL]):
     @classmethod
     async def _get_data(
         cls,
-        data: dict[str, Any] | None = None,
+        data: Optional[Dict[str, Any]] = None,
         mode: FactoryUseMode = FactoryUseMode.test,
     ) -> Dict:
         new_kwargs = dict()
@@ -75,7 +74,7 @@ class _BaseFactory(Generic[TYPE_MODEL]):
     async def create_batch(
         cls,
         count: int = 1,
-        data: dict[str, Any] | None = None,
+        data: Optional[Dict[str, Any]] = None,
         save: bool = True,
         mode: FactoryUseMode = FactoryUseMode.test,
     ) -> List[models.MODEL]:
@@ -111,7 +110,7 @@ class _BaseFactory(Generic[TYPE_MODEL]):
     @classmethod
     async def create(
         cls,
-        data: dict[str, Any] | None = None,
+        data: Optional[Dict[str, Any]] = None,
         header: Union[HeadersQueryStringManager, None] = None,
         save: bool = True,
         mode: FactoryUseMode = FactoryUseMode.test,

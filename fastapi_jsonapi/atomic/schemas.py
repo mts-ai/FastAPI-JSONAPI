@@ -180,13 +180,7 @@ class AtomicOperation(BaseModel):
                 raise ValueError(msg)
 
         data: OperationDataType = values.get("data")
-        operation_type = (
-            # take from ref
-            cls._get_value_from_dict_or_obj(ref, "type")
-            or
-            # or take from data
-            cls._get_value_from_dict_or_obj(data, "type")
-        )
+        operation_type = cls._get_value_from_dict_or_obj(ref, "type") or cls._get_value_from_dict_or_obj(data, "type")
         if not operation_type:
             msg = "Operation has to be in ref or in data"
             raise ValueError(msg)

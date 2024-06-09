@@ -1,8 +1,7 @@
 from fastapi_jsonapi.data_layers.fields.enum import Enum
 
 
-
-class UserStatusEnum(str, Enum):  # noqa: SLOT000
+class UserStatusEnum(str, Enum):
     """
     Status user.
     """

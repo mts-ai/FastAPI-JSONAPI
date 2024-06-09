@@ -564,7 +564,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         if isinstance(related_objects, InstrumentedList):
             return obj, [{"type": related_type_, "id": getattr(obj_, related_id_field)} for obj_ in related_objects]
-        return obj, {"type": related_type_, "id": getattr(related_objects, related_id_field)}
+        else:
+            return obj, {"type": related_type_, "id": getattr(related_objects, related_id_field)}
 
     async def update_relationship(
         self,
