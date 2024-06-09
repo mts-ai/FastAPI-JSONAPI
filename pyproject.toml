@@ -97,11 +97,10 @@ asyncpg = "0.28.0"
 
 
 [tool.poetry.group.lint.dependencies]
-black = "^23.3.0"
-ruff = "^0.1.8"
-mypy = "^1.4.1"
-sqlalchemy-stubs = "^0.4"
-pre-commit = "^3.3.3"
+black = "^24.4.2"
+ruff = "^0.4.8"
+mypy = "^1.10.0"
+pre-commit = "^3.7.1"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.0.1"
