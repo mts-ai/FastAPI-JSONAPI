@@ -56,10 +56,17 @@ class BaseDataLayer:
         self.is_atomic = False
         self.type_ = type_
 
-    async def atomic_start(self, previous_dl: BaseDataLayer | None = None):
+    async def atomic_start(
+        self,
+        previous_dl: BaseDataLayer | None = None,
+    ) -> None:
         self.is_atomic = True
 
-    async def atomic_end(self, success: bool = True):
+    async def atomic_end(
+        self,
+        success: bool = True,
+        exception: Exception | None = None,
+    ) -> None:
         raise NotImplementedError
 
     def _apply_client_generated_id(

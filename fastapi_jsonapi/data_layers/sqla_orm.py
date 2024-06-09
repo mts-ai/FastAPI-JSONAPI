@@ -97,7 +97,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.auto_convert_id_to_column_type = auto_convert_id_to_column_type
         self.transaction: Optional[AsyncSessionTransaction] = None
 
-    async def atomic_start(self, previous_dl: Optional["SqlalchemyDataLayer"] = None):
+    async def atomic_start(
+        self,
+        previous_dl: Optional["SqlalchemyDataLayer"] = None,
+    ) -> None:
         self.is_atomic = True
         if previous_dl:
             self.session = previous_dl.session
@@ -108,7 +111,11 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.transaction = self.session.begin()
         await self.transaction.start()
 
-    async def atomic_end(self, success: bool = True):
+    async def atomic_end(
+        self,
+        success: bool = True,
+        exception: Exception | None = None,
+    ):
         if success:
             await self.transaction.commit()
         else:
