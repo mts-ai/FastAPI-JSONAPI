@@ -12,4 +12,11 @@ def allowed_atomic_actions_list() -> list[str]:
 
 @pytest.fixture()
 def allowed_atomic_actions_as_string(allowed_atomic_actions_list) -> str:
-    return ", ".join(repr(op) for op in allowed_atomic_actions_list)
+    if len(allowed_atomic_actions_list) == 1:
+        return repr(allowed_atomic_actions_list[0])
+    return " or ".join(
+        (
+            ", ".join(repr(op) for op in allowed_atomic_actions_list[:-1]),
+            repr(allowed_atomic_actions_list[-1]),
+        )
+    )
