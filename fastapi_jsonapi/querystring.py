@@ -1,4 +1,5 @@
 """Helper to deal with querystring parameters according to jsonapi specification."""
+
 from collections import defaultdict
 from functools import cached_property
 from typing import (
@@ -33,7 +34,7 @@ from fastapi_jsonapi.exceptions import (
 )
 from fastapi_jsonapi.schema import (
     get_model_field,
-    get_relationships,
+    get_relationship_fields_names,
 )
 from fastapi_jsonapi.splitter import SPLIT_REL
 
@@ -268,26 +269,28 @@ class QueryStringManager:
 
         :raises InvalidSort: if sort field wrong.
         """
-        if sort_q := self.qs.get("sort"):
-            sorting_results = []
-            for sort_field in sort_q.split(","):
-                field = sort_field.replace("-", "")
-                if SPLIT_REL not in field:
-                    if field not in schema.model_fields:
-                        msg = "{schema} has no attribute {field}".format(
-                            schema=schema.__name__,
-                            field=field,
-                        )
-                        raise InvalidSort(msg)
-                    if field in get_relationships(schema):
-                        msg = "You can't sort on {field} because it is a relationship field".format(field=field)
-                        raise InvalidSort(msg)
-                    field = get_model_field(schema, field)
-                order = "desc" if sort_field.startswith("-") else "asc"
-                sorting_results.append({"field": field, "order": order})
-            return sorting_results
+        if not (sort_q := self.qs.get("sort")):
+            return []
 
-        return []
+        sorting_results = []
+        relationships_fields_names = get_relationship_fields_names(schema)
+
+        for sort_field in sort_q.split(","):
+            field = sort_field.replace("-", "")
+            if SPLIT_REL not in field:
+                if field not in schema.model_fields:
+                    msg = "{schema} has no attribute {field}".format(
+                        schema=schema.__name__,
+                        field=field,
+                    )
+                    raise InvalidSort(msg)
+                if field in relationships_fields_names:
+                    msg = f"You can't sort by relationship field {field!r} on {schema.__name__!r}"
+                    raise InvalidSort(msg)
+                field = get_model_field(schema, field)
+            order = "desc" if sort_field.startswith("-") else "asc"
+            sorting_results.append({"field": field, "order": order})
+        return sorting_results
 
     @property
     def include(self) -> List[str]:
