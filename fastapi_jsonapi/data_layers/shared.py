@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
+
 if TYPE_CHECKING:
-    from fastapi_jsonapi.data_layers.filtering.sqlalchemy import Node as NodeSQLAlchemy
-    from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
+    from fastapi_jsonapi.data_layers.node_shared import Node as NodeSQLAlchemy
 
 
 def create_filters_or_sorts(
