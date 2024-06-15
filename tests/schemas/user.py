@@ -20,10 +20,11 @@ if TYPE_CHECKING:
 
 
 class UserAttributesBaseSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     name: str
     age: int | None = None
     email: str | None = None
-    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBaseSchema(UserAttributesBaseSchema):
@@ -73,10 +74,8 @@ class UserInSchemaAllowIdOnPost(UserBaseSchema):
     id: Annotated[str, ClientCanSetId()]
 
 
-class UserSchema(UserInSchema):
+class UserSchema(UserBaseSchema):
     """User item schema."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: int
 
