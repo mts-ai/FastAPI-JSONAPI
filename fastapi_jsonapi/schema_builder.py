@@ -117,6 +117,14 @@ FieldValidators = dict[str, Callable]
 
 
 @dataclass(frozen=True)
+class IncludedSchemaDTO:
+    # (name, related_schema, relationship_info.resource_type)
+    name: str
+    related_schema: type[BaseModel]
+    related_resource_type: str
+
+
+@dataclass(frozen=True)
 class SchemasInfoDTO:
     # id field
     resource_id_field: tuple[type, FieldInfo, Callable, FieldValidators]
@@ -127,7 +135,7 @@ class SchemasInfoDTO:
     # has any required relationship
     has_required_relationship: bool
     # anything that can be included
-    included_schemas: list[tuple[str, BaseModel, str]]
+    included_schemas: list[IncludedSchemaDTO]
 
 
 class SchemaBuilder:
@@ -282,8 +290,7 @@ class SchemaBuilder:
     ) -> SchemasInfoDTO:
         attributes_schema_fields = {}
         relationships_schema_fields = {}
-        # TODO: dto? instead of tuples
-        included_schemas: list[tuple[str, type | None, str]] = []
+        included_schemas: list[IncludedSchemaDTO] = []
         has_required_relationship = False
         resource_id_field = (str, Field(None), None, {})
 
@@ -313,7 +320,13 @@ class SchemaBuilder:
                 # works both for to-one and to-many
                 related_schema = get_schema_from_field_annotation(field)
                 if related_schema:
-                    included_schemas.append((name, related_schema, relationship_info.resource_type))
+                    included_schemas.append(
+                        IncludedSchemaDTO(
+                            name,
+                            related_schema,
+                            relationship_info.resource_type,
+                        ),
+                    )
                 else:
                     log.warning("Could not find related schema in field %s", field)
             elif name == "id":
@@ -472,17 +485,17 @@ class SchemaBuilder:
         schema: type[BaseModel],
         resource_type: str,
         includes: Iterable[str],
-        included_schemas: list[tuple[str, BaseModel, str]],
+        included_schemas: list[IncludedSchemaDTO],
     ) -> dict[str, type[JSONAPIObjectSchema]]:
         if includes is not_passed:
             return {
                 # prepare same object schema
                 # TODO: caches?!
-                name: self.create_jsonapi_object_schemas(
-                    included_schema,
-                    resource_type=resource_type,
+                i.name: self.create_jsonapi_object_schemas(
+                    i.related_schema,
+                    resource_type=i.related_resource_type,
                 ).object_jsonapi_schema
-                for (name, included_schema, resource_type) in included_schemas
+                for i in included_schemas
             }
 
         can_be_included_schemas = {}
