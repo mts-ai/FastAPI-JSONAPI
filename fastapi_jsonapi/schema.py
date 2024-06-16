@@ -1,26 +1,35 @@
-"""
-Base JSON:API schemas.
+from __future__ import annotations
 
-Pydantic (for FastAPI).
-"""
+from inspect import isclass
+from types import (
+    GenericAlias,
+    UnionType,
+)
 from typing import (
     TYPE_CHECKING,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Type,
     Union,
+    get_args,
 )
 
-from fastapi import FastAPI
 from pydantic import (
-    BaseModel,
+    BaseModel as PydanticBaseModel,
+)
+from pydantic import (
     ConfigDict,
     Field,
 )
+from pydantic._internal._typing_extra import is_none_type
+
+from fastapi_jsonapi.common import search_relationship_info
+from fastapi_jsonapi.schema_base import BaseModel
 
 if TYPE_CHECKING:
+    # noinspection PyProtectedMember
+    from collections.abc import Sequence
+
+    from fastapi import FastAPI
+    from pydantic.fields import FieldInfo
+
     from fastapi_jsonapi.data_typing import TypeSchema
 
 
@@ -36,7 +45,7 @@ class BaseJSONAPIRelationshipDataToOneSchema(BaseModel):
 
 
 class BaseJSONAPIRelationshipDataToManySchema(BaseModel):
-    data: List[BaseJSONAPIRelationshipSchema]
+    data: list[BaseJSONAPIRelationshipSchema]
 
 
 class BaseJSONAPIItemSchema(BaseModel):
@@ -54,9 +63,9 @@ class BaseJSONAPIItemInSchema(BaseJSONAPIItemSchema):
     TODO PATCH: accept object id (maybe create a new separate schema)
     """
 
-    attributes: "TypeSchema" = Field(description="Resource object attributes")
-    relationships: Optional["TypeSchema"] = Field(None, description="Resource object relationships")
-    id: Optional[str] = Field(None, description="Resource object ID")
+    attributes: TypeSchema = Field(description="Resource object attributes")
+    relationships: TypeSchema | None = Field(None, description="Resource object relationships")
+    id: str | None = Field(None, description="Resource object ID")
 
 
 class BaseJSONAPIDataInSchema(BaseModel):
@@ -72,8 +81,8 @@ class BaseJSONAPIObjectSchema(BaseJSONAPIItemSchema):
 class JSONAPIResultListMetaSchema(BaseModel):
     """JSON:API list meta schema."""
 
-    count: Optional[int] = None
-    total_pages: Optional[int] = Field(None, alias="totalPages")
+    count: int | None = None
+    total_pages: int | None = Field(None, alias="totalPages")
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
@@ -93,13 +102,15 @@ class JSONAPIDocumentObjectSchema(BaseModel):
 class JSONAPIObjectSchema(BaseJSONAPIObjectSchema):
     """JSON:API base object schema."""
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class BaseJSONAPIResultSchema(BaseModel):
-    """
-    JSON:API Required fields schema
-    """
+    """JSON:API Required fields schema"""
 
-    meta: Optional[JSONAPIResultListMetaSchema] = Field(None, description="JSON:API metadata")
+    model_config = ConfigDict(from_attributes=True)
+
+    meta: JSONAPIResultListMetaSchema | None = Field(None, description="JSON:API metadata")
     jsonapi: JSONAPIDocumentObjectSchema = JSONAPIDocumentObjectSchema()
 
 
@@ -116,8 +127,8 @@ class JSONAPIResultDetailSchema(BaseJSONAPIResultSchema):
 
 
 RelationshipInfoSchema = Union[
-    Type[BaseJSONAPIRelationshipDataToOneSchema],
-    Type[BaseJSONAPIRelationshipDataToManySchema],
+    type[BaseJSONAPIRelationshipDataToOneSchema],
+    type[BaseJSONAPIRelationshipDataToManySchema],
 ]
 
 
@@ -125,7 +136,7 @@ class JSONAPISchemaIntrospectionError(Exception):
     pass
 
 
-def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
+def get_model_field(schema: type[TypeSchema], field: str) -> str:
     """
     Get the model field of a schema field.
 
@@ -144,36 +155,28 @@ def get_model_field(schema: Type["TypeSchema"], field: str) -> str:
     :raises Exception: if the schema from parameter has no attribute for parameter.
     """
     if schema.model_fields.get(field) is None:
-        msg = "{schema} has no attribute {field}".format(
-            schema=schema.__name__,
-            field=field,
-        )
+        msg = f"{schema.__name__} has no attribute {field}"
         raise JSONAPISchemaIntrospectionError(msg)
     return field
 
 
-def get_relationships(schema: Type["TypeSchema"], model_field: bool = False) -> List[str]:
+def get_relationship_fields_names(
+    schema: type[TypeSchema],
+) -> set[str]:
     """
     Return relationship fields of a schema.
 
     :param schema: a schemas schema
-    :param model_field: list of relationship fields of a schema
     """
-    relationships: List[str] = []
+    names: set[str] = set()
     for i_name, i_type in schema.model_fields.items():
-        try:
-            if issubclass(i_type.annotation, BaseModel):
-                relationships.append(i_name)
-        except TypeError:
-            pass
+        if search_relationship_info.first(i_type):
+            names.add(i_name)
 
-    if model_field is True:
-        relationships = [get_model_field(schema, key) for key in relationships]
-
-    return relationships
+    return names
 
 
-def get_schema_from_type(resource_type: str, app: FastAPI) -> Type[BaseModel]:
+def get_schema_from_type(resource_type: str, app: FastAPI) -> type[BaseModel]:
     """
     Retrieve a schema from the registry by his type.
 
@@ -182,15 +185,38 @@ def get_schema_from_type(resource_type: str, app: FastAPI) -> Type[BaseModel]:
     :return Schema: the schema class.
     :raises Exception: if the schema not found for this resource type.
     """
-    schemas: Dict[str, Type[BaseModel]] = getattr(app, "schemas", {})
+    schemas: dict[str, type[BaseModel]] = getattr(app, "schemas", {})
     try:
         return schemas[resource_type]
     except KeyError:
-        msg = "Couldn't find schema for type: {type}".format(type=resource_type)
-        raise Exception(msg)
+        msg = f"Couldn't find schema for type: {resource_type}"
+        raise ValueError(msg)
 
 
-def get_related_schema(schema: Type["TypeSchema"], field: str) -> Type["TypeSchema"]:
+def get_schema_from_field_annotation(field: FieldInfo) -> type[BaseModel] | None:
+    """TODO: consider using pydantic's GenerateSchema ?"""
+    choices = []
+    if isinstance(field.annotation, UnionType):
+        args = get_args(field.annotation)
+        choices.extend(args)
+    else:
+        choices.append(field.annotation)
+    while choices:
+        elem = choices.pop(0)
+        if isinstance(elem, GenericAlias):
+            choices.extend(get_args(elem))
+            continue
+
+        if is_none_type(elem):
+            continue
+
+        if isclass(elem) and issubclass(elem, PydanticBaseModel):
+            return elem
+
+    return None
+
+
+def get_related_schema(schema: type[TypeSchema], field: str) -> type[TypeSchema]:
     """
     Retrieve the related schema of a relationship field.
 
@@ -198,4 +224,4 @@ def get_related_schema(schema: Type["TypeSchema"], field: str) -> Type["TypeSche
     :params field: the relationship field
     :return: the related schema
     """
-    return schema.model_fields[field].annotation
+    return get_schema_from_field_annotation(schema.model_fields[field])

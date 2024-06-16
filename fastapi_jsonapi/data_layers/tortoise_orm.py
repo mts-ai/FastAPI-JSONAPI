@@ -1,7 +1,11 @@
 """This module is a CRUD interface between resource managers and the Tortoise ORM"""
 
-from typing import Any, Iterable, Optional, Tuple, Type
+from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import Any
+
+from fastapi import Request
 from tortoise.queryset import QuerySet
 
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
@@ -17,13 +21,15 @@ class TortoiseDataLayer(BaseDataLayer):
 
     def __init__(
         self,
-        schema: Type[TypeSchema],
-        model: Type[TypeModel],
+        request: Request,
+        schema: type[TypeSchema],
+        model: type[TypeModel],
+        *,
         disable_collection_count: bool = False,
         default_collection_count: int = -1,
-        id_name_field: Optional[str] = None,
+        id_name_field: str | None = None,
         url_id_field: str = "id",
-        query: Optional[QuerySet] = None,
+        query: QuerySet | None = None,
         **kwargs: Any,
     ):
         """
@@ -38,6 +44,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :param kwargs: initialization parameters of an TortoiseDataLayer instance
         """
         super().__init__(
+            request=request,
             schema=schema,
             model=model,
             url_id_field=url_id_field,
@@ -57,7 +64,7 @@ class TortoiseDataLayer(BaseDataLayer):
         :return DeclarativeMeta: an object
         """
 
-    async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
+    async def get_object(self, view_kwargs: dict, qs: QueryStringManager | None = None) -> TypeModel:
         """
         Retrieve an object
 
@@ -80,7 +87,7 @@ class TortoiseDataLayer(BaseDataLayer):
 
         return await query.count()
 
-    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
+    async def get_collection(self, qs: QueryStringManager, view_kwargs: dict | None = None) -> tuple[int, list]:
         """
         Retrieve a collection of objects through Tortoise.
 
@@ -157,7 +164,7 @@ class TortoiseDataLayer(BaseDataLayer):
         related_type_: str,
         related_id_field: str,
         view_kwargs: dict,
-    ) -> Tuple[Any, Any]:
+    ) -> tuple[Any, Any]:
         """
         Get a relationship.
 
@@ -203,7 +210,7 @@ class TortoiseDataLayer(BaseDataLayer):
 
     async def get_related_object(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         id_value: str,
     ) -> TypeModel:
@@ -257,7 +264,10 @@ class TortoiseDataLayer(BaseDataLayer):
         :return Tortoise query: a query from Tortoise
         """
 
-    def query(self, view_kwargs: dict) -> QuerySet:
+    def query(
+        self,
+        view_kwargs: dict,
+    ) -> QuerySet:
         """
         Construct the base query to retrieve wanted data.
 
@@ -305,7 +315,12 @@ class TortoiseDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         """
 
-    async def after_get_collection(self, collection: Iterable, qs: QueryStringManager, view_kwargs: dict) -> Iterable:
+    async def after_get_collection(
+        self,
+        collection: Iterable,
+        qs: QueryStringManager,  # noqa: ARG002
+        view_kwargs: dict,  # noqa: ARG002
+    ) -> Iterable:
         """
         Make work after to retrieve a collection of objects.
 

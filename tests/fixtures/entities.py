@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Awaitable, Callable, List
+from typing import TYPE_CHECKING, Callable
 
-from pytest import fixture  # noqa
+import pytest
 from pytest_asyncio import fixture as async_fixture
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.misc.utils import fake
 from tests.models import (
@@ -18,6 +17,11 @@ from tests.models import (
     UserBio,
     Workplace,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def build_user(**fields) -> User:
@@ -108,7 +112,7 @@ async def build_post(async_session: AsyncSession, user: User, **fields) -> Post:
 
 
 @async_fixture()
-async def user_1_posts(async_session: AsyncSession, user_1: User) -> List[Post]:
+async def user_1_posts(async_session: AsyncSession, user_1: User) -> list[Post]:
     posts = [
         Post(
             title=f"post_u1_{i}",
@@ -141,7 +145,7 @@ async def user_1_post(async_session: AsyncSession, user_1: User):
 
 
 @async_fixture()
-async def user_2_posts(async_session: AsyncSession, user_2: User) -> List[Post]:
+async def user_2_posts(async_session: AsyncSession, user_2: User) -> list[Post]:
     posts = [
         Post(
             title=f"post_u2_{i}",
@@ -182,8 +186,8 @@ async def user_1_comments_for_u2_posts(async_session: AsyncSession, user_1, user
     await async_session.commit()
 
 
-@fixture()
-def user_1_post_for_comments(user_1_posts: List[Post]) -> Post:
+@pytest.fixture()
+def user_1_post_for_comments(user_1_posts: list[Post]) -> Post:
     return user_1_posts[0]
 
 

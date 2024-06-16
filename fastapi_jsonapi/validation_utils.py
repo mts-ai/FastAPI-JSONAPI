@@ -1,50 +1,22 @@
-from copy import deepcopy
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Set, Type
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from pydantic import field_validator, model_validator
 
-from fastapi_jsonapi.schema_base import BaseModel
-
 if TYPE_CHECKING:
-    from pydantic._internal._decorators import Decorator, DecoratorInfos
+    from pydantic import BaseModel as PydanticBaseModel
+    from pydantic._internal._decorators import DecoratorInfos
+    from pydantic.functional_validators import _V2Validator
 
 
-def extract_root_validators(model: Type[BaseModel]) -> Dict[str, Callable]:
-    pre_root_validators = getattr(model, "__pre_root_validators__", [])
-    post_root_validators = getattr(model, "__post_root_validators__", [])
-    result_validators = {}
-    for validator_func in pre_root_validators:
-        result_validators[validator_func.__name__] = model_validator(mode="before")
-
-    for validator_func in post_root_validators:
-        result_validators[validator_func.__name__] = model_validator(
-            mode="before",
-        )
-
-    return result_validators
-
-
-def _deduplicate_field_validators(validators: "DecoratorInfos") -> Dict:
-    result_validators = {}
-    field_validators = validators.field_validators
-    model_validators = validators.model_validators
-
-    for category_validators in [field_validators, model_validators]:
-        for validator_name, field_validator_ in category_validators.items():
-            func_name = field_validator_.func.__name__
-
-            if func_name not in result_validators:
-                result_validators[func_name] = field_validator_
-
-    return result_validators
-
-
-def extract_field_validators(
-    model: Type[BaseModel],
-    include_for_field_names: Optional[Set[str]] = None,
-    exclude_for_field_names: Optional[Set[str]] = None,
-):
-    validators = _deduplicate_field_validators(deepcopy(model.__pydantic_decorators__))
+# TODO: handle model validators? (info.model_validator)
+def extract_validators(
+    model: type[PydanticBaseModel],
+    include_for_field_names: set[str] | None = None,
+    exclude_for_field_names: set[str] | None = None,
+) -> dict[str, _V2Validator]:
+    validators: DecoratorInfos = model.__pydantic_decorators__
 
     exclude_for_field_names = exclude_for_field_names or set()
     if include_for_field_names and exclude_for_field_names:
@@ -53,34 +25,24 @@ def extract_field_validators(
         )
 
     result_validators = {}
-    for field_name, field_validators in validators.items():
-        field_validators: Decorator
-        if field_name in exclude_for_field_names:
-            continue
 
-        if include_for_field_names and field_name not in include_for_field_names:
-            continue
-        validator_params = {
-            "mode": field_validators.info.mode,
-            "check_fields": field_validators.info.check_fields,
-        }
-        validator_name = f"{field_name}"
-        result_validators[validator_name] = field_validator(
-            field_name,
-            **validator_params,
-        )(field_validators.func)
+    # field validators
+    for name, validator in validators.field_validators.items():
+        for field_name in validator.info.fields:
+            # exclude
+            if field_name in exclude_for_field_names:
+                continue
+
+            # or include
+            if include_for_field_names and field_name not in include_for_field_names:
+                continue
+
+            validator_config = field_validator(field_name, mode=validator.info.mode)
+            result_validators[name] = validator_config(validator.func)
+
+    # model validators
+    for name, validator in validators.model_validators.items():
+        validator_config = model_validator(mode=validator.info.mode)
+        result_validators[name] = validator_config(validator.func)
 
     return result_validators
-
-
-def extract_validators(
-    model: Type[BaseModel],
-    exclude_for_field_names: Optional[Set[str]] = None,
-) -> Dict[str, Callable]:
-    return {
-        **extract_field_validators(
-            model=model,
-            exclude_for_field_names=exclude_for_field_names,
-        ),
-        **extract_root_validators(model),
-    }

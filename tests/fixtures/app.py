@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional, Type
 
 import pytest
 from fastapi import APIRouter, FastAPI
@@ -230,8 +231,8 @@ def build_app_custom(
     schema_in_post=None,
     path: str = "/misc",
     resource_type: str = "misc",
-    class_list: Type[ListViewBase] = ListViewBaseGeneric,
-    class_detail: Type[DetailViewBase] = DetailViewBaseGeneric,
+    class_list: type[ListViewBase] = ListViewBaseGeneric,
+    class_detail: type[DetailViewBase] = DetailViewBaseGeneric,
 ) -> FastAPI:
     router: APIRouter = APIRouter()
 
@@ -291,12 +292,12 @@ def build_alphabet_app() -> FastAPI:
 class ResourceInfoDTO(BaseModel):
     path: str
     resource_type: str
-    model: Type[TypeModel]
-    schema_: Type[BaseModel]
-    schema_in_patch: Optional[BaseModel] = None
-    schema_in_post: Optional[BaseModel] = None
-    class_list: Type[ListViewBase] = ListViewBaseGeneric
-    class_detail: Type[DetailViewBase] = DetailViewBaseGeneric
+    model: type[TypeModel]
+    schema_: type[BaseModel]
+    schema_in_patch: BaseModel | None = None
+    schema_in_post: BaseModel | None = None
+    class_list: type[ListViewBase] = ListViewBaseGeneric
+    class_detail: type[DetailViewBase] = DetailViewBaseGeneric
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

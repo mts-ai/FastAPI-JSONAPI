@@ -1,6 +1,7 @@
 """
 Previously used: '__'
 """
+
 from typing import Protocol
 
 
@@ -13,7 +14,7 @@ def add_suffix(field_name: str, suffix: str, sep: str = "__") -> str:
     :param sep:
     :return:
     """
-    return "".join((field_name, sep, suffix))
+    return f"{field_name}{sep}{suffix}"
 
 
 def type_op_any(field_name: str, type_op: str) -> str:
@@ -292,8 +293,7 @@ def type_op_ilike(field_name: str, type_op: str) -> str:
 
 
 class ProcessTypeOperationFieldName(Protocol):
-    def __call__(self, field_name: str, type_op: str) -> str:
-        ...
+    def __call__(self, field_name: str, type_op: str) -> str: ...
 
 
 filters_dict: dict[str, ProcessTypeOperationFieldName] = {

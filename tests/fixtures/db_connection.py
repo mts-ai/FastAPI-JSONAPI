@@ -1,17 +1,32 @@
-from pytest import fixture  # noqa PT013
 from pytest_asyncio import fixture as async_fixture
+from sqlalchemy import AsyncAdaptedQueuePool
 from sqlalchemy.engine import make_url
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import (
+    async_sessionmaker,
+    create_async_engine,
+)
 
-from tests.common import sqla_uri
+from tests.common import (
+    sqla_uri,
+)
 from tests.models import Base
 
 
-def get_async_sessionmaker() -> sessionmaker:
-    engine = create_async_engine(url=make_url(sqla_uri()))
-    _async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-    return _async_session
+def create_engine():
+    return create_async_engine(
+        url=make_url(sqla_uri()),
+        echo=False,
+        pool_size=10,
+        poolclass=AsyncAdaptedQueuePool,
+    )
+
+
+def get_async_session_maker() -> async_sessionmaker:
+    engine = create_engine()
+    return async_sessionmaker(
+        bind=engine,
+        expire_on_commit=False,
+    )
 
 
 async def async_session_dependency():
@@ -20,37 +35,38 @@ async def async_session_dependency():
 
     :return:
     """
-    session_maker = get_async_sessionmaker()
-    async with session_maker() as db_session:  # type: AsyncSession
-        yield db_session
-        await db_session.rollback()
+    session_factory = get_async_session_maker()
+    async with session_factory() as session:  # type: AsyncSession
+        try:
+            yield session
+        finally:
+            await session.rollback()
 
 
 @async_fixture(scope="class")
 async def async_engine():
-    engine = create_async_engine(
-        url=make_url(sqla_uri()),
-        echo=False,
-        # echo=True,
-    )
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-    return engine
+    return create_engine()
 
 
-@async_fixture(scope="class")
-async def async_session_plain(async_engine):
-    session = sessionmaker(
+@async_fixture(scope="function")
+async def async_session(async_engine):
+    session_factory = async_sessionmaker(
         bind=async_engine,
-        class_=AsyncSession,
         expire_on_commit=False,
     )
-    return session
+    async with session_factory() as session:  # type: AsyncSession
+        try:
+            yield session
+        finally:
+            await session.rollback()
 
 
-@async_fixture(scope="class")
-async def async_session(async_session_plain):
-    async with async_session_plain() as session:  # type: AsyncSession
-        yield session
-        await session.rollback()
+async def recreate_tables(engine):
+    async with engine.begin() as connector:
+        await connector.run_sync(Base.metadata.drop_all)
+        await connector.run_sync(Base.metadata.create_all)
+
+
+@async_fixture()
+async def refresh_db(async_engine):
+    await recreate_tables(async_engine)

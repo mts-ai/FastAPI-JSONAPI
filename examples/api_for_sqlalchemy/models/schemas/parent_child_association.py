@@ -1,6 +1,14 @@
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+)
+
+from fastapi_jsonapi.schema_base import (
+    BaseModel,
+)
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
     from .child import ChildSchema
@@ -11,16 +19,16 @@ class ParentToChildAssociationSchema(BaseModel):
     id: int
     extra_data: str
 
-    parent: "ParentSchema" = Field(
-        default=None,
-        relationship=RelationshipInfo(
+    parent: Annotated[
+        ParentSchema | None,
+        RelationshipInfo(
             resource_type="parent",
         ),
-    )
+    ] = None
 
-    child: "ChildSchema" = Field(
-        default=None,
-        relationship=RelationshipInfo(
+    child: Annotated[
+        ChildSchema | None,
+        RelationshipInfo(
             resource_type="child",
         ),
-    )
+    ] = None

@@ -1,13 +1,16 @@
-"""User schemas module."""
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+)
 
 from pydantic import ConfigDict
 
-from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+# from examples.api_for_sqlalchemy.models.enums import UserStatusEnum
+from fastapi_jsonapi.schema_base import BaseModel, Field
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
     from .computer import ComputerSchema
@@ -20,36 +23,34 @@ class UserBaseSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    class Enum:
-        """User enums."""
-
-        status = UserStatusEnum
-
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    age: Optional[int] = None
-    status: UserStatusEnum = Field(default=UserStatusEnum.active)
+    first_name: str | None = None
+    last_name: str | None = None
+    age: int | None = None
+    # status: UserStatusEnum = Field(default=UserStatusEnum.active)
     email: str | None = None
 
-    posts: Optional[List["PostSchema"]] = Field(
-        relationship=RelationshipInfo(
+    posts: Annotated[
+        list[PostSchema] | None,
+        RelationshipInfo(
             resource_type="post",
             many=True,
         ),
-    )
+    ] = None
 
-    bio: Optional["UserBioSchema"] = Field(
-        relationship=RelationshipInfo(
+    bio: Annotated[
+        UserBioSchema | None,
+        RelationshipInfo(
             resource_type="user_bio",
         ),
-    )
+    ] = None
 
-    computers: Optional[List["ComputerSchema"]] = Field(
-        relationship=RelationshipInfo(
+    computers: Annotated[
+        list[ComputerSchema] | None,
+        RelationshipInfo(
             resource_type="computer",
             many=True,
         ),
-    )
+    ] = None
 
 
 class UserPatchSchema(UserBaseSchema):

@@ -1,11 +1,18 @@
-"""Post schemas module."""
+from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+)
 
 from pydantic import ConfigDict
 
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from fastapi_jsonapi.schema_base import (
+    BaseModel,
+    Field,
+)
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
     from .post_comment import PostCommentSchema
@@ -20,18 +27,20 @@ class PostBaseSchema(BaseModel):
     title: str
     body: str
 
-    user: "UserSchema" = Field(
-        relationship=RelationshipInfo(
+    user: Annotated[
+        UserSchema | None,
+        RelationshipInfo(
             resource_type="user",
         ),
-    )
+    ] = None
 
-    comments: List["PostCommentSchema"] = Field(
-        relationship=RelationshipInfo(
+    comments: Annotated[
+        list[PostCommentSchema] | None,
+        RelationshipInfo(
             resource_type="post_comment",
             many=True,
         ),
-    )
+    ] = None
 
 
 class PostPatchSchema(PostBaseSchema):

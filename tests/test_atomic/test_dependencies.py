@@ -1,4 +1,4 @@
-from typing import ClassVar, Dict
+from typing import ClassVar
 
 import pytest
 from fastapi import Depends, Query, status
@@ -10,6 +10,7 @@ from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
 )
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.fixtures.app import build_app_custom
 from tests.fixtures.views import ArbitraryModelBase, SessionDependency, common_handler
 from tests.misc.utils import fake
@@ -58,7 +59,7 @@ class UserDeleteCustomDependency(ArbitraryModelBase):
 
 
 class UserCustomListView(ListViewBaseGeneric):
-    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+    method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -70,7 +71,7 @@ class UserCustomListView(ListViewBaseGeneric):
 
 
 class UserCustomDetailView(DetailViewBaseGeneric):
-    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+    method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -91,7 +92,7 @@ class TestDependenciesResolver:
 
     @pytest.fixture(scope="class")
     def app_w_deps(self, resource_type):
-        app = build_app_custom(
+        return build_app_custom(
             model=User,
             schema=UserSchema,
             schema_in_post=UserInSchema,
@@ -100,7 +101,6 @@ class TestDependenciesResolver:
             class_list=UserCustomListView,
             class_detail=UserCustomDetailView,
         )
-        return app
 
     @fixture(scope="class")
     async def client(self, app_w_deps):
@@ -145,9 +145,10 @@ class TestDependenciesResolver:
         expected_response_data = {
             "detail": [
                 {
+                    "input": None,
                     "loc": ["query", CustomDependencyForCreate.KEY],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -172,7 +173,7 @@ class TestDependenciesResolver:
             "atomic:operations": [
                 {
                     "op": "update",
-                    "id": user_1.id,
+                    "id": ViewBase.get_db_item_id(user_1),
                     "data": {
                         "type": resource_type,
                         "attributes": user.model_dump(),
@@ -183,9 +184,10 @@ class TestDependenciesResolver:
         expected_response_data = {
             "detail": [
                 {
+                    "input": None,
                     "loc": ["query", CustomDependencyForUpdate.KEY],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -206,7 +208,7 @@ class TestDependenciesResolver:
                 {
                     "op": "remove",
                     "ref": {
-                        "id": user_1.id,
+                        "id": ViewBase.get_db_item_id(user_1),
                         "type": resource_type,
                     },
                 },
@@ -216,9 +218,10 @@ class TestDependenciesResolver:
         expected_response_data = {
             "detail": [
                 {
+                    "input": None,
                     "loc": ["query", CustomDependencyForDelete.KEY],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }

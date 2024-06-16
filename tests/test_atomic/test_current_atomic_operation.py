@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import ClassVar, Dict, Literal, Optional
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import pytest
 from fastapi import Body, Depends, FastAPI, HTTPException, status
 from httpx import AsyncClient
 from pydantic import BaseModel
 from pytest_asyncio import fixture
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi.atomic import current_atomic_operation
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
@@ -16,6 +15,7 @@ from fastapi_jsonapi.views.utils import (
     HTTPMethod,
     HTTPMethodConfig,
 )
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common_user_api_test import (
     BaseGenericUserCreateUpdateWithBodyDependency,
     CustomNameAttributesJSONAPI,
@@ -30,17 +30,13 @@ from tests.schemas import (
     UserSchema,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
 pytestmark = pytest.mark.asyncio
 
 
 FIELD_CUSTOM_NAME = "custom_name"
-
-
-# this one can be used only for generic views
-# def get_custom_name_from_body_only_on_generic(
-#     data: CustomNameAttributesJSONAPI = Body(embed=True),
-# ) -> str:
-#     return data.attributes.custom_name
 
 
 missing = object()
@@ -51,6 +47,14 @@ missing = object()
 
 
 class AttributesData(BaseModel):
+    """
+    this one can be used only for generic views
+    def get_custom_name_from_body_only_on_generic(
+        data: CustomNameAttributesJSONAPI = Body(embed=True),
+    ) -> str:
+        return data.attributes.custom_name
+    """
+
     data: CustomNameAttributesJSONAPI
 
 
@@ -60,30 +64,29 @@ class AttributesTopLevelBody(BaseModel):
 
 @handle_validation_error
 def get_validated_attribute_from_body(data: dict):
-    # # this will work ok, but `loc` in exception text will be `'loc': ['attributes', 'custom_name']`
-    # # and we need `'loc': ['body', 'data', 'attributes', 'custom_name']`
-    # validated_data = CustomNameAttributesJSONAPI.parse_obj(data)
-    # return validated_data.attributes.custom_name
+    """
+    Why do we create nested dicts?
+    This example will work:
+    `validated_data = CustomNameAttributesJSONAPI.parse_obj(data)`
+    `return validated_data.attributes.custom_name`
+    this will work ok, but `loc` in exception text will be `'loc': ['attributes', 'custom_name']`
+    and we need `'loc': ['body', 'data', 'attributes', 'custom_name']`
 
+    :param data:
+    :return:
+    """
     validated_data = AttributesTopLevelBody.model_validate({"body": {"data": data}})
 
-    # or
-    # return get_custom_name_from_body_only_on_generic(data=validated_data)
-    # or
     return validated_data.body.data.attributes.custom_name
 
 
 async def get_custom_name_from_body_universal(
-    data: Optional[dict] = Body(None, embed=True),
+    data: dict | None = Body(None, embed=True),
 ) -> str:
     atomic_operation = current_atomic_operation.get(missing)
     if atomic_operation is missing:
         # example for same helper both for generic view and atomic view
         return get_validated_attribute_from_body(data)
-
-        # # use dependencies helper because it will raise corresponding errors
-        # dep_helper = DependencyHelper(request=request)
-        # return await dep_helper.run(get_custom_name_from_body_only_on_generic)
 
     return get_validated_attribute_from_body(atomic_operation.data.model_dump())
 
@@ -127,7 +130,7 @@ class UserUpdateCustomDependency(ArbitraryModelBase):
 
 
 class UserCustomListView(ListViewBaseGeneric):
-    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+    method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -139,7 +142,7 @@ class UserCustomListView(ListViewBaseGeneric):
 
 
 class UserCustomDetailView(DetailViewBaseGeneric):
-    method_dependencies: ClassVar[Dict[HTTPMethod, HTTPMethodConfig]] = {
+    method_dependencies: ClassVar[dict[HTTPMethod, HTTPMethodConfig]] = {
         HTTPMethod.ALL: HTTPMethodConfig(
             dependencies=SessionDependency,
             prepare_data_layer_kwargs=common_handler,
@@ -162,7 +165,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
 
     @pytest.fixture(scope="class")
     def app_w_deps(self, resource_type):
-        app = build_app_custom(
+        return build_app_custom(
             model=User,
             schema=UserSchema,
             resource_type=resource_type,
@@ -170,7 +173,6 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
             class_detail=UserCustomDetailView,
             path=f"/path_{resource_type}",
         )
-        return app
 
     @fixture(scope="class")
     async def client(self, app_w_deps: FastAPI):
@@ -277,21 +279,24 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         resource_type: str,
         user_attributes: UserAttributesBaseSchema,
     ):
-        user_attributes_data = user_attributes.model_dump()
-        assert self.FIELD_CUSTOM_NAME not in user_attributes_data
+        attributes_data = user_attributes.model_dump()
+        assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_atomic_request = {
             "atomic:operations": [
                 {
                     "op": "add",
                     "data": {
                         "type": resource_type,
-                        "attributes": user_attributes_data,
+                        "attributes": attributes_data,
                     },
                 },
             ],
         }
         response = await client.post("/operations", json=data_atomic_request)
-        self.validate_field_not_passed_response(response)
+        self.validate_field_not_passed_response(
+            response,
+            input_data=attributes_data,
+        )
 
     async def test_atomic_update_user_error_required_body_field_not_passed(
         self,
@@ -303,7 +308,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         attributes_data = user_attributes.model_dump()
         assert self.FIELD_CUSTOM_NAME not in attributes_data
         data_user_update = {
-            "id": user_1.id,
+            "id": ViewBase.get_db_item_id(user_1),
             "type": resource_type,
             "attributes": attributes_data,
         }
@@ -316,7 +321,10 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
             ],
         }
         response = await client.post("/operations", json=data_atomic_request)
-        self.validate_field_not_passed_response(response)
+        self.validate_field_not_passed_response(
+            response,
+            input_data=attributes_data,
+        )
 
     async def test_atomic_create_user_error_required_body_field_passed_but_invalid(
         self,
@@ -351,7 +359,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
         attributes_data = user_attributes.model_dump()
         attributes_data[self.FIELD_CUSTOM_NAME] = fake.word()
         data_user_update = {
-            "id": user_1.id,
+            "id": ViewBase.get_db_item_id(user_1),
             "type": resource_type,
             "attributes": attributes_data,
         }

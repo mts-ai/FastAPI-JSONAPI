@@ -3,6 +3,7 @@ Main module for w_mount service.
 
 In module placed db initialization functions, app factory.
 """
+
 import sys
 from pathlib import Path
 

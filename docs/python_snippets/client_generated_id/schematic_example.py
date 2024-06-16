@@ -1,9 +1,14 @@
 import sys
 from pathlib import Path
-from typing import ClassVar
+from typing import (
+    ClassVar,
+    Annotated,
+)
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
+
+from fastapi_jsonapi.types_metadata import ClientCanSetId
 from pydantic import ConfigDict
 from fastapi_jsonapi.schema_base import Field, BaseModel as PydanticBaseModel
 from sqlalchemy import Column, Integer, Text
@@ -52,7 +57,7 @@ class UserPatchSchema(UserAttributesBaseSchema):
 class UserInSchema(UserAttributesBaseSchema):
     """User input schema."""
 
-    id: int = Field(json_schema_extra={"client_can_set_id": True})
+    id: Annotated[int, ClientCanSetId()]
 
 
 async def get_session():

@@ -5,9 +5,13 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Computer, User, UserBio
-from tests.schemas import UserAttributesBaseSchema, UserBioAttributesBaseSchema
+from tests.schemas import (
+    UserAttributesBaseSchema,
+    UserBioAttributesBaseSchema,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -33,7 +37,7 @@ class TestAtomicUpdateObjects:
                 {
                     "op": "update",
                     "data": {
-                        "id": str(user_1.id),
+                        "id": ViewBase.get_db_item_id(user_1),
                         "type": "user",
                         "attributes": user_data.model_dump(),
                     },
@@ -41,7 +45,7 @@ class TestAtomicUpdateObjects:
                 {
                     "op": "update",
                     "data": {
-                        "id": str(user_1_bio.id),
+                        "id": ViewBase.get_db_item_id(user_1_bio),
                         "type": "user_bio",
                         "attributes": user_bio_data.model_dump(),
                     },
@@ -63,7 +67,7 @@ class TestAtomicUpdateObjects:
             {
                 "data": {
                     "attributes": user_data.model_dump(),
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
                 "meta": None,
@@ -71,7 +75,7 @@ class TestAtomicUpdateObjects:
             {
                 "data": {
                     "attributes": user_bio_data.model_dump(),
-                    "id": str(user_1_bio.id),
+                    "id": ViewBase.get_db_item_id(user_1_bio),
                     "type": "user_bio",
                 },
                 "meta": None,

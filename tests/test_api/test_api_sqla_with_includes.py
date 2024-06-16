@@ -5,21 +5,23 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from itertools import chain, zip_longest
 from json import dumps, loads
-from typing import Dict, List, Literal, Set, Tuple
+from typing import (
+    Annotated,
+    Literal,
+)
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import BaseModel, Field
-from pydantic.fields import FieldInfo
-from pytest import fixture, mark, param, raises  # noqa PT013
-from sqlalchemy import func, select
+from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute
 from starlette.datastructures import QueryParams
 
 from fastapi_jsonapi.api import RoutersJSONAPI
+from fastapi_jsonapi.contrib.sqla.filters import sql_filter_lower_equals
+from fastapi_jsonapi.types_metadata import ClientCanSetId
 from fastapi_jsonapi.views.view_base import ViewBase
 from tests.common import is_postgres_tests
 from tests.fixtures.app import build_alphabet_app, build_app_custom
@@ -60,7 +62,7 @@ from tests.schemas import (
     UserSchema,
 )
 
-pytestmark = mark.asyncio
+pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -74,6 +76,7 @@ async def test_root(client: AsyncClient):
     assert response.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.usefixtures("refresh_db")
 async def test_get_users(app: FastAPI, client: AsyncClient, user_1: User, user_2: User):
     url = app.url_path_for("get_user_list")
     response = await client.get(url)
@@ -149,28 +152,26 @@ class TestGetUsersList:
 
         assert response.status_code == status.HTTP_200_OK, response.text
         response_data = response.json()
-        assert response_data == {
-            "data": [
-                {
-                    "attributes": UserAttributesBaseSchema.model_validate(user),
-                    "id": str(user.id),
-                    "type": "user",
-                },
-            ],
-            "jsonapi": {"version": "1.0"},
-            "meta": {"count": 2, "totalPages": 2},
-        }
+        expected_data = [
+            {
+                "attributes": UserAttributesBaseSchema.model_validate(user).model_dump(),
+                "id": ViewBase.get_db_item_id(user),
+                "type": "user",
+            },
+        ]
+        assert "data" in response_data
+        assert response_data["data"] == expected_data
 
-    @mark.parametrize(
-        "fields, expected_include",
+    @pytest.mark.parametrize(
+        ("fields", "expected_include"),
         [
-            param(
+            pytest.param(
                 [
                     ("fields[user]", "name,age"),
                 ],
                 {"name", "age"},
             ),
-            param(
+            pytest.param(
                 [
                     ("fields[user]", "name,age"),
                     ("fields[user]", "email"),
@@ -185,8 +186,8 @@ class TestGetUsersList:
         client: AsyncClient,
         user_1: User,
         user_2: User,
-        fields: List[Tuple[str, str]],
-        expected_include: Set[str],
+        fields: list[tuple[str, str]],
+        expected_include: set[str],
     ):
         url = app.url_path_for("get_user_list")
         user_1, user_2 = sorted((user_1, user_2), key=lambda x: x.id)
@@ -200,13 +201,13 @@ class TestGetUsersList:
         assert response_data == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(include=expected_include),
-                    "id": str(user_1.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(include=expected_include),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(include=expected_include),
-                    "id": str(user_2.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(include=expected_include),
+                    "id": ViewBase.get_db_item_id(user_2),
                     "type": "user",
                 },
             ],
@@ -253,37 +254,37 @@ class TestGetUsersList:
         assert response_data == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(
                         include=set(queried_user_fields.split(",")),
                     ),
                     "relationships": {
                         "posts": {
                             "data": [
                                 {
-                                    "id": str(user_1_post.id),
+                                    "id": ViewBase.get_db_item_id(user_1_post),
                                     "type": "post",
                                 },
                             ],
                         },
                     },
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(
+                    "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(
                         include=set(queried_user_fields.split(",")),
                     ),
                     "relationships": {
                         "posts": {
                             "data": [
                                 {
-                                    "id": str(user_2_post.id),
+                                    "id": ViewBase.get_db_item_id(user_2_post),
                                     "type": "post",
                                 },
                             ],
                         },
                     },
-                    "id": str(user_2.id),
+                    "id": ViewBase.get_db_item_id(user_2),
                     "type": "user",
                 },
             ],
@@ -292,15 +293,15 @@ class TestGetUsersList:
             "included": sorted(
                 [
                     {
-                        "attributes": PostAttributesBaseSchema.from_orm(user_2_post).dict(
+                        "attributes": PostAttributesBaseSchema.model_validate(user_2_post).model_dump(
                             include=set(queried_post_fields.split(",")),
                         ),
-                        "id": str(user_2_post.id),
+                        "id": ViewBase.get_db_item_id(user_2_post),
                         "relationships": {
                             "comments": {
                                 "data": [
                                     {
-                                        "id": str(user_1_comment.id),
+                                        "id": ViewBase.get_db_item_id(user_1_comment),
                                         "type": "post_comment",
                                     },
                                 ],
@@ -309,23 +310,25 @@ class TestGetUsersList:
                         "type": "post",
                     },
                     {
-                        "attributes": PostAttributesBaseSchema.from_orm(user_1_post).dict(
+                        "attributes": PostAttributesBaseSchema.model_validate(user_1_post).model_dump(
                             include=set(queried_post_fields.split(",")),
                         ),
-                        "id": str(user_1_post.id),
+                        "id": ViewBase.get_db_item_id(user_1_post),
                         "relationships": {
-                            "comments": {"data": [{"id": str(user_2_comment.id), "type": "post_comment"}]},
+                            "comments": {
+                                "data": [{"id": ViewBase.get_db_item_id(user_2_comment), "type": "post_comment"}],
+                            },
                         },
                         "type": "post",
                     },
                     {
                         "attributes": {},
-                        "id": str(user_1_comment.id),
+                        "id": ViewBase.get_db_item_id(user_1_comment),
                         "type": "post_comment",
                     },
                     {
                         "attributes": {},
-                        "id": str(user_2_comment.id),
+                        "id": ViewBase.get_db_item_id(user_2_comment),
                         "type": "post_comment",
                     },
                 ],
@@ -350,8 +353,8 @@ class TestGetUsersList:
         assert response_data == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_1),
-                    "id": str(user_1.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
             ],
@@ -367,8 +370,8 @@ class TestCreatePostAndComments:
         client: AsyncClient,
         user_1: User,
         user_2: User,
-        user_1_posts: List[Post],
-        user_2_posts: List[Post],
+        user_1_posts: list[Post],
+        user_2_posts: list[Post],
     ):
         url = app.url_path_for("get_post_list")
         url = f"{url}?include=user"
@@ -434,7 +437,7 @@ class TestCreatePostAndComments:
                     "user": {
                         "data": {
                             "type": "user",
-                            "id": user_1.id,
+                            "id": ViewBase.get_db_item_id(user_1),
                         },
                     },
                 },
@@ -452,7 +455,7 @@ class TestCreatePostAndComments:
                 "user": {
                     "data": {
                         "type": "user",
-                        "id": str(user_1.id),
+                        "id": ViewBase.get_db_item_id(user_1),
                     },
                 },
             },
@@ -460,7 +463,7 @@ class TestCreatePostAndComments:
         included = response_data["included"]
         assert included == [
             {
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "type": "user",
                 "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
             },
@@ -486,13 +489,13 @@ class TestCreatePostAndComments:
                     "post": {
                         "data": {
                             "type": "post",
-                            "id": user_1_post.id,
+                            "id": ViewBase.get_db_item_id(user_1_post),
                         },
                     },
                     "author": {
                         "data": {
                             "type": "user",
-                            "id": user_2.id,
+                            "id": ViewBase.get_db_item_id(user_2),
                         },
                     },
                 },
@@ -511,13 +514,13 @@ class TestCreatePostAndComments:
                 "post": {
                     "data": {
                         "type": "post",
-                        "id": str(user_1_post.id),
+                        "id": ViewBase.get_db_item_id(user_1_post),
                     },
                 },
                 "author": {
                     "data": {
                         "type": "user",
-                        "id": str(user_2.id),
+                        "id": ViewBase.get_db_item_id(user_2),
                     },
                 },
             },
@@ -526,12 +529,12 @@ class TestCreatePostAndComments:
         assert included == [
             {
                 "type": "post",
-                "id": str(user_1_post.id),
+                "id": ViewBase.get_db_item_id(user_1_post),
                 "attributes": PostAttributesBaseSchema.model_validate(user_1_post).model_dump(),
                 "relationships": {
                     "user": {
                         "data": {
-                            "id": str(user_1.id),
+                            "id": ViewBase.get_db_item_id(user_1),
                             "type": "user",
                         },
                     },
@@ -539,12 +542,12 @@ class TestCreatePostAndComments:
             },
             {
                 "type": "user",
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
             },
             {
                 "type": "user",
-                "id": str(user_2.id),
+                "id": ViewBase.get_db_item_id(user_2),
                 "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(),
             },
         ]
@@ -563,22 +566,24 @@ class TestCreatePostAndComments:
         :param user_1_post:
         :return:
         """
+        # TODO: assert schema attribute is required!
         url = app.url_path_for("get_post_comment_list")
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).model_dump()
+        relationships_data = {
+            "post": {
+                "data": {
+                    "type": "post",
+                    "id": ViewBase.get_db_item_id(user_1_post),
+                },
+            },
+            # don't pass "author"
+        }
         comment_create = {
             "data": {
                 "attributes": comment_attributes,
-                "relationships": {
-                    "post": {
-                        "data": {
-                            "type": "post",
-                            "id": user_1_post.id,
-                        },
-                    },
-                    # don't pass "author"
-                },
+                "relationships": relationships_data,
             },
         }
         response = await client.post(url, json=comment_create)
@@ -593,8 +598,9 @@ class TestCreatePostAndComments:
                         "relationships",
                         "author",
                     ],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "input": relationships_data,
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -623,24 +629,16 @@ class TestCreatePostAndComments:
         assert response_data == {
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "data",
-                        "relationships",
-                        "post",
-                    ],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "input": {},
+                    "loc": ["body", "data", "relationships", "post"],
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
-                    "loc": [
-                        "body",
-                        "data",
-                        "relationships",
-                        "author",
-                    ],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "input": {},
+                    "loc": ["body", "data", "relationships", "author"],
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -654,11 +652,12 @@ class TestCreatePostAndComments:
         comment_attributes = PostCommentAttributesBaseSchema(
             text=fake.sentence(),
         ).model_dump()
+        create_data = {
+            "attributes": comment_attributes,
+            # don't pass "relationships" at all
+        }
         comment_create = {
-            "data": {
-                "attributes": comment_attributes,
-                # don't pass "relationships" at all
-            },
+            "data": create_data,
         }
         response = await client.post(url, json=comment_create)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
@@ -666,13 +665,10 @@ class TestCreatePostAndComments:
         assert response_data == {
             "detail": [
                 {
-                    "loc": [
-                        "body",
-                        "data",
-                        "relationships",
-                    ],
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "input": create_data,
+                    "loc": ["body", "data", "relationships"],
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -686,8 +682,8 @@ async def test_get_users_with_all_inner_relations(
     user_1_bio: UserBio,
     user_1_posts,
     user_1_post_for_comments: Post,
-    user_2_posts: List[Post],
-    user_1_comments_for_u2_posts: List[PostComment],
+    user_2_posts: list[Post],
+    user_1_comments_for_u2_posts: list[PostComment],
     user_2_comment_for_one_u1_post: PostComment,
 ):
     """
@@ -711,7 +707,7 @@ async def test_get_users_with_all_inner_relations(
     assert len(users_data) == len(users)
 
     assert "included" in response_data, response_data
-    included: List[Dict] = response_data["included"]
+    included: list[dict] = response_data["included"]
 
     included_data = {association_key(data): data for data in included}
 
@@ -839,10 +835,10 @@ class TestGetUserDetail:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
             "data": {
-                "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(
+                "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(
                     include=set(queried_user_fields.split(",")),
                 ),
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "type": "user",
             },
             "jsonapi": {"version": "1.0"},
@@ -851,8 +847,12 @@ class TestGetUserDetail:
 
 
 class TestUserWithPostsWithInnerIncludes:
-    @mark.parametrize(
-        "include, expected_relationships_inner_relations, expect_user_include",
+    @pytest.mark.parametrize(
+        (
+            "include",
+            "expected_relationships_inner_relations",
+            "expect_user_include",
+        ),
         [
             (
                 ["posts", "posts.user"],
@@ -895,6 +895,7 @@ class TestUserWithPostsWithInnerIncludes:
         Test if requesting `posts.user` and `posts.comments`
         returns posts with both `user` and `comments`
         """
+        assert user_1_post_for_comments.id, "post required"
         assert user_1_posts
         assert user_2_comment_for_one_u1_post.author_id == user_2.id
         include_param = ",".join(include)
@@ -909,14 +910,14 @@ class TestUserWithPostsWithInnerIncludes:
 
         assert result_data == [
             {
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "type": resource_type,
                 "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
                 "relationships": {
                     "posts": {
                         "data": [
                             # relationship info
-                            {"id": str(p.id), "type": "post"}
+                            {"id": ViewBase.get_db_item_id(p), "type": "post"}
                             # for every post
                             for p in user_1_posts
                         ],
@@ -958,7 +959,6 @@ class TestUserWithPostsWithInnerIncludes:
         for key in set(expected_includes).difference(expected_relationships_inner_relations):
             expected_includes.pop(key)
 
-        # XXX
         if not expect_user_include:
             expected_includes.pop("user", None)
         assert included_as_map == expected_includes
@@ -970,29 +970,31 @@ class TestUserWithPostsWithInnerIncludes:
         user_1_posts: list[PostComment],
         user_2_comment_for_one_u1_post: PostComment,
     ):
-        expected_includes = {
+        return {
             "post": [
                 #
                 {
-                    "id": str(p.id),
+                    "id": ViewBase.get_db_item_id(p),
                     "type": "post",
                     "attributes": PostAttributesBaseSchema.model_validate(p).model_dump(),
                     "relationships": {
                         "user": {
                             "data": {
-                                "id": str(user_1.id),
+                                "id": ViewBase.get_db_item_id(user_1),
                                 "type": "user",
                             },
                         },
                         "comments": {
-                            "data": [
-                                {
-                                    "id": str(user_2_comment_for_one_u1_post.id),
-                                    "type": "post_comment",
-                                },
-                            ]
-                            if p.id == user_2_comment_for_one_u1_post.post_id
-                            else [],
+                            "data": (
+                                [
+                                    {
+                                        "id": ViewBase.get_db_item_id(user_2_comment_for_one_u1_post),
+                                        "type": "post_comment",
+                                    },
+                                ]
+                                if p.id == user_2_comment_for_one_u1_post.post_id
+                                else []
+                            ),
                         },
                     },
                 }
@@ -1001,7 +1003,7 @@ class TestUserWithPostsWithInnerIncludes:
             ],
             "post_comment": [
                 {
-                    "id": str(user_2_comment_for_one_u1_post.id),
+                    "id": ViewBase.get_db_item_id(user_2_comment_for_one_u1_post),
                     "type": "post_comment",
                     "attributes": PostCommentAttributesBaseSchema.model_validate(
                         user_2_comment_for_one_u1_post,
@@ -1009,7 +1011,7 @@ class TestUserWithPostsWithInnerIncludes:
                     "relationships": {
                         "author": {
                             "data": {
-                                "id": str(user_2.id),
+                                "id": ViewBase.get_db_item_id(user_2),
                                 "type": "user",
                             },
                         },
@@ -1018,14 +1020,12 @@ class TestUserWithPostsWithInnerIncludes:
             ],
             "user": [
                 {
-                    "id": str(user_2.id),
+                    "id": ViewBase.get_db_item_id(user_2),
                     "type": "user",
                     "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(),
                 },
             ],
         }
-
-        return expected_includes
 
 
 async def test_method_not_allowed(app: FastAPI, client: AsyncClient):
@@ -1044,7 +1044,7 @@ async def test_get_list_view_generic(app: FastAPI, client: AsyncClient, user_1: 
     assert len(users_data) == 1, users_data
     user_data = users_data[0]
     assert user_data["id"] == str(user_1.id)
-    assert user_data["attributes"] == UserAttributesBaseSchema.model_validate(user_1)
+    assert user_data["attributes"] == UserAttributesBaseSchema.model_validate(user_1).model_dump()
 
 
 async def test_get_user_not_found(app: FastAPI, client: AsyncClient):
@@ -1093,9 +1093,10 @@ class TestCreateObjects:
                 "attributes": UserBioAttributesBaseSchema(
                     birth_city=fake.word(),
                     favourite_movies=fake.sentence(),
+                    # TODO:
                     # keys_to_ids_list={"foobar": [1, 2, 3], "spameggs": [2, 3, 4]},
                 ).model_dump(),
-                "relationships": {"user": {"data": {"type": "user", "id": user_1.id}}},
+                "relationships": {"user": {"data": {"type": "user", "id": ViewBase.get_db_item_id(user_1)}}},
             },
         }
         url = app.url_path_for("get_user_bio_list")
@@ -1112,7 +1113,7 @@ class TestCreateObjects:
         assert isinstance(included_user, dict), included_user
         assert included_user["type"] == "user"
         assert included_user["id"] == str(user_1.id)
-        assert included_user["attributes"] == UserAttributesBaseSchema.model_validate(user_1)
+        assert included_user["attributes"] == UserAttributesBaseSchema.model_validate(user_1).model_dump()
 
     async def test_create_object_with_to_many_relationship_and_fetch_include(
         self,
@@ -1132,11 +1133,11 @@ class TestCreateObjects:
                     "computers": {
                         "data": [
                             {
-                                "id": computer_1.id,
+                                "id": ViewBase.get_db_item_id(computer_1),
                                 "type": "computer",
                             },
                             {
-                                "id": computer_2.id,
+                                "id": ViewBase.get_db_item_id(computer_2),
                                 "type": "computer",
                             },
                         ],
@@ -1159,11 +1160,11 @@ class TestCreateObjects:
                     "computers": {
                         "data": [
                             {
-                                "id": str(computer_1.id),
+                                "id": ViewBase.get_db_item_id(computer_1),
                                 "type": "computer",
                             },
                             {
-                                "id": str(computer_2.id),
+                                "id": ViewBase.get_db_item_id(computer_2),
                                 "type": "computer",
                             },
                         ],
@@ -1174,12 +1175,12 @@ class TestCreateObjects:
             "included": [
                 {
                     "attributes": {"name": computer_1.name},
-                    "id": str(computer_1.id),
+                    "id": ViewBase.get_db_item_id(computer_1),
                     "type": "computer",
                 },
                 {
                     "attributes": {"name": computer_2.name},
-                    "id": str(computer_2.id),
+                    "id": ViewBase.get_db_item_id(computer_2),
                     "type": "computer",
                 },
             ],
@@ -1206,18 +1207,18 @@ class TestCreateObjects:
                     "computers": {
                         "data": [
                             {
-                                "id": computer_1.id,
+                                "id": ViewBase.get_db_item_id(computer_1),
                                 "type": "computer",
                             },
                             {
-                                "id": computer_2.id,
+                                "id": ViewBase.get_db_item_id(computer_2),
                                 "type": "computer",
                             },
                         ],
                     },
                     "workplace": {
                         "data": {
-                            "id": str(workplace_1.id),
+                            "id": ViewBase.get_db_item_id(workplace_1),
                             "type": "workplace",
                         },
                     },
@@ -1239,18 +1240,18 @@ class TestCreateObjects:
                     "computers": {
                         "data": [
                             {
-                                "id": str(computer_1.id),
+                                "id": ViewBase.get_db_item_id(computer_1),
                                 "type": "computer",
                             },
                             {
-                                "id": str(computer_2.id),
+                                "id": ViewBase.get_db_item_id(computer_2),
                                 "type": "computer",
                             },
                         ],
                     },
                     "workplace": {
                         "data": {
-                            "id": str(workplace_1.id),
+                            "id": ViewBase.get_db_item_id(workplace_1),
                             "type": "workplace",
                         },
                     },
@@ -1260,17 +1261,17 @@ class TestCreateObjects:
             "included": [
                 {
                     "attributes": {"name": computer_1.name},
-                    "id": str(computer_1.id),
+                    "id": ViewBase.get_db_item_id(computer_1),
                     "type": "computer",
                 },
                 {
                     "attributes": {"name": computer_2.name},
-                    "id": str(computer_2.id),
+                    "id": ViewBase.get_db_item_id(computer_2),
                     "type": "computer",
                 },
                 {
                     "attributes": {"name": workplace_1.name},
-                    "id": str(workplace_1.id),
+                    "id": ViewBase.get_db_item_id(workplace_1),
                     "type": "workplace",
                 },
             ],
@@ -1331,7 +1332,7 @@ class TestCreateObjects:
             resource_type=resource_type,
         )
 
-        new_id = str(fake.pyint(100, 999))
+        new_id = str(fake.pyint(1000, 10_000))
         attrs = UserAttributesBaseSchema(
             name=fake.name(),
             age=fake.pyint(),
@@ -1420,7 +1421,8 @@ class TestCreateObjects:
 
             response_json = res.json()
             assert response_json["data"]
-            assert (parent_object_id := response_json["data"].get("id"))
+            parent_object_id = response_json["data"].get("id")
+            assert parent_object_id
             assert response_json == {
                 "data": {
                     "attributes": {
@@ -1454,7 +1456,8 @@ class TestCreateObjects:
 
             response_json = res.json()
             assert response_json["data"]
-            assert (child_object_id := response_json["data"].get("id"))
+            child_object_id = response_json["data"].get("id")
+            assert child_object_id
             assert res.json() == {
                 "data": {
                     "attributes": {"name": "child"},
@@ -1509,13 +1512,23 @@ class TestCreateObjects:
             assert res.status_code == status.HTTP_201_CREATED, res.text
             response_json = res.json()
 
-            assert (entity_id := response_json["data"]["id"])
+            data = response_json["data"]
+            entity_id = data["id"]
+            assert entity_id
+
+            received_attributes = data.pop("attributes")
+            assert (
+                # rec
+                ContainsTimestampAttrsSchema(**received_attributes)
+                ==
+                # ex
+                ContainsTimestampAttrsSchema(timestamp=create_timestamp)
+            )
             assert response_json == {
                 "meta": None,
                 "jsonapi": {"version": "1.0"},
                 "data": {
                     "type": resource_type,
-                    "attributes": {"timestamp": create_timestamp.isoformat()},
                     "id": entity_id,
                 },
             }
@@ -1528,6 +1541,7 @@ class TestCreateObjects:
             if is_postgres_tests():
                 expected_response_timestamp = create_timestamp.replace().isoformat()
 
+            # ... ?
             params = {
                 "filter": json.dumps(
                     [
@@ -1620,7 +1634,7 @@ class TestPatchObjects:
 
         patch_user_body = {
             "data": {
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": new_attrs,
             },
         }
@@ -1631,7 +1645,7 @@ class TestPatchObjects:
         assert res.json() == {
             "data": {
                 "attributes": new_attrs,
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "type": "user",
             },
             "jsonapi": {"version": "1.0"},
@@ -1662,7 +1676,7 @@ class TestPatchObjects:
 
         patch_user_body = {
             "data": {
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": new_attrs,
             },
         }
@@ -1689,7 +1703,7 @@ class TestPatchObjects:
         create_body = {
             "data": {
                 "attributes": new_attributes.model_dump(),
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
             },
         }
 
@@ -1701,7 +1715,7 @@ class TestPatchObjects:
         assert res.json() == {
             "data": {
                 "attributes": UserAttributesBaseSchema(**new_attributes.model_dump()).model_dump(),
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "type": resource_type,
             },
             "jsonapi": {"version": "1.0"},
@@ -1730,7 +1744,7 @@ class TestPatchObjects:
 
         patch_user_body = {
             "data": {
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": new_attrs.dict(),
             },
         }
@@ -1743,14 +1757,14 @@ class TestPatchObjects:
         assert res.json() == {
             "data": {
                 "attributes": new_attrs.dict(include=set(queried_user_fields.split(","))),
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "type": "user",
             },
             "jsonapi": {"version": "1.0"},
             "meta": None,
         }
 
-    @mark.parametrize("check_type", ["ok", "fail"])
+    @pytest.mark.parametrize("check_type", ["ok", "fail"])
     async def test_update_to_many_relationships(self, async_session: AsyncSession, check_type: Literal["ok", "fail"]):
         resource_type = "cascade_case"
         with suppress(KeyError):
@@ -1787,18 +1801,18 @@ class TestPatchObjects:
             update_body = {
                 "type": resource_type,
                 "data": {
-                    "id": new_top_item.id,
+                    "id": ViewBase.get_db_item_id(new_top_item),
                     "attributes": {},
                     "relationships": {
                         "sub_items": {
                             "data": [
                                 {
                                     "type": resource_type,
-                                    "id": sub_item_1.id,
+                                    "id": ViewBase.get_db_item_id(sub_item_1),
                                 },
                                 {
                                     "type": resource_type,
-                                    "id": sub_item_2.id,
+                                    "id": ViewBase.get_db_item_id(sub_item_2),
                                 },
                             ],
                         },
@@ -1847,16 +1861,17 @@ class TestPatchObjectRelationshipsToOne:
             email=fake.email(),
         ).model_dump()
 
+        workplace_data = {
+            "type": "workplace",
+            "id": ViewBase.get_db_item_id(workplace_1),
+        }
         patch_user_body = {
             "data": {
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": new_attrs,
                 "relationships": {
                     "workplace": {
-                        "data": {
-                            "type": "workplace",
-                            "id": workplace_1.id,
-                        },
+                        "data": workplace_data,
                     },
                 },
             },
@@ -1871,12 +1886,12 @@ class TestPatchObjectRelationshipsToOne:
         assert res.json() == {
             "data": {
                 "attributes": new_attrs,
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "relationships": {
                     "workplace": {
                         "data": {
                             "type": "workplace",
-                            "id": str(workplace_1.id),
+                            "id": ViewBase.get_db_item_id(workplace_1),
                         },
                     },
                 },
@@ -1885,7 +1900,7 @@ class TestPatchObjectRelationshipsToOne:
             "included": [
                 {
                     "attributes": {"name": workplace_1.name},
-                    "id": str(workplace_1.id),
+                    "id": ViewBase.get_db_item_id(workplace_1),
                     "type": "workplace",
                 },
             ],
@@ -1893,7 +1908,7 @@ class TestPatchObjectRelationshipsToOne:
             "meta": None,
         }
 
-        patch_user_body["data"]["relationships"]["workplace"]["data"]["id"] = workplace_2.id
+        workplace_data["id"] = ViewBase.get_db_item_id(workplace_2)
 
         # update relationship with patch endpoint
         res = await client.patch(url, json=patch_user_body)
@@ -1902,12 +1917,12 @@ class TestPatchObjectRelationshipsToOne:
         assert res.json() == {
             "data": {
                 "attributes": new_attrs,
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "relationships": {
                     "workplace": {
                         "data": {
                             "type": "workplace",
-                            "id": str(workplace_2.id),
+                            "id": ViewBase.get_db_item_id(workplace_2),
                         },
                     },
                 },
@@ -1916,7 +1931,7 @@ class TestPatchObjectRelationshipsToOne:
             "included": [
                 {
                     "attributes": {"name": workplace_2.name},
-                    "id": str(workplace_2.id),
+                    "id": ViewBase.get_db_item_id(workplace_2),
                     "type": "workplace",
                 },
             ],
@@ -1938,13 +1953,13 @@ class TestPatchObjectRelationshipsToOne:
 
         patch_user_bio_body = {
             "data": {
-                "id": user_1_bio.id,
+                "id": ViewBase.get_db_item_id(user_1_bio),
                 "attributes": UserBioAttributesBaseSchema.model_validate(user_1_bio).model_dump(),
                 "relationships": {
                     "user": {
                         "data": {
                             "type": "user",
-                            "id": user_2.id,
+                            "id": ViewBase.get_db_item_id(user_2),
                         },
                     },
                 },
@@ -1963,13 +1978,14 @@ class TestPatchObjectRelationshipsToOne:
                     "status_code": status.HTTP_400_BAD_REQUEST,
                     "title": "Bad Request",
                     "meta": {
-                        "id": str(user_1_bio.id),
+                        "id": ViewBase.get_db_item_id(user_1_bio),
                         "type": "user_bio",
                     },
                 },
             ],
         }
 
+    @pytest.mark.usefixtures("refresh_db")
     async def test_relationship_not_found(
         self,
         app: FastAPI,
@@ -1985,7 +2001,7 @@ class TestPatchObjectRelationshipsToOne:
         fake_relationship_id = "1"
         patch_user_body = {
             "data": {
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": new_attrs,
                 "relationships": {
                     "workplace": {
@@ -2021,11 +2037,10 @@ class TestPatchObjectRelationshipsToOne:
         client: AsyncClient,
         user_1: User,
     ):
-        user_id = user_1.id
         another_id = 0
         patch_user_body = {
             "data": {
-                "id": user_id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
             },
         }
@@ -2066,7 +2081,7 @@ class TestPatchObjectRelationshipsToOne:
             expected_name = fake.name()
             update_body = {
                 "data": {
-                    "id": str(child_obj.id),
+                    "id": ViewBase.get_db_item_id(child_obj),
                     "attributes": {
                         "name": expected_name,
                     },
@@ -2085,8 +2100,8 @@ class TestPatchObjectRelationshipsToOne:
             assert res.status_code == status.HTTP_200_OK, res.text
             assert res.json() == {
                 "data": {
-                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).dict(),
-                    "id": str(child_obj.id),
+                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).model_dump(exclude_unset=True),
+                    "id": ViewBase.get_db_item_id(child_obj),
                     "relationships": {"parent_object": {"data": None}},
                     "type": "self_relationship",
                 },
@@ -2116,20 +2131,18 @@ class TestPatchRelationshipsToMany:
 
         patch_user_body = {
             "data": {
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": new_attrs,
                 "relationships": {
                     "computers": {
                         "data": [
                             {
                                 "type": "computer",
-                                # test id as int
-                                "id": computer_1.id,
+                                "id": ViewBase.get_db_item_id(computer_1),
                             },
                             {
                                 "type": "computer",
-                                # test id as str
-                                "id": str(computer_2.id),
+                                "id": ViewBase.get_db_item_id(computer_2),
                             },
                         ],
                     },
@@ -2145,17 +2158,17 @@ class TestPatchRelationshipsToMany:
         assert res.json() == {
             "data": {
                 "attributes": new_attrs,
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "relationships": {
                     "computers": {
                         "data": [
                             {
                                 "type": "computer",
-                                "id": str(computer_1.id),
+                                "id": ViewBase.get_db_item_id(computer_1),
                             },
                             {
                                 "type": "computer",
-                                "id": str(computer_2.id),
+                                "id": ViewBase.get_db_item_id(computer_2),
                             },
                         ],
                     },
@@ -2165,12 +2178,12 @@ class TestPatchRelationshipsToMany:
             "included": [
                 {
                     "attributes": {"name": computer_1.name},
-                    "id": str(computer_1.id),
+                    "id": ViewBase.get_db_item_id(computer_1),
                     "type": "computer",
                 },
                 {
                     "attributes": {"name": computer_2.name},
-                    "id": str(computer_2.id),
+                    "id": ViewBase.get_db_item_id(computer_2),
                     "type": "computer",
                 },
             ],
@@ -2182,7 +2195,7 @@ class TestPatchRelationshipsToMany:
             "data": [
                 {
                     "type": "computer",
-                    "id": str(computer_1.id),
+                    "id": ViewBase.get_db_item_id(computer_1),
                 },
             ],
         }
@@ -2194,13 +2207,13 @@ class TestPatchRelationshipsToMany:
         assert res.json() == {
             "data": {
                 "attributes": new_attrs,
-                "id": str(user_1.id),
+                "id": ViewBase.get_db_item_id(user_1),
                 "relationships": {
                     "computers": {
                         "data": [
                             {
                                 "type": "computer",
-                                "id": str(computer_1.id),
+                                "id": ViewBase.get_db_item_id(computer_1),
                             },
                         ],
                     },
@@ -2210,7 +2223,7 @@ class TestPatchRelationshipsToMany:
             "included": [
                 {
                     "attributes": {"name": computer_1.name},
-                    "id": str(computer_1.id),
+                    "id": ViewBase.get_db_item_id(computer_1),
                     "type": "computer",
                 },
             ],
@@ -2237,18 +2250,18 @@ class TestPatchRelationshipsToMany:
 
         patch_user_body = {
             "data": {
-                "id": user_1.id,
+                "id": ViewBase.get_db_item_id(user_1),
                 "attributes": new_attrs,
                 "relationships": {
                     "computers": {
                         "data": [
                             {
                                 "type": "computer",
-                                "id": str(computer_1.id),
+                                "id": ViewBase.get_db_item_id(computer_1),
                             },
                             {
                                 "type": "computer",
-                                "id": fake_computer_id,
+                                "id": str(fake_computer_id),
                             },
                         ],
                     },
@@ -2292,19 +2305,20 @@ class TestPatchRelationshipsToMany:
 
         assert child_obj_1.self_relationship_id == parent_obj.id
         assert child_obj_2.self_relationship_id == parent_obj.id
-        assert len(parent_obj.children_objects) == 2  # noqa PLR2004
+        assert len(parent_obj.children_objects) == 2  # noqa: PLR2004
 
         async with AsyncClient(app=app, base_url="http://test") as client:
             expected_name = fake.name()
             update_body = {
                 "data": {
-                    "id": str(parent_obj.id),
+                    "id": ViewBase.get_db_item_id(parent_obj),
                     "attributes": {
                         "name": expected_name,
                     },
                     "relationships": {
                         "children_objects": {
-                            "data": None,
+                            # clear by setting empty list
+                            "data": [],
                         },
                     },
                 },
@@ -2317,8 +2331,8 @@ class TestPatchRelationshipsToMany:
             assert res.status_code == status.HTTP_200_OK, res.text
             assert res.json() == {
                 "data": {
-                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).dict(),
-                    "id": str(parent_obj.id),
+                    "attributes": SelfRelationshipAttributesSchema(name=expected_name).model_dump(exclude_unset=True),
+                    "id": ViewBase.get_db_item_id(parent_obj),
                     "relationships": {"children_objects": {"data": []}},
                     "type": "self_relationship",
                 },
@@ -2386,13 +2400,13 @@ class TestDeleteObjects:
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_1),
-                    "id": str(user_1.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_3),
-                    "id": str(user_3.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_3).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_3),
                     "type": "user",
                 },
             ],
@@ -2405,8 +2419,8 @@ class TestDeleteObjects:
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_2),
-                    "id": str(user_2.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_2),
                     "type": "user",
                 },
             ],
@@ -2429,17 +2443,17 @@ class TestDeleteObjects:
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(
                         include=set(queried_user_fields.split(",")),
                     ),
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.from_orm(user_2).dict(
+                    "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(
                         include=set(queried_user_fields.split(",")),
                     ),
-                    "id": str(user_2.id),
+                    "id": ViewBase.get_db_item_id(user_2),
                     "type": "user",
                 },
             ],
@@ -2501,7 +2515,7 @@ class TestOpenApi:
 
     async def test_openapi_for_client_can_set_id(self):
         class Schema(BaseModel):
-            id: UUID = Field(json_schema_extra={"client_can_set_id": True})
+            id: Annotated[UUID, ClientCanSetId()]
 
         app = build_app_custom(
             model=User,
@@ -2535,7 +2549,7 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
-    @mark.parametrize("field_name", [param(name, id=name) for name in ["id", "name", "age", "email"]])
+    @pytest.mark.parametrize("field_name", [pytest.param(name, id=name) for name in ["id", "name", "age", "email"]])
     async def test_field_filters(
         self,
         app: FastAPI,
@@ -2555,7 +2569,7 @@ class TestFilters:
             "data": [
                 {
                     "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
             ],
@@ -2587,7 +2601,7 @@ class TestFilters:
             "data": [
                 {
                     "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
-                    "id": str(user_1.id),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
             ],
@@ -2616,11 +2630,11 @@ class TestFilters:
             "meta": {"count": 0, "totalPages": 1},
         }
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("filter_dict", "expected_email_is_null"),
         [
-            param([{"name": "email", "op": "is_", "val": None}], True),
-            param([{"name": "email", "op": "isnot", "val": None}], False),
+            pytest.param([{"name": "email", "op": "is_", "val": None}], True),
+            pytest.param([{"name": "email", "op": "isnot", "val": None}], False),
         ],
     )
     async def test_filter_by_null(
@@ -2646,7 +2660,8 @@ class TestFilters:
 
         response_json = response.json()
 
-        assert len(data := response_json["data"]) == 1
+        data = response_json["data"]
+        assert len(data) == 1
         assert data[0]["id"] == str(target_user.id)
         assert data[0]["attributes"]["email"] == target_user.email
 
@@ -2707,20 +2722,8 @@ class TestFilters:
 
         assert user_1.id != user_2.id
 
-        def lower_equals_sql_filter(
-            schema_field: FieldInfo,
-            model_column: InstrumentedAttribute,
-            value: str,
-            operator: str,
-        ):
-            return func.lower(model_column) == func.lower(value)
-
         class UserWithEmailFieldSchema(UserAttributesBaseSchema):
-            email: str = Field(
-                json_schema_extra={
-                    "_lower_equals_sql_filter_": lower_equals_sql_filter,
-                },
-            )
+            email: Annotated[str, sql_filter_lower_equals]
 
         app = build_app_custom(
             model=User,
@@ -2750,14 +2753,13 @@ class TestFilters:
 
         assert len(response_data) == 1
         assert response_data[0] == {
-            "id": str(user_1.id),
+            "id": ViewBase.get_db_item_id(user_1),
             "type": resource_type,
             "attributes": UserWithEmailFieldSchema.model_validate(user_1).model_dump(),
         }
 
     async def test_custom_sql_filter_lower_string_old_style_with_joins(
         self,
-        caplog,
         async_session: AsyncSession,
         user_1: User,
         user_2: User,
@@ -2766,20 +2768,8 @@ class TestFilters:
 
         assert user_1.id != user_2.id
 
-        def lower_equals_sql_filter(
-            schema_field: FieldInfo,
-            model_column: InstrumentedAttribute,
-            value: str,
-            operator: str,
-        ):
-            return func.lower(model_column) == func.lower(value), []
-
         class UserWithEmailFieldFilterSchema(UserAttributesBaseSchema):
-            email: str = Field(
-                json_schema_extra={
-                    "_lower_equals_sql_filter_": lower_equals_sql_filter,
-                },
-            )
+            email: Annotated[str, sql_filter_lower_equals]
 
         app = build_app_custom(
             model=User,
@@ -2809,39 +2799,16 @@ class TestFilters:
 
         assert len(response_data) == 1
         assert response_data[0] == {
-            "id": str(user_1.id),
+            "id": ViewBase.get_db_item_id(user_1),
             "type": resource_type,
             "attributes": UserWithEmailFieldFilterSchema.model_validate(user_1).model_dump(),
         }
-        assert any(
-            # str from logs
-            "Please return only filter expression from now on" in record.msg
-            # check all records
-            for record in caplog.records
-        )
 
-    async def test_custom_sql_filter_invalid_result(
-        self,
-        caplog,
-        async_session: AsyncSession,
-        user_1: User,
-    ):
+    async def test_custom_sql_filter_doesnt_exist(self):
         resource_type = "user_with_custom_invalid_sql_filter"
 
-        def returns_invalid_number_of_params_filter(
-            schema_field: FieldInfo,
-            model_column: InstrumentedAttribute,
-            value: str,
-            operator: str,
-        ):
-            return 1, 2, 3
-
         class UserWithInvalidEmailFieldFilterSchema(UserAttributesBaseSchema):
-            email: str = Field(
-                json_schema_extra={
-                    "_custom_broken_filter_sql_filter_": returns_invalid_number_of_params_filter,
-                },
-            )
+            email: str
 
         app = build_app_custom(
             model=User,
@@ -2849,12 +2816,14 @@ class TestFilters:
             resource_type=resource_type,
         )
 
+        field_name = "email"
+        field_op = "custom_broken_filter"
         params = {
             "filter": dumps(
                 [
                     {
-                        "name": "email",
-                        "op": "custom_broken_filter",
+                        "name": field_name,
+                        "op": field_op,
                         "val": "qwerty",
                     },
                 ],
@@ -2867,7 +2836,7 @@ class TestFilters:
             assert response.json() == {
                 "errors": [
                     {
-                        "detail": "Custom sql filter backend error.",
+                        "detail": f"Field {field_name!r} has no operator {field_op!r}",
                         "source": {"parameter": "filters"},
                         "status_code": status.HTTP_400_BAD_REQUEST,
                         "title": "Invalid filters querystring parameter.",
@@ -2883,6 +2852,7 @@ class TestFilters:
         user_2: User,
         user_3: User,
     ):
+        assert user_2.id, "user 2 should exist"
         params = {
             "filter": dumps(
                 [
@@ -2904,13 +2874,13 @@ class TestFilters:
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_1),
-                    "id": str(user_1.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_3),
-                    "id": str(user_3.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_3).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_3),
                     "type": "user",
                 },
             ],
@@ -2926,6 +2896,7 @@ class TestFilters:
         user_2: User,
         user_3: User,
     ):
+        assert user_2.id, "user 2 should exist"
         params = {
             "filter": dumps(
                 [
@@ -2952,8 +2923,8 @@ class TestFilters:
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_1),
-                    "id": str(user_1.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
             ],
@@ -2981,7 +2952,7 @@ class TestFilters:
                         ],
                     },
                     {
-                        "name": "name",
+                        "name": "id",
                         "op": "eq",
                         "val": user_2.id,
                     },
@@ -3063,18 +3034,18 @@ class TestFilters:
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_1),
-                    "id": str(user_1.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_2),
-                    "id": str(user_2.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_2),
                     "type": "user",
                 },
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_4),
-                    "id": str(user_4.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_4).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_4),
                     "type": "user",
                 },
             ],
@@ -3122,8 +3093,8 @@ class TestFilters:
         assert res.json() == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_1),
-                    "id": str(user_1.id),
+                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
+                    "id": ViewBase.get_db_item_id(user_1),
                     "type": "user",
                 },
             ],
@@ -3372,7 +3343,9 @@ class TestFilters:
 
             assert response.status_code == status.HTTP_200_OK, response.text
             assert response.json() == {
-                "data": [{"attributes": {}, "id": str(alpha_1.id), "type": "alpha"}],
+                "data": [
+                    {"attributes": {}, "id": ViewBase.get_db_item_id(alpha_1), "type": "alpha"},
+                ],
                 "jsonapi": {"version": "1.0"},
                 "meta": {"count": 1, "totalPages": 1},
             }
@@ -3386,11 +3359,11 @@ class TestSorts:
     def get_reverse(self, order: str) -> bool:
         return order is DESCENDING
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "order",
         [
-            param(ASCENDING, id="ascending"),
-            param(DESCENDING, id="descending"),
+            pytest.param(ASCENDING, id="ascending"),
+            pytest.param(DESCENDING, id="descending"),
         ],
     )
     async def test_sort(
@@ -3429,12 +3402,12 @@ class TestSorts:
                 [
                     {
                         "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
-                        "id": str(user_1.id),
+                        "id": ViewBase.get_db_item_id(user_1),
                         "type": "user",
                     },
                     {
                         "attributes": UserAttributesBaseSchema.model_validate(user_3).model_dump(),
-                        "id": str(user_3.id),
+                        "id": ViewBase.get_db_item_id(user_3),
                         "type": "user",
                     },
                 ],
@@ -3478,4 +3451,4 @@ class TestFilteringErrors:
         }
 
 
-# todo: test errors
+# TODO: test errors

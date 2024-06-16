@@ -2,10 +2,12 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 from examples.api_for_sqlalchemy.extensions.sqlalchemy import Base
-from examples.api_for_sqlalchemy.utils.sqlalchemy.base_model_mixin import BaseModelMixin
+from examples.api_for_sqlalchemy.utils.sqlalchemy.timestamps_mixin import TimestampsMixin
+
+# TODO: sqla 2.0
 
 
-class User(Base, BaseModelMixin):
+class User(Base, TimestampsMixin):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name: str = Column(String)
@@ -15,7 +17,7 @@ class User(Base, BaseModelMixin):
     computers = relationship("Computer", back_populates="user", uselist=True)
 
 
-class Computer(Base, BaseModelMixin):
+class Computer(Base, TimestampsMixin):
     __tablename__ = "computers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -24,7 +26,7 @@ class Computer(Base, BaseModelMixin):
     user = relationship("User", back_populates="computers")
 
 
-class UserBio(Base, BaseModelMixin):
+class UserBio(Base, TimestampsMixin):
     __tablename__ = "user_bio"
     id = Column(Integer, primary_key=True, autoincrement=True)
     birth_city: str = Column(String, nullable=False, default="", server_default="")

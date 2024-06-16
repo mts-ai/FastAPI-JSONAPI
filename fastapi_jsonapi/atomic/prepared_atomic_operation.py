@@ -1,28 +1,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
-
-from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.atomic.schemas import AtomicOperationAction, AtomicOperationRef, OperationDataType
 from fastapi_jsonapi.views.utils import HTTPMethod
 
 if TYPE_CHECKING:
+    from fastapi import Request
+
+    from fastapi_jsonapi import RoutersJSONAPI
     from fastapi_jsonapi.data_layers.base import BaseDataLayer
+    from fastapi_jsonapi.data_typing import TypeSchema
     from fastapi_jsonapi.views.detail_view import DetailViewBase
     from fastapi_jsonapi.views.list_view import ListViewBase
     from fastapi_jsonapi.views.view_base import ViewBase
 
-LocalIdsType = Dict[str, Dict[str, str]]
+LocalIdsType = dict[str, dict[str, str]]
 
 
 @dataclass
 class OperationBase:
     jsonapi: RoutersJSONAPI
     view: ViewBase
-    ref: Optional[AtomicOperationRef]
+    ref: AtomicOperationRef | None
     data: OperationDataType
     op_type: str
 
@@ -36,10 +37,10 @@ class OperationBase:
         action: str,
         request: Request,
         jsonapi: RoutersJSONAPI,
-        ref: Optional[AtomicOperationRef],
+        ref: AtomicOperationRef | None,
         data: OperationDataType,
-    ) -> "OperationBase":
-        view_cls: Type[ViewBase] = jsonapi.detail_view_resource
+    ) -> OperationBase:
+        view_cls: type[ViewBase] = jsonapi.detail_view_resource
 
         if hasattr(action, "value"):
             # convert to str if enum
@@ -67,14 +68,14 @@ class OperationBase:
         )
 
     async def get_data_layer(self) -> BaseDataLayer:
-        data_layer_view_dependencies: Dict[str, Any] = await self.jsonapi.handle_view_dependencies(
+        data_layer_view_dependencies: dict[str, Any] = await self.jsonapi.handle_view_dependencies(
             request=self.view.request,
             view_cls=self.view.__class__,
             method=self.http_method,
         )
         return await self.view.get_data_layer(data_layer_view_dependencies)
 
-    async def handle(self, dl: BaseDataLayer):
+    async def handle(self, dl: BaseDataLayer) -> TypeSchema | None:
         raise NotImplementedError
 
     @classmethod
@@ -87,7 +88,7 @@ class OperationBase:
         :return:
         """
         missing = object()
-        lid = relationship_info.get("lid", missing)
+        lid: str | type[missing] = relationship_info.get("lid", missing)
         if lid is missing:
             return
 
@@ -113,7 +114,7 @@ class OperationBase:
     def update_relationships_with_lid(self, local_ids: LocalIdsType):
         if not (self.data and self.data.relationships):
             return
-        for relationship_name, relationship_value in self.data.relationships.items():
+        for relationship_value in self.data.relationships.values():
             relationship_data = relationship_value["data"]
             if isinstance(relationship_data, list):
                 for data in relationship_data:
@@ -122,7 +123,7 @@ class OperationBase:
                 self.upd_one_relationship_with_local_id(relationship_data, local_ids=local_ids)
             else:
                 msg = "unexpected relationship data"
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY004
 
 
 class ListOperationBase(OperationBase):
@@ -136,22 +137,21 @@ class DetailOperationBase(OperationBase):
 class OperationAdd(ListOperationBase):
     http_method = HTTPMethod.POST
 
-    async def handle(self, dl: BaseDataLayer):
+    async def handle(self, dl: BaseDataLayer) -> TypeSchema:
         # use outer schema wrapper because we need this error path:
         # `{'loc': ['data', 'attributes', 'name']`
         # and not `{'loc': ['attributes', 'name']`
-        data_in = self.jsonapi.schema_in_post(data=self.data)
-        response = await self.view.process_create_object(
+        data_in = self.jsonapi.schema_in_post(data=self.data.model_dump(exclude_unset=True))
+        return await self.view.process_create_object(
             dl=dl,
             data_create=data_in.data,
         )
-        return response
 
 
 class OperationUpdate(DetailOperationBase):
     http_method = HTTPMethod.PATCH
 
-    async def handle(self, dl: BaseDataLayer):
+    async def handle(self, dl: BaseDataLayer) -> TypeSchema:
         if self.data is None:
             # TODO: clear to-one relationships
             pass
@@ -160,14 +160,13 @@ class OperationUpdate(DetailOperationBase):
         # use outer schema wrapper because we need this error path:
         # `{'loc': ['data', 'attributes', 'name']`
         # and not `{'loc': ['attributes', 'name']`
-        data_in = self.jsonapi.schema_in_patch(data=self.data)
+        data_in = self.jsonapi.schema_in_patch(data=self.data.model_dump(exclude_unset=True))
         obj_id = self.ref and self.ref.id or self.data and self.data.id
-        response = await self.view.process_update_object(
+        return await self.view.process_update_object(
             dl=dl,
             obj_id=obj_id,
             data_update=data_in.data,
         )
-        return response
 
 
 class OperationRemove(DetailOperationBase):

@@ -5,14 +5,15 @@ If you want to create your own data layer
 you must inherit from this base class
 """
 
-from typing import Dict, List, Optional, Tuple, Type
+from __future__ import annotations
 
 from fastapi import Request
+from pydantic import TypeAdapter
 
+from fastapi_jsonapi.common import search_client_can_set_id
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
-from fastapi_jsonapi.schema_builder import FieldConfig, TransferSaveWrapper
 
 
 class BaseDataLayer:
@@ -21,10 +22,11 @@ class BaseDataLayer:
     def __init__(
         self,
         request: Request,
-        schema: Type[TypeSchema],
-        model: Type[TypeModel],
+        schema: type[TypeSchema],
+        model: type[TypeModel],
+        *,
         url_id_field: str,
-        id_name_field: Optional[str] = None,
+        id_name_field: str | None = None,
         disable_collection_count: bool = False,
         default_collection_count: int = -1,
         type_: str = "",
@@ -53,19 +55,19 @@ class BaseDataLayer:
         self.is_atomic = False
         self.type_ = type_
 
-    async def atomic_start(self, previous_dl: Optional["BaseDataLayer"] = None):
+    async def atomic_start(
+        self,
+        previous_dl: BaseDataLayer | None = None,
+    ) -> None:
         self.is_atomic = True
 
-    async def atomic_end(self, success: bool = True):
+    async def atomic_end(
+        self,
+        *,
+        success: bool = True,
+        exception: Exception | None = None,
+    ) -> None:
         raise NotImplementedError
-
-    def _unwrap_field_config(self, extra: Dict):
-        field_config_wrapper: Optional[TransferSaveWrapper] = extra.get("field_config")
-
-        if field_config_wrapper:
-            return field_config_wrapper.get_field_config()
-
-        return FieldConfig()
 
     def _apply_client_generated_id(
         self,
@@ -80,13 +82,16 @@ class BaseDataLayer:
         """
         if data_create.id is None:
             return model_kwargs
-        extra = data_create.model_fields["id"].json_schema_extra
-        if extra is not None and extra.get("client_can_set_id"):
-            id_value = data_create.id
-            field_config = self._unwrap_field_config(extra)
 
-            if field_config.cast_type:
-                id_value = field_config.cast_type(id_value)
+        # TODO: annotation?
+        field = data_create.model_fields["id"]
+        if can_set_id := search_client_can_set_id.first(field):
+            id_value = data_create.id
+
+            if can_set_id.cast_type:
+                # TODO: use type adapter only on builtin types?
+                t = TypeAdapter(can_set_id.cast_type)
+                id_value = t.validate_python(id_value)
 
             model_kwargs["id"] = id_value
 
@@ -117,12 +122,12 @@ class BaseDataLayer:
         except AttributeError:
             msg = f"{self.model.__name__} has no attribute {id_name_field}"
             # TODO: any custom exception type?
-            raise Exception(msg)
+            raise Exception(msg)  # noqa: TRY002
 
     def get_object_id(self, obj: TypeModel):
         return getattr(obj, self.get_object_id_field_name())
 
-    async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
+    async def get_object(self, view_kwargs: dict, qs: QueryStringManager | None = None) -> TypeModel:
         """
         Retrieve an object
 
@@ -132,7 +137,7 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
+    async def get_collection(self, qs: QueryStringManager, view_kwargs: dict | None = None) -> tuple[int, list]:
         """
         Retrieve a collection of objects
 
@@ -236,7 +241,7 @@ class BaseDataLayer:
 
     def get_related_model_query_base(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
     ):
         """
         Prepare query for the related model
@@ -248,7 +253,7 @@ class BaseDataLayer:
 
     def get_related_object_query(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         id_value: str,
     ):
@@ -264,7 +269,7 @@ class BaseDataLayer:
 
     def get_related_objects_list_query(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         ids: list[str],
     ):
@@ -281,7 +286,7 @@ class BaseDataLayer:
     # async def get_related_object_query(self):
     async def get_related_object(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         id_value: str,
     ) -> TypeModel:
@@ -297,7 +302,7 @@ class BaseDataLayer:
 
     async def get_related_objects_list(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         ids: list[str],
     ) -> list[TypeModel]:
@@ -412,27 +417,25 @@ class BaseDataLayer:
         """
         raise NotImplementedError
 
-    async def delete_objects(self, objects: List[TypeModel], view_kwargs):
+    async def delete_objects(self, objects: list[TypeModel], view_kwargs):
         # TODO: doc
         raise NotImplementedError
 
-    async def before_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+    async def before_delete_objects(self, objects: list[TypeModel], view_kwargs: dict):
         """
         Make checks before deleting objects.
 
         :param objects: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
-    async def after_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+    async def after_delete_objects(self, objects: list[TypeModel], view_kwargs: dict):
         """
         Any action after deleting objects.
 
         :param objects: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_create_relationship(
         self,

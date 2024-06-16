@@ -1,6 +1,3 @@
-"""schemas package."""
-
-
 from .child import (
     ChildInSchema,
     ChildPatchSchema,

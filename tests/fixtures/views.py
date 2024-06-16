@@ -1,8 +1,7 @@
-from typing import ClassVar, Dict
+from typing import ClassVar
 
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict
-from pytest import fixture  # noqa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_jsonapi.misc.sqla.generics.base import (
@@ -24,7 +23,7 @@ class SessionDependency(ArbitraryModelBase):
     session: AsyncSession = Depends(async_session_dependency)
 
 
-def common_handler(view: ViewBase, dto: SessionDependency) -> Dict:
+def common_handler(view: ViewBase, dto: SessionDependency) -> dict:  # noqa: ARG001
     return {"session": dto.session}
 
 

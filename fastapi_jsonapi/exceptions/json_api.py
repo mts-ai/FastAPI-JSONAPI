@@ -1,11 +1,10 @@
 """JSON API exceptions schemas."""
 
+from __future__ import annotations
+
 from http import HTTPStatus
 from typing import (
     Any,
-    List,
-    Optional,
-    Union,
 )
 
 from fastapi import HTTPException as FastApiHttpException
@@ -21,13 +20,13 @@ class HTTPException(FastApiHttpException):
 
     def __init__(
         self,
-        detail: Union[str, dict] = "",
+        detail: str | dict = "",
         pointer: str = "",
         parameter: str = "",
-        title: Optional[str] = None,
-        status_code: Optional[int] = None,
-        errors: Optional[List["HTTPException"]] = None,
-        meta: Optional[dict[str, Any]] = None,
+        title: str | None = None,
+        status_code: int | None = None,
+        errors: list[HTTPException] | None = None,
+        meta: dict[str, Any] | None = None,
     ):
         """
         Init base HTTP exception.
@@ -93,16 +92,6 @@ class InternalServerError(HTTPException):
     """
 
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-
-
-class UnsupportedFeatureORM(InternalServerError):
-    """
-    Init for invalid ORM exception.
-
-    Unsupported feature ORM exception class customized for json_api exceptions.
-    """
-
-    title = "Unsupported ORM"
 
 
 class BadRequest(HTTPException):

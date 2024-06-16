@@ -1,11 +1,15 @@
-"""User Bio schemas module."""
+from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+)
 
 from pydantic import ConfigDict
 
-from fastapi_jsonapi.schema_base import BaseModel, Field, RelationshipInfo
+from fastapi_jsonapi.schema_base import BaseModel, Field
+from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 if TYPE_CHECKING:
     from .user import UserSchema
@@ -20,13 +24,12 @@ class UserBioBaseSchema(BaseModel):
     favourite_movies: str
     # keys_to_ids_list: Optional[Dict[str, List[int]]] = None
 
-    user: "UserSchema" = Field(
-        json_schema_extra={
-            "relationship": RelationshipInfo(
-                resource_type="user",
-            ),
-        },
-    )
+    user: Annotated[
+        UserSchema | None,
+        RelationshipInfo(
+            resource_type="user",
+        ),
+    ] = None
 
 
 class UserBioPatchSchema(UserBioBaseSchema):

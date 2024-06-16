@@ -4,7 +4,6 @@ import logging
 import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
-from pytest import fixture  # noqa PT013
 from pytest_asyncio import fixture as async_fixture
 
 from tests.fixtures.app import (  # noqa
@@ -14,7 +13,7 @@ from tests.fixtures.app import (  # noqa
 from tests.fixtures.db_connection import (  # noqa
     async_engine,
     async_session,
-    async_session_plain,
+    refresh_db,
 )
 from tests.fixtures.entities import (  # noqa
     child_1,
@@ -54,7 +53,6 @@ from tests.fixtures.views import (  # noqa
     DetailViewBaseGeneric,
     ListViewBaseGeneric,
 )
-from tests.models import Base
 
 
 def configure_logging():
@@ -81,13 +79,6 @@ def event_loop():
 
 
 @async_fixture()
-async def client(app: FastAPI) -> AsyncClient:  # noqa
+async def client(app: FastAPI) -> AsyncClient:  # noqa: F811
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-
-
-@async_fixture(autouse=True)
-async def refresh_db(async_engine):  # noqa F811
-    async with async_engine.begin() as connector:
-        for table in reversed(Base.metadata.sorted_tables):
-            await connector.execute(table.delete())

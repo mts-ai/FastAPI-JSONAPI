@@ -1,8 +1,8 @@
 import inspect
+from collections.abc import Awaitable
 from contextlib import AsyncExitStack
 from typing import (
     Any,
-    Awaitable,
     Callable,
     TypeVar,
     Union,
@@ -44,7 +44,7 @@ class DependencyHelper:
         if errors:
             raise RequestValidationError(errors, body=body)
 
-        orig_func: Callable[..., FuncReturnType[Any]] = dependant.call  # type: ignore
+        orig_func: Callable[..., FuncReturnType[Any]] = dependant.call
         if inspect.iscoroutinefunction(orig_func):
             function_call_result = await orig_func(**values)
         else:

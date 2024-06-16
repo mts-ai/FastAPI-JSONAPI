@@ -106,7 +106,4 @@ class TestAtomicOperationRequest:
             AtomicOperationRequest.model_validate(atomic_request_data)
         errors = exc_info.value.errors()
         error = errors[0]
-        assert (
-            error.get("msg")
-            == f"value is not a valid enumeration member; permitted: {allowed_atomic_actions_as_string}"
-        )
+        assert error.get("msg") == f"Input should be {allowed_atomic_actions_as_string}"

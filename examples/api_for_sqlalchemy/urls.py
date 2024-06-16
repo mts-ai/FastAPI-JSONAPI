@@ -2,8 +2,6 @@
 
 from typing import (
     Any,
-    Dict,
-    List,
 )
 
 from fastapi import (
@@ -47,7 +45,7 @@ from .models.schemas import (
 )
 
 
-def add_routes(app: FastAPI) -> List[Dict[str, Any]]:
+def add_routes(app: FastAPI) -> list[dict[str, Any]]:
     tags = [
         {
             "name": "User",

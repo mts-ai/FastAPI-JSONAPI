@@ -1,16 +1,20 @@
 import logging
-from typing import Callable, Sequence
+from typing import TYPE_CHECKING, Callable
 
 import pytest
 from httpx import AsyncClient
-from pytest import mark  # noqa
-from sqlalchemy import and_, or_, select
-from sqlalchemy.engine import Result
+from sqlalchemy import (
+    and_,
+    or_,
+    select,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
 from starlette import status
 
+from fastapi_jsonapi.atomic.atomic_handler import OPERATION_VALIDATION_ERROR_TEXT
+from fastapi_jsonapi.views.view_base import ViewBase
 from tests.misc.utils import fake
 from tests.models import Child, Parent, ParentToChildAssociation, User, UserBio
 from tests.schemas import (
@@ -22,11 +26,18 @@ from tests.schemas import (
     UserBioAttributesBaseSchema,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from sqlalchemy.engine import Result
+
 COLUMN_CHARACTERS_LIMIT = 50
 
-pytestmark = mark.asyncio
+pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
+
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 
 def random_sentence() -> str:
@@ -45,9 +56,14 @@ class TestAtomicCreateObjects:
             "detail": [
                 {
                     "loc": ["body", "atomic:operations"],
-                    "msg": "ensure this value has at least 1 items",
-                    "type": "value_error.list.min_items",
-                    "ctx": {"limit_value": 1},
+                    "input": [],
+                    "msg": "List should have at least 1 item after validation, not 0",
+                    "type": "too_short",
+                    "ctx": {
+                        "min_length": 1,
+                        "field_type": "List",
+                        "actual_length": 0,
+                    },
                 },
             ],
         }
@@ -88,7 +104,7 @@ class TestAtomicCreateObjects:
         assert result == {
             "data": {
                 "attributes": UserAttributesBaseSchema.model_validate(user_obj).model_dump(),
-                "id": str(user_obj.id),
+                "id": ViewBase.get_db_item_id(user_obj),
                 "type": "user",
             },
         }
@@ -223,7 +239,7 @@ class TestAtomicCreateObjects:
                         "relationships": {
                             "user": {
                                 "data": {
-                                    "id": user_1.id,
+                                    "id": ViewBase.get_db_item_id(user_1),
                                     "type": "user",
                                 },
                             },
@@ -660,11 +676,9 @@ class TestAtomicCreateObjects:
             "detail": {
                 "data": {
                     **action_2["data"],
-                    "id": None,
-                    "lid": None,
                 },
                 "error": expected_error_text,
-                "message": f"Validation error on operation {action_1['op']}",
+                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_1["op"]),
                 "ref": None,
             },
         }
@@ -672,6 +686,7 @@ class TestAtomicCreateObjects:
         user = await async_session.scalar(user_stmt)
         assert user is None
 
+    @pytest.mark.usefixtures("refresh_db")
     async def test_local_id_not_found(
         self,
         client: AsyncClient,
@@ -758,11 +773,9 @@ class TestAtomicCreateObjects:
             "detail": {
                 "data": {
                     **action_2["data"],
-                    "id": None,
-                    "lid": None,
                 },
                 "error": expected_error_text,
-                "message": f"Validation error on operation {action_2['op']}",
+                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_2["op"]),
                 "ref": None,
             },
         }
@@ -770,6 +783,7 @@ class TestAtomicCreateObjects:
         user = await async_session.scalar(user_stmt)
         assert user is None
 
+    @pytest.mark.usefixtures("refresh_db")
     async def test_create_and_associate_many_to_many(
         self,
         client: AsyncClient,
@@ -900,24 +914,23 @@ class TestAtomicCreateObjects:
         response = await client.post("/operations", json=data_atomic_request)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
         # TODO: json:api exception
-        assert response.json() == {
-            "detail": {
-                "data": {
-                    **action_add["data"],
-                    "id": None,
-                    "lid": None,
-                    "relationships": None,
-                },
-                "errors": [
-                    {
-                        "loc": ["data", "attributes", "name"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
-                    },
-                ],
-                "message": f"Validation error on operation {action_add['op']}",
-                "ref": None,
-            },
+        detail = response.json()["detail"]
+        errors = detail.pop("errors")
+        assert len(errors) == 1
+        error = errors[0]
+        url: str = error.pop("url")
+        assert url.startswith("https://errors.pydantic.dev/"), url
+        assert url.endswith("/v/missing"), url
+        assert error == {
+            "input": {},
+            "loc": ["data", "attributes", "name"],
+            "msg": "Field required",
+            "type": "missing",
+        }
+        assert detail == {
+            "data": action_add["data"],
+            "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_add["op"]),
+            "ref": None,
         }
 
     @pytest.mark.skip("not ready yet")

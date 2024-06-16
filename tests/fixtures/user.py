@@ -7,12 +7,11 @@ from tests.schemas import UserAttributesBaseSchema
 @pytest.fixture()
 def user_attributes_factory():
     def factory():
-        user_attributes = UserAttributesBaseSchema(
+        return UserAttributesBaseSchema(
             name=fake.name(),
             age=fake.pyint(min_value=13, max_value=99),
             email=fake.email(),
         )
-        return user_attributes
 
     return factory
 

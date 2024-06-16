@@ -1,17 +1,19 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
+
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, List, Literal, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import DBAPIError, IntegrityError, MissingGreenlet, NoResultFound
-from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.sql import column, distinct
 
 from fastapi_jsonapi import BadRequest
+from fastapi_jsonapi.common import get_relationship_info_from_field_metadata
 from fastapi_jsonapi.data_layers.base import BaseDataLayer
 from fastapi_jsonapi.data_layers.filtering.sqlalchemy import (
     create_filters_and_joins,
@@ -26,21 +28,27 @@ from fastapi_jsonapi.exceptions import (
     RelatedObjectNotFound,
     RelationNotFound,
 )
-from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
 from fastapi_jsonapi.schema import (
     BaseJSONAPIItemInSchema,
     BaseJSONAPIRelationshipDataToManySchema,
     BaseJSONAPIRelationshipDataToOneSchema,
+    JSONAPISchemaIntrospectionError,
     get_model_field,
     get_related_schema,
 )
-from fastapi_jsonapi.schema_base import RelationshipInfo
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from pydantic import BaseModel as PydanticBaseModel
+    from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
+    from sqlalchemy.orm.attributes import InstrumentedAttribute
     from sqlalchemy.sql import Select
+
+    from fastapi_jsonapi.querystring import PaginationQueryStringManager, QueryStringManager
+    from fastapi_jsonapi.types_metadata import RelationshipInfo
 
 log = logging.getLogger(__name__)
 
@@ -53,15 +61,16 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
     def __init__(
         self,
-        schema: Type[TypeSchema],
-        model: Type[TypeModel],
+        schema: type[TypeSchema],
+        model: type[TypeModel],
         session: AsyncSession,
+        *,
         disable_collection_count: bool = False,
         default_collection_count: int = -1,
-        id_name_field: Optional[str] = None,
+        id_name_field: str | None = None,
         url_id_field: str = "id",
         eagerload_includes: bool = True,
-        query: Optional["Select"] = None,
+        query: Select | None = None,
         auto_convert_id_to_column_type: bool = True,
         **kwargs: Any,
     ):
@@ -93,9 +102,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.eagerload_includes_ = eagerload_includes
         self._query = query
         self.auto_convert_id_to_column_type = auto_convert_id_to_column_type
-        self.transaction: Optional[AsyncSessionTransaction] = None
+        self.transaction: AsyncSessionTransaction | None = None
 
-    async def atomic_start(self, previous_dl: Optional["SqlalchemyDataLayer"] = None):
+    async def atomic_start(
+        self,
+        previous_dl: SqlalchemyDataLayer | None = None,
+    ) -> None:
         self.is_atomic = True
         if previous_dl:
             self.session = previous_dl.session
@@ -106,7 +118,12 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self.transaction = self.session.begin()
         await self.transaction.start()
 
-    async def atomic_end(self, success: bool = True):
+    async def atomic_end(
+        self,
+        *,
+        success: bool = True,
+        exception: Exception | None = None,
+    ):
         if success:
             await self.transaction.commit()
         else:
@@ -141,8 +158,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self,
         obj: TypeModel,
         relation_name: str,
-        related_data: Optional[ModelTypeOneOrMany],
-        action_trigger: ActionTrigger,
+        related_data: ModelTypeOneOrMany | None,
+        action_trigger: ActionTrigger,  # noqa: ARG002
     ):
         """
         Links target object with relationship object or objects
@@ -177,11 +194,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
         self,
         related_model: TypeModel,
         relationship_info: RelationshipInfo,
-        relationship_in: Union[
-            BaseJSONAPIRelationshipDataToOneSchema,
-            BaseJSONAPIRelationshipDataToManySchema,
-        ],
-    ) -> Optional[ModelTypeOneOrMany]:
+        relationship_in: BaseJSONAPIRelationshipDataToOneSchema | BaseJSONAPIRelationshipDataToManySchema,
+    ) -> ModelTypeOneOrMany | None:
         """
         Retrieves object or objects to link from database
 
@@ -221,7 +235,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param action_trigger: indicates which one operation triggered relationships applying
         :return:
         """
-        relationships: "PydanticBaseModel" = data_create.relationships
+        relationships: PydanticBaseModel = data_create.relationships
         if relationships is None:
             return
 
@@ -237,14 +251,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 log.warning("field for %s in schema %s not found", relation_name, self.schema.__name__)
                 continue
 
-            if "relationship" not in field.json_schema_extra:
-                log.warning(
-                    "relationship info for %s in schema %s extra not found",
-                    relation_name,
-                    self.schema.__name__,
-                )
+            relationship_info: RelationshipInfo | None = get_relationship_info_from_field_metadata(field)
+            if relationship_info is None:
                 continue
-            relationship_info: RelationshipInfo = field.json_schema_extra["relationship"]
             related_model = get_related_model_cls(type(obj), relation_name)
             related_data = await self.get_related_data_to_link(
                 related_model=related_model,
@@ -300,7 +309,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         """
         return self.id_name_field or inspect(self.model).primary_key[0].key
 
-    async def get_object(self, view_kwargs: dict, qs: Optional[QueryStringManager] = None) -> TypeModel:
+    async def get_object(self, view_kwargs: dict, qs: QueryStringManager | None = None) -> TypeModel:
         """
         Retrieve an object through sqlalchemy.
 
@@ -331,7 +340,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return obj
 
-    async def get_collection_count(self, query: "Select", qs: QueryStringManager, view_kwargs: dict) -> int:
+    async def get_collection_count(self, query: Select, qs: QueryStringManager, view_kwargs: dict) -> int:
         """
         Returns number of elements for this collection
 
@@ -346,7 +355,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         count_query = select(func.count(distinct(column("id")))).select_from(query.subquery())
         return (await self.session.execute(count_query)).scalar_one()
 
-    async def get_collection(self, qs: QueryStringManager, view_kwargs: Optional[dict] = None) -> Tuple[int, list]:
+    async def get_collection(self, qs: QueryStringManager, view_kwargs: dict | None = None) -> tuple[int, list]:
         """
         Retrieve a collection of objects through sqlalchemy.
 
@@ -406,6 +415,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             # TODO: get field alias (if present) and get attribute by alias (rarely used, but required)
 
             if (old_value := getattr(obj, field_name, missing)) is missing:
+                # TODO: tests coverage
                 log.warning("No field %r on %s. Make sure schema conforms model.", field_name, type(obj))
                 continue
 
@@ -429,7 +439,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             await self.session.rollback()
 
             err_message = f"Got an error {e.__class__.__name__} during updating obj {view_kwargs} data in DB"
-            log.error(err_message, exc_info=e)
+            log.exception(err_message, exc_info=e)
 
             raise InternalServerError(
                 detail=err_message,
@@ -461,7 +471,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             await self.session.rollback()
 
             err_message = f"Got an error {e.__class__.__name__} deleting object {view_kwargs}"
-            log.error(err_message, exc_info=e)
+            log.exception(err_message, exc_info=e)
 
             raise InternalServerError(
                 detail=err_message,
@@ -474,9 +484,9 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         await self.after_delete_object(obj, view_kwargs)
 
-    async def delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+    async def delete_objects(self, objects: list[TypeModel], view_kwargs: dict):
         await self.before_delete_objects(objects, view_kwargs)
-        query = delete(self.model).filter(self.model.id.in_((obj.id for obj in objects)))
+        query = delete(self.model).filter(self.model.id.in_(obj.id for obj in objects))
 
         try:
             await self.session.execute(query)
@@ -505,7 +515,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return: True if relationship have changed else False.
         """
-        pass
 
     async def get_relationship(
         self,
@@ -513,7 +522,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         related_type_: str,
         related_id_field: str,
         view_kwargs: dict,
-    ) -> Tuple[Any, Any]:
+    ) -> tuple[Any, Any]:
         """
         Get a relationship.
 
@@ -555,8 +564,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         if isinstance(related_objects, InstrumentedList):
             return obj, [{"type": related_type_, "id": getattr(obj_, related_id_field)} for obj_ in related_objects]
-        else:
-            return obj, {"type": related_type_, "id": getattr(related_objects, related_id_field)}
+        return obj, {"type": related_type_, "id": getattr(related_objects, related_id_field)}
 
     async def update_relationship(
         self,
@@ -566,7 +574,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         view_kwargs: dict,
     ) -> bool:
         """
-
         Update a relationship
 
         :param json_data: the request params.
@@ -594,8 +601,8 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
     def get_related_model_query_base(
         self,
-        related_model: Type[TypeModel],
-    ) -> "Select":
+        related_model: type[TypeModel],
+    ) -> Select:
         """
         Prepare sql query (statement) to fetch related model
 
@@ -606,29 +613,29 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
     def get_related_object_query(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         id_value: str,
     ):
         id_field = getattr(related_model, related_id_field)
         id_value = self.prepare_id_value(id_field, id_value)
-        stmt: "Select" = self.get_related_model_query_base(related_model)
+        stmt: Select = self.get_related_model_query_base(related_model)
         return stmt.where(id_field == id_value)
 
     def get_related_objects_list_query(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         ids: list[str],
-    ) -> Tuple["Select", list[str]]:
+    ) -> tuple[Select, list[str]]:
         id_field = getattr(related_model, related_id_field)
         prepared_ids = [self.prepare_id_value(id_field, _id) for _id in ids]
-        stmt: "Select" = self.get_related_model_query_base(related_model)
+        stmt: Select = self.get_related_model_query_base(related_model)
         return stmt.where(id_field.in_(prepared_ids)), prepared_ids
 
     async def get_related_object(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         id_value: str,
     ) -> TypeModel:
@@ -656,7 +663,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
     async def get_related_objects_list(
         self,
-        related_model: Type[TypeModel],
+        related_model: type[TypeModel],
         related_id_field: str,
         ids: list[str],
     ) -> list[TypeModel]:
@@ -687,7 +694,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return list(related_objects)
 
-    def filter_query(self, query: "Select", filter_info: Optional[list]) -> "Select":
+    def filter_query(self, query: Select, filter_info: list | None) -> Select:
         """
         Filter query according to jsonapi 1.0.
 
@@ -709,7 +716,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return query
 
-    def sort_query(self, query: "Select", sort_info: list) -> "Select":
+    def sort_query(self, query: Select, sort_info: list) -> Select:
         """
         Sort query according to jsonapi 1.0.
 
@@ -725,7 +732,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
                 query = query.order_by(i_sort)
         return query
 
-    def paginate_query(self, query: "Select", paginate_info: PaginationQueryStringManager) -> "Select":
+    def paginate_query(self, query: Select, paginate_info: PaginationQueryStringManager) -> Select:
         """
         Paginate query according to jsonapi 1.0.
 
@@ -742,7 +749,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         return query
 
-    def eagerload_includes(self, query: "Select", qs: QueryStringManager) -> "Select":
+    def eagerload_includes(self, query: Select, qs: QueryStringManager) -> Select:
         """
         Use eagerload feature of sqlalchemy to optimize data retrieval for include querystring parameter.
 
@@ -758,7 +765,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             for related_field_name in include.split(SPLIT_REL):
                 try:
                     field_name_to_load = get_model_field(current_schema, related_field_name)
-                except Exception as e:
+                except (JSONAPISchemaIntrospectionError, AttributeError) as e:
                     raise InvalidInclude(str(e))
 
                 field_to_load: InstrumentedAttribute = getattr(current_model, field_name_to_load)
@@ -785,7 +792,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
         view_kwargs: dict,
         filter_field: InstrumentedAttribute,
         filter_value: Any,
-    ) -> "Select":
+    ) -> Select:
         """
         Build query to retrieve object.
 
@@ -795,10 +802,10 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :return sqlalchemy query: a query from sqlalchemy
         """
         value = self.prepare_id_value(filter_field, filter_value)
-        query: "Select" = self.query(view_kwargs).where(filter_field == value)
+        query: Select = self.query(view_kwargs).where(filter_field == value)
         return query
 
-    def query(self, view_kwargs: dict) -> "Select":
+    def query(self, view_kwargs: dict) -> Select:
         """
         Construct the base query to retrieve wanted data.
 
@@ -827,7 +834,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param model_kwargs: the data validated by pydantic.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_get_object(self, view_kwargs: dict):
         """
@@ -835,7 +841,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def after_get_object(self, obj: Any, view_kwargs: dict):
         """
@@ -844,7 +849,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param obj: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_get_collection(self, qs: QueryStringManager, view_kwargs: dict):
         """
@@ -853,7 +857,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param qs: a querystring manager to retrieve information from url.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def after_get_collection(self, collection: Iterable, qs: QueryStringManager, view_kwargs: dict):
         """
@@ -873,7 +876,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param model_kwargs: the data validated by schemas.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def after_update_object(self, obj: Any, model_kwargs: dict, view_kwargs: dict):
         """
@@ -883,7 +885,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param model_kwargs: the data validated by schemas.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_delete_object(self, obj: TypeModel, view_kwargs: dict):
         """
@@ -892,7 +893,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param obj: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def after_delete_object(self, obj: TypeModel, view_kwargs: dict):
         """
@@ -901,25 +901,22 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param obj: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
-    async def before_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+    async def before_delete_objects(self, objects: list[TypeModel], view_kwargs: dict):
         """
         Make checks before deleting objects.
 
         :param objects: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
-    async def after_delete_objects(self, objects: List[TypeModel], view_kwargs: dict):
+    async def after_delete_objects(self, objects: list[TypeModel], view_kwargs: dict):
         """
         Any actions after deleting objects.
 
         :param objects: an object from data layer.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def before_create_relationship(
         self,
@@ -937,7 +934,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     async def after_create_relationship(
         self,
@@ -959,7 +955,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     async def before_get_relationship(
         self,
@@ -977,7 +972,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param dict view_kwargs: kwargs from the resource view.
         :return tuple: the object and related object(s).
         """
-        pass
 
     async def after_get_relationship(
         self,
@@ -999,7 +993,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return tuple: the object and related object(s).
         """
-        pass
 
     async def before_update_relationship(
         self,
@@ -1017,7 +1010,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     async def after_update_relationship(
         self,
@@ -1039,7 +1031,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param view_kwargs: kwargs from the resource view.
         :return boolean: True if relationship have changed else False.
         """
-        pass
 
     async def before_delete_relationship(
         self,
@@ -1056,7 +1047,6 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param related_id_field: the identifier field of the related model.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass
 
     async def after_delete_relationship(
         self,
@@ -1077,4 +1067,3 @@ class SqlalchemyDataLayer(BaseDataLayer):
         :param related_id_field: the identifier field of the related model.
         :param view_kwargs: kwargs from the resource view.
         """
-        pass

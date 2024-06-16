@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI
@@ -45,8 +45,7 @@ class UserSchema(UserAttributesBaseSchema):
 
 def async_session() -> async_sessionmaker:
     engine = create_async_engine(url=make_url(DB_URL))
-    _async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-    return _async_session
+    return async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 class Connector:
@@ -75,7 +74,7 @@ class SessionDependency(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-def session_dependency_handler(view: ViewBase, dto: SessionDependency) -> Dict[str, Any]:
+def session_dependency_handler(view: ViewBase, dto: SessionDependency) -> dict[str, Any]:
     return {
         "session": dto.session,
     }
@@ -146,6 +145,6 @@ app = create_app()
 if __name__ == "__main__":
     uvicorn.run(
         app,
-        host="0.0.0.0",
+        host="0.0.0.0",  # noqa: S104
         port=8080,
     )
