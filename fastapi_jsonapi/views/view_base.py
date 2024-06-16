@@ -188,6 +188,8 @@ class ViewBase:
             includes_schemas=object_schemas.included_schemas_list,
         )
 
+        # TODO: handle
+        #  Expected `Union[...]` but got `...` - serialized value may not be as expected
         return detail_jsonapi_schema(
             data=result_object,
             **extras,

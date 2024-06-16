@@ -1332,7 +1332,7 @@ class TestCreateObjects:
             resource_type=resource_type,
         )
 
-        new_id = str(fake.pyint(100, 999))
+        new_id = str(fake.pyint(1000, 10_000))
         attrs = UserAttributesBaseSchema(
             name=fake.name(),
             age=fake.pyint(),

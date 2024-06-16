@@ -4,15 +4,24 @@ from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Annotated,
+    NoReturn,
 )
 
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import (
+    BaseModel as PydanticBaseModel,
+    ConfigDict,
+    field_validator,
+    model_validator,
+    BeforeValidator,
+    AfterValidator,
+)
 from pytest_asyncio import fixture
 
 from fastapi_jsonapi import RoutersJSONAPI
+from fastapi_jsonapi.schema import BaseModel
 from fastapi_jsonapi.exceptions import BadRequest
 from fastapi_jsonapi.schema_builder import SchemaBuilder
 from fastapi_jsonapi.types_metadata import ClientCanSetId
@@ -24,7 +33,7 @@ from tests.models import (
     Task,
     User,
 )
-from tests.schemas import TaskBaseSchema
+from tests.schemas import TaskBaseSchema, UserAttributesBaseSchema
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +41,21 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.asyncio
 
 
-# TODO: Support Annotated validators (Before/After)
+@fixture()
+def refresh_caches() -> None:
+    object_schemas_cache = deepcopy(SchemaBuilder.object_schemas_cache)
+    relationship_schema_cache = deepcopy(SchemaBuilder.relationship_schema_cache)
+    base_jsonapi_object_schemas_cache = deepcopy(SchemaBuilder.base_jsonapi_object_schemas_cache)
+
+    all_jsonapi_routers = deepcopy(RoutersJSONAPI.all_jsonapi_routers)
+
+    yield
+
+    SchemaBuilder.object_schemas_cache = object_schemas_cache
+    SchemaBuilder.relationship_schema_cache = relationship_schema_cache
+    SchemaBuilder.base_jsonapi_object_schemas_cache = base_jsonapi_object_schemas_cache
+
+    RoutersJSONAPI.all_jsonapi_routers = all_jsonapi_routers
 
 
 @fixture()
@@ -51,7 +74,125 @@ def resource_type():
     return "task"
 
 
+@pytest.mark.usefixtures("refresh_db", "refresh_caches")
+class TestAnnotatedBeforeAndAfterValidators:
+
+    @pytest.mark.parametrize("validator", [BeforeValidator, AfterValidator])
+    async def test_validator_annotated(
+        self,
+        validator: type[BeforeValidator] | type[AfterValidator],
+        async_session: AsyncSession,
+    ) -> None:
+
+        def mod_name(v: str) -> str:
+            return v.title()
+
+        def mod_age(v: int) -> int:
+            return v * 2
+
+        class UserAnnotatedFieldsSchema(UserAttributesBaseSchema):
+            name: Annotated[str, validator(mod_name)]
+            age: Annotated[int, validator(mod_age)]
+
+        r_type = fake.word() + fake.word()
+        app = build_app_custom(
+            model=User,
+            schema=UserAnnotatedFieldsSchema,
+            resource_type=r_type,
+        )
+
+        raw_name = fake.name().lower()
+        # raw_age = fake.pyint(min_value=13, max_value=99)
+        raw_age = 80
+
+        user_attrs = {
+            "name": raw_name,
+            "age": raw_age,
+        }
+        create_user_body = {
+            "data": {
+                "attributes": user_attrs,
+            },
+        }
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"create_{r_type}_list")
+            res = await client.post(url, json=create_user_body)
+            assert res.status_code == status.HTTP_201_CREATED, res.text
+            response_json = res.json()
+
+        assert "data" in response_json
+        data = response_json["data"]
+        obj_id = data["id"]
+        obj = await async_session.get(User, int(obj_id))
+
+        assert data["type"] == r_type
+        attributes = data["attributes"]
+        user_name = attributes["name"]
+        assert user_name != raw_name, attributes
+        assert user_name == mod_name(raw_name), attributes
+        user_age = attributes["age"]
+        assert user_age != raw_age, attributes
+        expected_age_in_db_after_deserialize = mod_age(raw_age)
+        meta = {
+            "raw age": raw_age,
+            "user age": obj.age,
+            "user id": obj.id,
+            "user name": obj.name,
+        }
+        assert obj.age == expected_age_in_db_after_deserialize, meta
+        expected_age_after_preparing_result = mod_age(expected_age_in_db_after_deserialize)
+        assert user_age == expected_age_after_preparing_result, (attributes, meta)
+
+    @pytest.mark.parametrize("validator", [BeforeValidator, AfterValidator])
+    async def test_id_validator_annotated(
+        self,
+        validator: type[BeforeValidator] | type[AfterValidator],
+    ):
+
+        marker = fake.word() + fake.word()
+
+        def format_error_text(v: int | str) -> str:
+            return f"[{marker}] some id error [{v}]"
+
+        def validate_id_raise(v: str) -> NoReturn:
+            raise ValueError(format_error_text(v))
+
+        class UserAnnotatedIdValidatorSchema(UserAttributesBaseSchema):
+            id: Annotated[int, ClientCanSetId(), validator(validate_id_raise)]
+
+        r_type = fake.word() + fake.word()
+        app = build_app_custom(
+            model=User,
+            schema=UserAnnotatedIdValidatorSchema,
+            resource_type=r_type,
+        )
+
+        user_attrs = {
+            "name": fake.name(),
+        }
+        new_user_id = fake.pyint(min_value=1000, max_value=10_000)
+        create_user_body = {
+            "data": {
+                "attributes": user_attrs,
+                "id": str(new_user_id),
+            },
+        }
+
+        async with AsyncClient(app=app, base_url="http://test") as client:
+            url = app.url_path_for(f"create_{r_type}_list")
+            res = await client.post(url, json=create_user_body)
+            assert res.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, res.text
+            response_json = res.json()
+
+        assert "detail" in response_json, response_json
+        detail = response_json["detail"][0]
+        assert detail["loc"] == ["body", "data", "id"]
+        assert detail["msg"].endswith(format_error_text(new_user_id)), detail["msg"]
+
+
 @pytest.mark.xfail(reason="validators passthrough not supported yet")
+@pytest.mark.usefixtures("refresh_db")
 class TestTaskValidators:
     async def test_base_model_validator_pre_true_get_one(
         self,
@@ -145,24 +286,9 @@ class TestTaskValidators:
 
 
 @pytest.mark.xfail(reason="validators passthrough not supported yet")
+@pytest.mark.usefixtures("refresh_db", "refresh_caches")
 class TestValidators:
     resource_type = "validator"
-
-    @fixture(autouse=True)
-    def _refresh_caches(self) -> None:
-        object_schemas_cache = deepcopy(SchemaBuilder.object_schemas_cache)
-        relationship_schema_cache = deepcopy(SchemaBuilder.relationship_schema_cache)
-        base_jsonapi_object_schemas_cache = deepcopy(SchemaBuilder.base_jsonapi_object_schemas_cache)
-
-        all_jsonapi_routers = deepcopy(RoutersJSONAPI.all_jsonapi_routers)
-
-        yield
-
-        SchemaBuilder.object_schemas_cache = object_schemas_cache
-        SchemaBuilder.relationship_schema_cache = relationship_schema_cache
-        SchemaBuilder.base_jsonapi_object_schemas_cache = base_jsonapi_object_schemas_cache
-
-        RoutersJSONAPI.all_jsonapi_routers = all_jsonapi_routers
 
     def build_app(self, schema, resource_type: str | None = None) -> FastAPI:
         return build_app_custom(
@@ -171,7 +297,7 @@ class TestValidators:
             resource_type=resource_type or self.resource_type,
         )
 
-    def inherit(self, schema: type[BaseModel]) -> type[BaseModel]:
+    def inherit(self, schema: type[PydanticBaseModel]) -> type[PydanticBaseModel]:
         class InheritedSchema(schema):
             pass
 
@@ -186,7 +312,7 @@ class TestValidators:
     ):
         resource_type = resource_type or self.resource_type
         async with AsyncClient(app=app, base_url="http://test") as client:
-            url = app.url_path_for(f"get_{resource_type}_list")
+            url = app.url_path_for(f"create_{resource_type}_list")
             res = await client.post(url, json=body)
             assert res.status_code == status.HTTP_400_BAD_REQUEST, res.text
             assert res.json() == {
@@ -202,7 +328,7 @@ class TestValidators:
 
     async def execute_request_twice_and_check_response(
         self,
-        schema: type[BaseModel],
+        schema: type[PydanticBaseModel],
         body: dict,
         expected_detail: str,
     ):
@@ -227,7 +353,7 @@ class TestValidators:
         Basic check to ensure that field validator called
         """
 
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             name: str
 
             @field_validator("name")
@@ -250,7 +376,7 @@ class TestValidators:
         )
 
     async def test_field_validator_each_item_arg(self):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             names: list[str]
 
             @field_validator("names")
@@ -272,7 +398,7 @@ class TestValidators:
         )
 
     async def test_field_validator_pre_arg(self):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             name: list[str]
 
             @field_validator("name", mode="before")
@@ -297,7 +423,7 @@ class TestValidators:
         )
 
     async def test_field_validator_always_arg(self):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             name: str = None
 
             @field_validator("name")
@@ -316,7 +442,7 @@ class TestValidators:
         )
 
     async def test_field_validator_several_validators(self):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             field: str
 
             @field_validator("field")
@@ -357,7 +483,7 @@ class TestValidators:
         )
 
     async def test_field_validator_asterisk(self):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             field_1: str
             field_2: str
 
@@ -399,27 +525,37 @@ class TestValidators:
         Unusual case because of "id" field handling in a different way than attributes
         """
 
-        class UserSchemaWithValidator(BaseModel):
+        unique_marker = fake.word()
+
+        def format_error(v) -> str:
+            return f"[{unique_marker}] Check validator for {v}"
+
+        # !!!
+        class UserSchemaWithValidator(PydanticBaseModel):
             id: Annotated[int, ClientCanSetId()]
 
-            @field_validator("id")
+            @field_validator("id", mode="after")
             @classmethod
-            def validate_id(cls, v):
-                raise BadRequest(detail=f"Check validator for {v}")
+            def validate_id(cls, v: str):
+                # TODO: wtf w/ passing validators
+                #  `cls` receives value
+                #  `v` receives validation info
+                raise ValueError(format_error(v))
 
             model_config = ConfigDict(from_attributes=True)
 
+        id_val = fake.pyint(min_value=10, max_value=100)
         create_user_body = {
             "data": {
                 "attributes": {},
-                "id": str(42),
+                "id": str(id_val),
             },
         }
 
         await self.execute_request_twice_and_check_response(
             schema=UserSchemaWithValidator,
             body=create_user_body,
-            expected_detail="Check validator",
+            expected_detail=format_error(id_val),
         )
 
     @pytest.mark.parametrize(
@@ -430,7 +566,7 @@ class TestValidators:
         ],
     )
     async def test_field_validator_can_change_value(self, inherit: bool):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             name: str
 
             @field_validator("name")
@@ -474,7 +610,7 @@ class TestValidators:
         ],
     )
     async def test_root_validator(self, name: str, expected_detail: str):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             name: str
 
             @model_validator(mode="before")
@@ -528,7 +664,7 @@ class TestValidators:
         ],
     )
     async def test_root_validator_can_change_value(self, inherit: bool):
-        class UserSchemaWithValidator(BaseModel):
+        class UserSchemaWithValidator(PydanticBaseModel):
             name: str
 
             @model_validator(mode="after")
@@ -573,7 +709,7 @@ class TestValidators:
         ],
     )
     async def test_root_validator_inheritance(self, name: str, expected_detail: str):
-        class UserSchemaWithValidatorBase(BaseModel):
+        class UserSchemaWithValidatorBase(PydanticBaseModel):
             name: str
 
             @model_validator(mode="before")
@@ -653,7 +789,6 @@ class TestValidators:
         )
 
 
-@pytest.mark.xfail(reason="validators passthrough not supported yet")
 class TestValidationUtils:
     @pytest.mark.parametrize(
         ("include", "exclude", "expected"),
@@ -689,8 +824,5 @@ class TestValidationUtils:
             include_for_field_names=include,
             exclude_for_field_names=exclude,
         )
-        validator_func_names = {
-            validator_item.__validator_config__[1].func.__name__ for validator_item in validators.values()
-        }
 
-        assert expected == validator_func_names
+        assert set(validators) == expected
