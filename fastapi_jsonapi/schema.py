@@ -102,9 +102,13 @@ class JSONAPIDocumentObjectSchema(BaseModel):
 class JSONAPIObjectSchema(BaseJSONAPIObjectSchema):
     """JSON:API base object schema."""
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class BaseJSONAPIResultSchema(BaseModel):
     """JSON:API Required fields schema"""
+
+    model_config = ConfigDict(from_attributes=True)
 
     meta: JSONAPIResultListMetaSchema | None = Field(None, description="JSON:API metadata")
     jsonapi: JSONAPIDocumentObjectSchema = JSONAPIDocumentObjectSchema()

@@ -189,8 +189,7 @@ class ViewBase:
         )
 
         return detail_jsonapi_schema(
-            # TODO: non-strict models? read from pydantic model
-            data=result_object.model_dump(),
+            data=result_object,
             **extras,
         )
 
@@ -211,8 +210,7 @@ class ViewBase:
         )
         return list_jsonapi_schema(
             meta=JSONAPIResultListMetaSchema(count=count, total_pages=total_pages),
-            # TODO: non-strict models? read from pydantic model
-            data=[obj.model_dump() for obj in result_objects],
+            data=result_objects,
             **extras,
         )
 
