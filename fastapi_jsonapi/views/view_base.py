@@ -397,7 +397,7 @@ class ViewBase:
             relationships_schema = object_schemas.relationships_schema
             schemas_include = object_schemas.can_be_included_schemas
 
-            current_relation_field: FieldInfo = current_relation_schema.__fields__[related_field_name]
+            current_relation_field: FieldInfo = current_relation_schema.model_fields[related_field_name]
             current_relation_schema: type[TypeSchema] = get_schema_from_field_annotation(current_relation_field)
             # TODO: check and raise, get rid of assert!
             assert current_relation_schema

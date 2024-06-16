@@ -242,7 +242,7 @@ class QueryStringManager:
                 if field_name == "":
                     continue
 
-                if field_name not in schema.__fields__:
+                if field_name not in schema.model_fields:
                     msg = f"{schema.__name__} has no attribute {field_name}"
                     raise InvalidField(msg)
 

@@ -66,7 +66,7 @@ def get_schema_field_names(schema: type[TypeSchema]) -> set[str]:
     """Returns all attribute names except relationships"""
     result = set()
 
-    for field_name, field in schema.__fields__.items():
+    for field_name, field in schema.model_fields.items():
         if get_relationship_info_from_field_metadata(field):
             continue
 
@@ -92,7 +92,7 @@ def _calculate_exclude_fields(
     query_params: QueryStringManager,
     jsonapi: RoutersJSONAPI,
 ) -> dict:
-    included = "included" in response.__fields__ and response.included or []
+    included = "included" in response.model_fields and response.included or []
     is_list_response = isinstance(response, JSONAPIResultListSchema)
 
     exclude_params: dict[str, Any] = {}
