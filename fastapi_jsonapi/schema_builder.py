@@ -48,17 +48,14 @@ from fastapi_jsonapi.schema_base import (
     registry,
 )
 from fastapi_jsonapi.splitter import SPLIT_REL
-from fastapi_jsonapi.types_metadata import ClientCanSetId, RelationshipInfo
-from fastapi_jsonapi.validation_utils import (
-    extract_field_validators,
-)
+from fastapi_jsonapi.types_metadata import RelationshipInfo
+from fastapi_jsonapi.validation_utils import extract_validators
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from pydantic.fields import FieldInfo
 
-    from fastapi_jsonapi.data_typing import TypeSchema
 
 JSON_API_RESPONSE_TYPE = dict[int | str, dict[str, Any]]
 
@@ -353,7 +350,7 @@ class SchemaBuilder:
                 else:
                     log.warning("Could not find related schema in field %s", field)
             elif name == "id":
-                id_validators = extract_field_validators(
+                id_validators = extract_validators(
                     model=schema,
                     include_for_field_names={"id"},
                 )
@@ -370,7 +367,10 @@ class SchemaBuilder:
 
         model_config = ConfigDict(from_attributes=True)
 
-        extracted_validators = extract_field_validators(schema, exclude_for_field_names={"id"})
+        extracted_validators = extract_validators(
+            model=schema,
+            exclude_for_field_names={"id"},
+        )
         attributes_schema = pydantic.create_model(
             f"{base_name}AttributesJSONAPI",
             **attributes_schema_fields,

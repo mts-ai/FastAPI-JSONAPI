@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 if TYPE_CHECKING:
     from pydantic import BaseModel as PydanticBaseModel
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 # TODO: handle model validators? (info.model_validator)
-def extract_field_validators(
+def extract_validators(
     model: type[PydanticBaseModel],
     include_for_field_names: set[str] | None = None,
     exclude_for_field_names: set[str] | None = None,
@@ -26,6 +26,7 @@ def extract_field_validators(
 
     result_validators = {}
 
+    # field validators
     for name, validator in validators.field_validators.items():
         for field_name in validator.info.fields:
             # exclude
@@ -38,5 +39,10 @@ def extract_field_validators(
 
             validator_config = field_validator(field_name, mode=validator.info.mode)
             result_validators[name] = validator_config(validator.func)
+
+    # model validators
+    for name, validator in validators.model_validators.items():
+        validator_config = model_validator(mode=validator.info.mode)
+        result_validators[name] = validator_config(validator.func)
 
     return result_validators
