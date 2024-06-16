@@ -251,7 +251,6 @@ class TestAnnotatedBeforeAndAfterValidators:
         assert detail["msg"].endswith(format_error(flag_name)), detail["msg"]
 
 
-@pytest.mark.xfail(reason="tasks ids passthrough not checked yet")
 @pytest.mark.usefixtures("refresh_db")
 class TestTaskValidators:
     async def test_base_model_validator_pre_true_get_one(
@@ -262,6 +261,7 @@ class TestTaskValidators:
         task_with_none_ids: Task,
     ):
         assert task_with_none_ids.task_ids is None
+        assert task_with_none_ids.another_task_ids is None
         url = app.url_path_for(f"get_{resource_type}_detail", obj_id=task_with_none_ids.id)
         res = await client.get(url)
         assert res.status_code == status.HTTP_200_OK, res.text
@@ -271,6 +271,7 @@ class TestTaskValidators:
             "data": {
                 "id": ViewBase.get_db_item_id(task_with_none_ids),
                 "type": resource_type,
+                # dont' pass fields at all
             },
             "jsonapi": {"version": "1.0"},
             "meta": None,
@@ -278,8 +279,9 @@ class TestTaskValidators:
         assert attributes == {
             # not `None`! schema validator returns empty list `[]`
             "task_ids": [],
+            "another_task_ids": [],
         }
-        assert attributes == TaskBaseSchema.model_validate(task_with_none_ids)
+        assert attributes == TaskBaseSchema.model_validate(task_with_none_ids).model_dump()
 
     async def test_base_model_model_validator_get_list(
         self,
@@ -289,6 +291,7 @@ class TestTaskValidators:
         task_with_none_ids: Task,
     ):
         assert task_with_none_ids.task_ids is None
+        assert task_with_none_ids.another_task_ids is None
         url = app.url_path_for(f"get_{resource_type}_list")
         res = await client.get(url)
         assert res.status_code == status.HTTP_200_OK, res.text
@@ -300,6 +303,7 @@ class TestTaskValidators:
                 "attributes": {
                     # not `None`! schema validator returns empty list `[]`
                     "task_ids": [],
+                    "another_task_ids": [],
                 },
             },
         ]
@@ -315,6 +319,7 @@ class TestTaskValidators:
         task_data = {
             # should be converted to [] by schema on create
             "task_ids": None,
+            "another_task_ids": None,
         }
         data_create = {
             "data": {
@@ -332,12 +337,14 @@ class TestTaskValidators:
         # we sent request with `None`, but value in db is `[]`
         # because validator converted data before object creation
         assert task.task_ids == []
+        assert task.another_task_ids == []
         assert response_data == {
             "data": {
                 "type": resource_type,
                 "attributes": {
                     # should be empty list
                     "task_ids": [],
+                    "another_task_ids": [],
                 },
             },
             "jsonapi": {"version": "1.0"},
