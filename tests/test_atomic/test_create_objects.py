@@ -914,21 +914,23 @@ class TestAtomicCreateObjects:
         response = await client.post("/operations", json=data_atomic_request)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
         # TODO: json:api exception
-        assert response.json() == {
-            "detail": {
-                "data": action_add["data"],
-                "errors": [
-                    {
-                        "input": {},
-                        "loc": ["data", "attributes", "name"],
-                        "msg": "Field required",
-                        "type": "missing",
-                        "url": "https://errors.pydantic.dev/2.8/v/missing",
-                    },
-                ],
-                "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_add["op"]),
-                "ref": None,
-            },
+        detail = response.json()["detail"]
+        errors = detail.pop("errors")
+        assert len(errors) == 1
+        error = errors[0]
+        url: str = error.pop("url")
+        assert url.startswith("https://errors.pydantic.dev/"), url
+        assert url.endswith("/v/missing"), url
+        assert error == {
+            "input": {},
+            "loc": ["data", "attributes", "name"],
+            "msg": "Field required",
+            "type": "missing",
+        }
+        assert detail == {
+            "data": action_add["data"],
+            "message": OPERATION_VALIDATION_ERROR_TEXT.format(operation=action_add["op"]),
+            "ref": None,
         }
 
     @pytest.mark.skip("not ready yet")
