@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     TypeVar,
+    Generic,
 )
 
 if TYPE_CHECKING:
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 SearchType = TypeVar("SearchType")
 
 
-class MetadataInstanceSearch:
+class MetadataInstanceSearch(Generic[SearchType]):
     def __init__(self, search_type: type[SearchType]):
         self.search_type = search_type
 

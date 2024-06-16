@@ -13,9 +13,9 @@ if TYPE_CHECKING:
     # noinspection PyProtectedMember
     from pydantic.fields import FieldInfo
 
-search_client_can_set_id = MetadataInstanceSearch(ClientCanSetId)
-search_relationship_info = MetadataInstanceSearch(RelationshipInfo)
-search_custom_filter_sql = MetadataInstanceSearch(CustomFilterSQL)
+search_client_can_set_id = MetadataInstanceSearch[ClientCanSetId](ClientCanSetId)
+search_relationship_info = MetadataInstanceSearch[RelationshipInfo](RelationshipInfo)
+search_custom_filter_sql = MetadataInstanceSearch[CustomFilterSQL](CustomFilterSQL)
 
 
 def get_relationship_info_from_field_metadata(
