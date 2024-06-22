@@ -1,4 +1,5 @@
 """Helper to create sqlalchemy filters according to filter querystring parameter"""
+
 import inspect
 import logging
 from collections.abc import Sequence

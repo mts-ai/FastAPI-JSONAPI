@@ -97,8 +97,8 @@ asyncpg = "0.28.0"
 
 
 [tool.poetry.group.lint.dependencies]
-black = "^23.3.0"
-ruff = "^0.1.8"
+black = "^24.4.2"
+ruff = "^0.4.10"
 mypy = "^1.4.1"
 sqlalchemy-stubs = "^0.4"
 pre-commit = "^3.3.3"

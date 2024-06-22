@@ -1,4 +1,5 @@
 """Functions for extracting and updating signatures."""
+
 import inspect
 import logging
 from enum import Enum
