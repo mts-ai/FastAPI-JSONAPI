@@ -1206,14 +1206,16 @@ class TestUserWithPostsWithInnerIncludes:
                             },
                         },
                         "comments": {
-                            "data": [
-                                {
-                                    "id": str(user_2_comment_for_one_u1_post.id),
-                                    "type": "post_comment",
-                                },
-                            ]
-                            if p.id == user_2_comment_for_one_u1_post.post_id
-                            else [],
+                            "data": (
+                                [
+                                    {
+                                        "id": str(user_2_comment_for_one_u1_post.id),
+                                        "type": "post_comment",
+                                    },
+                                ]
+                                if p.id == user_2_comment_for_one_u1_post.post_id
+                                else []
+                            ),
                         },
                     },
                 }

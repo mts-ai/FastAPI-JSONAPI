@@ -1,4 +1,5 @@
 """User Bio model."""
+
 from typing import Dict, List
 
 from sqlalchemy import JSON, Column, ForeignKey, Integer, String

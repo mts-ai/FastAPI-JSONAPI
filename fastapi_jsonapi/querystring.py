@@ -1,4 +1,5 @@
 """Helper to deal with querystring parameters according to jsonapi specification."""
+
 from collections import defaultdict
 from functools import cached_property
 from typing import (
