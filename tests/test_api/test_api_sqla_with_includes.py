@@ -1641,7 +1641,8 @@ class TestCreateObjects:
 
             response_json = res.json()
             assert response_json["data"]
-            assert (parent_object_id := response_json["data"].get("id"))
+            parent_object_id = response_json["data"].get("id")
+            assert parent_object_id
             assert response_json == {
                 "data": {
                     "attributes": {
@@ -1675,7 +1676,8 @@ class TestCreateObjects:
 
             response_json = res.json()
             assert response_json["data"]
-            assert (child_object_id := response_json["data"].get("id"))
+            child_object_id = response_json["data"].get("id")
+            assert child_object_id
             assert res.json() == {
                 "data": {
                     "attributes": {"name": "child"},
@@ -1730,7 +1732,8 @@ class TestCreateObjects:
             assert res.status_code == status.HTTP_201_CREATED, res.text
             response_json = res.json()
 
-            assert (entity_id := response_json["data"]["id"])
+            entity_id = response_json["data"]["id"]
+            assert entity_id
             assert response_json == {
                 "meta": None,
                 "jsonapi": {"version": "1.0"},
@@ -2867,7 +2870,8 @@ class TestFilters:
 
         response_json = response.json()
 
-        assert len(data := response_json["data"]) == 1
+        data = response_json["data"]
+        assert len(data) == 1
         assert data[0]["id"] == str(target_user.id)
         assert data[0]["attributes"]["email"] == target_user.email
 
