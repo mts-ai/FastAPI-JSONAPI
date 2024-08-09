@@ -27,8 +27,6 @@ classifiers = [
 dependencies = [
     "fastapi>=0.100.0",
     "pydantic>=2",
-    # TODO: orjson
-    "simplejson>=3.17.6",
 ]
 
 [project.optional-dependencies]

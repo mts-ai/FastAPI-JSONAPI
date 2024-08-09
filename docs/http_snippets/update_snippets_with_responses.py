@@ -4,7 +4,7 @@ import logging
 from http import HTTPStatus
 
 import requests
-import simplejson
+import json
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -83,7 +83,7 @@ def run_request_for_module(module_name: str):
     if response.content:
         # TODO: handle non-json response?
         http_response_text.append(
-            simplejson.dumps(
+            json.dumps(
                 response.json(),
                 sort_keys=SORT_KEYS_ON_DUMP,
                 indent=2,

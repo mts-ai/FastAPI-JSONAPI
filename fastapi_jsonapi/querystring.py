@@ -10,7 +10,11 @@ from typing import (
 )
 from urllib.parse import unquote
 
-import simplejson as json
+try:
+    import orjson as json
+except ImportError:
+    import json
+
 from fastapi import (
     FastAPI,
     Request,
