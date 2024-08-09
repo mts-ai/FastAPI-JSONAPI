@@ -3,7 +3,6 @@
 concurrency = greenlet
 branch = True
 omit =
-    tests/*
     examples/*
     docs/*
     # omit anything in a .local directory anywhere
