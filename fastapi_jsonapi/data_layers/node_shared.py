@@ -1,20 +1,22 @@
 from __future__ import annotations
-from sqlalchemy.orm import (
-    aliased,
-    InstrumentedAttribute,
-    DeclarativeMeta,
-)
 
 from typing import Any
 
+from pydantic.fields import FieldInfo
+from sqlalchemy.orm import (
+    DeclarativeMeta,
+    InstrumentedAttribute,
+    aliased,
+)
 from sqlalchemy.sql.elements import BinaryExpression
+
 from fastapi_jsonapi.data_typing import (
     TypeModel,
     TypeSchema,
 )
 from fastapi_jsonapi.exceptions import (
-    InvalidSort,
     InvalidFilters,
+    InvalidSort,
 )
 from fastapi_jsonapi.schema import (
     get_model_field,
@@ -23,7 +25,6 @@ from fastapi_jsonapi.schema import (
 )
 from fastapi_jsonapi.splitter import SPLIT_REL
 from fastapi_jsonapi.utils.sqla import get_related_model_cls
-from pydantic.fields import FieldInfo
 
 Sort = BinaryExpression
 Join = list[Any]

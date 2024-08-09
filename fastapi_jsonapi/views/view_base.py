@@ -280,7 +280,7 @@ class ViewBase:
         if hasattr(parent_included_object, "relationships") and parent_included_object.relationships:
             existing = parent_included_object.relationships or {}
             if isinstance(existing, BaseModel):
-                existing = existing.dict()
+                existing = existing.model_dump()
             new_relationships.update(existing)
         new_relationships.update(
             **{

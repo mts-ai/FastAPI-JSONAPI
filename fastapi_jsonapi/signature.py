@@ -37,7 +37,7 @@ def create_filter_parameter(
         default = Query(
             None,
             alias=query_filter_name,
-            # todo: read from annotation or somehow else?
+            # TODO: read from annotation or somehow else?
             enum=list(field.annotation),
         )
         type_field = str

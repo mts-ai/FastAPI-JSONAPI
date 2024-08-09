@@ -45,7 +45,7 @@ class HTTPMethod(Enum):
 
 class HTTPMethodConfig(BaseModel):
     dependencies: type[BaseModel] | None = None
-    prepare_data_layer_kwargs: Callable | None = None
+    prepare_data_layer_kwargs: Callable[[...], ...] | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
@@ -137,6 +137,6 @@ def handle_jsonapi_fields(
     exclude_params = _calculate_exclude_fields(response, query_params, jsonapi)
 
     if exclude_params:
-        return response.dict(exclude=exclude_params, by_alias=True)
+        return response.model_dump(exclude=exclude_params, by_alias=True)
 
     return response

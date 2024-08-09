@@ -1064,6 +1064,7 @@ async def test_get_user_not_found(app: FastAPI, client: AsyncClient):
     }
 
 
+@pytest.mark.usefixtures("refresh_db")
 class TestCreateObjects:
     async def test_create_object(self, app: FastAPI, client: AsyncClient):
         create_user_body = {
@@ -1597,7 +1598,7 @@ class TestCreateObjects:
         )
         create_user_body = {
             "data": {
-                "attributes": user_attrs_schema.dict(),
+                "attributes": user_attrs_schema.model_dump(),
             },
         }
         queried_user_fields = "name"
@@ -1611,7 +1612,7 @@ class TestCreateObjects:
         assert response_data["data"].pop("id")
         assert response_data == {
             "data": {
-                "attributes": user_attrs_schema.dict(include=set(queried_user_fields.split(","))),
+                "attributes": user_attrs_schema.model_dump(include=set(queried_user_fields.split(","))),
                 "type": "user",
             },
             "jsonapi": {"version": "1.0"},
@@ -1745,7 +1746,7 @@ class TestPatchObjects:
         patch_user_body = {
             "data": {
                 "id": ViewBase.get_db_item_id(user_1),
-                "attributes": new_attrs.dict(),
+                "attributes": new_attrs.model_dump(),
             },
         }
         queried_user_fields = "name"
@@ -1756,7 +1757,7 @@ class TestPatchObjects:
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json() == {
             "data": {
-                "attributes": new_attrs.dict(include=set(queried_user_fields.split(","))),
+                "attributes": new_attrs.model_dump(include=set(queried_user_fields.split(","))),
                 "id": ViewBase.get_db_item_id(user_1),
                 "type": "user",
             },

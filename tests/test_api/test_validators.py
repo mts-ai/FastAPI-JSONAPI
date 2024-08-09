@@ -12,12 +12,14 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import (
-    BaseModel as PydanticBaseModel,
+    AfterValidator,
+    BeforeValidator,
     ConfigDict,
     field_validator,
     model_validator,
-    BeforeValidator,
-    AfterValidator,
+)
+from pydantic import (
+    BaseModel as PydanticBaseModel,
 )
 from pydantic_core.core_schema import ValidationInfo
 from pytest_asyncio import fixture

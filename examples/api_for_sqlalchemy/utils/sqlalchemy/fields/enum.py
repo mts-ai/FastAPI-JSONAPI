@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum as EnumOriginal
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 
 from sqlalchemy import types
 from sqlalchemy.engine import Dialect

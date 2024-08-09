@@ -27,6 +27,29 @@ from tests.schemas import (
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.fixture(scope="class")
+def resource_type():
+    return "user_w_custom_deps_for_generic"
+
+
+@pytest.fixture(scope="class")
+def app_w_deps(resource_type):
+    return build_app_custom(
+        model=User,
+        schema=UserSchema,
+        resource_type=resource_type,
+        class_list=UserCustomListView,
+        class_detail=UserCustomDetailView,
+        path=f"/path_{resource_type}",
+    )
+
+
+@fixture(scope="class")
+async def client(app_w_deps: FastAPI):
+    async with AsyncClient(app=app_w_deps, base_url="http://test") as client:
+        yield client
+
+
 def get_custom_name_from_body(
     data: CustomNameAttributesJSONAPI = Body(),
 ) -> str:
@@ -95,31 +118,12 @@ class UserCustomDetailView(DetailViewBaseGeneric):
     }
 
 
+@pytest.mark.usefixtures("refresh_db")
 class TestGenericUserCreateUpdateWithBodyDependency(
     BaseGenericUserCreateUpdateWithBodyDependency,
 ):
     validator_create = validator_create
     validator_update = validator_update
-
-    @pytest.fixture(scope="class")
-    def resource_type(self):
-        return "user_w_custom_deps_for_generic"
-
-    @pytest.fixture(scope="class")
-    def app_w_deps(self, resource_type):
-        return build_app_custom(
-            model=User,
-            schema=UserSchema,
-            resource_type=resource_type,
-            class_list=UserCustomListView,
-            class_detail=UserCustomDetailView,
-            path=f"/path_{resource_type}",
-        )
-
-    @fixture(scope="class")
-    async def client(self, app_w_deps: FastAPI):
-        async with AsyncClient(app=app_w_deps, base_url="http://test") as client:
-            yield client
 
     async def test_generic_create_validation_error_key_not_passed(
         self,

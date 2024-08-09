@@ -1,4 +1,3 @@
-
 from fastapi_jsonapi.data_typing import TypeModel
 
 

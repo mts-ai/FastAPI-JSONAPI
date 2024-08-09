@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from dataclasses import (
     dataclass,
+)
+from dataclasses import (
     field as dataclass_field,
 )
 from typing import (
@@ -19,11 +21,13 @@ from typing import (
 
 import pydantic
 from pydantic import (
-    BaseModel as PydanticBaseModel,
-    BeforeValidator,
     AfterValidator,
+    BeforeValidator,
+    ConfigDict,
 )
-from pydantic import ConfigDict
+from pydantic import (
+    BaseModel as PydanticBaseModel,
+)
 
 from fastapi_jsonapi.common import (
     get_relationship_info_from_field_metadata,
@@ -406,7 +410,14 @@ class SchemaBuilder:
         schema_name = f"{name}RelationshipJSONAPI".format(name=name)
         return pydantic.create_model(
             schema_name,
-            id=(str, Field(..., description="Resource object id", example=relationship_info.resource_id_example)),
+            id=(
+                str,
+                Field(
+                    ...,
+                    description="Resource object id",
+                    json_schema_extra=dict(example=relationship_info.resource_id_example),
+                ),
+            ),
             type=(str, Field(default=relationship_info.resource_type, description="Resource type")),
             __base__=BaseJSONAPIRelationshipSchema,
         )
@@ -493,7 +504,7 @@ class SchemaBuilder:
         if use_schema_cache and base_name in self.base_jsonapi_object_schemas_cache:
             return self.base_jsonapi_object_schemas_cache[base_name]
 
-        # todo: pass all decorator infos for whole schema for attributes schema
+        # TODO: pass all decorator infos for whole schema for attributes schema
         object_jsonapi_schema_fields = self._build_object_jsonapi_schema_fields(
             attributes_schema=schemas_info_dto.attributes_schema,
             resource_id_field=schemas_info_dto.resource_id_field,
