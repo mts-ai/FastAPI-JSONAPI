@@ -1,6 +1,7 @@
 """
 Previously used: '__'
 """
+
 from typing import Protocol
 
 
@@ -292,8 +293,7 @@ def type_op_ilike(field_name: str, type_op: str) -> str:
 
 
 class ProcessTypeOperationFieldName(Protocol):
-    def __call__(self, field_name: str, type_op: str) -> str:
-        ...
+    def __call__(self, field_name: str, type_op: str) -> str: ...
 
 
 filters_dict: dict[str, ProcessTypeOperationFieldName] = {

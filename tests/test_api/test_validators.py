@@ -35,7 +35,7 @@ async def task_with_none_ids(
     return task
 
 
-@pytest.fixture()
+@pytest.fixture
 def resource_type():
     return "task"
 

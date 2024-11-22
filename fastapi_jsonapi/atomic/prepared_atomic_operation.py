@@ -161,7 +161,7 @@ class OperationUpdate(DetailOperationBase):
         # `{'loc': ['data', 'attributes', 'name']`
         # and not `{'loc': ['attributes', 'name']`
         data_in = self.jsonapi.schema_in_patch(data=self.data)
-        obj_id = self.ref and self.ref.id or self.data and self.data.id
+        obj_id = (self.ref and self.ref.id) or (self.data and self.data.id)
         response = await self.view.process_update_object(
             dl=dl,
             obj_id=obj_id,

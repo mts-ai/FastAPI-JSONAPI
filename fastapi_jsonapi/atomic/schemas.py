@@ -172,7 +172,7 @@ class AtomicOperation(BaseModel):
                 raise ValueError(msg)
 
         data: OperationDataType = values.get("data")
-        operation_type = ref and ref.type or data and data.type
+        operation_type = (ref and ref.type) or (data and data.type)
         if not operation_type:
             msg = "Operation has to be in ref or in data"
             raise ValueError(msg)

@@ -1193,7 +1193,6 @@ class TestUserWithPostsWithInnerIncludes:
     ):
         expected_includes = {
             "post": [
-                #
                 {
                     "id": str(p.id),
                     "type": "post",
@@ -1206,18 +1205,19 @@ class TestUserWithPostsWithInnerIncludes:
                             },
                         },
                         "comments": {
-                            "data": [
-                                {
-                                    "id": str(user_2_comment_for_one_u1_post.id),
-                                    "type": "post_comment",
-                                },
-                            ]
-                            if p.id == user_2_comment_for_one_u1_post.post_id
-                            else [],
+                            "data": (
+                                [
+                                    {
+                                        "id": str(user_2_comment_for_one_u1_post.id),
+                                        "type": "post_comment",
+                                    },
+                                ]
+                                if p.id == user_2_comment_for_one_u1_post.post_id
+                                else []
+                            ),
                         },
                     },
                 }
-                #
                 for p in user_1_posts
             ],
             "post_comment": [
@@ -3398,7 +3398,6 @@ class TestFilters:
         async_session.add(another_item)
         await async_session.commit()
 
-        #
         params = {}
         if filter_kind == "small":
             params.update(

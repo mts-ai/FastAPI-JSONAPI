@@ -1,4 +1,5 @@
 """Helper to create sqlalchemy sortings according to filter querystring parameter"""
+
 from typing import Any, List, Tuple, Type, Union
 
 from pydantic.fields import ModelField

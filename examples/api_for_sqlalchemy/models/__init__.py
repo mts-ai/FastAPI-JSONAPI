@@ -8,12 +8,12 @@ from examples.api_for_sqlalchemy.models.user import User
 from examples.api_for_sqlalchemy.models.user_bio import UserBio
 
 __all__ = (
-    "User",
-    "Post",
-    "UserBio",
-    "PostComment",
-    "Parent",
-    "Computer",
     "Child",
+    "Computer",
+    "Parent",
     "ParentToChildAssociation",
+    "Post",
+    "PostComment",
+    "User",
+    "UserBio",
 )

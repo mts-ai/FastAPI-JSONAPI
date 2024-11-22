@@ -1,8 +1,8 @@
 __all__ = (
-    "Field",
     "BaseModel",
-    "registry",
+    "Field",
     "RelationshipInfo",
+    "registry",
 )
 
 from typing import Dict

@@ -182,7 +182,7 @@ async def user_1_comments_for_u2_posts(async_session: AsyncSession, user_1, user
     await async_session.commit()
 
 
-@fixture()
+@fixture
 def user_1_post_for_comments(user_1_posts: List[Post]) -> Post:
     return user_1_posts[0]
 

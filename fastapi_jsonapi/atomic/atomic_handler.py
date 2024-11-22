@@ -83,7 +83,7 @@ class AtomicViewHandler:
         :param operation:
         :return:
         """
-        operation_type = operation.ref and operation.ref.type or operation.data and operation.data.type
+        operation_type = (operation.ref and operation.ref.type) or (operation.data and operation.data.type)
         assert operation_type
         if operation_type not in self.jsonapi_routers_cls.all_jsonapi_routers:
             msg = f"Unknown resource type {operation_type!r}. Register it via RoutersJSONAPI"

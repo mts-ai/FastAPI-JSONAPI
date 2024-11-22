@@ -106,7 +106,7 @@ def _calculate_exclude_fields(
     query_params: QueryStringManager,
     jsonapi: RoutersJSONAPI,
 ) -> Dict:
-    included = "included" in response.__fields__ and response.included or []
+    included = ("included" in response.__fields__ and response.included) or []
     is_list_response = isinstance(response, JSONAPIResultListSchema)
 
     exclude_params: Dict[str, Any] = {}

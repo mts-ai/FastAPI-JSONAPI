@@ -3,6 +3,7 @@ Base JSON:API schemas.
 
 Pydantic (for FastAPI).
 """
+
 from typing import (
     TYPE_CHECKING,
     Dict,

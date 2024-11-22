@@ -1,4 +1,5 @@
 """This module is a CRUD interface between resource managers and the sqlalchemy ORM"""
+
 import logging
 from typing import TYPE_CHECKING, Any, Iterable, List, Literal, Optional, Tuple, Type, Union
 
