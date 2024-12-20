@@ -96,7 +96,7 @@ async def test_dependency_handler_call():
 
     app = build_app(DependencyInjectionDetailView, resource_type="test_dependency_handler_call")
     async with AsyncClient(app=app, base_url="http://test") as client:
-        res = await client.get("/users/1")
+        res = await client.get("/users/1/")
 
         assert res.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, res.text
         assert res.json() == {
@@ -154,7 +154,7 @@ async def test_dependencies_as_permissions(user_1: User):
     resource_type = fake.word()
     app = build_app(DependencyInjectionDetailView, resource_type=resource_type)
     async with AsyncClient(app=app, base_url="http://test") as client:
-        res = await client.get(f"/users/{user_1.id}", headers={"X-AUTH": "not_admin"})
+        res = await client.get(f"/users/{user_1.id}/", headers={"X-AUTH": "not_admin"})
 
         assert res.status_code == status.HTTP_403_FORBIDDEN, res.text
         assert res.json() == {
@@ -168,7 +168,7 @@ async def test_dependencies_as_permissions(user_1: User):
             ],
         }
 
-        res = await client.get(f"/users/{user_1.id}", headers={"X-AUTH": "admin"})
+        res = await client.get(f"/users/{user_1.id}/", headers={"X-AUTH": "admin"})
         assert res.json() == {
             "data": {
                 "attributes": UserAttributesBaseSchema.from_orm(user_1).dict(),
@@ -207,7 +207,7 @@ async def test_manipulate_data_layer_kwargs(
 
     app = build_app(DependencyInjectionDetailView, resource_type="test_manipulate_data_layer_kwargs")
     async with AsyncClient(app=app, base_url="http://test") as client:
-        res = await client.get(f"/users/{user_1.id}")
+        res = await client.get(f"/users/{user_1.id}/")
 
         assert res.status_code == status.HTTP_404_NOT_FOUND, res.text
         assert res.json() == {
