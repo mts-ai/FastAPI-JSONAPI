@@ -44,7 +44,6 @@ class RelationshipFilteringInfo(BaseModel):
     model: Type[TypeModel]
     aliased_model: AliasedClass
     join_column: InstrumentedAttribute
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
