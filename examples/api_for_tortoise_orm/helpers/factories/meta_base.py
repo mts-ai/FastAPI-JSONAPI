@@ -16,7 +16,7 @@ from typing import (
 
 from tortoise import models
 
-from fastapi_jsonapi.data_layers.fields.enum import Enum
+from enum import Enum
 from .exceptions import (
     ExceptionAfterCommit,
     ExceptionBeforeCreate,

@@ -11,7 +11,6 @@ from pydantic.fields import ModelField
 from tortoise.expressions import Q
 from tortoise.queryset import QuerySet
 
-from fastapi_jsonapi.data_layers.fields.enum import Enum
 from fastapi_jsonapi.data_layers.filtering.tortoise_operation import prepare_field_name_for_filtering
 from fastapi_jsonapi.data_layers.orm import DBORMOperandType
 from fastapi_jsonapi.data_typing import TypeModel
@@ -138,8 +137,6 @@ class FilterTortoiseORM:
 
     def val_to_query(self, val: Any) -> Any:
         """Value to query."""
-        if isinstance(val, Enum):
-            val = val.value
         return val
 
     def _validate(self, json_api_filter: dict[str, list[str]], model_filed: ModelField) -> list:
