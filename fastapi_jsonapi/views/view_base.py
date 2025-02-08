@@ -289,15 +289,9 @@ class ViewBase:
                 ),
             },
         )
-        # ?
-        # TODO: Expected `UserSchemaRelationshipsJSONAPI` but got `dict` - serialized value may not be as expected
-        """
-        pydantic/main.py:362: UserWarning: Pydantic serializer warnings:
-          Expected `UserSchemaRelationshipsJSONAPI` but got `dict` - serialized value may not be as expected
-          return self.__pydantic_serializer__.to_python(
-        """
-        included_objects[cache_key] = object_schema.model_validate(
-            obj=parent_included_object.model_dump(
+
+        included_objects[cache_key] = object_schema(
+            **parent_included_object.model_dump(
                 exclude={"relationships"} if getattr(parent_included_object, "relationships", None) is None else None,
             ),
         ).copy(
