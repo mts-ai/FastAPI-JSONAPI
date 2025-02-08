@@ -22,7 +22,6 @@ from pydantic import (
     BaseModel as PydanticBaseModel,
 )
 from pydantic_core.core_schema import ValidationInfo
-from pytest_asyncio import fixture
 
 from fastapi_jsonapi import RoutersJSONAPI
 from fastapi_jsonapi.schema import BaseModel
@@ -42,7 +41,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
-@fixture()
+@pytest.fixture()
 def refresh_caches() -> None:
     object_schemas_cache = deepcopy(SchemaBuilder.object_schemas_cache)
     relationship_schema_cache = deepcopy(SchemaBuilder.relationship_schema_cache)
@@ -59,7 +58,7 @@ def refresh_caches() -> None:
     RoutersJSONAPI.all_jsonapi_routers = all_jsonapi_routers
 
 
-@fixture()
+@pytest.fixture()
 async def task_with_none_ids(
     async_session: AsyncSession,
 ) -> Task:

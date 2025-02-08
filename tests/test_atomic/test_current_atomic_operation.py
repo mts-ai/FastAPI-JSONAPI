@@ -6,7 +6,6 @@ import pytest
 from fastapi import Body, Depends, FastAPI, HTTPException, status
 from httpx import AsyncClient
 from pydantic import BaseModel
-from pytest_asyncio import fixture
 
 from fastapi_jsonapi.atomic import current_atomic_operation
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
@@ -172,7 +171,7 @@ class TestSameBodyDependencyBothForGenericsAndCurrentAtomicOperation(
             path=f"/path_{resource_type}",
         )
 
-    @fixture(scope="class")
+    @pytest.fixture()
     async def client(self, app_w_deps: FastAPI):
         async with AsyncClient(app=app_w_deps, base_url="http://test") as client:
             yield client

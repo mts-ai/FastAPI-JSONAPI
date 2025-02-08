@@ -4,7 +4,7 @@ import logging
 import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
-from pytest_asyncio import fixture as async_fixture, is_async_test
+from pytest_asyncio import is_async_test
 
 from tests.fixtures.app import (  # noqa
     app,
@@ -75,7 +75,7 @@ def pytest_collection_modifyitems(items):
         async_test.add_marker(session_scope_marker, append=False)
 
 
-@async_fixture()
+@pytest.fixture()
 async def client(app: FastAPI) -> AsyncClient:  # noqa: F811
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac

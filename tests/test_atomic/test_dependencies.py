@@ -1,9 +1,8 @@
 from typing import ClassVar
 
 import pytest
-from fastapi import Depends, Query, status
+from fastapi import Depends, Query, status, FastAPI
 from httpx import AsyncClient
-from pytest_asyncio import fixture
 
 from fastapi_jsonapi.misc.sqla.generics.base import DetailViewBaseGeneric, ListViewBaseGeneric
 from fastapi_jsonapi.views.utils import (
@@ -100,8 +99,8 @@ class TestDependenciesResolver:
             class_detail=UserCustomDetailView,
         )
 
-    @fixture(scope="class")
-    async def client(self, app_w_deps):
+    @pytest.fixture()
+    async def client(self, app_w_deps: FastAPI):
         async with AsyncClient(app=app_w_deps, base_url="http://test") as client:
             yield client
 

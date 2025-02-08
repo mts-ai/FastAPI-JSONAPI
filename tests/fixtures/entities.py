@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 import pytest
-from pytest_asyncio import fixture as async_fixture
 
 from tests.misc.utils import fake
 from tests.models import (
@@ -41,7 +40,7 @@ async def create_user(async_session: AsyncSession, **fields):
     return user
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_1(async_session: AsyncSession):
     user = build_user()
     async_session.add(user)
@@ -52,7 +51,7 @@ async def user_1(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_2(async_session: AsyncSession):
     user = build_user()
     async_session.add(user)
@@ -63,7 +62,7 @@ async def user_2(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_3(async_session: AsyncSession):
     user = build_user()
     async_session.add(user)
@@ -81,7 +80,7 @@ async def build_user_bio(async_session: AsyncSession, user: User, **fields):
     return bio
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_1_bio(async_session: AsyncSession, user_1: User) -> UserBio:
     return await build_user_bio(
         async_session,
@@ -92,7 +91,7 @@ async def user_1_bio(async_session: AsyncSession, user_1: User) -> UserBio:
     )
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_2_bio(async_session: AsyncSession, user_2: User) -> UserBio:
     return await build_user_bio(
         async_session,
@@ -111,7 +110,7 @@ async def build_post(async_session: AsyncSession, user: User, **fields) -> Post:
     return post
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_1_posts(async_session: AsyncSession, user_1: User) -> list[Post]:
     posts = [
         Post(
@@ -130,7 +129,7 @@ async def user_1_posts(async_session: AsyncSession, user_1: User) -> list[Post]:
     return posts
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_1_post(async_session: AsyncSession, user_1: User):
     post = Post(title="post_for_u1", user=user_1)
     async_session.add(post)
@@ -144,7 +143,7 @@ async def user_1_post(async_session: AsyncSession, user_1: User):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_2_posts(async_session: AsyncSession, user_2: User) -> list[Post]:
     posts = [
         Post(
@@ -163,7 +162,7 @@ async def user_2_posts(async_session: AsyncSession, user_2: User) -> list[Post]:
     return posts
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_1_comments_for_u2_posts(async_session: AsyncSession, user_1, user_2_posts):
     post_comments = [
         PostComment(
@@ -191,7 +190,7 @@ def user_1_post_for_comments(user_1_posts: list[Post]) -> Post:
     return user_1_posts[0]
 
 
-@async_fixture()
+@pytest.fixture()
 async def computer_1(async_session: AsyncSession):
     computer = Computer(name="Halo")
 
@@ -205,7 +204,7 @@ async def computer_1(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def computer_2(async_session: AsyncSession):
     computer = Computer(name="Nestor")
 
@@ -219,7 +218,7 @@ async def computer_2(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def computer_factory(async_session: AsyncSession) -> Callable[[str | None], Awaitable[Computer]]:
     async def factory(name: str | None = None) -> Computer:
         computer = Computer(name=name or fake.word())
@@ -248,7 +247,7 @@ async def build_post_comment(
     return post_comment
 
 
-@async_fixture()
+@pytest.fixture()
 async def user_2_comment_for_one_u1_post(async_session: AsyncSession, user_2, user_1_post_for_comments):
     post = user_1_post_for_comments
     post_comment = PostComment(
@@ -267,7 +266,7 @@ async def user_2_comment_for_one_u1_post(async_session: AsyncSession, user_2, us
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def parent_1(async_session: AsyncSession):
     parent = Parent(
         name="parent_1",
@@ -283,7 +282,7 @@ async def parent_1(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def parent_2(async_session: AsyncSession):
     parent = Parent(
         name="parent_2",
@@ -299,7 +298,7 @@ async def parent_2(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def parent_3(async_session: AsyncSession):
     parent = Parent(
         name="parent_3",
@@ -315,7 +314,7 @@ async def parent_3(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def child_1(async_session: AsyncSession):
     child = Child(
         name="child_1",
@@ -331,7 +330,7 @@ async def child_1(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def child_2(async_session: AsyncSession):
     child = Child(
         name="child_2",
@@ -347,7 +346,7 @@ async def child_2(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def child_3(async_session: AsyncSession):
     child = Child(
         name="child_3",
@@ -363,7 +362,7 @@ async def child_3(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def child_4(async_session: AsyncSession):
     child = Child(
         name="child_4",
@@ -379,7 +378,7 @@ async def child_4(async_session: AsyncSession):
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def p1_c1_association(
     async_session: AsyncSession,
     parent_1: Parent,
@@ -401,7 +400,7 @@ async def p1_c1_association(
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def p2_c1_association(
     async_session: AsyncSession,
     parent_2: Parent,
@@ -423,7 +422,7 @@ async def p2_c1_association(
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def p1_c2_association(
     async_session: AsyncSession,
     parent_1: Parent,
@@ -445,7 +444,7 @@ async def p1_c2_association(
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def p2_c2_association(
     async_session: AsyncSession,
     parent_2: Parent,
@@ -467,7 +466,7 @@ async def p2_c2_association(
     await async_session.commit()
 
 
-@async_fixture()
+@pytest.fixture()
 async def p2_c3_association(
     async_session: AsyncSession,
     parent_2: Parent,
@@ -498,14 +497,14 @@ async def build_workplace(async_session: AsyncSession, **fields):
     return workplace
 
 
-@async_fixture()
+@pytest.fixture()
 async def workplace_1(
     async_session: AsyncSession,
 ):
     yield await build_workplace(async_session, name="workplace_1")
 
 
-@async_fixture()
+@pytest.fixture()
 async def workplace_2(
     async_session: AsyncSession,
 ):
