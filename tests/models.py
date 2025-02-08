@@ -343,7 +343,10 @@ class Alpha(Base):
     )
     beta = relationship("Beta", back_populates="alphas")
     gamma_id = Column(Integer, ForeignKey("gamma.id"), nullable=False)
-    gamma: Mapped[Gamma] = relationship("Gamma")
+    gamma: Mapped[Gamma] = relationship(
+        "Gamma",
+        back_populates="alpha",
+    )
 
 
 class BetaGammaBinding(Base):
@@ -388,7 +391,10 @@ class Gamma(Base):
         nullable=False,
         index=True,
     )
-    alpha = relationship("Alpha")
+    alpha: Mapped[Alpha] = relationship(
+        "Alpha",
+        back_populates="gamma",
+    )
     delta: Mapped[Delta] = relationship("Delta")
 
 
