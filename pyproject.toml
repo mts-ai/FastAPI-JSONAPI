@@ -123,6 +123,13 @@ testpaths = [
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
+# ignore DeprecationWarning for:
+#  pytest-asyncio detected an unclosed event loop when tearing down the event_loop
+#  - could not fix
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
 
 [tool.poetry]
 package-mode = false

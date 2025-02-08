@@ -1,4 +1,4 @@
-from pytest_asyncio import fixture as async_fixture
+import pytest
 from sqlalchemy import AsyncAdaptedQueuePool
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
@@ -43,12 +43,12 @@ async def async_session_dependency():
             await session.rollback()
 
 
-@async_fixture(scope="class")
+@pytest.fixture()
 async def async_engine():
     return create_engine()
 
 
-@async_fixture(scope="function")
+@pytest.fixture()
 async def async_session(async_engine):
     session_factory = async_sessionmaker(
         bind=async_engine,
@@ -67,6 +67,6 @@ async def recreate_tables(engine):
         await connector.run_sync(Base.metadata.create_all)
 
 
-@async_fixture()
+@pytest.fixture()
 async def refresh_db(async_engine):
     await recreate_tables(async_engine)
