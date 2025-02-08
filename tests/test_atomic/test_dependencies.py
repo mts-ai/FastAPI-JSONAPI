@@ -22,8 +22,6 @@ from tests.schemas import (
     UserSchema,
 )
 
-pytestmark = pytest.mark.asyncio
-
 
 class CustomDependencyForCreate:
     KEY = "spam_create"

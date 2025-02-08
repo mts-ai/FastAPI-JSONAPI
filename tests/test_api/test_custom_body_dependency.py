@@ -24,8 +24,6 @@ from tests.schemas import (
     UserSchema,
 )
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture(scope="class")
 def resource_type():

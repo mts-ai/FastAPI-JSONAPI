@@ -62,8 +62,6 @@ from tests.schemas import (
     UserSchema,
 )
 
-pytestmark = pytest.mark.asyncio
-
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -235,6 +233,7 @@ class TestGetUsersList:
         queried_user_fields = "name"
         queried_post_fields = "title"
 
+        # noinspection PyTypeChecker
         params = QueryParams(
             [
                 ("fields[user]", queried_user_fields),
@@ -336,30 +335,38 @@ class TestGetUsersList:
             ),
         }
 
+    @pytest.mark.usefixtures(
+        "refresh_db",
+    )
     async def test_select_custom_fields_for_includes_without_requesting_includes(
         self,
         app: FastAPI,
         client: AsyncClient,
         user_1: User,
+        user_2: User,
     ):
         url = app.url_path_for("get_user_list")
 
+        # noinspection PyTypeChecker
         params = QueryParams([("fields[post]", "title")])
         response = await client.get(url, params=str(params))
 
         assert response.status_code == status.HTTP_200_OK, response.text
         response_data = response.json()
 
+        users = [user_1, user_2]
+
         assert response_data == {
             "data": [
                 {
-                    "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(),
-                    "id": ViewBase.get_db_item_id(user_1),
+                    "attributes": UserAttributesBaseSchema.model_validate(user).model_dump(),
+                    "id": ViewBase.get_db_item_id(user),
                     "type": "user",
-                },
+                }
+                for user in users
             ],
             "jsonapi": {"version": "1.0"},
-            "meta": {"count": 1, "totalPages": 1},
+            "meta": {"count": len(users), "totalPages": 1},
         }
 
 

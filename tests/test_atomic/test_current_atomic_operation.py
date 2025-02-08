@@ -33,8 +33,6 @@ from tests.schemas import (
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-pytestmark = pytest.mark.asyncio
-
 
 FIELD_CUSTOM_NAME = "custom_name"
 

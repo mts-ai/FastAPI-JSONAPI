@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from sqlalchemy.ext.asyncio import AsyncSession
 
-pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 

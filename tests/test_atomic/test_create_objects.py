@@ -33,7 +33,6 @@ if TYPE_CHECKING:
 
 COLUMN_CHARACTERS_LIMIT = 50
 
-pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 

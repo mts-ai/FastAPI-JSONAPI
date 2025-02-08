@@ -12,7 +12,6 @@ from starlette import status
 from fastapi_jsonapi.atomic.schemas import AtomicOperationAction
 from tests.models import Computer
 
-pytestmark = pytest.mark.asyncio
 
 logging.basicConfig(level=logging.DEBUG)
 

@@ -41,8 +41,6 @@ from tests.schemas import TaskBaseSchema, UserAttributesBaseSchema
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-pytestmark = pytest.mark.asyncio
-
 
 @fixture()
 def refresh_caches() -> None:

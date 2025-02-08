@@ -28,8 +28,6 @@ from tests.schemas import (
     UserSchema,
 )
 
-pytestmark = pytest.mark.asyncio
-
 
 def build_app(detail_view, resource_type: str) -> FastAPI:
     app = FastAPI(

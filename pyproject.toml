@@ -19,9 +19,9 @@ keywords = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Utilities",
 ]
 dependencies = [
@@ -74,13 +74,13 @@ dependencies = [
     "faker",
     "httpx==0.24.1",
     "pytest-cov",
-    "pytest-asyncio==0.21.1",
+    "pytest-asyncio==0.25.3",
     "pre-commit",
 ]
 
 
-[tool.hatch.envs.test]
-dependencies = [
+[tool.hatch.envs.hatch-test]
+extra-dependencies = [
     # project dependencies
     "sqlalchemy[asyncio]",
     "aiosqlite",
@@ -92,47 +92,44 @@ dependencies = [
 
     # test dependencies
     "pytest-cov",
-    "pytest-asyncio==0.21.1",
-    "pytest==7.4.4",
-    #  "pytest~=8.1",
-
-    # coverage
-    "coverage[toml]~=7.4",
+    "pytest-asyncio==0.25.3",
+    "pytest==8.3.4",
+    "coverage[toml]~=7.6",
 ]
 
 
-[[tool.hatch.envs.test.matrix]]
+[[tool.hatch.envs.hatch-test.matrix]]
 python = [
-    "3.9",
-    "3.10",
     "3.11",
     "3.12",
+    "3.13",
 ]
 
-[tool.hatch.envs.test.scripts]
+[tool.hatch.envs.hatch-test.scripts]
+run = "pytest{env:HATCH_TEST_ARGS:} {args}"
 cov = "pytest --cov-config .coveragerc --cov=fastapi_jsonapi --cov=testing {args}"
 cov-xml = "cov --cov-report=xml:coverage/python-{matrix:python}/coverage.xml"
 cov-html = [
     "cov",
     "coverage html -d coverage/python-{matrix:python}",
 ]
-run = "pytest {args}"
 
 
 [tool.pytest.ini_options]
-minversion = "7.0"
-#addopts = "-ra -q"
+minversion = "8.0"
 testpaths = [
     "tests",
 ]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
 
 [tool.poetry]
 package-mode = false
 
 
 [tool.poetry.group.lint.dependencies]
-black = "^24.4.2"
+black = "^25.1.0"
 ruff = "^0.4.8"
 mypy = "^1.10.0"
 pre-commit = "^3.7.1"

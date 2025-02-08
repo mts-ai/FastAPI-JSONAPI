@@ -13,8 +13,6 @@ from tests.schemas import (
     UserBioAttributesBaseSchema,
 )
 
-pytestmark = pytest.mark.asyncio
-
 logging.basicConfig(level=logging.DEBUG)
 
 

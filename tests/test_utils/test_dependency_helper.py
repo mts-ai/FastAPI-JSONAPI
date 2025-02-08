@@ -2,15 +2,12 @@ from random import choices
 from string import ascii_letters
 from unittest.mock import AsyncMock
 
-import pytest
 from fastapi import (
     Depends,
     Request,
 )
 
 from fastapi_jsonapi.utils.dependency_helper import DependencyHelper
-
-pytestmark = pytest.mark.asyncio
 
 
 class TestDependencyHelper:
