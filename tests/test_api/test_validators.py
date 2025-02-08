@@ -4,8 +4,8 @@ from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Annotated,
-    NoReturn,
     Callable,
+    NoReturn,
 )
 
 import pytest
@@ -97,14 +97,12 @@ def reformat_error(format_error) -> Callable[[str, str], str]:
 
 @pytest.mark.usefixtures("refresh_db", "refresh_caches")
 class TestAnnotatedBeforeAndAfterValidators:
-
     @pytest.mark.parametrize("validator", [BeforeValidator, AfterValidator])
     async def test_validator_annotated(
         self,
         async_session: AsyncSession,
-        validator: type[BeforeValidator] | type[AfterValidator],
+        validator: type[BeforeValidator | AfterValidator],
     ) -> None:
-
         def mod_name(v: str) -> str:
             return v.title()
 
@@ -168,10 +166,9 @@ class TestAnnotatedBeforeAndAfterValidators:
     @pytest.mark.parametrize("validator", [BeforeValidator, AfterValidator])
     async def test_id_validator_annotated(
         self,
-        validator: type[BeforeValidator] | type[AfterValidator],
+        validator: type[BeforeValidator | AfterValidator],
         format_error,
     ):
-
         def validate_id_raise(v: str) -> NoReturn:
             raise ValueError(format_error(v))
 
@@ -210,10 +207,9 @@ class TestAnnotatedBeforeAndAfterValidators:
     @pytest.mark.parametrize("validator", [BeforeValidator, AfterValidator])
     async def test_validator_annotated_sequence_arg(
         self,
-        validator: type[BeforeValidator] | type[AfterValidator],
+        validator: type[BeforeValidator | AfterValidator],
         format_error,
     ):
-
         flag_name = fake.name()
 
         def validate_name(v):
@@ -511,7 +507,6 @@ class TestValidators:
         )
 
     async def test_field_validator_several_validators(self, reformat_error):
-
         validator_1_marker = fake.word()
         validator_2_marker = fake.word()
 
@@ -639,7 +634,6 @@ class TestValidators:
         ],
     )
     async def test_field_validator_can_change_value(self, inherit: bool):
-
         def modificator(v: str) -> str:
             return v.title()
 
@@ -761,7 +755,6 @@ class TestValidators:
         ],
     )
     async def test_model_validator_can_change_value(self, inherit: bool, format_error):
-
         def modificator(v: str) -> str:
             return v.title()
 

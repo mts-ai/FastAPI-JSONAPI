@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Annotated
 
 from pydantic import (
+    BeforeValidator,
     ConfigDict,
     field_validator,
-    BeforeValidator,
 )
 
 from fastapi_jsonapi.schema_base import BaseModel
