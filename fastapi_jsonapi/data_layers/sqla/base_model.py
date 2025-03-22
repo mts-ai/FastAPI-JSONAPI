@@ -97,8 +97,9 @@ class BaseSQLA:
         cls,
         session: AsyncSession,
         stmt: Select,
+        id_field_name: str = "id",
     ) -> int:
-        stmt = select(func.count(distinct(column("id")))).select_from(stmt.subquery())
+        stmt = select(func.count(distinct(column(id_field_name)))).select_from(stmt.subquery())
         return (await session.execute(stmt)).scalar_one()
 
     @classmethod

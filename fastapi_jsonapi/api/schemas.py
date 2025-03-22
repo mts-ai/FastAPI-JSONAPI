@@ -1,13 +1,19 @@
 from typing import Iterable, Optional, Type, Union
 
-from pydantic import BaseModel
+from fastapi import APIRouter
+from pydantic import BaseModel, ConfigDict
 
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.views import Operation, ViewBase
 
 
 class ResourceData(BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
     path: Union[str, list[str]]
+    router: Optional[APIRouter]
     tags: list[str]
     view: Type[ViewBase]
     model: Type[TypeModel]

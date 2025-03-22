@@ -7,8 +7,10 @@ from fastapi_jsonapi.atomic import AtomicOperations
 
 from .api.views_base import ViewBase
 from .models import (
+    AgeRating,
     Child,
     Computer,
+    Movie,
     Parent,
     ParentToChildAssociation,
     Post,
@@ -17,12 +19,18 @@ from .models import (
     Workplace,
 )
 from .schemas import (
+    AgeRatingCreateSchema,
+    AgeRatingSchema,
+    AgeRatingUpdateSchema,
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
     ComputerInSchema,
     ComputerPatchSchema,
     ComputerSchema,
+    MovieCreateSchema,
+    MovieSchema,
+    MovieUpdateSchema,
     ParentInSchema,
     ParentPatchSchema,
     ParentSchema,
@@ -130,6 +138,27 @@ def add_routes(app: FastAPI):
         resource_type="workplace",
         schema_in_patch=WorkplacePatchSchema,
         schema_in_post=WorkplaceInSchema,
+    )
+    builder.add_resource(
+        path="/age-ratings",
+        tags=["Age Ratings"],
+        resource_type="age-rating",
+        view=ViewBase,
+        model=AgeRating,
+        schema=AgeRatingSchema,
+        schema_in_post=AgeRatingCreateSchema,
+        schema_in_patch=AgeRatingUpdateSchema,
+        model_id_field_name="name",
+    )
+    builder.add_resource(
+        path="/movies",
+        tags=["Movie"],
+        resource_type="movie",
+        view=ViewBase,
+        model=Movie,
+        schema=MovieSchema,
+        schema_in_post=MovieCreateSchema,
+        schema_in_patch=MovieUpdateSchema,
     )
     builder.initialize()
 

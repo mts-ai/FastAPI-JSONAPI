@@ -10,10 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.functions import count
 
-from examples.api_for_sqlalchemy.models import Child, Parent, ParentToChildAssociation, User, UserBio
+from examples.api_for_sqlalchemy.models import AgeRating, Child, Movie, Parent, ParentToChildAssociation, User, UserBio
 from examples.api_for_sqlalchemy.schemas import (
+    AgeRatingAttributesSchema,
     ChildAttributesSchema,
     ComputerAttributesBaseSchema,
+    MovieAttributesSchema,
     ParentAttributesSchema,
     ParentToChildAssociationAttributesSchema,
     UserAttributesBaseSchema,
@@ -254,6 +256,7 @@ class TestAtomicCreateObjects:
 
         :param client:
         :param async_session:
+        :param user_attributes:
         :return:
         """
         user_data = user_attributes
@@ -930,3 +933,98 @@ class TestAtomicCreateObjects:
         :param async_session:
         :return:
         """
+
+
+class TestAtomicCreateObjectsMayBeWoId:
+
+    async def test_create_user_and_user_bio_with_local_id(
+        self,
+        client: AsyncClient,
+        async_session: AsyncSession,
+    ):
+        """
+        Prepare test data:
+
+        - create age rating
+        - create movie with age rating
+
+        :param client:
+        :param async_session:
+        :return:
+        """
+        age_rating_data = AgeRatingAttributesSchema(
+            name=fake.word(),
+            description=fake.sentence(),
+        )
+        movie_data = MovieAttributesSchema(
+            title=fake.name(),
+            description=fake.sentence(),
+        )
+
+        age_rating_lid = fake.word()
+        data_atomic_request = {
+            # define operations
+            "atomic:operations": [
+                # first operation:
+                # create a new age rating entity
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "age-rating",
+                        "lid": age_rating_lid,
+                        "attributes": age_rating_data.model_dump(),
+                    },
+                },
+                # second operation:
+                # create a new movie,
+                # this movie has relation
+                # to the age rating with id=lid
+                {
+                    "op": "add",
+                    "data": {
+                        "type": "movie",
+                        "attributes": movie_data.model_dump(exclude_unset=True),
+                        "relationships": {
+                            "age_rating_obj": {
+                                "data": {
+                                    "lid": age_rating_lid,
+                                    "type": "age-rating",
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = await client.post("/operations", json=data_atomic_request)
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+        movie = await async_session.scalar(
+            select(Movie).options(
+                joinedload(Movie.age_rating_obj),
+            ),
+        )
+        assert isinstance(movie, Movie)
+        assert isinstance(movie.age_rating_obj, AgeRating)
+
+        movie_data.age_rating = movie.age_rating
+        assert response_data == {
+            "atomic:results": [
+                {
+                    "data": {
+                        "id": movie.age_rating,
+                        "type": "age-rating",
+                        "attributes": age_rating_data.model_dump(),
+                    },
+                    "meta": None,
+                },
+                {
+                    "data": {
+                        "id": f"{movie.id}",
+                        "type": "movie",
+                        "attributes": movie_data.model_dump(),
+                    },
+                    "meta": None,
+                },
+            ],
+        }

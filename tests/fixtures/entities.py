@@ -1,3 +1,4 @@
+from textwrap import dedent
 from typing import Awaitable, Callable, Optional
 
 import pytest
@@ -5,6 +6,7 @@ from pytest_asyncio import fixture as async_fixture
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from examples.api_for_sqlalchemy.models import (
+    AgeRating,
     Child,
     Computer,
     Parent,
@@ -532,11 +534,25 @@ def build_workplace(**fields):
     return Workplace(**fields)
 
 
+def build_age_rating(name: str, description: str) -> AgeRating:
+    return AgeRating(
+        name=name,
+        description=description,
+    )
+
+
 async def create_workplace(async_session: AsyncSession, **fields):
     workplace = build_workplace(**fields)
     async_session.add(workplace)
     await async_session.commit()
     return workplace
+
+
+async def create_age_rating(async_session: AsyncSession, **fields):
+    age_rating = build_age_rating(**fields)
+    async_session.add(age_rating)
+    await async_session.commit()
+    return age_rating
 
 
 @async_fixture()
@@ -551,3 +567,18 @@ async def workplace_2(
     async_session: AsyncSession,
 ):
     yield await create_workplace(async_session, name="workplace_2")
+
+
+@async_fixture()
+async def age_rating_g(async_session: AsyncSession) -> AgeRating:
+    return await create_age_rating(
+        async_session=async_session,
+        name="G",
+        description=dedent(
+            """G – General Audiences
+
+        All ages admitted.
+        Nothing that would offend parents for viewing by children.
+        """,
+        ),
+    )

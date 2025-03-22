@@ -14,6 +14,7 @@ from fastapi_jsonapi.common import search_client_can_set_id
 from fastapi_jsonapi.data_typing import TypeModel, TypeSchema
 from fastapi_jsonapi.querystring import QueryStringManager
 from fastapi_jsonapi.schema import BaseJSONAPIItemInSchema
+from fastapi_jsonapi.storages import models_storage
 from fastapi_jsonapi.views import RelationshipRequestInfo
 
 
@@ -51,6 +52,7 @@ class BaseDataLayer:
         self.disable_collection_count: bool = disable_collection_count
         self.default_collection_count: int = default_collection_count
         self.is_atomic = False
+        self.id_column_name = models_storage.get_model_id_field_name(resource_type)
 
     async def atomic_start(self, previous_dl: Optional["BaseDataLayer"] = None):
         self.is_atomic = True
