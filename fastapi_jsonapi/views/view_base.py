@@ -264,10 +264,13 @@ class ViewBase:
         attrs_schema = schemas_storage.get_attrs_schema(resource_type, operation_type="get")
 
         if include_fields is None or not (field_schemas := include_fields.get(resource_type)):
-
+            id_val = models_storage.get_object_id(
+                db_object=db_item,
+                resource_type=resource_type,
+            )
             data_schema = schemas_storage.get_data_schema(resource_type, operation_type="get")
             return data_schema(
-                id=f"{db_item.id}",
+                id=f"{id_val}",
                 attributes=attrs_schema.model_validate(db_item),
             ).model_dump()
 

@@ -1,3 +1,10 @@
+from .age_rating import (
+    AgeRatingAttributesSchema,
+    AgeRatingBaseSchema,
+    AgeRatingCreateSchema,
+    AgeRatingSchema,
+    AgeRatingUpdateSchema,
+)
 from .child import (
     ChildAttributesSchema,
     ChildInSchema,
@@ -9,6 +16,13 @@ from .computer import (
     ComputerInSchema,
     ComputerPatchSchema,
     ComputerSchema,
+)
+from .movie import (
+    MovieAttributesSchema,
+    MovieBaseSchema,
+    MovieCreateSchema,
+    MovieSchema,
+    MovieUpdateSchema,
 )
 from .parent import (
     ParentAttributesSchema,
@@ -51,6 +65,11 @@ from .workplace import (
 )
 
 __all__ = (
+    "AgeRatingAttributesSchema",
+    "AgeRatingBaseSchema",
+    "AgeRatingCreateSchema",
+    "AgeRatingSchema",
+    "AgeRatingUpdateSchema",
     "ChildAttributesSchema",
     "ChildInSchema",
     "ChildPatchSchema",
@@ -60,6 +79,11 @@ __all__ = (
     "ComputerPatchSchema",
     "ComputerSchema",
     "CustomUserAttributesSchema",
+    "MovieAttributesSchema",
+    "MovieBaseSchema",
+    "MovieCreateSchema",
+    "MovieSchema",
+    "MovieUpdateSchema",
     "ParentAttributesSchema",
     "ParentInSchema",
     "ParentPatchSchema",

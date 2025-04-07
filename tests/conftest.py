@@ -21,6 +21,7 @@ from tests.fixtures.db_connection import (  # noqa
     refresh_db,
 )
 from tests.fixtures.entities import (  # noqa
+    age_rating_g,
     child_1,
     child_2,
     child_3,

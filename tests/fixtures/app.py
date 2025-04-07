@@ -6,8 +6,10 @@ from fastapi import APIRouter, FastAPI
 from pydantic import BaseModel, ConfigDict
 
 from examples.api_for_sqlalchemy.models import (
+    AgeRating,
     Child,
     Computer,
+    Movie,
     Parent,
     ParentToChildAssociation,
     Post,
@@ -16,12 +18,18 @@ from examples.api_for_sqlalchemy.models import (
     UserBio,
 )
 from examples.api_for_sqlalchemy.schemas import (
+    AgeRatingCreateSchema,
+    AgeRatingSchema,
+    AgeRatingUpdateSchema,
     ChildInSchema,
     ChildPatchSchema,
     ChildSchema,
     ComputerInSchema,
     ComputerPatchSchema,
     ComputerSchema,
+    MovieCreateSchema,
+    MovieSchema,
+    MovieUpdateSchema,
     ParentPatchSchema,
     ParentSchema,
     ParentToChildAssociationSchema,
@@ -161,6 +169,27 @@ def add_routers(app_plain: FastAPI):
         schema=UserSchema,
         schema_in_patch=UserPatchSchema,
         schema_in_post=UserInSchema,
+    )
+    builder.add_resource(
+        path="/age-ratings",
+        tags=["Age Ratings"],
+        resource_type="age-rating",
+        view=ViewBaseGeneric,
+        model=AgeRating,
+        schema=AgeRatingSchema,
+        schema_in_post=AgeRatingCreateSchema,
+        schema_in_patch=AgeRatingUpdateSchema,
+        model_id_field_name="name",
+    )
+    builder.add_resource(
+        path="/movies",
+        tags=["Movie"],
+        resource_type="movie",
+        view=ViewBaseGeneric,
+        model=Movie,
+        schema=MovieSchema,
+        schema_in_post=MovieCreateSchema,
+        schema_in_patch=MovieUpdateSchema,
     )
     builder.initialize()
 

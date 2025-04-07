@@ -428,6 +428,7 @@ class SqlalchemyDataLayer(BaseDataLayer):
             objects_count = await self._base_sql.count(
                 session=self.session,
                 stmt=query,
+                id_field_name=self.id_column_name,
             )
 
         collection = await self.after_get_collection(collection, qs, view_kwargs)
