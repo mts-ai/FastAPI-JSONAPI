@@ -330,6 +330,79 @@ class TestGetUsersList:
             ),
         }
 
+    async def test_select_custom_fields_with_includes_other_direction(
+        self,
+        app: FastAPI,
+        async_session: AsyncSession,
+        client: AsyncClient,
+        user_1: User,
+        user_2: User,
+    ):
+        url = app.url_path_for("get_post_list")
+        user_1, user_2 = sorted((user_1, user_2), key=lambda x: x.id)
+
+        user_2_post = await create_post(async_session, user_2)
+        user_1_post = await create_post(async_session, user_1)
+
+        queried_user_fields = "name"
+        queried_post_fields = "title"
+
+        params = QueryParams(
+            [
+                ("fields[user]", queried_user_fields),
+                ("fields[post]", queried_post_fields),
+                ("include", "user"),
+            ],
+        )
+        response = await client.get(url, params=f"{params}")
+
+        assert response.status_code == status.HTTP_200_OK, response.text
+        response_data = response.json()
+        response_data["data"] = sorted(response_data["data"], key=lambda x: (x["type"], x["id"]))
+        response_data["included"] = sorted(response_data["included"], key=lambda x: (x["type"], x["id"]))
+
+        assert response_data == {
+            "data": [
+                {
+                    "id": f"{user_2_post.id}",
+                    "type": "post",
+                    "attributes": PostAttributesBaseSchema.model_validate(user_2_post).model_dump(
+                        include=set(queried_post_fields.split(",")),
+                    ),
+                    "relationships": {"user": {"data": {"id": f"{user_2.id}", "type": "user"}}},
+                },
+                {
+                    "id": f"{user_1_post.id}",
+                    "type": "post",
+                    "attributes": PostAttributesBaseSchema.model_validate(user_1_post).model_dump(
+                        include=set(queried_post_fields.split(",")),
+                    ),
+                    "relationships": {"user": {"data": {"id": f"{user_1.id}", "type": "user"}}},
+                },
+            ],
+            "jsonapi": {"version": "1.0"},
+            "meta": {"count": 2, "totalPages": 1},
+            "included": sorted(
+                [
+                    {
+                        "id": f"{user_1.id}",
+                        "type": "user",
+                        "attributes": UserAttributesBaseSchema.model_validate(user_1).model_dump(
+                            include=set(queried_user_fields.split(",")),
+                        ),
+                    },
+                    {
+                        "id": f"{user_2.id}",
+                        "type": "user",
+                        "attributes": UserAttributesBaseSchema.model_validate(user_2).model_dump(
+                            include=set(queried_user_fields.split(",")),
+                        ),
+                    },
+                ],
+                key=lambda x: (x["type"], x["id"]),
+            ),
+        }
+
     async def test_select_custom_fields_for_includes_without_requesting_includes(
         self,
         app: FastAPI,
