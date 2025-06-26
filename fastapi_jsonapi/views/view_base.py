@@ -259,7 +259,7 @@ class ViewBase:
         cls,
         db_item,
         resource_type: str,
-        include_fields: Optional[dict[str, dict[str, Type[TypeSchema]]]] = None,
+        include_fields: dict[str, dict[str, Type[TypeSchema]]],
     ) -> dict:
         attrs_schema = schemas_storage.get_attrs_schema(resource_type, operation_type="get")
 
@@ -387,7 +387,11 @@ class ViewBase:
                     include_key = self._get_include_key(relationship_db_item, info)
 
                     if not (relationship_item_data := result_included.get(include_key)):
-                        relationship_item_data = self._prepare_item_data(relationship_db_item, info.resource_type)
+                        relationship_item_data = self._prepare_item_data(
+                            relationship_db_item,
+                            info.resource_type,
+                            include_fields=include_fields,
+                        )
                         result_included[include_key] = relationship_item_data
 
                     items_data_to_process.append(relationship_item_data)
