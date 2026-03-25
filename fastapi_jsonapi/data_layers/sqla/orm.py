@@ -425,9 +425,15 @@ class SqlalchemyDataLayer(BaseDataLayer):
 
         objects_count = self.default_collection_count
         if not self.disable_collection_count:
+            count_query = self._base_sql.query(
+                model=self.model,
+                filters=filters,
+                jsonapi_join=relationships_info,
+                stmt=self._query,
+            )
             objects_count = await self._base_sql.count(
                 session=self.session,
-                stmt=query,
+                stmt=count_query,
             )
 
         collection = await self.after_get_collection(collection, qs, view_kwargs)
